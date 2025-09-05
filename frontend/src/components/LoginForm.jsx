@@ -4,65 +4,100 @@ import { useAuth } from '../contexts/AuthContext';
 import './LoginForm.css';
 
 const LoginForm = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
-  const { signMessage } = useSignMessage();
+  const { signMessage, error: signError } = useSignMessage();
   const [loginStatus, setLoginStatus] = useState({});
-
-  // Monitor wagmi connection state changes
-  useEffect(() => {
-    if (connectError) {
-      console.error('MetaMask connection error:', connectError);
-      setLoginStatus({ ethereum: 'error', error: connectError.message });
-    } else if (!connectLoading && isConnected && loginStatus.ethereum === 'connecting') {
-      // Connection successful, now proceed with signing
-      handleEthereumSignAndLogin();
-    }
-  }, [connectError, connectLoading, isConnected, loginStatus.ethereum]);
-
-  // Separate function for signing and login after successful connection
-  const handleEthereumSignAndLogin = async () => {
-    try {
-      setLoginStatus({ ethereum: 'processing' });
-      
-      // Sign a message to prove ownership
-      const message = `Login to Socialism platform with address: ${address}`;
-      const signature = await signMessage({ message });
-
-      const result = await login({
-        ethereumAddress: address,
-        signature,
-        message
-      }, 'ethereum');
-
-      if (result.success) {
-        setLoginStatus({ ethereum: 'success' });
-      } else {
-        setLoginStatus({ ethereum: 'error', error: result.error });
-      }
-    } catch (error) {
-      console.error('Ethereum sign/login error:', error);
-      setLoginStatus({ ethereum: 'error', error: error.message });
-    }
-  };
+  
+  // If user is already authenticated, don't show login buttons
+  if (isAuthenticated) {
+    return (
+      <div className="login-form">
+        <h2>You are already logged in!</h2>
+        <p>You are successfully authenticated.</p>
+      </div>
+    );
+  }
 
   // Ethereum/Web3 Login
   const handleEthereumLogin = async () => {
+    console.log('=== ETHEREUM LOGIN STARTED ===');
+    console.log('Initial state - isConnected:', isConnected, 'address:', address);
+    
     try {
-      if (!isConnected) {
-        // Connect wallet first - the useEffect will handle the rest
-        setLoginStatus({ ethereum: 'connecting' });
+      // Set connecting status immediately
+      console.log('Setting status to connecting');
+      setLoginStatus({ ethereum: 'connecting' });
+      
+      let currentAddress = address;
+      let currentIsConnected = isConnected;
+      
+      // If not connected, connect first
+      if (!currentIsConnected) {
+        console.log('Not connected, attempting to connect...');
         const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0];
-        await connect({ connector });
+        console.log('Found connector:', connector?.name);
+        
+        const result = await connect({ connector });
+        console.log('Connect result:', result);
+        
+        // After connection, get the updated address
+        currentAddress = result.accounts[0];
+        currentIsConnected = true;
+        console.log('Connected! New address:', currentAddress);
       } else {
-        // Already connected, proceed directly to sign and login
-        await handleEthereumSignAndLogin();
+        console.log('Already connected, proceeding with existing address:', currentAddress);
+      }
+      
+      // Now sign the message
+      console.log('Setting status to signing');
+      setLoginStatus({ ethereum: 'signing' });
+      const message = `Login to Socialism platform with address: ${currentAddress}`;
+      console.log('About to sign message:', message);
+      
+      const signature = await signMessage({ message });
+      console.log('Signature result:', signature ? 'received' : 'null/undefined');
+
+      if (!signature) {
+        throw new Error('Signature was cancelled');
+      }
+
+      // Now authenticate with backend
+      console.log('Setting status to authenticating');
+      setLoginStatus({ ethereum: 'authenticating' });
+      
+      console.log('Calling backend login API...');
+      const authResult = await login({
+        ethereumAddress: currentAddress,
+        signature,
+        message
+      }, 'ethereum');
+      console.log('Backend login result:', authResult);
+
+      if (authResult.success) {
+        console.log('Login successful! Setting status to success');
+        setLoginStatus({ ethereum: 'success' });
+      } else {
+        console.log('Login failed. Setting status to error');
+        setLoginStatus({ ethereum: 'error', error: authResult.error });
       }
     } catch (error) {
-      console.error('Ethereum login error:', error);
-      setLoginStatus({ ethereum: 'error', error: error.message });
+      console.error('ERROR in handleEthereumLogin:', error);
+      console.log('Error type:', typeof error);
+      console.log('Error message:', error.message);
+      console.log('Error stack:', error.stack);
+      
+      if (error.message.includes('rejected') || error.message.includes('cancelled')) {
+        console.log('Setting status to cancelled');
+        setLoginStatus({ ethereum: 'cancelled' });
+      } else {
+        console.log('Setting status to error');
+        setLoginStatus({ ethereum: 'error', error: error.message });
+      }
     }
+    
+    console.log('=== ETHEREUM LOGIN ENDED ===');
   };
 
   // OAuth Login Handler
@@ -138,9 +173,16 @@ const LoginForm = () => {
 
   const getButtonText = (provider) => {
     const status = loginStatus[provider];
+    if (provider === 'ethereum') {
+      console.log('getButtonText for ethereum - status:', status, 'full loginStatus:', loginStatus);
+    }
     switch (status) {
       case 'connecting':
         return 'Connecting...';
+      case 'signing':
+        return 'Sign Message...';
+      case 'authenticating':
+        return 'Authenticating...';
       case 'processing':
         return 'Processing...';
       case 'success':
@@ -157,7 +199,9 @@ const LoginForm = () => {
   const getButtonClass = (provider) => {
     const status = loginStatus[provider];
     let className = `login-button ${provider}-button`;
-    if (status === 'connecting' || status === 'processing') className += ' loading';
+    if (status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing') {
+      className += ' loading';
+    }
     if (status === 'success') className += ' success';
     if (status === 'error') className += ' error';
     return className;
@@ -173,7 +217,7 @@ const LoginForm = () => {
         <button
           className={getButtonClass('ethereum')}
           onClick={handleEthereumLogin}
-          disabled={isLoading || loginStatus.ethereum === 'connecting' || loginStatus.ethereum === 'processing'}
+          disabled={isLoading || loginStatus.ethereum === 'connecting' || loginStatus.ethereum === 'signing' || loginStatus.ethereum === 'authenticating'}
         >
           <span className="login-icon">⟠</span>
           {getButtonText('ethereum')}

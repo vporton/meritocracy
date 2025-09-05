@@ -7,7 +7,7 @@ const LoginForm = () => {
   const { login, isLoading, isAuthenticated } = useAuth();
   const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
-  const { signMessage, error: signError } = useSignMessage();
+  const { signMessage, signMessageAsync, error: signError, isLoading: isSigningLoading } = useSignMessage();
   const [loginStatus, setLoginStatus] = useState({});
   
   // If user is already authenticated, don't show login buttons
@@ -56,8 +56,10 @@ const LoginForm = () => {
       const message = `Login to Socialism platform with address: ${currentAddress}`;
       console.log('About to sign message:', message);
       
-      const signature = await signMessage({ message });
+      console.log('Trying signMessageAsync...');
+      const signature = await signMessageAsync({ message });
       console.log('Signature result:', signature ? 'received' : 'null/undefined');
+      console.log('Actual signature value:', signature);
 
       if (!signature) {
         throw new Error('Signature was cancelled');

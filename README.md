@@ -1,1 +1,324 @@
-# socialism
+# Socialism App - Full-Stack Template
+
+A modern full-stack application template built with Node.js, React, and Prisma ORM. This template provides a solid foundation for building scalable web applications with support for multiple databases.
+
+## 🚀 Tech Stack
+
+### Backend
+- **Node.js** with **Express.js** - Fast, unopinionated web framework
+- **Prisma ORM** - Modern database toolkit with type safety
+- **Database Support**: MySQL, PostgreSQL, SQLite
+- **CORS** enabled for cross-origin requests
+- **Helmet** for security headers
+- **Morgan** for HTTP request logging
+
+### Frontend
+- **React 18** - Modern React with hooks
+- **Vite** - Lightning fast build tool
+- **React Router** - Declarative routing
+- **Axios** - Promise-based HTTP client
+- **Modern CSS** with dark/light theme support
+
+## 📁 Project Structure
+
+```
+socialism/
+├── backend/                 # Node.js API server
+│   ├── src/
+│   │   ├── index.js        # Express server setup
+│   │   └── routes/         # API route handlers
+│   ├── prisma/
+│   │   ├── schema.prisma   # Database schema
+│   │   └── seed.js         # Database seeding
+│   ├── package.json
+│   └── env.example         # Environment variables template
+├── frontend/               # React application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   ├── services/       # API service layer
+│   │   └── main.jsx        # React entry point
+│   ├── package.json
+│   └── env.example         # Environment variables template
+└── package.json            # Root package.json with scripts
+```
+
+## 🛠️ Quick Start
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+- Git
+
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url>
+cd socialism
+```
+
+### 2. Install Dependencies
+```bash
+# Install all dependencies (backend + frontend)
+npm run install-all
+
+# Or install separately:
+npm run install-backend
+npm run install-frontend
+```
+
+### 3. Environment Setup
+
+#### Backend Environment
+```bash
+cd backend
+cp env.example .env
+```
+
+Edit `.env` file and configure your database:
+
+**SQLite (Default - recommended for development):**
+```env
+DATABASE_URL="file:./dev.db"
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+```
+
+**PostgreSQL:**
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/socialism?schema=public"
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+```
+
+**MySQL:**
+```env
+DATABASE_URL="mysql://username:password@localhost:3306/socialism"
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+```
+
+#### Frontend Environment
+```bash
+cd frontend
+cp env.example .env
+```
+
+Edit `.env` file:
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+### 4. Database Setup
+```bash
+# Setup database and seed with sample data
+npm run db:setup
+```
+
+This command will:
+- Generate Prisma client
+- Create/update database schema
+- Seed the database with sample users and posts
+
+### 5. Start Development Servers
+```bash
+# Start both backend and frontend concurrently
+npm run dev
+
+# Or start separately:
+npm run dev-backend  # Backend on http://localhost:3001
+npm run dev-frontend # Frontend on http://localhost:5173
+```
+
+## 🗄️ Database Configuration
+
+### Switching Between Databases
+
+1. **Update Prisma Schema** (`backend/prisma/schema.prisma`):
+   ```prisma
+   datasource db {
+     provider = "sqlite"      // Change to "postgresql" or "mysql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+
+2. **Update Environment Variables** (`.env`):
+   - Update `DATABASE_URL` with your database connection string
+
+3. **Regenerate Prisma Client**:
+   ```bash
+   cd backend
+   npx prisma generate
+   npx prisma db push
+   ```
+
+### Database Scripts
+```bash
+# Reset database (caution: deletes all data)
+npm run db:reset
+
+# Open Prisma Studio (database GUI)
+cd backend && npx prisma studio
+
+# Generate Prisma client only
+cd backend && npx prisma generate
+
+# Apply schema changes
+cd backend && npx prisma db push
+
+# Create and apply migration
+cd backend && npx prisma migrate dev
+```
+
+## 🎯 API Endpoints
+
+### Users
+- `GET /api/users` - Get all users
+- `GET /api/users/:id` - Get user by ID
+- `POST /api/users` - Create new user
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
+
+### Posts
+- `GET /api/posts` - Get all posts (supports `?published=true/false`)
+- `GET /api/posts/:id` - Get post by ID
+- `POST /api/posts` - Create new post
+- `PUT /api/posts/:id` - Update post
+- `DELETE /api/posts/:id` - Delete post
+
+### Example API Usage
+```javascript
+// Create a new user
+POST /api/users
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+
+// Create a new post
+POST /api/posts
+{
+  "title": "My First Post",
+  "content": "This is the content of my post",
+  "published": true,
+  "authorId": 1
+}
+```
+
+## 🎨 Features
+
+### Backend Features
+- RESTful API design
+- Database-agnostic ORM (Prisma)
+- Input validation and error handling
+- CORS configuration
+- Security headers (Helmet)
+- Request logging (Morgan)
+- Environment-based configuration
+
+### Frontend Features
+- Modern React with hooks
+- Responsive design with dark/light theme
+- Client-side routing (React Router)
+- API integration with error handling
+- Real-time UI updates
+- Form validation
+- Loading states and user feedback
+
+## 🔧 Development
+
+### Available Scripts
+
+**Root level:**
+- `npm run install-all` - Install all dependencies
+- `npm run dev` - Start both servers in development mode
+- `npm run build` - Build both applications for production
+- `npm run start` - Start both applications in production mode
+
+**Backend:**
+- `npm run dev` - Start development server with nodemon
+- `npm run start` - Start production server
+- `npm run db:generate` - Generate Prisma client
+- `npm run db:push` - Push schema changes to database
+- `npm run db:migrate` - Create and apply migration
+- `npm run db:studio` - Open Prisma Studio
+- `npm run db:seed` - Seed database with sample data
+
+**Frontend:**
+- `npm run dev` - Start Vite development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+### Code Structure Guidelines
+
+**Backend:**
+- Place route handlers in `src/routes/`
+- Use Prisma client for database operations
+- Follow RESTful API conventions
+- Include proper error handling
+
+**Frontend:**
+- Components in `src/components/`
+- Pages in `src/pages/`
+- API calls in `src/services/`
+- Follow React best practices and hooks
+
+## 📦 Production Deployment
+
+### Backend Deployment
+1. Set environment variables for production
+2. Ensure database is accessible
+3. Run `npx prisma generate && npx prisma db push`
+4. Start with `npm start`
+
+### Frontend Deployment
+1. Build the application: `npm run build`
+2. Deploy the `dist/` folder to your hosting service
+3. Configure environment variables for production API URL
+
+### Environment Variables for Production
+- Update `DATABASE_URL` with production database
+- Set `NODE_ENV=production`
+- Update `FRONTEND_URL` with production frontend URL
+- Update `VITE_API_URL` with production API URL
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin feature-name`
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Database Connection Issues:**
+- Verify `DATABASE_URL` in `.env` file
+- Ensure database server is running (for PostgreSQL/MySQL)
+- Check network connectivity and credentials
+
+**Port Conflicts:**
+- Backend default port: 3001
+- Frontend default port: 5173
+- Change ports in environment variables if needed
+
+**Prisma Issues:**
+- Run `npx prisma generate` after schema changes
+- Delete `node_modules` and reinstall if client issues persist
+- Check Prisma documentation for database-specific configurations
+
+**Build Issues:**
+- Clear node_modules and package-lock.json, then reinstall
+- Check for version compatibility issues
+- Ensure all environment variables are set correctly
+
+For more help, check the documentation of the individual technologies or create an issue in the repository.

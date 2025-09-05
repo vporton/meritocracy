@@ -30,6 +30,14 @@ export const postsApi = {
   delete: (id) => api.delete(`/api/posts/${id}`),
 }
 
+// Authentication API
+export const authApi = {
+  login: (provider, userData) => api.post(`/api/auth/login/${provider}`, userData),
+  logout: () => api.post('/api/auth/logout'),
+  getCurrentUser: () => api.get('/api/auth/me'),
+  cleanupSessions: () => api.delete('/api/auth/sessions/cleanup'),
+}
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,

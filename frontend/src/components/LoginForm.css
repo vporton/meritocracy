@@ -1,0 +1,173 @@
+.login-form {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-form h2 {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.login-form p {
+  text-align: center;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-icon {
+  font-size: 1.2rem;
+}
+
+/* Provider-specific styles */
+.ethereum-button {
+  background: linear-gradient(135deg, #627eea, #4f46e5);
+}
+
+.ethereum-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5, #3730a3);
+}
+
+.orcid-button {
+  background: linear-gradient(135deg, #a6ce39, #7cb342);
+}
+
+.orcid-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7cb342, #689f38);
+}
+
+.github-button {
+  background: linear-gradient(135deg, #333, #24292e);
+}
+
+.github-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #24292e, #1b1f23);
+}
+
+.bitbucket-button {
+  background: linear-gradient(135deg, #0052cc, #0747a6);
+}
+
+.bitbucket-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0747a6, #0065ff);
+}
+
+.gitlab-button {
+  background: linear-gradient(135deg, #fc6d26, #e24329);
+}
+
+.gitlab-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e24329, #c73e1d);
+}
+
+/* Loading state */
+.login-button.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Success state */
+.login-button.success {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+/* Error state */
+.login-button.error {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 6px;
+  border-left: 4px solid #dc2626;
+  font-size: 0.9rem;
+}
+
+.login-info {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f0f9ff;
+  border-radius: 6px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.login-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #0c4a6e;
+  text-align: left;
+}
+
+.login-info strong {
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .login-form {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .login-button {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}

@@ -14,17 +14,34 @@
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
-    "express": "^4.18.2",
+    "bcrypt": "^6.0.0",
+    "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
     "helmet": "^7.1.0",
-    "morgan": "^1.10.0"
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "passport": "^0.7.0",
+    "passport-bitbucket-oauth2": "^0.1.2",
+    "passport-github2": "^0.1.12",
+    "passport-gitlab2": "^5.0.0",
+    "passport-local": "^1.0.0",
+    "passport-oauth2": "^1.8.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
     "prisma": "^5.7.1"
   },
-  "keywords": ["node", "express", "prisma", "api"],
+  "keywords": [
+    "node",
+    "express",
+    "prisma",
+    "api"
+  ],
   "author": "",
   "license": "MIT"
 }

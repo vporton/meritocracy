@@ -1,27 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import './LoginForm.css';
 
 const LoginForm = () => {
   const { login, isLoading } = useAuth();
-  const { connect, connectors } = useConnect();
+  const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
   const { signMessage } = useSignMessage();
   const [loginStatus, setLoginStatus] = useState({});
 
-  // Ethereum/Web3 Login
-  const handleEthereumLogin = async () => {
-    try {
-      setLoginStatus({ ethereum: 'connecting' });
-      
-      if (!isConnected) {
-        // Connect wallet first
-        const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0];
-        connect({ connector });
-        return;
-      }
+  // Monitor wagmi connection state changes
+  useEffect(() => {
+    if (connectError) {
+      console.error('MetaMask connection error:', connectError);
+      setLoginStatus({ ethereum: 'error', error: connectError.message });
+    } else if (!connectLoading && isConnected && loginStatus.ethereum === 'connecting') {
+      // Connection successful, now proceed with signing
+      handleEthereumSignAndLogin();
+    }
+  }, [connectError, connectLoading, isConnected, loginStatus.ethereum]);
 
+  // Separate function for signing and login after successful connection
+  const handleEthereumSignAndLogin = async () => {
+    try {
+      setLoginStatus({ ethereum: 'processing' });
+      
       // Sign a message to prove ownership
       const message = `Login to Socialism platform with address: ${address}`;
       const signature = await signMessage({ message });
@@ -36,6 +40,24 @@ const LoginForm = () => {
         setLoginStatus({ ethereum: 'success' });
       } else {
         setLoginStatus({ ethereum: 'error', error: result.error });
+      }
+    } catch (error) {
+      console.error('Ethereum sign/login error:', error);
+      setLoginStatus({ ethereum: 'error', error: error.message });
+    }
+  };
+
+  // Ethereum/Web3 Login
+  const handleEthereumLogin = async () => {
+    try {
+      if (!isConnected) {
+        // Connect wallet first - the useEffect will handle the rest
+        setLoginStatus({ ethereum: 'connecting' });
+        const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0];
+        await connect({ connector });
+      } else {
+        // Already connected, proceed directly to sign and login
+        await handleEthereumSignAndLogin();
       }
     } catch (error) {
       console.error('Ethereum login error:', error);

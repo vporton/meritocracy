@@ -421,7 +421,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.github === 'processing' || connectStatus.github === 'disconnecting'}
         >
           <span className="connect-icon">👨‍💻</span>
-          {getButtonText('github')}
+          {getButtonText('GitHub')}
         </button>
 
         {/* BitBucket Connect */}
@@ -431,7 +431,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.bitbucket === 'processing' || connectStatus.bitbucket === 'disconnecting'}
         >
           <span className="connect-icon">🪣</span>
-          {getButtonText('bitbucket')}
+          {getButtonText('BitBucket')}
         </button>
 
         {/* GitLab Connect */}
@@ -441,7 +441,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.gitlab === 'processing' || connectStatus.gitlab === 'disconnecting'}
         >
           <span className="connect-icon">🦊</span>
-          {getButtonText('gitlab')}
+          {getButtonText('GitLab')}
         </button>
       </div>
 

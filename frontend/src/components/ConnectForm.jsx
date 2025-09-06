@@ -20,7 +20,7 @@ const ConnectForm = () => {
           <h3>✅ Connected Accounts</h3>
           <p>You are successfully authenticated. You can connect additional accounts below.</p>
           <div className="connected-user-info">
-            <strong>Current user:</strong> {user?.name || 'User'}
+            <strong>Current user:</strong> {user.id}: {user?.name || 'User'}
           </div>
         </div>
       );

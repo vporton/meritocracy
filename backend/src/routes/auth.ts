@@ -81,7 +81,7 @@ async function findOrCreateUser(userData: UserData) {
     
     // Get all data from existing users to merge
     const mergedData = {
-      email: email || existingUsers.find(u => u.email)?.email || `merged_${uuidv4()}@example.com`,
+      email: email || existingUsers.find(u => u.email)?.email || `merged_${uuidv4()}@example.com`, // FIXME: It makes no sense to generate a random email.
       name: name || existingUsers.find(u => u.name)?.name,
       ethereumAddress: ethereumAddress || existingUsers.find(u => u.ethereumAddress)?.ethereumAddress,
       orcidId: orcidId || existingUsers.find(u => u.orcidId)?.orcidId,

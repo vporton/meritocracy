@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
+import { ethers } from 'ethers';
 
 interface ServerStatus {
   status?: string;
@@ -10,6 +11,7 @@ interface ServerStatus {
 
 function Home() {
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
+  const [ethereumStatus, setEthereumStatus] = useState<{network: string, balance: bigint, currency: string} | undefined>()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,27 +29,29 @@ function Home() {
     checkServerStatus()
   }, [])
 
+  useEffect(() => {
+    const checkEthereumStatus = async () => {
+      try {
+        const response = await api.get('/api/ethereum/wallet-info')
+        setEthereumStatus(response.data.data)
+      } catch (error) {
+        // setEthereumStatus({ error: 'Failed to connect to server' })
+      } finally {
+        // setLoading(false) // TODO
+      }
+    }
+
+    checkEthereumStatus()
+  }, [])
+
   if (loading) {
     return <div className="loading">Checking server status...</div>
   }
 
   return (
     <div>
-      <h1>Welcome to Socialism App</h1>
-      <div className="card">
-        <h2>🚀 Node.js + React + Prisma Template</h2>
-        <p>
-          This is a full-stack application template featuring:
-        </p>
-        <ul style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
-          <li><strong>Backend:</strong> Node.js with Express</li>
-          <li><strong>Database:</strong> Prisma ORM (supports MySQL, PostgreSQL, SQLite)</li>
-          <li><strong>Frontend:</strong> React with Vite</li>
-          <li><strong>API:</strong> RESTful endpoints for users and posts</li>
-          <li><strong>Routing:</strong> React Router for navigation</li>
-        </ul>
-      </div>
-
+      <h1>Welcome to Socialism App <span style={{ color: 'red' }}>⚠️This is a test version</span></h1>
+      <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer.</p>
       <div className="card">
         <h3>Server Status</h3>
         {serverStatus?.error ? (
@@ -60,23 +64,12 @@ function Home() {
           <div>
             <p>✅ <strong>Status:</strong> {serverStatus?.status}</p>
             <p>📦 <strong>Version:</strong> {serverStatus?.version}</p>
-            <p>💬 <strong>Message:</strong> {serverStatus?.message}</p>
           </div>
         )}
       </div>
-
       <div className="card">
-        <h3>Quick Start</h3>
-        <div style={{ textAlign: 'left' }}>
-          <p><strong>1. Start the backend:</strong></p>
-          <code>cd backend && npm install && npm run dev</code>
-          
-          <p><strong>2. Start the frontend:</strong></p>
-          <code>cd frontend && npm install && npm run dev</code>
-          
-          <p><strong>3. Initialize the database:</strong></p>
-          <code>cd backend && npx prisma db push && npm run db:seed</code>
-        </div>
+        <p>✅ <strong>EVM network:</strong> {ethereumStatus?.network}</p>
+        <p>📦 <strong>EVM gas token balance:</strong> {ethereumStatus ? ethers.formatEther(ethereumStatus.balance) : "n/a"} {ethereumStatus?.currency}</p>
       </div>
     </div>
   )

@@ -28,7 +28,7 @@ function loadEthereumConfig(): { privateKey: string; mnemonic?: string; network:
         privateKey: config.ETHEREUM_PRIVATE_KEY,
         mnemonic: config.ETHEREUM_MNEMONIC,
         network: config.ETHEREUM_NETWORK || 'mainnet',
-        rpcUrl: config.ETHEREUM_RPC_URL
+        rpcUrl: process.env.ETHEREUM_RPC_URL
     };
 }
 
@@ -99,9 +99,8 @@ class EthereumService {
     }
 
     // Utility methods
-    public async getBalance(): Promise<string> {
-        const balance = await this.provider.getBalance(this.signer.address);
-        return ethers.formatEther(balance);
+    public async getBalance(): Promise<bigint> {
+        return await this.provider.getBalance(this.signer.address);
     }
 
     public async getNetwork(): Promise<ethers.Network> {

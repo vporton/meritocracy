@@ -16,7 +16,8 @@ router.get('/wallet-info', async (req: Request, res: Response) => {
             success: true,
             data: {
                 address,
-                balance: `${balance} ETH`,
+                balance: balance.toString(),
+                currency: 'ETH', // TODO
                 network: network.name,
                 chainId: network.chainId.toString()
             }

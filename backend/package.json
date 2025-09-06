@@ -25,6 +25,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "openai": "^5.19.1",
     "passport": "^0.7.0",
     "passport-bitbucket-oauth2": "^0.1.2",
     "passport-github2": "^0.1.12",

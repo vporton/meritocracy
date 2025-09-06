@@ -411,7 +411,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.orcid === 'processing' || connectStatus.orcid === 'disconnecting'}
         >
           <span className="connect-icon">🎓</span>
-          {getButtonText('orcid')}
+          {getButtonText('ORCID')}
         </button>
 
         {/* GitHub Connect */}

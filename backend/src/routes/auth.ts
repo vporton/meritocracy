@@ -80,6 +80,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
     }
   });
 
+  // FIXME: The following code seems wrong.
   if (existingUser === null) {
     // No existing user found, create new one
     return await prisma.user.create({
@@ -94,6 +95,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       }
     });
   } else {
+    // TODO: DB transaction
     // One user found, update with new information
     if (currentUserId !== null && currentUserId !== existingUser.id) {
       // If there's a current user that's different from the existing user,

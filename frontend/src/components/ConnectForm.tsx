@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { User } from '../services/api';
 import './ConnectForm.css';
 
 interface ConnectStatus {
-  [provider: string]: string;
+  [provider: string]: string | undefined;
   error?: string;
 }
 
@@ -49,11 +48,75 @@ interface MessageEvent {
 
 const ConnectForm = () => {
   const { login, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
-  const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
+  const { connect, connectors } = useConnect();
   const { address, isConnected } = useAccount();
-  const { signMessage, signMessageAsync, error: signError, isLoading: isSigningLoading } = useSignMessage();
+  const { signMessageAsync } = useSignMessage();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
-  const navigate = useNavigate();
+  const [pendingEthereumConnection, setPendingEthereumConnection] = useState(false);
+  
+  // Handle Ethereum connection flow when address becomes available
+  useEffect(() => {
+    const handleEthereumAuth = async () => {
+      if (pendingEthereumConnection && address && isConnected) {
+        console.log('useEffect: Address available after connection:', address);
+        setPendingEthereumConnection(false);
+        
+        try {
+          // Now sign the message
+          console.log('Setting status to signing');
+          setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
+          const message = `Connect to Socialism platform with address: ${address}`;
+          console.log('About to sign message:', message);
+          
+          console.log('Trying signMessageAsync...');
+          const signature = await signMessageAsync({ message });
+          console.log('Signature result:', signature ? 'received' : 'null/undefined');
+          console.log('Actual signature value:', signature);
+
+          if (!signature) {
+            throw new Error('Signature was cancelled');
+          }
+
+          // Now authenticate with backend
+          console.log('Setting status to authenticating');
+          setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
+          
+          console.log('Calling backend login API...');
+          const authResult = await login({
+            ethereumAddress: address,
+            signature,
+            message
+          }, 'ethereum');
+          console.log('Backend login result:', authResult);
+
+          if (authResult.success) {
+            console.log('Connect successful! Setting status to success');
+            setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
+            // Reset status after a short delay to allow connecting more accounts
+            setTimeout(() => setConnectStatus(prev => {
+              const { ethereum, ...rest } = prev;
+              return rest;
+            }), 2000);
+          } else {
+            console.log('Connect failed. Setting status to error');
+            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
+          }
+        } catch (error: any) {
+          console.error('ERROR in useEffect handleEthereumAuth:', error);
+          
+          if (error.message.includes('rejected') || error.message.includes('cancelled')) {
+            console.log('Setting status to cancelled');
+            setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
+          } else {
+            console.log('Setting status to error');
+            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: error.message }));
+          }
+        }
+      }
+    };
+    
+    handleEthereumAuth();
+  }, [pendingEthereumConnection, address, isConnected, signMessageAsync, login]);
   
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
@@ -86,7 +149,7 @@ const ConnectForm = () => {
       });
       
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         // Update the user context with the updated user data
         await refreshUser();
         setConnectStatus(prev => {
@@ -116,70 +179,31 @@ const ConnectForm = () => {
       console.log('Setting status to connecting');
       setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
       
-      let currentAddress = address;
-      let currentIsConnected = isConnected;
-      
       // If not connected, connect first
-      if (!currentIsConnected) {
+      if (!isConnected) {
         console.log('Not connected, attempting to connect...');
         const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0];
         console.log('Found connector:', connector?.name);
         
-        const result = await connect({ connector });
-        console.log('Connect result:', result);
+        // Set flag to trigger useEffect when address becomes available
+        setPendingEthereumConnection(true);
         
-        // After connection, get the updated address
-        currentAddress = result.accounts[0];
-        currentIsConnected = true;
-        console.log('Connected! New address:', currentAddress);
+        await connect({ connector });
+        console.log('Connect initiated');
+        
+        // The useEffect will handle the rest when address is available
       } else {
-        console.log('Already connected, proceeding with existing address:', currentAddress);
-      }
-      
-      // Now sign the message
-      console.log('Setting status to signing');
-      setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-      const message = `Connect to Socialism platform with address: ${currentAddress}`;
-      console.log('About to sign message:', message);
-      
-      console.log('Trying signMessageAsync...');
-      const signature = await signMessageAsync({ message });
-      console.log('Signature result:', signature ? 'received' : 'null/undefined');
-      console.log('Actual signature value:', signature);
-
-      if (!signature) {
-        throw new Error('Signature was cancelled');
-      }
-
-      // Now authenticate with backend
-      console.log('Setting status to authenticating');
-      setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-      
-      console.log('Calling backend login API...');
-      const authResult = await login({
-        ethereumAddress: currentAddress,
-        signature,
-        message
-      }, 'ethereum');
-      console.log('Backend login result:', authResult);
-
-      if (authResult.success) {
-        console.log('Connect successful! Setting status to success');
-        setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
-        // Reset status after a short delay to allow connecting more accounts
-        setTimeout(() => setConnectStatus(prev => {
-          const { ethereum, ...rest } = prev;
-          return rest;
-        }), 2000);
-      } else {
-        console.log('Connect failed. Setting status to error');
-        setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
+        console.log('Already connected, proceeding with existing address:', address);
+        // If already connected, trigger the auth flow directly
+        setPendingEthereumConnection(true);
       }
     } catch (error: any) {
       console.error('ERROR in handleEthereumConnect:', error);
       console.log('Error type:', typeof error);
       console.log('Error message:', error.message);
       console.log('Error stack:', error.stack);
+      
+      setPendingEthereumConnection(false);
       
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
         console.log('Setting status to cancelled');

@@ -9,6 +9,8 @@ const prisma = new PrismaClient();
 
 // Track ongoing OAuth requests to prevent duplicates
 const ongoingOAuthRequests = new Map();
+// Cache successful OAuth results for a short time to handle duplicates
+const oauthResultCache = new Map();
 
 // Helper function to find or create user based on provided data
 async function findOrCreateUser(userData) {
@@ -340,11 +342,20 @@ router.post('/oauth/:provider/callback', async (req, res) => {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
 
-    // Check for duplicate requests
+    // Check for duplicate requests and cached results
     const requestKey = `${provider}:${code}`;
+    
+    // First check if we have a cached result for this exact request
+    if (oauthResultCache.has(requestKey)) {
+      console.log('Returning cached OAuth result for duplicate request:', requestKey);
+      const cachedResult = oauthResultCache.get(requestKey);
+      return res.json(cachedResult);
+    }
+    
+    // Check if the same request is currently in progress
     if (ongoingOAuthRequests.has(requestKey)) {
-      console.log('Duplicate OAuth request detected, ignoring:', requestKey);
-      return res.status(409).json({ error: 'OAuth request already in progress' });
+      console.log('Duplicate OAuth request detected, rejecting to avoid API errors:', requestKey);
+      return res.status(429).json({ error: 'OAuth request already processing, please wait' });
     }
     
     // Mark request as ongoing
@@ -353,6 +364,10 @@ router.post('/oauth/:provider/callback', async (req, res) => {
     // Clean up the request tracking after completion (with timeout)
     const cleanup = () => {
       ongoingOAuthRequests.delete(requestKey);
+      // Also clean up cache after 5 minutes
+      setTimeout(() => {
+        oauthResultCache.delete(requestKey);
+      }, 5 * 60 * 1000);
     };
     setTimeout(cleanup, 30000); // Cleanup after 30 seconds regardless
 
@@ -396,16 +411,22 @@ router.post('/oauth/:provider/callback', async (req, res) => {
     
     console.log('User created/found and session created successfully');
     
-    // Clean up request tracking on success
-    cleanup();
-    
-    res.json({
+    // Prepare the response
+    const response = {
       user,
       session: {
         token: session.token,
         expiresAt: session.expiresAt
       }
-    });
+    };
+    
+    // Cache the successful result
+    oauthResultCache.set(requestKey, response);
+    
+    // Clean up request tracking on success
+    cleanup();
+    
+    res.json(response);
   } catch (error) {
     console.error(`=== ${req.params.provider} OAuth Error ===`);
     console.error('Error details:', {

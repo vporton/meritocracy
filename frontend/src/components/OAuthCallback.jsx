@@ -1,14 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const OAuthCallback = ({ provider }) => {
   const location = useLocation();
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate processing
+    if (hasProcessed.current) {
+      return;
+    }
+
     const handleCallback = async () => {
+      // Mark as processed immediately to prevent any race conditions
+      hasProcessed.current = true;
+
       const urlParams = new URLSearchParams(location.search);
       const code = urlParams.get('code');
       const error = urlParams.get('error');
+
+      console.log('OAuth callback processing:', { provider, code: code ? 'present' : 'missing', error });
 
       if (error) {
         window.opener?.postMessage({
@@ -22,6 +33,7 @@ const OAuthCallback = ({ provider }) => {
 
       if (code) {
         try {
+          console.log('Sending OAuth code to backend...');
           // Send the authorization code to the backend for secure token exchange
           const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/oauth/${provider}/callback`, {
             method: 'POST',
@@ -33,10 +45,12 @@ const OAuthCallback = ({ provider }) => {
 
           if (!response.ok) {
             const errorData = await response.json();
+            console.error('Backend OAuth error:', errorData);
             throw new Error(errorData.error || 'OAuth authentication failed');
           }
 
           const authData = await response.json();
+          console.log('OAuth success, sending message to parent');
           
           // Send the authentication result back to the parent window
           window.opener?.postMessage({
@@ -59,7 +73,7 @@ const OAuthCallback = ({ provider }) => {
     };
 
     handleCallback();
-  }, [location, provider]);
+  }, [location.search, provider]); // Use location.search instead of location object
 
 
 

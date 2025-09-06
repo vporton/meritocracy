@@ -82,12 +82,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    if (token) {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
+        setUser(response.data.user);
+        return response.data.user;
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+        throw error;
+      }
+    }
+  };
+
   const value = {
     user,
     isLoading,
     isAuthenticated: !!user,
     login,
     logout,
+    refreshUser,
   };
 
   return (

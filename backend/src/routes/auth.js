@@ -312,6 +312,282 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// OAuth callback endpoints for secure token exchange
+router.post('/oauth/:provider/callback', async (req, res) => {
+  try {
+    const { provider } = req.params;
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is required' });
+    }
+
+    let userData;
+    
+    switch (provider) {
+      case 'github':
+        userData = await handleGitHubOAuth(code);
+        break;
+      case 'orcid':
+        userData = await handleORCIDOAuth(code);
+        break;
+      case 'bitbucket':
+        userData = await handleBitBucketOAuth(code);
+        break;
+      case 'gitlab':
+        userData = await handleGitLabOAuth(code);
+        break;
+      default:
+        return res.status(400).json({ error: 'Unsupported OAuth provider' });
+    }
+
+    // Use the existing login logic
+    const user = await findOrCreateUser(userData);
+    const session = await createSession(user.id);
+    
+    res.json({
+      user,
+      session: {
+        token: session.token,
+        expiresAt: session.expiresAt
+      }
+    });
+  } catch (error) {
+    console.error(`${req.params.provider} OAuth error:`, error);
+    res.status(500).json({ error: `Failed to authenticate with ${req.params.provider}` });
+  }
+});
+
+// OAuth handler functions
+async function handleGitHubOAuth(code) {
+  // Exchange code for access token
+  const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: process.env.GITHUB_CLIENT_ID,
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      code: code,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error('Failed to exchange code for GitHub access token');
+  }
+
+  const tokenData = await tokenResponse.json();
+  
+  if (tokenData.error) {
+    throw new Error(`GitHub OAuth error: ${tokenData.error_description || tokenData.error}`);
+  }
+
+  // Get user data from GitHub API
+  const userResponse = await fetch('https://api.github.com/user', {
+    headers: {
+      'Authorization': `token ${tokenData.access_token}`,
+    },
+  });
+
+  if (!userResponse.ok) {
+    throw new Error('Failed to fetch GitHub user data');
+  }
+
+  const userData = await userResponse.json();
+  
+  return {
+    githubHandle: userData.login,
+    name: userData.name,
+    email: userData.email,
+  };
+}
+
+async function handleORCIDOAuth(code) {
+  // Exchange code for access token
+  const tokenResponse = await fetch(`https://orcid.org/oauth/token`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: process.env.ORCID_CLIENT_ID,
+      client_secret: process.env.ORCID_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: `${process.env.FRONTEND_URL}/auth/orcid/callback`,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error('Failed to exchange code for ORCID access token');
+  }
+
+  const tokenData = await tokenResponse.json();
+  
+  if (tokenData.error) {
+    throw new Error(`ORCID OAuth error: ${tokenData.error_description || tokenData.error}`);
+  }
+  
+  return {
+    orcidId: tokenData.orcid,
+    name: tokenData.name,
+  };
+}
+
+async function handleBitBucketOAuth(code) {
+  // Exchange code for access token
+  const tokenResponse = await fetch('https://bitbucket.org/site/oauth2/access_token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code,
+      client_id: process.env.BITBUCKET_CLIENT_ID,
+      client_secret: process.env.BITBUCKET_CLIENT_SECRET,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error('Failed to exchange code for BitBucket access token');
+  }
+
+  const tokenData = await tokenResponse.json();
+  
+  if (tokenData.error) {
+    throw new Error(`BitBucket OAuth error: ${tokenData.error_description || tokenData.error}`);
+  }
+
+  // Get user data from BitBucket API
+  const userResponse = await fetch('https://api.bitbucket.org/2.0/user', {
+    headers: {
+      'Authorization': `Bearer ${tokenData.access_token}`,
+    },
+  });
+
+  if (!userResponse.ok) {
+    throw new Error('Failed to fetch BitBucket user data');
+  }
+
+  const userData = await userResponse.json();
+  
+  return {
+    bitbucketHandle: userData.username,
+    name: userData.display_name,
+    email: userData.email,
+  };
+}
+
+async function handleGitLabOAuth(code) {
+  // Exchange code for access token
+  const tokenResponse = await fetch('https://gitlab.com/oauth/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: process.env.GITLAB_CLIENT_ID,
+      client_secret: process.env.GITLAB_CLIENT_SECRET,
+      code: code,
+      grant_type: 'authorization_code',
+      redirect_uri: `${process.env.FRONTEND_URL}/auth/gitlab/callback`,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error('Failed to exchange code for GitLab access token');
+  }
+
+  const tokenData = await tokenResponse.json();
+  
+  if (tokenData.error) {
+    throw new Error(`GitLab OAuth error: ${tokenData.error_description || tokenData.error}`);
+  }
+
+  // Get user data from GitLab API
+  const userResponse = await fetch('https://gitlab.com/api/v4/user', {
+    headers: {
+      'Authorization': `Bearer ${tokenData.access_token}`,
+    },
+  });
+
+  if (!userResponse.ok) {
+    throw new Error('Failed to fetch GitLab user data');
+  }
+
+  const userData = await userResponse.json();
+  
+  return {
+    gitlabHandle: userData.username,
+    name: userData.name,
+    email: userData.email,
+  };
+}
+
+// Disconnect provider endpoint
+router.post('/disconnect/:provider', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.substring(7);
+    const { provider } = req.params;
+    
+    // Find session and get user
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const user = session.user;
+    
+    // Determine which field to clear based on provider
+    const providerFields = {
+      ethereum: 'ethereumAddress',
+      orcid: 'orcidId',
+      github: 'githubHandle', 
+      bitbucket: 'bitbucketHandle',
+      gitlab: 'gitlabHandle'
+    };
+
+    const fieldToClear = providerFields[provider];
+    if (!fieldToClear) {
+      return res.status(400).json({ error: 'Invalid provider' });
+    }
+
+    // Check if the provider is actually connected
+    if (!user[fieldToClear]) {
+      return res.status(400).json({ error: 'Provider not connected' });
+    }
+
+    // Update user to remove the provider connection
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        [fieldToClear]: null
+      }
+    });
+    
+    res.json({ 
+      message: `${provider} disconnected successfully`,
+      user: updatedUser 
+    });
+  } catch (error) {
+    console.error('Disconnect error:', error);
+    res.status(500).json({ error: 'Failed to disconnect provider' });
+  }
+});
+
 // Cleanup expired sessions (should be called periodically)
 router.delete('/sessions/cleanup', async (req, res) => {
   try {

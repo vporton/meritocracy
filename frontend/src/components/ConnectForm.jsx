@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import './ConnectForm.css';
 
 const ConnectForm = () => {
-  const { login, isLoading, isAuthenticated, user } = useAuth();
+  const { login, isLoading, isAuthenticated, user, refreshUser } = useAuth();
   const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
   const { signMessage, signMessageAsync, error: signError, isLoading: isSigningLoading } = useSignMessage();
@@ -28,15 +28,50 @@ const ConnectForm = () => {
     return null;
   };
 
+  // Helper function to disconnect a provider
+  const handleDisconnect = async (provider) => {
+    try {
+      setConnectStatus(prev => ({ ...prev, [provider]: 'disconnecting' }));
+      
+      // Call backend to disconnect/unlink the provider
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/disconnect/${provider}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        // Update the user context with the updated user data
+        await refreshUser();
+        setConnectStatus(prev => {
+          const { [provider]: _, ...rest } = prev;
+          return rest;
+        }); // Clear the provider's status
+      } else {
+        throw new Error('Failed to disconnect provider');
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.message }));
+    }
+  };
+
   // Ethereum/Web3 Connect
   const handleEthereumConnect = async () => {
+    // Check if already connected and user wants to disconnect
+    if (isProviderConnected('ethereum')) {
+      return handleDisconnect('ethereum');
+    }
     console.log('=== ETHEREUM CONNECT STARTED ===');
     console.log('Initial state - isConnected:', isConnected, 'address:', address);
     
     try {
       // Set connecting status immediately
       console.log('Setting status to connecting');
-      setConnectStatus({ ethereum: 'connecting' });
+      setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
       
       let currentAddress = address;
       let currentIsConnected = isConnected;
@@ -60,7 +95,7 @@ const ConnectForm = () => {
       
       // Now sign the message
       console.log('Setting status to signing');
-      setConnectStatus({ ethereum: 'signing' });
+      setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
       const message = `Connect to Socialism platform with address: ${currentAddress}`;
       console.log('About to sign message:', message);
       
@@ -75,7 +110,7 @@ const ConnectForm = () => {
 
       // Now authenticate with backend
       console.log('Setting status to authenticating');
-      setConnectStatus({ ethereum: 'authenticating' });
+      setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
       
       console.log('Calling backend login API...');
       const authResult = await login({
@@ -87,12 +122,15 @@ const ConnectForm = () => {
 
       if (authResult.success) {
         console.log('Connect successful! Setting status to success');
-        setConnectStatus({ ethereum: 'success' });
+        setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
         // Reset status after a short delay to allow connecting more accounts
-        setTimeout(() => setConnectStatus({}), 2000);
+        setTimeout(() => setConnectStatus(prev => {
+          const { ethereum, ...rest } = prev;
+          return rest;
+        }), 2000);
       } else {
         console.log('Connect failed. Setting status to error');
-        setConnectStatus({ ethereum: 'error', error: authResult.error });
+        setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
       }
     } catch (error) {
       console.error('ERROR in handleEthereumConnect:', error);
@@ -102,10 +140,10 @@ const ConnectForm = () => {
       
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
         console.log('Setting status to cancelled');
-        setConnectStatus({ ethereum: 'cancelled' });
+        setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
       } else {
         console.log('Setting status to error');
-        setConnectStatus({ ethereum: 'error', error: error.message });
+        setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: error.message }));
       }
     }
     
@@ -114,6 +152,10 @@ const ConnectForm = () => {
 
   // OAuth Connect Handler
   const handleOAuthConnect = (provider) => {
+    // Check if already connected and user wants to disconnect
+    if (isProviderConnected(provider)) {
+      return handleDisconnect(provider);
+    }
     const clientIds = {
       github: import.meta.env.VITE_GITHUB_CLIENT_ID,
       orcid: import.meta.env.VITE_ORCID_CLIENT_ID,
@@ -130,7 +172,7 @@ const ConnectForm = () => {
 
     const authUrls = {
       github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=user:email`,
-      orcid: `https://orcid.org/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=openid&redirect_uri=${encodeURIComponent(redirectUris.orcid)}`,
+      orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=openid&redirect_uri=${encodeURIComponent(redirectUris.orcid)}`,
       bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}`,
       gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=read_user`,
     };
@@ -147,11 +189,19 @@ const ConnectForm = () => {
       'width=600,height=600,scrollbars=yes,resizable=yes'
     );
 
+    // Track if we've received a proper response (to avoid race condition)
+    let hasReceivedResponse = false;
+
     // Listen for the OAuth callback
     const checkClosed = setInterval(() => {
       if (popup.closed) {
+        console.log(`${provider} popup closed. hasReceivedResponse:`, hasReceivedResponse);
         clearInterval(checkClosed);
-        setConnectStatus({ [provider]: 'cancelled' });
+        // Only mark as cancelled if we didn't receive a proper response
+        if (!hasReceivedResponse) {
+          console.log(`${provider} marked as cancelled - no response received`);
+          setConnectStatus(prev => ({ ...prev, [provider]: 'cancelled' }));
+        }
       }
     }, 1000);
 
@@ -159,25 +209,38 @@ const ConnectForm = () => {
     const handleMessage = async (event) => {
       if (event.origin !== window.location.origin) return;
       
+      console.log(`OAuth message received for ${provider}:`, event.data);
+      
       if (event.data.type === 'OAUTH_SUCCESS' && event.data.provider === provider) {
+        hasReceivedResponse = true;
         clearInterval(checkClosed);
         popup.close();
         
         try {
-          setConnectStatus({ [provider]: 'processing' });
-          const result = await login(event.data.userData, provider);
+          setConnectStatus(prev => ({ ...prev, [provider]: 'success' }));
           
-          if (result.success) {
-            setConnectStatus({ [provider]: 'success' });
-            // Reset status after a short delay to allow connecting more accounts
-            setTimeout(() => setConnectStatus({}), 2000);
-          } else {
-            setConnectStatus({ [provider]: 'error', error: result.error });
-          }
+          // The backend already handled authentication, just update the frontend state
+          const { user, session } = event.data.authData;
+          
+          // Update AuthContext with the new user and session
+          localStorage.setItem('authToken', session.token);
+          await refreshUser();
+          
+          // Reset status after a short delay to allow connecting more accounts
+          setTimeout(() => setConnectStatus(prev => {
+            const { [provider]: _, ...rest } = prev;
+            return rest;
+          }), 2000);
         } catch (error) {
-          setConnectStatus({ [provider]: 'error', error: error.message });
+          setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.message }));
         }
         
+        window.removeEventListener('message', handleMessage);
+      } else if (event.data.type === 'OAUTH_ERROR' && event.data.provider === provider) {
+        hasReceivedResponse = true;
+        clearInterval(checkClosed);
+        popup.close();
+        setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: event.data.error }));
         window.removeEventListener('message', handleMessage);
       }
     };
@@ -185,11 +248,35 @@ const ConnectForm = () => {
     window.addEventListener('message', handleMessage);
   };
 
+  // Helper function to check if a provider is connected
+  const isProviderConnected = (provider) => {
+    if (!user) return false;
+    
+    const providerFields = {
+      ethereum: 'ethereumAddress',
+      orcid: 'orcidId', 
+      github: 'githubHandle',
+      bitbucket: 'bitbucketHandle',
+      gitlab: 'gitlabHandle'
+    };
+    
+    const field = providerFields[provider];
+    return field && user[field] != null;
+  };
+
   const getButtonText = (provider) => {
     const status = connectStatus[provider];
+    const isConnected = isProviderConnected(provider);
+    
     if (provider === 'ethereum') {
-      console.log('getButtonText for ethereum - status:', status, 'full connectStatus:', connectStatus);
+      console.log('getButtonText for ethereum - status:', status, 'isConnected:', isConnected, 'full connectStatus:', connectStatus);
     }
+    
+    // If connected and no temporary status, show disconnect option
+    if (isConnected && !status) {
+      return `Disconnect ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+    }
+    
     switch (status) {
       case 'connecting':
         return 'Connecting...';
@@ -199,6 +286,8 @@ const ConnectForm = () => {
         return 'Authenticating...';
       case 'processing':
         return 'Processing...';
+      case 'disconnecting':
+        return 'Disconnecting...';
       case 'success':
         return 'Success!';
       case 'error':
@@ -212,12 +301,16 @@ const ConnectForm = () => {
 
   const getButtonClass = (provider) => {
     const status = connectStatus[provider];
+    const isConnected = isProviderConnected(provider);
     let className = `connect-button ${provider}-button`;
-    if (status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing') {
+    
+    if (status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing' || status === 'disconnecting') {
       className += ' loading';
     }
     if (status === 'success') className += ' success';
     if (status === 'error') className += ' error';
+    if (isConnected && !status) className += ' connected';
+    
     return className;
   };
 
@@ -234,7 +327,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('ethereum')}
           onClick={handleEthereumConnect}
-          disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating'}
+          disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting'}
         >
           <span className="connect-icon">⟠</span>
           {getButtonText('ethereum')}
@@ -244,7 +337,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('orcid')}
           onClick={() => handleOAuthConnect('orcid')}
-          disabled={isLoading || connectStatus.orcid === 'processing'}
+          disabled={isLoading || connectStatus.orcid === 'processing' || connectStatus.orcid === 'disconnecting'}
         >
           <span className="connect-icon">🎓</span>
           {getButtonText('orcid')}
@@ -254,7 +347,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('github')}
           onClick={() => handleOAuthConnect('github')}
-          disabled={isLoading || connectStatus.github === 'processing'}
+          disabled={isLoading || connectStatus.github === 'processing' || connectStatus.github === 'disconnecting'}
         >
           <span className="connect-icon">👨‍💻</span>
           {getButtonText('github')}
@@ -264,7 +357,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('bitbucket')}
           onClick={() => handleOAuthConnect('bitbucket')}
-          disabled={isLoading || connectStatus.bitbucket === 'processing'}
+          disabled={isLoading || connectStatus.bitbucket === 'processing' || connectStatus.bitbucket === 'disconnecting'}
         >
           <span className="connect-icon">🪣</span>
           {getButtonText('bitbucket')}
@@ -274,7 +367,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('gitlab')}
           onClick={() => handleOAuthConnect('gitlab')}
-          disabled={isLoading || connectStatus.gitlab === 'processing'}
+          disabled={isLoading || connectStatus.gitlab === 'processing' || connectStatus.gitlab === 'disconnecting'}
         >
           <span className="connect-icon">🦊</span>
           {getButtonText('gitlab')}

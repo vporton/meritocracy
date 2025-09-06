@@ -25,22 +25,25 @@ function Navigation() {
       <div className="nav-right">
         {isLoading ? (
           <span className="nav-loading">Loading...</span>
-        ) : isAuthenticated ? (
-          <div className="nav-auth">
-            <span className="nav-user">
-              Welcome, {user?.name || 'User'}
-            </span>
-            <button onClick={handleLogout} className="nav-logout">
-              Logout
-            </button>
-          </div>
         ) : (
-          <Link 
-            to="/login" 
-            className={`nav-link ${isActive('/login') ? 'active' : ''}`}
-          >
-            Login
-          </Link>
+          <div className="nav-auth">
+            {isAuthenticated && (
+              <span className="nav-user">
+                Welcome, {user?.name || 'User'}
+              </span>
+            )}
+            <Link 
+              to="/connect" 
+              className={`nav-link ${isActive('/connect') ? 'active' : ''}`}
+            >
+              Connect
+            </Link>
+            {isAuthenticated && (
+              <button onClick={handleLogout} className="nav-logout">
+                Logout
+              </button>
+            )}
+          </div>
         )}
       </div>
     </nav>

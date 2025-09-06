@@ -1,34 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
-import './LoginForm.css';
+import { useNavigate } from 'react-router-dom';
+import './ConnectForm.css';
 
-const LoginForm = () => {
-  const { login, isLoading, isAuthenticated } = useAuth();
+const ConnectForm = () => {
+  const { login, isLoading, isAuthenticated, user } = useAuth();
   const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
   const { signMessage, signMessageAsync, error: signError, isLoading: isSigningLoading } = useSignMessage();
-  const [loginStatus, setLoginStatus] = useState({});
+  const [connectStatus, setConnectStatus] = useState({});
+  const navigate = useNavigate();
   
-  // If user is already authenticated, don't show login buttons
-  if (isAuthenticated) {
-    return (
-      <div className="login-form">
-        <h2>You are already logged in!</h2>
-        <p>You are successfully authenticated.</p>
-      </div>
-    );
-  }
+  // Show connected status and allow connecting more accounts
+  const renderConnectedStatus = () => {
+    if (isAuthenticated) {
+      return (
+        <div className="connected-status">
+          <h3>✅ Connected Accounts</h3>
+          <p>You are successfully authenticated. You can connect additional accounts below.</p>
+          <div className="connected-user-info">
+            <strong>Current user:</strong> {user?.name || 'User'}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
-  // Ethereum/Web3 Login
-  const handleEthereumLogin = async () => {
-    console.log('=== ETHEREUM LOGIN STARTED ===');
+  // Ethereum/Web3 Connect
+  const handleEthereumConnect = async () => {
+    console.log('=== ETHEREUM CONNECT STARTED ===');
     console.log('Initial state - isConnected:', isConnected, 'address:', address);
     
     try {
       // Set connecting status immediately
       console.log('Setting status to connecting');
-      setLoginStatus({ ethereum: 'connecting' });
+      setConnectStatus({ ethereum: 'connecting' });
       
       let currentAddress = address;
       let currentIsConnected = isConnected;
@@ -52,8 +60,8 @@ const LoginForm = () => {
       
       // Now sign the message
       console.log('Setting status to signing');
-      setLoginStatus({ ethereum: 'signing' });
-      const message = `Login to Socialism platform with address: ${currentAddress}`;
+      setConnectStatus({ ethereum: 'signing' });
+      const message = `Connect to Socialism platform with address: ${currentAddress}`;
       console.log('About to sign message:', message);
       
       console.log('Trying signMessageAsync...');
@@ -67,7 +75,7 @@ const LoginForm = () => {
 
       // Now authenticate with backend
       console.log('Setting status to authenticating');
-      setLoginStatus({ ethereum: 'authenticating' });
+      setConnectStatus({ ethereum: 'authenticating' });
       
       console.log('Calling backend login API...');
       const authResult = await login({
@@ -78,32 +86,34 @@ const LoginForm = () => {
       console.log('Backend login result:', authResult);
 
       if (authResult.success) {
-        console.log('Login successful! Setting status to success');
-        setLoginStatus({ ethereum: 'success' });
+        console.log('Connect successful! Setting status to success');
+        setConnectStatus({ ethereum: 'success' });
+        // Reset status after a short delay to allow connecting more accounts
+        setTimeout(() => setConnectStatus({}), 2000);
       } else {
-        console.log('Login failed. Setting status to error');
-        setLoginStatus({ ethereum: 'error', error: authResult.error });
+        console.log('Connect failed. Setting status to error');
+        setConnectStatus({ ethereum: 'error', error: authResult.error });
       }
     } catch (error) {
-      console.error('ERROR in handleEthereumLogin:', error);
+      console.error('ERROR in handleEthereumConnect:', error);
       console.log('Error type:', typeof error);
       console.log('Error message:', error.message);
       console.log('Error stack:', error.stack);
       
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
         console.log('Setting status to cancelled');
-        setLoginStatus({ ethereum: 'cancelled' });
+        setConnectStatus({ ethereum: 'cancelled' });
       } else {
         console.log('Setting status to error');
-        setLoginStatus({ ethereum: 'error', error: error.message });
+        setConnectStatus({ ethereum: 'error', error: error.message });
       }
     }
     
-    console.log('=== ETHEREUM LOGIN ENDED ===');
+    console.log('=== ETHEREUM CONNECT ENDED ===');
   };
 
-  // OAuth Login Handler
-  const handleOAuthLogin = (provider) => {
+  // OAuth Connect Handler
+  const handleOAuthConnect = (provider) => {
     const clientIds = {
       github: import.meta.env.VITE_GITHUB_CLIENT_ID,
       orcid: import.meta.env.VITE_ORCID_CLIENT_ID,
@@ -141,7 +151,7 @@ const LoginForm = () => {
     const checkClosed = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkClosed);
-        setLoginStatus({ [provider]: 'cancelled' });
+        setConnectStatus({ [provider]: 'cancelled' });
       }
     }, 1000);
 
@@ -154,16 +164,18 @@ const LoginForm = () => {
         popup.close();
         
         try {
-          setLoginStatus({ [provider]: 'processing' });
+          setConnectStatus({ [provider]: 'processing' });
           const result = await login(event.data.userData, provider);
           
           if (result.success) {
-            setLoginStatus({ [provider]: 'success' });
+            setConnectStatus({ [provider]: 'success' });
+            // Reset status after a short delay to allow connecting more accounts
+            setTimeout(() => setConnectStatus({}), 2000);
           } else {
-            setLoginStatus({ [provider]: 'error', error: result.error });
+            setConnectStatus({ [provider]: 'error', error: result.error });
           }
         } catch (error) {
-          setLoginStatus({ [provider]: 'error', error: error.message });
+          setConnectStatus({ [provider]: 'error', error: error.message });
         }
         
         window.removeEventListener('message', handleMessage);
@@ -174,9 +186,9 @@ const LoginForm = () => {
   };
 
   const getButtonText = (provider) => {
-    const status = loginStatus[provider];
+    const status = connectStatus[provider];
     if (provider === 'ethereum') {
-      console.log('getButtonText for ethereum - status:', status, 'full loginStatus:', loginStatus);
+      console.log('getButtonText for ethereum - status:', status, 'full connectStatus:', connectStatus);
     }
     switch (status) {
       case 'connecting':
@@ -194,13 +206,13 @@ const LoginForm = () => {
       case 'cancelled':
         return 'Try Again';
       default:
-        return `Login with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+        return `Connect with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
     }
   };
 
   const getButtonClass = (provider) => {
-    const status = loginStatus[provider];
-    let className = `login-button ${provider}-button`;
+    const status = connectStatus[provider];
+    let className = `connect-button ${provider}-button`;
     if (status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing') {
       className += ' loading';
     }
@@ -210,72 +222,75 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="login-form">
-      <h2>Login to Socialism Platform</h2>
-      <p>Choose your preferred login method:</p>
+    <div className="connect-form">
+      <h2>Connect to Socialism Platform</h2>
       
-      <div className="login-options">
-        {/* Ethereum Login */}
+      {renderConnectedStatus()}
+      
+      <p>{isAuthenticated ? 'Connect additional accounts:' : 'Choose your preferred connection method:'}</p>
+      
+      <div className="connect-options">
+        {/* Ethereum Connect */}
         <button
           className={getButtonClass('ethereum')}
-          onClick={handleEthereumLogin}
-          disabled={isLoading || loginStatus.ethereum === 'connecting' || loginStatus.ethereum === 'signing' || loginStatus.ethereum === 'authenticating'}
+          onClick={handleEthereumConnect}
+          disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating'}
         >
-          <span className="login-icon">⟠</span>
+          <span className="connect-icon">⟠</span>
           {getButtonText('ethereum')}
         </button>
 
-        {/* ORCID Login */}
+        {/* ORCID Connect */}
         <button
           className={getButtonClass('orcid')}
-          onClick={() => handleOAuthLogin('orcid')}
-          disabled={isLoading || loginStatus.orcid === 'processing'}
+          onClick={() => handleOAuthConnect('orcid')}
+          disabled={isLoading || connectStatus.orcid === 'processing'}
         >
-          <span className="login-icon">🎓</span>
+          <span className="connect-icon">🎓</span>
           {getButtonText('orcid')}
         </button>
 
-        {/* GitHub Login */}
+        {/* GitHub Connect */}
         <button
           className={getButtonClass('github')}
-          onClick={() => handleOAuthLogin('github')}
-          disabled={isLoading || loginStatus.github === 'processing'}
+          onClick={() => handleOAuthConnect('github')}
+          disabled={isLoading || connectStatus.github === 'processing'}
         >
-          <span className="login-icon">👨‍💻</span>
+          <span className="connect-icon">👨‍💻</span>
           {getButtonText('github')}
         </button>
 
-        {/* BitBucket Login */}
+        {/* BitBucket Connect */}
         <button
           className={getButtonClass('bitbucket')}
-          onClick={() => handleOAuthLogin('bitbucket')}
-          disabled={isLoading || loginStatus.bitbucket === 'processing'}
+          onClick={() => handleOAuthConnect('bitbucket')}
+          disabled={isLoading || connectStatus.bitbucket === 'processing'}
         >
-          <span className="login-icon">🪣</span>
+          <span className="connect-icon">🪣</span>
           {getButtonText('bitbucket')}
         </button>
 
-        {/* GitLab Login */}
+        {/* GitLab Connect */}
         <button
           className={getButtonClass('gitlab')}
-          onClick={() => handleOAuthLogin('gitlab')}
-          disabled={isLoading || loginStatus.gitlab === 'processing'}
+          onClick={() => handleOAuthConnect('gitlab')}
+          disabled={isLoading || connectStatus.gitlab === 'processing'}
         >
-          <span className="login-icon">🦊</span>
+          <span className="connect-icon">🦊</span>
           {getButtonText('gitlab')}
         </button>
       </div>
 
       {/* Error Display */}
-      {Object.entries(loginStatus).map(([provider, status]) => 
+      {Object.entries(connectStatus).map(([provider, status]) => 
         status === 'error' && (
           <div key={provider} className="error-message">
-            {provider.toUpperCase()} login failed: {loginStatus.error}
+            {provider.toUpperCase()} connection failed: {connectStatus.error}
           </div>
         )
       )}
 
-      <div className="login-info">
+      <div className="connect-info">
         <p>
           <strong>Note:</strong> If you have accounts on multiple platforms, they will be automatically merged into one account.
         </p>
@@ -284,4 +299,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default ConnectForm;

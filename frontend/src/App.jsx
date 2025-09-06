@@ -1,11 +1,11 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/wagmi'
 import { AuthProvider } from './contexts/AuthContext'
 import Navigation from './components/Navigation'
 import Home from './pages/Home'
-import LoginForm from './components/LoginForm'
+import ConnectForm from './components/ConnectForm'
 import OAuthCallback from './components/OAuthCallback'
 import './App.css'
 
@@ -21,7 +21,9 @@ function App() {
             <main>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/login" element={<LoginForm />} />
+                <Route path="/connect" element={<ConnectForm />} />
+                {/* Redirect old login route to new connect route */}
+                <Route path="/login" element={<Navigate to="/connect" replace />} />
                 <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
                 <Route path="/auth/orcid/callback" element={<OAuthCallback provider="orcid" />} />
                 <Route path="/auth/bitbucket/callback" element={<OAuthCallback provider="bitbucket" />} />

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import './ConnectForm.css';
 
 const ConnectForm = () => {
-  const { login, isLoading, isAuthenticated, user, refreshUser } = useAuth();
+  const { login, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
   const { signMessage, signMessageAsync, error: signError, isLoading: isSigningLoading } = useSignMessage();
@@ -223,8 +223,7 @@ const ConnectForm = () => {
           const { user, session } = event.data.authData;
           
           // Update AuthContext with the new user and session
-          localStorage.setItem('authToken', session.token);
-          await refreshUser();
+          await updateAuthData(user, session.token);
           
           // Reset status after a short delay to allow connecting more accounts
           setTimeout(() => setConnectStatus(prev => {

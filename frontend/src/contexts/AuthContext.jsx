@@ -95,6 +95,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateAuthData = async (userData, sessionToken) => {
+    setUser(userData);
+    setToken(sessionToken);
+    localStorage.setItem('authToken', sessionToken);
+  };
+
   const value = {
     user,
     isLoading,
@@ -102,6 +108,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     refreshUser,
+    updateAuthData,
   };
 
   return (

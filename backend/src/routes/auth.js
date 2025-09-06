@@ -7,6 +7,9 @@ const crypto = require('crypto');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Track ongoing OAuth requests to prevent duplicates
+const ongoingOAuthRequests = new Map();
+
 // Helper function to find or create user based on provided data
 async function findOrCreateUser(userData) {
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
@@ -318,32 +321,83 @@ router.post('/oauth/:provider/callback', async (req, res) => {
     const { provider } = req.params;
     const { code } = req.body;
     
+    console.log(`=== OAuth Callback for ${provider} ===`);
+    console.log('Request details:', {
+      provider,
+      code: code ? `${code.substring(0, 10)}...` : 'null',
+      codeLength: code ? code.length : 0,
+      fullCode: code, // For debugging - remove in production
+      bodyKeys: Object.keys(req.body),
+      headers: {
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent'],
+        origin: req.headers.origin
+      }
+    });
+    
     if (!code) {
+      console.error('No authorization code provided');
       return res.status(400).json({ error: 'Authorization code is required' });
     }
+
+    // Check for duplicate requests
+    const requestKey = `${provider}:${code}`;
+    if (ongoingOAuthRequests.has(requestKey)) {
+      console.log('Duplicate OAuth request detected, ignoring:', requestKey);
+      return res.status(409).json({ error: 'OAuth request already in progress' });
+    }
+    
+    // Mark request as ongoing
+    ongoingOAuthRequests.set(requestKey, Date.now());
+    
+    // Clean up the request tracking after completion (with timeout)
+    const cleanup = () => {
+      ongoingOAuthRequests.delete(requestKey);
+    };
+    setTimeout(cleanup, 30000); // Cleanup after 30 seconds regardless
 
     let userData;
     
     switch (provider) {
       case 'github':
+        console.log('Calling GitHub OAuth handler...');
         userData = await handleGitHubOAuth(code);
         break;
       case 'orcid':
+        console.log('Calling ORCID OAuth handler...');
         userData = await handleORCIDOAuth(code);
         break;
       case 'bitbucket':
+        console.log('Calling BitBucket OAuth handler...');
         userData = await handleBitBucketOAuth(code);
         break;
       case 'gitlab':
+        console.log('Calling GitLab OAuth handler...');
         userData = await handleGitLabOAuth(code);
         break;
       default:
+        console.error('Unsupported OAuth provider:', provider);
         return res.status(400).json({ error: 'Unsupported OAuth provider' });
     }
+
+    console.log('OAuth handler completed, user data:', {
+      provider,
+      userData: {
+        ...userData,
+        // Redact sensitive info in logs
+        email: userData.email ? '***@***.***' : null,
+        name: userData.name || null
+      }
+    });
 
     // Use the existing login logic
     const user = await findOrCreateUser(userData);
     const session = await createSession(user.id);
+    
+    console.log('User created/found and session created successfully');
+    
+    // Clean up request tracking on success
+    cleanup();
     
     res.json({
       user,
@@ -353,13 +407,50 @@ router.post('/oauth/:provider/callback', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(`${req.params.provider} OAuth error:`, error);
-    res.status(500).json({ error: `Failed to authenticate with ${req.params.provider}` });
+    console.error(`=== ${req.params.provider} OAuth Error ===`);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    // Clean up request tracking on error
+    if (req.body.code) {
+      const requestKey = `${req.params.provider}:${req.body.code}`;
+      ongoingOAuthRequests.delete(requestKey);
+    }
+    
+    res.status(500).json({ 
+      error: `Failed to authenticate with ${req.params.provider}`,
+      details: error.message 
+    });
   }
 });
 
 // OAuth handler functions
 async function handleGitHubOAuth(code) {
+  console.log('=== GitHub OAuth Handler ===');
+  console.log('Code received:', {
+    code: code ? `${code.substring(0, 10)}...` : 'null',
+    codeLength: code ? code.length : 0,
+    fullCode: code // Log full code for debugging
+  });
+  
+  const requestBody = {
+    client_id: process.env.GITHUB_CLIENT_ID,
+    client_secret: process.env.GITHUB_CLIENT_SECRET,
+    code: code,
+    redirect_uri: `${process.env.FRONTEND_URL}/auth/github/callback`,
+  };
+  
+  console.log('GitHub token exchange request:', {
+    url: 'https://github.com/login/oauth/access_token',
+    client_id: requestBody.client_id,
+    redirect_uri: requestBody.redirect_uri,
+    code_preview: code ? `${code.substring(0, 10)}...` : 'null',
+    frontend_url: process.env.FRONTEND_URL
+  });
+
   // Exchange code for access token
   const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
@@ -367,32 +458,67 @@ async function handleGitHubOAuth(code) {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      client_id: process.env.GITHUB_CLIENT_ID,
-      client_secret: process.env.GITHUB_CLIENT_SECRET,
-      code: code,
-    }),
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await tokenResponse.text();
+  console.log('GitHub token response:', {
+    status: tokenResponse.status,
+    statusText: tokenResponse.statusText,
+    headers: Object.fromEntries(tokenResponse.headers.entries()),
+    body: responseText
   });
 
   if (!tokenResponse.ok) {
-    throw new Error('Failed to exchange code for GitHub access token');
+    console.error('GitHub token exchange failed:', {
+      status: tokenResponse.status,
+      statusText: tokenResponse.statusText,
+      body: responseText
+    });
+    throw new Error(`Failed to exchange code for GitHub access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
   }
 
-  const tokenData = await tokenResponse.json();
+  let tokenData;
+  try {
+    tokenData = JSON.parse(responseText);
+  } catch (parseError) {
+    console.error('Failed to parse GitHub token response as JSON:', parseError);
+    throw new Error(`Invalid JSON response from GitHub: ${responseText}`);
+  }
   
   if (tokenData.error) {
+    console.error('GitHub OAuth token error:', tokenData);
     throw new Error(`GitHub OAuth error: ${tokenData.error_description || tokenData.error}`);
   }
 
+  console.log('GitHub token exchange successful:', {
+    access_token: tokenData.access_token ? 'present' : 'missing',
+    token_type: tokenData.token_type,
+    scope: tokenData.scope
+  });
   // Get user data from GitHub API
+  console.log('Fetching user data from GitHub API...');
   const userResponse = await fetch('https://api.github.com/user', {
     headers: {
-      'Authorization': `token ${tokenData.access_token}`,
+      'Authorization': `Bearer ${tokenData.access_token}`,
     },
   });
 
+  console.log('GitHub user API response:', {
+    status: userResponse.status,
+    statusText: userResponse.statusText,
+    ok: userResponse.ok
+  });
+
   if (!userResponse.ok) {
-    throw new Error('Failed to fetch GitHub user data');
+    const errorText = await userResponse.text();
+    console.error('GitHub user API error response:', {
+      status: userResponse.status,
+      statusText: userResponse.statusText,
+      body: errorText,
+      headers: Object.fromEntries(userResponse.headers.entries())
+    });
+    throw new Error(`Failed to fetch GitHub user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
   }
 
   const userData = await userResponse.json();

@@ -54,7 +54,8 @@ jspm_packages/
 
 # Ethereum private keys and secrets
 *.secret
-ethereum-keys.*
+*.priv
+*.privkey
 
 # next.js build output
 .next

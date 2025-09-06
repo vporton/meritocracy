@@ -132,7 +132,8 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
     const { ethereumAddress, signature, message, name } = req.body;
     
     if (!ethereumAddress) {
-      return res.status(400).json({ error: 'Ethereum address is required' });
+      res.status(400).json({ error: 'Ethereum address is required' });
+      return;
     }
 
     // In a real implementation, you would verify the signature here
@@ -164,7 +165,8 @@ router.post('/login/orcid', async (req, res): Promise<void> => {
     const { orcidId, accessToken, name, email } = req.body;
     
     if (!orcidId) {
-      return res.status(400).json({ error: 'ORCID ID is required' });
+      res.status(400).json({ error: 'ORCID ID is required' });
+      return;
     }
 
     const user = await findOrCreateUser({
@@ -194,7 +196,8 @@ router.post('/login/github', async (req, res): Promise<void> => {
     const { githubHandle, accessToken, name, email } = req.body;
     
     if (!githubHandle) {
-      return res.status(400).json({ error: 'GitHub handle is required' });
+      res.status(400).json({ error: 'GitHub handle is required' });
+      return;
     }
 
     const user = await findOrCreateUser({
@@ -224,7 +227,8 @@ router.post('/login/bitbucket', async (req, res): Promise<void> => {
     const { bitbucketHandle, accessToken, name, email } = req.body;
     
     if (!bitbucketHandle) {
-      return res.status(400).json({ error: 'BitBucket handle is required' });
+      res.status(400).json({ error: 'BitBucket handle is required' });
+      return;
     }
 
     const user = await findOrCreateUser({
@@ -254,7 +258,8 @@ router.post('/login/gitlab', async (req, res): Promise<void> => {
     const { gitlabHandle, accessToken, name, email } = req.body;
     
     if (!gitlabHandle) {
-      return res.status(400).json({ error: 'GitLab handle is required' });
+      res.status(400).json({ error: 'GitLab handle is required' });
+      return;
     }
 
     const user = await findOrCreateUser({
@@ -283,7 +288,8 @@ router.post('/logout', async (req, res): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
+      res.status(401).json({ error: 'No token provided' });
+      return;
     }
 
     const token = authHeader.substring(7);
@@ -305,7 +311,8 @@ router.get('/me', async (req, res): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
+      res.status(401).json({ error: 'No token provided' });
+      return;
     }
 
     const token = authHeader.substring(7);
@@ -317,7 +324,8 @@ router.get('/me', async (req, res): Promise<void> => {
     });
     
     if (!session || session.expiresAt < new Date()) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
     }
     
     res.json({ user: session.user });
@@ -349,7 +357,8 @@ router.post('/oauth/:provider/callback', async (req, res): Promise<void> => {
     
     if (!code) {
       console.error('No authorization code provided');
-      return res.status(400).json({ error: 'Authorization code is required' });
+      res.status(400).json({ error: 'Authorization code is required' });
+      return;
     }
 
     // Check for duplicate requests and cached results
@@ -359,13 +368,15 @@ router.post('/oauth/:provider/callback', async (req, res): Promise<void> => {
     if (oauthResultCache.has(requestKey)) {
       console.log('Returning cached OAuth result for duplicate request:', requestKey);
       const cachedResult = oauthResultCache.get(requestKey);
-      return res.json(cachedResult);
+      res.json(cachedResult);
+      return;
     }
     
     // Check if the same request is currently in progress
     if (ongoingOAuthRequests.has(requestKey)) {
       console.log('Duplicate OAuth request detected, rejecting to avoid API errors:', requestKey);
-      return res.status(429).json({ error: 'OAuth request already processing, please wait' });
+      res.status(429).json({ error: 'OAuth request already processing, please wait' });
+      return;
     }
     
     // Mark request as ongoing
@@ -402,7 +413,8 @@ router.post('/oauth/:provider/callback', async (req, res): Promise<void> => {
         break;
       default:
         console.error('Unsupported OAuth provider:', provider);
-        return res.status(400).json({ error: 'Unsupported OAuth provider' });
+        res.status(400).json({ error: 'Unsupported OAuth provider' });
+        return;
     }
 
     console.log('OAuth handler completed, user data:', {
@@ -690,7 +702,8 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
+      res.status(401).json({ error: 'No token provided' });
+      return;
     }
 
     const token = authHeader.substring(7);
@@ -703,7 +716,8 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
     });
     
     if (!session || session.expiresAt < new Date()) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
     }
 
     const user = session.user;
@@ -719,12 +733,14 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
 
     const fieldToClear = providerFields[provider];
     if (!fieldToClear) {
-      return res.status(400).json({ error: 'Invalid provider' });
+      res.status(400).json({ error: 'Invalid provider' });
+      return;
     }
 
     // Check if the provider is actually connected
     if (!(user as any)[fieldToClear]) {
-      return res.status(400).json({ error: 'Provider not connected' });
+      res.status(400).json({ error: 'Provider not connected' });
+      return;
     }
 
     // Update user to remove the provider connection

@@ -25,7 +25,7 @@ export interface OpenAIConfig {
  * Default configuration for OpenAI API calls
  */
 const DEFAULT_CONFIG: OpenAIConfig = {
-  model: 'gpt-3.5-turbo',
+  model: process.env.OPENAI_MODEL!,
   maxTokens: 1000,
   temperature: 0.7,
   topP: 1,

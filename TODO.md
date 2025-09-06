@@ -3,3 +3,5 @@
 - Test ORCID, connect BitBucket.
 
 - ICP blockchain payments.
+
+- OpenAI Batch API⁠⁠ (saves 50% of cost)

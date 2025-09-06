@@ -3,6 +3,8 @@ import { ethereumService } from '../services/ethereum';
 
 const router = Router();
 
+// FIXME: This file seems to be superfluous and it may be even security risk.
+
 // Get wallet information
 router.get('/wallet-info', async (req: Request, res: Response) => {
     try {
@@ -28,45 +30,13 @@ router.get('/wallet-info', async (req: Request, res: Response) => {
     }
 });
 
-// Sign a message
-router.post('/sign-message', async (req: Request, res: Response) => {
-    try {
-        const { message } = req.body;
-        
-        if (!message) {
-            return res.status(400).json({
-                success: false,
-                error: 'Message is required'
-            });
-        }
-        
-        const signature = await ethereumService.signMessage(message);
-        const address = ethereumService.getAddress();
-        
-        res.json({
-            success: true,
-            data: {
-                message,
-                signature,
-                address
-            }
-        });
-    } catch (error) {
-        console.error('Error signing message:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to sign message'
-        });
-    }
-});
-
 // Verify a signature
 router.post('/verify-signature', async (req: Request, res: Response) => {
     try {
         const { message, signature } = req.body;
         
         if (!message || !signature) {
-            return res.status(400).json({
+            res.status(400).json({
                 success: false,
                 error: 'Message and signature are required'
             });

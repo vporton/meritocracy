@@ -87,28 +87,6 @@ Get wallet address, balance, and network information.
 }
 ```
 
-#### POST `/api/ethereum/sign-message`
-Sign a message with the wallet's private key.
-
-**Request:**
-```json
-{
-  "message": "Hello World"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Hello World",
-    "signature": "0x1234567890abcdef...",
-    "address": "0x742d35Cc6Db6b1c8..."
-  }
-}
-```
-
 #### POST `/api/ethereum/verify-signature`
 Verify a message signature.
 

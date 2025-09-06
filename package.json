@@ -6,17 +6,18 @@
     "install-all": "npm run install-backend && npm run install-frontend",
     "install-backend": "cd backend && npm install",
     "install-frontend": "cd frontend && npm install",
-    "dev": "concurrently \"npm run dev-backend\" \"npm run dev-frontend\"",
+    "dev": "concurrently --kill-others-on-fail --kill-others \"npm run dev-backend\" \"npm run dev-frontend\"",
     "dev-backend": "cd backend && npm run dev",
     "dev-frontend": "cd frontend && npm run dev",
     "build": "npm run build-backend && npm run build-frontend",
     "build-backend": "cd backend && echo 'Backend build complete'",
     "build-frontend": "cd frontend && npm run build",
-    "start": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "start": "concurrently --kill-others-on-fail --kill-others \"npm run start-backend\" \"npm run start-frontend\"",
     "start-backend": "cd backend && npm start",
     "start-frontend": "cd frontend && npm run preview",
     "db:setup": "cd backend && npx prisma generate && npx prisma db push && npm run db:seed",
-    "db:reset": "cd backend && npx prisma db push --force-reset && npm run db:seed"
+    "db:reset": "cd backend && npx prisma db push --force-reset && npm run db:seed",
+    "dev:stop": "pkill -f 'npm run dev' && pkill -f nodemon && pkill -f vite"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

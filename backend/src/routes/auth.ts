@@ -12,6 +12,33 @@ const ongoingOAuthRequests = new Map<string, number>();
 // Cache successful OAuth results for a short time to handle duplicates
 const oauthResultCache = new Map<string, any>();
 
+// Middleware to extract user ID from authorization token
+async function getCurrentUserFromToken(req: express.Request): Promise<number | null> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Find session
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+    
+    return session.user.id;
+  } catch (error) {
+    console.error('Error extracting user from token:', error);
+    return null;
+  }
+}
+
 interface UserData {
   email?: string;
   name?: string;
@@ -30,8 +57,7 @@ interface UserData {
 // B0 B1
 // and set B1 to A1. Then we need to deal only with two users, because A1!=B1.
 // We delete that user that had been previously set to our data!
-async function findOrCreateUser(userData: UserData) {
-  const { user } = useAuth();
+async function findOrCreateUser(userData: UserData, currentUserId: number | null = null) {
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
   
   // First, check for exact matches using unique fields
@@ -69,21 +95,37 @@ async function findOrCreateUser(userData: UserData) {
     });
   } else {
     // One user found, update with new information
-    if (user.id !== null) {
+    if (currentUserId !== null && currentUserId !== existingUser.id) {
+      // If there's a current user that's different from the existing user,
+      // merge the existing user's data into the current user and delete the existing user
       await prisma.user.delete({where: {id: existingUser.id}});
+      return await prisma.user.update({
+        where: { id: currentUserId },
+        data: {
+          email: email || existingUser.email,
+          name: name || existingUser.name,
+          ethereumAddress: ethereumAddress || existingUser.ethereumAddress,
+          orcidId: orcidId || existingUser.orcidId,
+          githubHandle: githubHandle || existingUser.githubHandle,
+          bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle,
+          gitlabHandle: gitlabHandle || existingUser.gitlabHandle
+        }
+      });
+    } else {
+      // Either no current user or current user is the same as existing user
+      return await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          email: email || existingUser.email,
+          name: name || existingUser.name,
+          ethereumAddress: ethereumAddress || existingUser.ethereumAddress,
+          orcidId: orcidId || existingUser.orcidId,
+          githubHandle: githubHandle || existingUser.githubHandle,
+          bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle,
+          gitlabHandle: gitlabHandle || existingUser.gitlabHandle
+        }
+      });
     }
-    return await prisma.user.update({
-      where: { id: user.id ?? existingUser },
-      data: {
-        email: email || existingUser.email,
-        name: name || existingUser.name,
-        ethereumAddress: ethereumAddress || existingUser.ethereumAddress,
-        orcidId: orcidId || existingUser.orcidId,
-        githubHandle: githubHandle || existingUser.githubHandle,
-        bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle,
-        gitlabHandle: gitlabHandle || existingUser.gitlabHandle
-      }
-    });
   }
 }
 
@@ -120,10 +162,13 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
     // In a real implementation, you would verify the signature here
     // For now, we'll just trust the provided address
     
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
     const user = await findOrCreateUser({
       ethereumAddress,
       name
-    });
+    }, currentUserId);
     
     const session = await createSession(user.id);
     
@@ -150,11 +195,14 @@ router.post('/login/orcid', async (req, res): Promise<void> => {
       return;
     }
 
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
     const user = await findOrCreateUser({
       orcidId,
       email,
       name
-    });
+    }, currentUserId);
     
     const session = await createSession(user.id);
     
@@ -181,11 +229,14 @@ router.post('/login/github', async (req, res): Promise<void> => {
       return;
     }
 
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
     const user = await findOrCreateUser({
       githubHandle,
       email,
       name
-    });
+    }, currentUserId);
     
     const session = await createSession(user.id);
     
@@ -212,11 +263,14 @@ router.post('/login/bitbucket', async (req, res): Promise<void> => {
       return;
     }
 
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
     const user = await findOrCreateUser({
       bitbucketHandle,
       email,
       name
-    });
+    }, currentUserId);
     
     const session = await createSession(user.id);
     
@@ -243,11 +297,14 @@ router.post('/login/gitlab', async (req, res): Promise<void> => {
       return;
     }
 
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
     const user = await findOrCreateUser({
       gitlabHandle,
       email,
       name
-    });
+    }, currentUserId);
     
     const session = await createSession(user.id);
     
@@ -408,8 +465,11 @@ router.post('/oauth/:provider/callback', async (req, res): Promise<void> => {
       }
     });
 
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
     // Use the existing login logic
-    const user = await findOrCreateUser(userData);
+    const user = await findOrCreateUser(userData, currentUserId);
     const session = await createSession(user.id);
     
     console.log('User created/found and session created successfully');
@@ -764,7 +824,4 @@ router.delete('/sessions/cleanup', async (req, res) => {
 });
 
 export default router;
-function useAuth(): { user: any; } {
-  throw new Error('Function not implemented.');
-}
 

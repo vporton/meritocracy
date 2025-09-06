@@ -63,7 +63,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (authData: AuthData, provider: string) => {
     try {
       setIsLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/api/auth/login/${provider}`, authData);
+      
+      // Create headers object
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Include authorization header if user is already logged in (for connecting additional accounts)
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login/${provider}`, authData, {
+        headers
+      });
       
       const { user: userData, session } = response.data;
       setUser(userData);

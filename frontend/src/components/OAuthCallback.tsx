@@ -39,11 +39,19 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
         try {
           console.log('Sending OAuth code to backend...');
           // Send the authorization code to the backend for secure token exchange
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+          
+          // Include authorization header if user is already logged in
+          const authToken = localStorage.getItem('authToken');
+          if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+          }
+          
           const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/oauth/${provider}/callback`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify({ code }),
           });
 

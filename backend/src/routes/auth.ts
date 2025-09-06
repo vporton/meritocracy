@@ -22,13 +22,21 @@ interface UserData {
   gitlabHandle?: string;
 }
 
-// Helper function to find or create user based on provided data
+// Helper function to find or create user based on provided data.
+//
+// TODO: Document in more details.
+// Consider we have two users:
+// A0 A1
+// B0 B1
+// and set B1 to A1. Then we need to deal only with two users, because A1!=B1.
+// We delete that user that had been previously set to our data!
 async function findOrCreateUser(userData: UserData) {
+  const { user } = useAuth();
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
   
   // First, check for exact matches using unique fields
   const searchConditions = [];
-  if (email) searchConditions.push({ email });
+  // if (email) searchConditions.push({ email });
   if (ethereumAddress) searchConditions.push({ ethereumAddress });
   if (orcidId) searchConditions.push({ orcidId });
   if (githubHandle) searchConditions.push({ githubHandle });
@@ -39,18 +47,18 @@ async function findOrCreateUser(userData: UserData) {
     throw new Error('No identifying information provided');
   }
 
-  // Find existing users that match any of the unique fields
-  const existingUsers = await prisma.user.findMany({
+  // Due to the unique fields, only one user can match.
+  const existingUser = await prisma.user.findFirst({
     where: {
       OR: searchConditions
     }
   });
 
-  if (existingUsers.length === 0) {
+  if (existingUser === null) {
     // No existing user found, create new one
     return await prisma.user.create({
       data: {
-        email: email || `temp_${uuidv4()}@example.com`, // Fallback email if not provided
+        email: email || `temp_${uuidv4()}@example.com`, // Fallback email if not provided // FIXME: It makes no sense to generate a random email.
         name,
         ethereumAddress,
         orcidId,
@@ -59,11 +67,13 @@ async function findOrCreateUser(userData: UserData) {
         gitlabHandle
       }
     });
-  } else if (existingUsers.length === 1) {
+  } else {
     // One user found, update with new information
-    const existingUser = existingUsers[0];
+    if (user.id !== null) {
+      await prisma.user.delete({where: {id: existingUser.id}});
+    }
     return await prisma.user.update({
-      where: { id: existingUser.id },
+      where: { id: user.id ?? existingUser },
       data: {
         email: email || existingUser.email,
         name: name || existingUser.name,
@@ -73,35 +83,6 @@ async function findOrCreateUser(userData: UserData) {
         bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle,
         gitlabHandle: gitlabHandle || existingUser.gitlabHandle
       }
-    });
-  } else {
-    // Multiple users found - they represent the same person across different platforms
-    // Delete all existing users and create a new merged one
-    const userIds = existingUsers.map(user => user.id);
-    
-    // Get all data from existing users to merge
-    const mergedData = {
-      email: email || existingUsers.find(u => u.email)?.email || `merged_${uuidv4()}@example.com`, // FIXME: It makes no sense to generate a random email.
-      name: name || existingUsers.find(u => u.name)?.name,
-      ethereumAddress: ethereumAddress || existingUsers.find(u => u.ethereumAddress)?.ethereumAddress,
-      orcidId: orcidId || existingUsers.find(u => u.orcidId)?.orcidId,
-      githubHandle: githubHandle || existingUsers.find(u => u.githubHandle)?.githubHandle,
-      bitbucketHandle: bitbucketHandle || existingUsers.find(u => u.bitbucketHandle)?.bitbucketHandle,
-      gitlabHandle: gitlabHandle || existingUsers.find(u => u.gitlabHandle)?.gitlabHandle
-    };
-
-    // Delete existing users
-    await prisma.user.deleteMany({
-      where: {
-        id: {
-          in: userIds
-        }
-      }
-    });
-
-    // Create new merged user
-    return await prisma.user.create({
-      data: mergedData
     });
   }
 }
@@ -783,3 +764,7 @@ router.delete('/sessions/cleanup', async (req, res) => {
 });
 
 export default router;
+function useAuth(): { user: any; } {
+  throw new Error('Function not implemented.');
+}
+

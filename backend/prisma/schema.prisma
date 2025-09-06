@@ -21,6 +21,8 @@ model User {
   gitlabHandle   String?  @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  bannedTill     DateTime?
+  lastPaymentAmount Decimal?
 
   // Relationships
   sessions       Session[]

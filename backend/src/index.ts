@@ -9,6 +9,7 @@ dotenv.config();
 import userRoutes from './routes/users';
 import postRoutes from './routes/posts';
 import authRoutes from './routes/auth';
+import ethereumRoutes from './routes/ethereum';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +36,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/ethereum', ethereumRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -52,6 +52,10 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
+# Ethereum private keys and secrets
+*.secret
+ethereum-keys.*
+
 # next.js build output
 .next
 

@@ -5,7 +5,7 @@ function Navigation() {
   const location = useLocation()
   const { user, isAuthenticated, logout, isLoading } = useAuth()
   
-  const isActive = (path) => location.pathname === path
+  const isActive = (path: string) => location.pathname === path
 
   const handleLogout = async () => {
     await logout()

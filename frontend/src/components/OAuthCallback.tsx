@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const OAuthCallback = ({ provider }) => {
+interface OAuthCallbackProps {
+  provider: string;
+}
+
+const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
   const location = useLocation();
   const hasProcessed = useRef(false);
 
@@ -22,7 +26,7 @@ const OAuthCallback = ({ provider }) => {
       console.log('OAuth callback processing:', { provider, code: code ? 'present' : 'missing', error });
 
       if (error) {
-        window.opener?.postMessage({
+        (window.opener as Window)?.postMessage({
           type: 'OAUTH_ERROR',
           provider,
           error: error
@@ -53,16 +57,16 @@ const OAuthCallback = ({ provider }) => {
           console.log('OAuth success, sending message to parent');
           
           // Send the authentication result back to the parent window
-          window.opener?.postMessage({
+          (window.opener as Window)?.postMessage({
             type: 'OAUTH_SUCCESS',
             provider,
             authData
           }, window.location.origin);
           
           window.close();
-        } catch (error) {
+        } catch (error: any) {
           console.error('OAuth callback error:', error);
-          window.opener?.postMessage({
+          (window.opener as Window)?.postMessage({
             type: 'OAUTH_ERROR',
             provider,
             error: error.message

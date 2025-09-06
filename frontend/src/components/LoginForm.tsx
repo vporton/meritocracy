@@ -2,14 +2,57 @@ import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { User } from '../services/api';
 import './LoginForm.css';
+
+interface LoginStatus {
+  [provider: string]: string;
+  error?: string;
+}
+
+interface OAuthClientIds {
+  github: string;
+  orcid: string;
+  bitbucket: string;
+  gitlab: string;
+}
+
+interface OAuthRedirectUris {
+  github: string;
+  orcid: string;
+  bitbucket: string;
+  gitlab: string;
+}
+
+interface OAuthAuthUrls {
+  github: string;
+  orcid: string;
+  bitbucket: string;
+  gitlab: string;
+}
+
+interface MessageEvent {
+  origin: string;
+  data: {
+    type: string;
+    provider: string;
+    authData?: {
+      user: User;
+      session: {
+        token: string;
+        expiresAt: string;
+      };
+    };
+    error?: string;
+  };
+}
 
 const LoginForm = () => {
   const { login, isLoading, isAuthenticated } = useAuth();
   const { connect, connectors, error: connectError, isLoading: connectLoading } = useConnect();
   const { address, isConnected } = useAccount();
   const { signMessage, signMessageAsync, error: signError, isLoading: isSigningLoading } = useSignMessage();
-  const [loginStatus, setLoginStatus] = useState({});
+  const [loginStatus, setLoginStatus] = useState<LoginStatus>({});
   const navigate = useNavigate();
   
   // If user is already authenticated, don't show login buttons
@@ -88,7 +131,7 @@ const LoginForm = () => {
         console.log('Login failed. Setting status to error');
         setLoginStatus({ ethereum: 'error', error: authResult.error });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('ERROR in handleEthereumLogin:', error);
       console.log('Error type:', typeof error);
       console.log('Error message:', error.message);
@@ -107,39 +150,44 @@ const LoginForm = () => {
   };
 
   // OAuth Login Handler
-  const handleOAuthLogin = (provider) => {
-    const clientIds = {
+  const handleOAuthLogin = (provider: string) => {
+    const clientIds: OAuthClientIds = {
       github: import.meta.env.VITE_GITHUB_CLIENT_ID,
       orcid: import.meta.env.VITE_ORCID_CLIENT_ID,
       bitbucket: import.meta.env.VITE_BITBUCKET_CLIENT_ID,
       gitlab: import.meta.env.VITE_GITLAB_CLIENT_ID,
     };
 
-    const redirectUris = {
+    const redirectUris: OAuthRedirectUris = {
       github: import.meta.env.VITE_GITHUB_REDIRECT_URI,
       orcid: import.meta.env.VITE_ORCID_REDIRECT_URI,
       bitbucket: import.meta.env.VITE_BITBUCKET_REDIRECT_URI,
       gitlab: import.meta.env.VITE_GITLAB_REDIRECT_URI,
     };
 
-    const authUrls = {
+    const authUrls: OAuthAuthUrls = {
       github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=user:email`,
       orcid: `https://orcid.org/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=openid&redirect_uri=${encodeURIComponent(redirectUris.orcid)}`,
       bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}`,
       gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=read_user`,
     };
 
-    if (!clientIds[provider]) {
+    if (!clientIds[provider as keyof OAuthClientIds]) {
       alert(`${provider.toUpperCase()} client ID not configured`);
       return;
     }
 
     // Open OAuth flow in popup window
     const popup = window.open(
-      authUrls[provider],
+      authUrls[provider as keyof OAuthAuthUrls],
       `${provider}_oauth`,
       'width=600,height=600,scrollbars=yes,resizable=yes'
     );
+
+    if (!popup) {
+      alert('Popup was blocked. Please allow popups for this site.');
+      return;
+    }
 
     // Track if we've received a proper response (to avoid race condition)
     let hasReceivedResponse = false;
@@ -158,7 +206,7 @@ const LoginForm = () => {
     }, 1000);
 
     // Handle the OAuth callback message
-    const handleMessage = async (event) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
       console.log(`OAuth message received for ${provider}:`, event.data);
@@ -172,31 +220,31 @@ const LoginForm = () => {
           setLoginStatus({ [provider]: 'success' });
           
           // The backend already handled authentication, just update the frontend state
-          const { user, session } = event.data.authData;
+          const { user, session } = event.data.authData!;
           
           // Update localStorage with the new token
           localStorage.setItem('authToken', session.token);
           
           // Redirect to home page after successful login
           setTimeout(() => navigate('/'), 1000);
-        } catch (error) {
+        } catch (error: any) {
           setLoginStatus({ [provider]: 'error', error: error.message });
         }
         
-        window.removeEventListener('message', handleMessage);
+        window.removeEventListener('message', handleMessage as any);
       } else if (event.data.type === 'OAUTH_ERROR' && event.data.provider === provider) {
         hasReceivedResponse = true;
         clearInterval(checkClosed);
         popup.close();
         setLoginStatus({ [provider]: 'error', error: event.data.error });
-        window.removeEventListener('message', handleMessage);
+        window.removeEventListener('message', handleMessage as any);
       }
     };
 
-    window.addEventListener('message', handleMessage);
+    window.addEventListener('message', handleMessage as any);
   };
 
-  const getButtonText = (provider) => {
+  const getButtonText = (provider: string): string => {
     const status = loginStatus[provider];
     if (provider === 'ethereum') {
       console.log('getButtonText for ethereum - status:', status, 'full loginStatus:', loginStatus);
@@ -221,7 +269,7 @@ const LoginForm = () => {
     }
   };
 
-  const getButtonClass = (provider) => {
+  const getButtonClass = (provider: string): string => {
     const status = loginStatus[provider];
     let className = `connect-button ${provider}-button`;
     if (status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing') {

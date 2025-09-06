@@ -1,0 +1,112 @@
+import axios, { AxiosResponse } from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+interface User {
+  id: number;
+  email: string;
+  name?: string;
+  ethereumAddress?: string;
+  orcidId?: string;
+  githubHandle?: string;
+  bitbucketHandle?: string;
+  gitlabHandle?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Post {
+  id: number;
+  title: string;
+  content?: string;
+  published: boolean;
+  authorId: number;
+  author: Pick<User, 'id' | 'name' | 'email'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateUserData {
+  email: string;
+  name?: string;
+}
+
+interface CreatePostData {
+  title: string;
+  content?: string;
+  published?: boolean;
+  authorId: number;
+}
+
+interface UpdateUserData {
+  email?: string;
+  name?: string;
+}
+
+interface UpdatePostData {
+  title?: string;
+  content?: string;
+  published?: boolean;
+}
+
+interface AuthData {
+  ethereumAddress?: string;
+  signature?: string;
+  message?: string;
+  name?: string;
+  orcidId?: string;
+  accessToken?: string;
+  email?: string;
+  githubHandle?: string;
+  bitbucketHandle?: string;
+  gitlabHandle?: string;
+}
+
+// Users API
+export const usersApi = {
+  getAll: (): Promise<AxiosResponse<User[]>> => api.get('/api/users'),
+  getById: (id: number): Promise<AxiosResponse<User>> => api.get(`/api/users/${id}`),
+  create: (userData: CreateUserData): Promise<AxiosResponse<User>> => api.post('/api/users', userData),
+  update: (id: number, userData: UpdateUserData): Promise<AxiosResponse<User>> => api.put(`/api/users/${id}`, userData),
+  delete: (id: number): Promise<AxiosResponse<void>> => api.delete(`/api/users/${id}`),
+}
+
+// Posts API
+export const postsApi = {
+  getAll: (published?: boolean): Promise<AxiosResponse<Post[]>> => {
+    const params = published !== undefined ? { published } : {}
+    return api.get('/api/posts', { params })
+  },
+  getById: (id: number): Promise<AxiosResponse<Post>> => api.get(`/api/posts/${id}`),
+  create: (postData: CreatePostData): Promise<AxiosResponse<Post>> => api.post('/api/posts', postData),
+  update: (id: number, postData: UpdatePostData): Promise<AxiosResponse<Post>> => api.put(`/api/posts/${id}`, postData),
+  delete: (id: number): Promise<AxiosResponse<void>> => api.delete(`/api/posts/${id}`),
+}
+
+// Authentication API
+export const authApi = {
+  login: (provider: string, userData: AuthData): Promise<AxiosResponse<{ user: User; session: { token: string; expiresAt: string } }>> => 
+    api.post(`/api/auth/login/${provider}`, userData),
+  logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
+  getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
+  cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
+}
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message)
+    return Promise.reject(error)
+  }
+)
+
+export default api
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData }

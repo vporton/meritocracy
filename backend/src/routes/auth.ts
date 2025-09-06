@@ -1,19 +1,29 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
-const crypto = require('crypto');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // Track ongoing OAuth requests to prevent duplicates
-const ongoingOAuthRequests = new Map();
+const ongoingOAuthRequests = new Map<string, number>();
 // Cache successful OAuth results for a short time to handle duplicates
-const oauthResultCache = new Map();
+const oauthResultCache = new Map<string, any>();
+
+interface UserData {
+  email?: string;
+  name?: string;
+  ethereumAddress?: string;
+  orcidId?: string;
+  githubHandle?: string;
+  bitbucketHandle?: string;
+  gitlabHandle?: string;
+}
 
 // Helper function to find or create user based on provided data
-async function findOrCreateUser(userData) {
+async function findOrCreateUser(userData: UserData) {
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
   
   // First, check for exact matches using unique fields
@@ -97,7 +107,7 @@ async function findOrCreateUser(userData) {
 }
 
 // Helper function to create session
-async function createSession(userId) {
+async function createSession(userId: number) {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret', { 
     expiresIn: '7d' 
   });
@@ -117,7 +127,7 @@ async function createSession(userId) {
 }
 
 // Ethereum login endpoint
-router.post('/login/ethereum', async (req, res) => {
+router.post('/login/ethereum', async (req, res): Promise<void> => {
   try {
     const { ethereumAddress, signature, message, name } = req.body;
     
@@ -142,14 +152,14 @@ router.post('/login/ethereum', async (req, res) => {
         expiresAt: session.expiresAt
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Ethereum login error:', error);
     res.status(500).json({ error: 'Failed to authenticate with Ethereum' });
   }
 });
 
 // ORCID OAuth callback endpoint
-router.post('/login/orcid', async (req, res) => {
+router.post('/login/orcid', async (req, res): Promise<void> => {
   try {
     const { orcidId, accessToken, name, email } = req.body;
     
@@ -172,14 +182,14 @@ router.post('/login/orcid', async (req, res) => {
         expiresAt: session.expiresAt
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('ORCID login error:', error);
     res.status(500).json({ error: 'Failed to authenticate with ORCID' });
   }
 });
 
 // GitHub OAuth callback endpoint
-router.post('/login/github', async (req, res) => {
+router.post('/login/github', async (req, res): Promise<void> => {
   try {
     const { githubHandle, accessToken, name, email } = req.body;
     
@@ -202,14 +212,14 @@ router.post('/login/github', async (req, res) => {
         expiresAt: session.expiresAt
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('GitHub login error:', error);
     res.status(500).json({ error: 'Failed to authenticate with GitHub' });
   }
 });
 
 // BitBucket OAuth callback endpoint
-router.post('/login/bitbucket', async (req, res) => {
+router.post('/login/bitbucket', async (req, res): Promise<void> => {
   try {
     const { bitbucketHandle, accessToken, name, email } = req.body;
     
@@ -232,14 +242,14 @@ router.post('/login/bitbucket', async (req, res) => {
         expiresAt: session.expiresAt
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('BitBucket login error:', error);
     res.status(500).json({ error: 'Failed to authenticate with BitBucket' });
   }
 });
 
 // GitLab OAuth callback endpoint
-router.post('/login/gitlab', async (req, res) => {
+router.post('/login/gitlab', async (req, res): Promise<void> => {
   try {
     const { gitlabHandle, accessToken, name, email } = req.body;
     
@@ -262,14 +272,14 @@ router.post('/login/gitlab', async (req, res) => {
         expiresAt: session.expiresAt
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('GitLab login error:', error);
     res.status(500).json({ error: 'Failed to authenticate with GitLab' });
   }
 });
 
 // Logout endpoint
-router.post('/logout', async (req, res) => {
+router.post('/logout', async (req, res): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -284,14 +294,14 @@ router.post('/logout', async (req, res) => {
     });
     
     res.json({ message: 'Logged out successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Logout error:', error);
     res.status(500).json({ error: 'Failed to logout' });
   }
 });
 
 // Get current user endpoint
-router.get('/me', async (req, res) => {
+router.get('/me', async (req, res): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -311,14 +321,14 @@ router.get('/me', async (req, res) => {
     }
     
     res.json({ user: session.user });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get current user error:', error);
     res.status(500).json({ error: 'Failed to get current user' });
   }
 });
 
 // OAuth callback endpoints for secure token exchange
-router.post('/oauth/:provider/callback', async (req, res) => {
+router.post('/oauth/:provider/callback', async (req, res): Promise<void> => {
   try {
     const { provider } = req.params;
     const { code } = req.body;
@@ -371,7 +381,7 @@ router.post('/oauth/:provider/callback', async (req, res) => {
     };
     setTimeout(cleanup, 30000); // Cleanup after 30 seconds regardless
 
-    let userData;
+    let userData: UserData;
     
     switch (provider) {
       case 'github':
@@ -427,7 +437,7 @@ router.post('/oauth/:provider/callback', async (req, res) => {
     cleanup();
     
     res.json(response);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`=== ${req.params.provider} OAuth Error ===`);
     console.error('Error details:', {
       message: error.message,
@@ -449,7 +459,7 @@ router.post('/oauth/:provider/callback', async (req, res) => {
 });
 
 // OAuth handler functions
-async function handleGitHubOAuth(code) {
+async function handleGitHubOAuth(code: string): Promise<UserData> {
   console.log('=== GitHub OAuth Handler ===');
   console.log('Code received:', {
     code: code ? `${code.substring(0, 10)}...` : 'null',
@@ -458,8 +468,8 @@ async function handleGitHubOAuth(code) {
   });
   
   const requestBody = {
-    client_id: process.env.GITHUB_CLIENT_ID,
-    client_secret: process.env.GITHUB_CLIENT_SECRET,
+    client_id: process.env.GITHUB_CLIENT_ID!,
+    client_secret: process.env.GITHUB_CLIENT_SECRET!,
     code: code,
     redirect_uri: `${process.env.FRONTEND_URL}/auth/github/callback`,
   };
@@ -499,7 +509,7 @@ async function handleGitHubOAuth(code) {
     throw new Error(`Failed to exchange code for GitHub access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
   }
 
-  let tokenData;
+  let tokenData: any;
   try {
     tokenData = JSON.parse(responseText);
   } catch (parseError) {
@@ -542,7 +552,7 @@ async function handleGitHubOAuth(code) {
     throw new Error(`Failed to fetch GitHub user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
   }
 
-  const userData = await userResponse.json();
+  const userData: any = await userResponse.json();
   
   return {
     githubHandle: userData.login,
@@ -551,7 +561,7 @@ async function handleGitHubOAuth(code) {
   };
 }
 
-async function handleORCIDOAuth(code) {
+async function handleORCIDOAuth(code: string): Promise<UserData> {
   // Exchange code for access token
   const tokenResponse = await fetch(`https://orcid.org/oauth/token`, {
     method: 'POST',
@@ -560,8 +570,8 @@ async function handleORCIDOAuth(code) {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      client_id: process.env.ORCID_CLIENT_ID,
-      client_secret: process.env.ORCID_CLIENT_SECRET,
+      client_id: process.env.ORCID_CLIENT_ID!,
+      client_secret: process.env.ORCID_CLIENT_SECRET!,
       grant_type: 'authorization_code',
       code: code,
       redirect_uri: `${process.env.FRONTEND_URL}/auth/orcid/callback`,
@@ -572,7 +582,7 @@ async function handleORCIDOAuth(code) {
     throw new Error('Failed to exchange code for ORCID access token');
   }
 
-  const tokenData = await tokenResponse.json();
+  const tokenData: any = await tokenResponse.json();
   
   if (tokenData.error) {
     throw new Error(`ORCID OAuth error: ${tokenData.error_description || tokenData.error}`);
@@ -584,7 +594,7 @@ async function handleORCIDOAuth(code) {
   };
 }
 
-async function handleBitBucketOAuth(code) {
+async function handleBitBucketOAuth(code: string): Promise<UserData> {
   // Exchange code for access token
   const tokenResponse = await fetch('https://bitbucket.org/site/oauth2/access_token', {
     method: 'POST',
@@ -594,8 +604,8 @@ async function handleBitBucketOAuth(code) {
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code: code,
-      client_id: process.env.BITBUCKET_CLIENT_ID,
-      client_secret: process.env.BITBUCKET_CLIENT_SECRET,
+      client_id: process.env.BITBUCKET_CLIENT_ID!,
+      client_secret: process.env.BITBUCKET_CLIENT_SECRET!,
     }),
   });
 
@@ -603,7 +613,7 @@ async function handleBitBucketOAuth(code) {
     throw new Error('Failed to exchange code for BitBucket access token');
   }
 
-  const tokenData = await tokenResponse.json();
+  const tokenData: any = await tokenResponse.json();
   
   if (tokenData.error) {
     throw new Error(`BitBucket OAuth error: ${tokenData.error_description || tokenData.error}`);
@@ -620,7 +630,7 @@ async function handleBitBucketOAuth(code) {
     throw new Error('Failed to fetch BitBucket user data');
   }
 
-  const userData = await userResponse.json();
+  const userData: any = await userResponse.json();
   
   return {
     bitbucketHandle: userData.username,
@@ -629,7 +639,7 @@ async function handleBitBucketOAuth(code) {
   };
 }
 
-async function handleGitLabOAuth(code) {
+async function handleGitLabOAuth(code: string): Promise<UserData> {
   // Exchange code for access token
   const tokenResponse = await fetch('https://gitlab.com/oauth/token', {
     method: 'POST',
@@ -637,8 +647,8 @@ async function handleGitLabOAuth(code) {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      client_id: process.env.GITLAB_CLIENT_ID,
-      client_secret: process.env.GITLAB_CLIENT_SECRET,
+      client_id: process.env.GITLAB_CLIENT_ID!,
+      client_secret: process.env.GITLAB_CLIENT_SECRET!,
       code: code,
       grant_type: 'authorization_code',
       redirect_uri: `${process.env.FRONTEND_URL}/auth/gitlab/callback`,
@@ -649,7 +659,7 @@ async function handleGitLabOAuth(code) {
     throw new Error('Failed to exchange code for GitLab access token');
   }
 
-  const tokenData = await tokenResponse.json();
+  const tokenData: any = await tokenResponse.json();
   
   if (tokenData.error) {
     throw new Error(`GitLab OAuth error: ${tokenData.error_description || tokenData.error}`);
@@ -666,7 +676,7 @@ async function handleGitLabOAuth(code) {
     throw new Error('Failed to fetch GitLab user data');
   }
 
-  const userData = await userResponse.json();
+  const userData: any = await userResponse.json();
   
   return {
     gitlabHandle: userData.username,
@@ -676,7 +686,7 @@ async function handleGitLabOAuth(code) {
 }
 
 // Disconnect provider endpoint
-router.post('/disconnect/:provider', async (req, res) => {
+router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -699,7 +709,7 @@ router.post('/disconnect/:provider', async (req, res) => {
     const user = session.user;
     
     // Determine which field to clear based on provider
-    const providerFields = {
+    const providerFields: Record<string, string> = {
       ethereum: 'ethereumAddress',
       orcid: 'orcidId',
       github: 'githubHandle', 
@@ -713,7 +723,7 @@ router.post('/disconnect/:provider', async (req, res) => {
     }
 
     // Check if the provider is actually connected
-    if (!user[fieldToClear]) {
+    if (!(user as any)[fieldToClear]) {
       return res.status(400).json({ error: 'Provider not connected' });
     }
 
@@ -729,7 +739,7 @@ router.post('/disconnect/:provider', async (req, res) => {
       message: `${provider} disconnected successfully`,
       user: updatedUser 
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Disconnect error:', error);
     res.status(500).json({ error: 'Failed to disconnect provider' });
   }
@@ -750,10 +760,10 @@ router.delete('/sessions/cleanup', async (req, res) => {
       message: 'Expired sessions cleaned up', 
       deletedCount: deletedSessions.count 
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Session cleanup error:', error);
     res.status(500).json({ error: 'Failed to cleanup sessions' });
   }
 });
 
-module.exports = router;
+export default router;

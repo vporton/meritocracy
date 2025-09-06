@@ -1,53 +1,48 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // GET /api/users - Get all users
-router.get('/', async (req, res) => {
+router.get('/', async (req, res): Promise<void> => {
   try {
-    const users = await prisma.user.findMany({
-      include: {
-        posts: true,
-      },
-    });
+    const users = await prisma.user.findMany();
     res.json(users);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
 // GET /api/users/:id - Get user by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
       where: { id: parseInt(id) },
-      include: {
-        posts: true,
-      },
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'User not found' });
+      return;
     }
 
     res.json(user);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching user:', error);
     res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
 // POST /api/users - Create new user
-router.post('/', async (req, res) => {
+router.post('/', async (req, res): Promise<void> => {
   try {
     const { email, name } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+      res.status(400).json({ error: 'Email is required' });
+      return;
     }
 
     const user = await prisma.user.create({
@@ -58,17 +53,18 @@ router.post('/', async (req, res) => {
     });
 
     res.status(201).json(user);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating user:', error);
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Email already exists' });
+    if ((error as any).code === 'P2002') {
+      res.status(400).json({ error: 'Email already exists' });
+      return;
     }
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
 // PUT /api/users/:id - Update user
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
     const { email, name } = req.body;
@@ -82,20 +78,22 @@ router.put('/:id', async (req, res) => {
     });
 
     res.json(user);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating user:', error);
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'User not found' });
+    if ((error as any).code === 'P2025') {
+      res.status(404).json({ error: 'User not found' });
+      return;
     }
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Email already exists' });
+    if ((error as any).code === 'P2002') {
+      res.status(400).json({ error: 'Email already exists' });
+      return;
     }
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
 // DELETE /api/users/:id - Delete user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -104,13 +102,14 @@ router.delete('/:id', async (req, res) => {
     });
 
     res.status(204).send();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting user:', error);
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'User not found' });
+    if ((error as any).code === 'P2025') {
+      res.status(404).json({ error: 'User not found' });
+      return;
     }
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
-module.exports = router;
+export default router;

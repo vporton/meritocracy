@@ -1,12 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
 
-const userRoutes = require('./routes/users');
-const postRoutes = require('./routes/posts');
-const authRoutes = require('./routes/auth');
+dotenv.config();
+
+import userRoutes from './routes/users';
+import postRoutes from './routes/posts';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,7 +37,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/auth', authRoutes);
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     error: 'Something went wrong!',

@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 
+interface ServerStatus {
+  status?: string;
+  version?: string;
+  message?: string;
+  error?: string;
+}
+
 function Home() {
-  const [serverStatus, setServerStatus] = useState(null)
+  const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

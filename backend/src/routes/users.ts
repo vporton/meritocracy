@@ -63,6 +63,7 @@ router.post('/', async (req, res): Promise<void> => {
   }
 });
 
+// FIXME: Protect this route from unauthenticated users.
 // PUT /api/users/:id - Update user
 router.put('/:id', async (req, res): Promise<void> => {
   try {
@@ -92,6 +93,7 @@ router.put('/:id', async (req, res): Promise<void> => {
   }
 });
 
+// FIXME: Protect this route from unauthenticated users.
 // DELETE /api/users/:id - Delete user
 router.delete('/:id', async (req, res): Promise<void> => {
   try {

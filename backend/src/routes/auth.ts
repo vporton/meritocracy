@@ -59,7 +59,6 @@ interface UserData {
 // We delete that user that had been previously set to our data!
 async function findOrCreateUser(userData: UserData, currentUserId: number | null = null) {
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
-  console.log("Y0", ethereumAddress);
   // First, check for exact matches using unique fields
   const searchConditions = [];
   // if (email) searchConditions.push({ email });
@@ -80,9 +79,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
     }
   });
 
-  // FIXME: The following code seems wrong.
   if (existingUser === null) {
-    console.log("X0");
     // No existing user found, create new one
     return await prisma.user.create({
       data: {
@@ -99,11 +96,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
     // TODO: DB transaction
     // One user found, update with new information
     if (currentUserId !== null && currentUserId !== existingUser.id) {
-      console.log("X1");
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user
-      console.log("currentUserId: ", currentUserId, "existingUser.id: ", existingUser.id);
-      console.log("ETH: ", ethereumAddress, existingUser.ethereumAddress);
       await prisma.user.delete({where: {id: existingUser.id}});
       return await prisma.user.update({
         where: { id: currentUserId },
@@ -118,7 +112,6 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
         }
       });
     } else {
-      console.log("X2");
       // Either no current user or current user is the same as existing user
       return await prisma.user.update({
         where: { id: existingUser.id },
@@ -160,7 +153,6 @@ async function createSession(userId: number) {
 router.post('/login/ethereum', async (req, res): Promise<void> => {
   try {
     const { ethereumAddress, signature, message, name } = req.body;
-    console.log("Z0", ethereumAddress);
     
     if (!ethereumAddress) {
       res.status(400).json({ error: 'Ethereum address is required' });

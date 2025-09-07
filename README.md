@@ -1,6 +1,14 @@
-# Socialism App - Full-Stack Template
+# Socialism App
 
-A modern full-stack application template built with Node.js, React, and Prisma ORM. This template provides a solid foundation for building scalable web applications with support for multiple databases.
+"Socialism" (in full: "AI Internet-Socialism", or AIIS) is an app that gathers crypto donations and distributes them among scientists and free software developers.
+
+See [the site](https://social.vporotn.name) for more information.
+
+The app decides how much to pay each employee (registered user) simply by asking an AI (not by, for example, quadratic voting of users).
+
+Actually, this "socialism" is quite capitalistic, as it hinted to me (the author of the app) that I am probably worth ~$1B/year.
+
+It is a full-stack application built with Node.js, React, and Prisma ORM.
 
 ## 🚀 Tech Stack
 
@@ -52,7 +60,7 @@ socialism/
 
 ### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/vporton/socialism.git
 cd socialism
 ```
 
@@ -181,13 +189,6 @@ cd backend && npx prisma migrate dev
 - `PUT /api/users/:id` - Update user
 - `DELETE /api/users/:id` - Delete user
 
-### Posts
-- `GET /api/posts` - Get all posts (supports `?published=true/false`)
-- `GET /api/posts/:id` - Get post by ID
-- `POST /api/posts` - Create new post
-- `PUT /api/posts/:id` - Update post
-- `DELETE /api/posts/:id` - Delete post
-
 ### Example API Usage
 ```javascript
 // Create a new user
@@ -196,16 +197,6 @@ POST /api/users
   "name": "John Doe",
   "email": "john@example.com"
 }
-
-// Create a new post
-POST /api/posts
-{
-  "title": "My First Post",
-  "content": "This is the content of my post",
-  "published": true,
-  "authorId": 1
-}
-```
 
 ## 🎨 Features
 

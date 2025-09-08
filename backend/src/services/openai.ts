@@ -1,5 +1,8 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleNonBatchClearer } from 'flexible-batches';
+import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 
 // Load environment variables
 dotenv.config();
@@ -12,7 +15,7 @@ const openai = new OpenAI({
 /**
  * OpenAI Service Configuration
  */
-export interface OpenAIConfig {
+export interface OpenAIConfig { // TODO: more options?
   model?: string;
   maxTokens?: number;
   temperature?: number;
@@ -24,112 +27,80 @@ export interface OpenAIConfig {
 /**
  * Default configuration for OpenAI API calls
  */
-const DEFAULT_CONFIG: OpenAIConfig = {
+const DEFAULT_CONFIG: OpenAIConfig = { // TODO
   model: process.env.OPENAI_MODEL!,
-  maxTokens: 1000,
+  maxTokens: 2000,
   temperature: 0.7,
   topP: 1,
   frequencyPenalty: 0,
   presencePenalty: 0,
 };
 
-/**
- * Chat completion function
- * @param messages - Array of chat messages
- * @param config - Optional configuration overrides
- * @returns Promise with OpenAI chat completion response
- */
-export async function createChatCompletion(
-  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-  config: OpenAIConfig = {}
-): Promise<OpenAI.Chat.Completions.ChatCompletion> {
-  try {
-    const finalConfig = { ...DEFAULT_CONFIG, ...config };
-    
-    const completion = await openai.chat.completions.create({
-      model: finalConfig.model!,
-      messages,
-      max_tokens: finalConfig.maxTokens,
-      temperature: finalConfig.temperature,
-      top_p: finalConfig.topP,
-      frequency_penalty: finalConfig.frequencyPenalty,
-      presence_penalty: finalConfig.presencePenalty,
-    });
+class OurBatchStore implements FlexibleBatchStore {
+  private batchesId: string | undefined;
 
-    return completion;
-  } catch (error) {
-    console.error('OpenAI API Error:', error);
-    throw new Error(`OpenAI API call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async init(): Promise<void> {
+    const batches = await this.prisma.batches.create({data: {}});
+    this.batchesId = batches.id.toString();
+  }
+
+  async getClearingId(): Promise<string> {
+    return this.batchesId!;
+  }
+  
+  async storeBatchIdByCustomId(props: { customId: string; batchId: string; }): Promise<void> {
+    await this.prisma.batchMapping.create({
+      data: {
+        customId: props.customId,
+        batchId: BigInt(props.batchId),
+      },
+    });
+  }
+  
+  async getBatchIdByCustomId(customId: string): Promise<string | undefined> {
+    const mapping = await this.prisma.batchMapping.findUnique({
+      where: { customId },
+    });
+    return mapping?.batchId?.toString();
   }
 }
 
-/**
- * Simple text completion function for easier use
- * @param prompt - The text prompt to send
- * @param config - Optional configuration overrides
- * @returns Promise with the generated text response
- */
-export async function generateText(
-  prompt: string,
-  config: OpenAIConfig = {}
-): Promise<string> {
-  try {
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'user', content: prompt }
-    ];
-
-    const completion = await createChatCompletion(messages, config);
-    
-    const response = completion.choices[0]?.message?.content;
-    if (!response) {
-      throw new Error('No response content received from OpenAI');
-    }
-
-    return response;
-  } catch (error) {
-    console.error('Text generation error:', error);
-    throw error;
+class OurNonBatchStore implements FlexibleNonBatchStore {
+  private store: string;
+  constructor(private readonly prisma: PrismaClient) {
+    this.store = uuidv4();
+  }
+  async getStoreId(): Promise<string> {
+    return this.store;
+  }
+  async storeResponseByCustomId(props: {
+    customId: string; response: OpenAI.Responses.Response;
+  }): Promise<void> {
+    await this.prisma.nonBatchMapping.create({
+      data: {
+        customId: props.customId,
+        response: JSON.stringify(props.response),
+        nonBatchId: BigInt(this.store),
+      },
+    });
+  }
+  async getResponseByCustomId(customId: string): Promise<OpenAI.Responses.Response | undefined> {
+    const response = await this.prisma.nonBatchMapping.findUnique({
+      where: { customId },
+    });
+    return response?.response ? JSON.parse(response.response) : undefined; // TODO: Make it throw instead of returning undefined?
   }
 }
 
-/**
- * Function to generate embeddings for text
- * @param text - Text to generate embeddings for
- * @param model - Embedding model to use (default: text-embedding-ada-002)
- * @returns Promise with embedding vector
- */
-export async function createEmbedding(
-  text: string,
-  model: string = 'text-embedding-ada-002'
-): Promise<number[]> {
-  try {
-    const response = await openai.embeddings.create({
-      model,
-      input: text,
-    });
+class OurClearer implements FlexibleBatchClearer, FlexibleNonBatchClearer {
+  constructor(private readonly prisma: PrismaClient) {}
 
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error('Embedding generation error:', error);
-    throw new Error(`Embedding generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Function to moderate content
- * @param input - Text to moderate
- * @returns Promise with moderation results
- */
-export async function moderateContent(input: string): Promise<OpenAI.Moderations.ModerationCreateResponse> {
-  try {
-    const moderation = await openai.moderations.create({
-      input,
-    });
-
-    return moderation;
-  } catch (error) {
-    console.error('Content moderation error:', error);
-    throw new Error(`Content moderation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  async clear(storeId: string): Promise<void> {
+    // Delete both batch and non-batch data, as necessary if the server switches between batch and non-batch modes.
+    await this.prisma.batches.delete({where: {id: BigInt(storeId)}});
+    await this.prisma.nonBatches.delete({where: {id: BigInt(storeId)}});
   }
 }
 

@@ -42,3 +42,44 @@ model Session {
   @@map("sessions")
 }
 
+model Batches {
+  id             BigInt      @id @default(autoincrement())
+  createdAt      DateTime    @default(now())
+  
+  // Relationships
+  batchMappings  BatchMapping[]
+
+  @@map("batches")
+}
+
+model BatchMapping {
+  id        Int      @id @default(autoincrement())
+  customId  String   @unique
+  batchId   BigInt
+  batch     Batches  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("batch_mappings")
+}
+
+model NonBatches {
+  id             BigInt      @id @default(autoincrement())
+  createdAt      DateTime    @default(now())
+  
+  // Relationships
+  nonbatchMappings  NonBatchMapping[]
+
+  @@map("non_batches")
+}
+
+model NonBatchMapping {
+  id         Int      @id @default(autoincrement())
+  customId   String   @unique
+  response   String
+  nonBatchId BigInt
+  batch      NonBatches  @relation(fields: [nonBatchId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("non_batch_mappings")
+}

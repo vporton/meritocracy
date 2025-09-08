@@ -1,11 +1,13 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleNonBatchClearer } from 'flexible-batches';
+import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleNonBatchClearer, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput } from 'flexible-batches';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 // Load environment variables
 dotenv.config();
+
+const prisma = new PrismaClient();
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -44,6 +46,10 @@ class OurBatchStore implements FlexibleBatchStore {
   async init(): Promise<void> {
     const batches = await this.prisma.batches.create({data: {}});
     this.batchesId = batches.id.toString();
+  }
+
+  async getStoreId(): Promise<string> {
+    return this.batchesId!;
   }
 
   async getClearingId(): Promise<string> {
@@ -103,6 +109,27 @@ class OurClearer implements FlexibleBatchClearer, FlexibleNonBatchClearer {
     await this.prisma.nonBatches.delete({where: {id: BigInt(storeId)}});
   }
 }
+
+const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
+
+/// Centralized code. Probably, should be refactored.
+function openAIObjects() {
+  if (openAIFlexMode === 'batch') {
+    const store = new OurBatchStore(prisma);
+    return {
+      runner: new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store)),
+      outputter: new FlexibleOpenAIBatchOutput(openai, store),
+      clearer: new OurClearer(prisma),
+    }
+  } else if (openAIFlexMode === 'nonbatch') {
+    const store = new OurNonBatchStore(prisma);
+    return {
+      runner: new FlexibleOpenAINonBatch(openai, "/v1/responses", store),
+      outputter: new FlexibleOpenAINonBatchOutput(store),
+      clearer: new OurClearer(prisma),
+    }
+  }
+};
 
 /**
  * Utility function to check if OpenAI is properly configured

@@ -199,6 +199,33 @@
   font-size: 0.9rem;
 }
 
+.connected-providers {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 6px;
+}
+
+.connected-providers h4 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.connected-providers ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connected-providers li {
+  padding: 0.25rem 0;
+  color: #047857;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .connect-form {

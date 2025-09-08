@@ -120,7 +120,23 @@ const ConnectForm = () => {
   
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
+      const connectedProviders = [];
+      const providerDisplayNames: Record<string, string> = {
+        ethereum: 'Ethereum',
+        orcid: 'ORCID',
+        github: 'GitHub',
+        bitbucket: 'BitBucket',
+        gitlab: 'GitLab'
+      };
+      
+      // Check which providers are connected
+      if (user.ethereumAddress) connectedProviders.push({ name: 'Ethereum', value: user.ethereumAddress });
+      if (user.orcidId) connectedProviders.push({ name: 'ORCID', value: user.orcidId });
+      if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
+      if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
+      if (user.gitlabHandle) connectedProviders.push({ name: 'GitLab', value: user.gitlabHandle });
+      
       return (
         <div className="connected-status">
           <h3>✅ Connected Accounts</h3>
@@ -128,6 +144,18 @@ const ConnectForm = () => {
           <div className="connected-user-info">
             <strong>Current user:</strong> {user?.id}: {user?.name || 'User'}
           </div>
+          {connectedProviders.length > 0 && (
+            <div className="connected-providers">
+              <h4>Connected Services:</h4>
+              <ul>
+                {connectedProviders.map((provider, index) => (
+                  <li key={index}>
+                    <strong>{provider.name}:</strong> {provider.value}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       );
     }
@@ -339,13 +367,24 @@ const ConnectForm = () => {
     const status = connectStatus[provider];
     const isConnected = isProviderConnected(provider);
     
+    // Map provider names to display names
+    const providerDisplayNames: Record<string, string> = {
+      ethereum: 'Ethereum',
+      orcid: 'ORCID',
+      github: 'GitHub',
+      bitbucket: 'BitBucket',
+      gitlab: 'GitLab'
+    };
+    
+    const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
+    
     if (provider === 'ethereum') {
       console.log('getButtonText for ethereum - status:', status, 'isConnected:', isConnected, 'full connectStatus:', connectStatus);
     }
     
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {
-      return `Disconnect ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+      return `Disconnect ${displayName}`;
     }
     
     switch (status) {
@@ -366,7 +405,7 @@ const ConnectForm = () => {
       case 'cancelled':
         return 'Try Again';
       default:
-        return `Connect with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+        return `Connect with ${displayName}`;
     }
   };
 
@@ -413,7 +452,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.orcid === 'processing' || connectStatus.orcid === 'disconnecting'}
         >
           <span className="connect-icon">🎓</span>
-          {getButtonText('ORCID')}
+          {getButtonText('orcid')}
         </button>
 
         {/* GitHub Connect */}
@@ -423,7 +462,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.github === 'processing' || connectStatus.github === 'disconnecting'}
         >
           <span className="connect-icon">👨‍💻</span>
-          {getButtonText('GitHub')}
+          {getButtonText('github')}
         </button>
 
         {/* BitBucket Connect */}
@@ -433,7 +472,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.bitbucket === 'processing' || connectStatus.bitbucket === 'disconnecting'}
         >
           <span className="connect-icon">🪣</span>
-          {getButtonText('BitBucket')}
+          {getButtonText('bitbucket')}
         </button>
 
         {/* GitLab Connect */}
@@ -443,7 +482,7 @@ const ConnectForm = () => {
           disabled={isLoading || connectStatus.gitlab === 'processing' || connectStatus.gitlab === 'disconnecting'}
         >
           <span className="connect-icon">🦊</span>
-          {getButtonText('GitLab')}
+          {getButtonText('gitlab')}
         </button>
       </div>
 

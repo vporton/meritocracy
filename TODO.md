@@ -7,3 +7,5 @@
 - ICP blockchain, Solana, Bitcoin, BCH payments.
 
 - OpenAI Batch API⁠⁠ (saves 50% of cost)
+
+- Connect with BitBucket does not work, connect with ORCID requires a domain to test.

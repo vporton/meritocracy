@@ -66,7 +66,7 @@
             <mxPoint x="440" y="360" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="mHMxv2ssWJFSwwewqc2A-13" value="Median" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+        <mxCell id="mHMxv2ssWJFSwwewqc2A-13" value="Salary = the median" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="105" y="630" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="mHMxv2ssWJFSwwewqc2A-14" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="mHMxv2ssWJFSwwewqc2A-1" target="mHMxv2ssWJFSwwewqc2A-13">

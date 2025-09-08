@@ -80,18 +80,35 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
   });
 
   if (existingUser === null) {
-    // No existing user found, create new one
-    return await prisma.user.create({
-      data: {
-        email: email || `temp_${uuidv4()}@example.com`, // Fallback email if not provided // FIXME: It makes no sense to generate a random email.
-        name,
-        ethereumAddress,
-        orcidId,
-        githubHandle,
-        bitbucketHandle,
-        gitlabHandle
-      }
-    });
+    // No existing user found
+    if (currentUserId !== null) {
+      // If there's a current user, update them with the new provider info instead of creating a new user
+      return await prisma.user.update({
+        where: { id: currentUserId },
+        data: {
+          email: email || undefined, // Only update email if provided
+          name: name || undefined, // Only update name if provided  
+          ethereumAddress: ethereumAddress || undefined,
+          orcidId: orcidId || undefined,
+          githubHandle: githubHandle || undefined,
+          bitbucketHandle: bitbucketHandle || undefined,
+          gitlabHandle: gitlabHandle || undefined,
+        }
+      });
+    } else {
+      // No current user, create new one
+      return await prisma.user.create({
+        data: {
+          email: email || `temp_${uuidv4()}@example.com`, // Fallback email if not provided // FIXME: It makes no sense to generate a random email.
+          name,
+          ethereumAddress,
+          orcidId,
+          githubHandle,
+          bitbucketHandle,
+          gitlabHandle
+        }
+      });
+    }
   } else {
     // TODO: DB transaction
     // One user found, update with new information

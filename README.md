@@ -4,7 +4,7 @@
 
 "Socialism" (in full: "AI Internet-Socialism", or AIIS) is an app that gathers crypto donations and distributes them among scientists and free software developers.
 
-See [the site](https://social.vporotn.name) for more information.
+See [the site](https://social.vporton.name) for more information.
 
 The app decides how much to pay each employee (registered user) simply by asking an AI (not by, for example, quadratic voting of users).
 

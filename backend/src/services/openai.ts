@@ -33,6 +33,8 @@ const DEFAULT_CONFIG: OpenAIConfig = {
   presencePenalty: 0,
 };
 
+// FIXME: The below code allows hackers to spend out OpenAI credits.
+
 /**
  * Chat completion function
  * @param messages - Array of chat messages

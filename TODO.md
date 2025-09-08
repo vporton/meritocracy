@@ -1,11 +1,3 @@
-- Load user accounts from the DB before displaying Connect buttons.
-
-- Whilst testing, use search models with no price or minimal search results tokens.
-
-- Test ORCID, connect BitBucket.
-
 - ICP blockchain, Solana, Bitcoin, BCH payments.
-
-- OpenAI Batch API⁠⁠ (saves 50% of cost)
 
 - Connect with BitBucket does not work, connect with ORCID requires a domain to test.

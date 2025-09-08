@@ -113,7 +113,7 @@ class OurClearer implements FlexibleBatchClearer, FlexibleNonBatchClearer {
 const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
 /// Centralized code. Probably, should be refactored.
-async function openAIObjects() {
+async function createOpenAISession() {
   let result;
   if (openAIFlexMode === 'batch') {
     const store = new OurBatchStore(prisma);

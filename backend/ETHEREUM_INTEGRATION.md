@@ -80,7 +80,8 @@ Get wallet address, balance, and network information.
   "success": true,
   "data": {
     "address": "0x742d35Cc6Db6b1c8...",
-    "balance": "1.23 ETH",
+    "balance": "12300000000000000000000",
+    "currency": "ETH",
     "network": "mainnet",
     "chainId": "1"
   }

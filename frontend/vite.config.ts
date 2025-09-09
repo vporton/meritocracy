@@ -15,7 +15,20 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    // nodePolyfills(),
     // environment("all", { prefix: "VITE_" }),
   ],
+  define: {
+    global: 'globalThis',
+    'process.env': {},
+  },
+  resolve: {
+    alias: {
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      buffer: 'buffer',
+    },
+  },
+  optimizeDeps: {
+    include: ['buffer', 'crypto-browserify', 'stream-browserify'],
+  },
 })

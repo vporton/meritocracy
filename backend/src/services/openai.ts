@@ -142,36 +142,37 @@ export function isOpenAIConfigured(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
 
+// TODO
 /**
  * Health check function to test OpenAI connection
  * @returns Promise with test result
  */
-export async function testOpenAIConnection(): Promise<{ success: boolean; message: string }> {
-  try {
-    if (!isOpenAIConfigured()) {
-      return {
-        success: false,
-        message: 'OpenAI API key not configured'
-      };
-    }
+// export async function testOpenAIConnection(): Promise<{ success: boolean; message: string }> {
+//   try {
+//     if (!isOpenAIConfigured()) {
+//       return {
+//         success: false,
+//         message: 'OpenAI API key not configured'
+//       };
+//     }
 
-    // Simple test call
-    const response = await generateText('Say "Hello" to test the connection.', {
-      maxTokens: 10,
-      temperature: 0
-    });
+//     // Simple test call
+//     const response = await generateText('Say "Hello" to test the connection.', {
+//       maxTokens: 10,
+//       temperature: 0
+//     });
 
-    return {
-      success: true,
-      message: `Connection successful. Response: ${response.trim()}`
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
-  }
-}
+//     return {
+//       success: true,
+//       message: `Connection successful. Response: ${response.trim()}`
+//     };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+//     };
+//   }
+// }
 
 // Export the OpenAI client instance for advanced usage
 export { openai };

@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleNonBatchClearer, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput } from 'flexible-batches';
+import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { assert } from 'console';
 
 // Load environment variables
 dotenv.config();
@@ -38,24 +39,32 @@ const DEFAULT_CONFIG: OpenAIConfig = { // TODO
   presencePenalty: 0,
 };
 
-class OurBatchStore implements FlexibleBatchStore {
-  private batchesId: string | undefined;
+abstract class OurClearer implements FlexibleStore {
+  constructor(protected readonly prisma: PrismaClient) {}
+  async init(): Promise<void> {}
+  abstract getStoreId(): string;
+  async clear(): Promise<void> {
+    // Delete both batch and non-batch data, as necessary if the server switches between batch and non-batch modes.
+    await this.prisma.batches.delete({where: {id: BigInt(this.getStoreId())}});
+    await this.prisma.nonBatches.delete({where: {id: BigInt(this.getStoreId())}});
+  }
+}
 
-  constructor(private readonly prisma: PrismaClient) {}
-
+class OurBatchStore extends OurClearer implements FlexibleBatchStore {
+  constructor(prisma: PrismaClient, private batchesId: string | undefined) {
+    super(prisma);
+  }
   async init(): Promise<void> {
+    assert(this.batchesId === undefined, "cannot initialize batchesId second time");
     const batches = await this.prisma.batches.create({data: {}});
     this.batchesId = batches.id.toString();
   }
-
-  async getStoreId(): Promise<string> {
+  getStoreId(): string {
     return this.batchesId!;
   }
-
   async getClearingId(): Promise<string> {
     return this.batchesId!;
   }
-  
   async storeBatchIdByCustomId(props: { customId: string; batchId: string; }): Promise<void> {
     await this.prisma.batchMapping.create({
       data: {
@@ -64,7 +73,6 @@ class OurBatchStore implements FlexibleBatchStore {
       },
     });
   }
-  
   async getBatchIdByCustomId(customId: string): Promise<string | undefined> {
     const mapping = await this.prisma.batchMapping.findUnique({
       where: { customId },
@@ -73,13 +81,18 @@ class OurBatchStore implements FlexibleBatchStore {
   }
 }
 
-class OurNonBatchStore implements FlexibleNonBatchStore {
-  private store: string;
-  constructor(private readonly prisma: PrismaClient) {
-    this.store = uuidv4();
+class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
+  constructor(prisma: PrismaClient, private storeId: string | undefined) {
+    super(prisma);
+    this.storeId = uuidv4();
+  }
+  async init(): Promise<void> {
+    assert(this.storeId === undefined, "cannot initialize storeId second time");
+    const batches = await this.prisma.batches.create({data: {}});
+    this.storeId = batches.id.toString();
   }
   async getStoreId(): Promise<string> {
-    return this.store;
+    return this.storeId!;
   }
   async storeResponseByCustomId(props: {
     customId: string; response: OpenAI.Responses.Response;
@@ -88,7 +101,7 @@ class OurNonBatchStore implements FlexibleNonBatchStore {
       data: {
         customId: props.customId,
         response: JSON.stringify(props.response),
-        nonBatchId: BigInt(this.store),
+        nonBatchId: BigInt(this.storeId!),
       },
     });
   }
@@ -100,37 +113,28 @@ class OurNonBatchStore implements FlexibleNonBatchStore {
   }
 }
 
-class OurClearer implements FlexibleBatchClearer, FlexibleNonBatchClearer {
-  constructor(private readonly prisma: PrismaClient) {}
-
-  async clear(storeId: string): Promise<void> {
-    // Delete both batch and non-batch data, as necessary if the server switches between batch and non-batch modes.
-    await this.prisma.batches.delete({where: {id: BigInt(storeId)}});
-    await this.prisma.nonBatches.delete({where: {id: BigInt(storeId)}});
-  }
-}
-
 const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
 /// Centralized code. Probably, should be refactored.
-async function createOpenAISession() {
-  let result;
-  if (openAIFlexMode === 'batch') {
-    const store = new OurBatchStore(prisma);
-    result = {
-      runner: new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store)),
-      outputter: new FlexibleOpenAIBatchOutput(openai, store),
-      clearer: new OurClearer(prisma),
-    }
-  } else if (openAIFlexMode === 'nonbatch') {
-    const store = new OurNonBatchStore(prisma);
-    result = {
-      runner: new FlexibleOpenAINonBatch(openai, "/v1/responses", store),
-      outputter: new FlexibleOpenAINonBatchOutput(store),
-      clearer: new OurClearer(prisma),
-    }
-  }
-  await result!.runner.init();
+async function createAIBatchStore(storeId: string | undefined) {
+  const store = openAIFlexMode === 'batch' ? new OurBatchStore(prisma, storeId) : new OurNonBatchStore(prisma, storeId);
+  await store.init();
+  return store;
+}
+
+async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+  const result = openAIFlexMode === 'batch' ?
+    new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
+    new FlexibleOpenAINonBatch(openai, "/v1/responses", store as FlexibleNonBatchStore);
+  await result.init();
+  return result;
+}
+
+async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+  const result = openAIFlexMode === 'batch' ?
+    new FlexibleOpenAIBatchOutput(openai, store as FlexibleBatchStore) : 
+    new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);
+  await result.init();
   return result;
 };
 

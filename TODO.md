@@ -12,3 +12,5 @@
 - Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.
 
 - Tell the AI the size of world GDP, for it not to spend tokens researching it.
+
+- Protect against prompt injections by inserting random strings before and after answers.

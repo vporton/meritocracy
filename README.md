@@ -68,6 +68,9 @@ cd socialism
 
 ### 2. Install Dependencies
 ```bash
+# Set NPM version
+nvm use v22.1.0
+
 # Install all dependencies (backend + frontend)
 npm run install-all
 

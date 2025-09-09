@@ -91,7 +91,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
     const batches = await this.prisma.batches.create({data: {}});
     this.storeId = batches.id.toString();
   }
-  async getStoreId(): Promise<string> {
+  getStoreId(): string {
     return this.storeId!;
   }
   async storeResponseByCustomId(props: {

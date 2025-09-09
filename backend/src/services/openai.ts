@@ -116,13 +116,13 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
 const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
 /// Centralized code. Probably, should be refactored.
-async function createAIBatchStore(storeId: string | undefined) {
+export async function createAIBatchStore(storeId: string | undefined) {
   const store = openAIFlexMode === 'batch' ? new OurBatchStore(prisma, storeId) : new OurNonBatchStore(prisma, storeId);
   await store.init();
   return store;
 }
 
-async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
     new FlexibleOpenAINonBatch(openai, "/v1/responses", store as FlexibleNonBatchStore);
@@ -130,7 +130,7 @@ async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore)
   return result;
 }
 
-async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+export async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatchOutput(openai, store as FlexibleBatchStore) : 
     new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);

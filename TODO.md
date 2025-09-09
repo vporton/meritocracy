@@ -6,3 +6,5 @@
 
 - Confirmation of email, instead of taking emails from GitHub, etc.
   Consider email the same login method, as Ethereum, ORCID, GitHub, etc.
+
+- After failed login, the button text is "Try again". Thus the name of the button is not shown.

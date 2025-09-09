@@ -82,7 +82,7 @@ function Home() {
   return (
     <div>
       <h1>Welcome to Socialism App <span style={{ color: 'red' }}>⚠️This is a test version</span></h1>
-      <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer.</p>
+      <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
       <div className="card">
         <h3>Server Status</h3>
         {serverStatus?.error ? (

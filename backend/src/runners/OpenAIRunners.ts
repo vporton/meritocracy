@@ -315,51 +315,6 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     await this.makeOpenAIRequest(prompt, schema, customId);
   }
 
-  /**
-   * Helper method to process dependency results and extract worth values
-   * @param task - The task with dependencies
-   * @param runnerClassName - The class name of the runner to look for
-   * @returns Array of worth values from dependencies
-   */
-  protected async processDependencyResults(
-    task: TaskWithDependencies, 
-    runnerClassName: string
-  ): Promise<number[]> {
-    const worthValues: number[] = [];
-    
-    for (const dep of task.dependencies) {
-      try {
-        // Get the dependency task data
-        if (!dep.dependency.runnerData) {
-          this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
-          continue;
-        }
-
-        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
-        if (!depData.customId || !depData.storeId) {
-          this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
-          continue;
-        }
-
-        // Get the result from the dependency
-        const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
-          customId: depData.customId, 
-          storeId: depData.storeId 
-        });
-
-        if (typeof response.worthAsFractionOfGDP === 'number') {
-          worthValues.push(response.worthAsFractionOfGDP);
-        }
-      } catch (error) {
-        this.log('warn', `Failed to retrieve dependency result`, { 
-          dependencyId: dep.dependency.id, 
-          error: error instanceof Error ? error.message : String(error) 
-        });
-      }
-    }
-
-    return worthValues;
-  }
 
   /**
    * Helper method to get a single dependency result by runner class name
@@ -519,7 +474,7 @@ export class MedianRunner extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     // Extract worth values from dependency results
-    const worthValues = await this.processDependencyResults(task, 'WorthAsFractionOfGDPRunner');
+    const worthValues = await this.processWorthDependencyResults(task);
 
     if (worthValues.length === 0) {
       throw new DependencyError('No valid worth values found in dependencies', undefined, task.id, this.constructor.name);
@@ -542,6 +497,48 @@ export class MedianRunner extends BaseOpenAIRunner {
     });
 
     this.log('info', `✅ Median TaskRunner completed`, { taskId: task.id, median, sourceValuesCount: worthValues.length });
+  }
+
+  /**
+   * Process dependency results and extract worth values from WorthAsFractionOfGDPRunner
+   * @param task - The task with dependencies
+   * @returns Array of worth values from dependencies
+   */
+  private async processWorthDependencyResults(task: TaskWithDependencies): Promise<number[]> {
+    const worthValues: number[] = [];
+    
+    for (const dep of task.dependencies) {
+      try {
+        // Get the dependency task data
+        if (!dep.dependency.runnerData) {
+          this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
+          continue;
+        }
+
+        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
+        if (!depData.customId || !depData.storeId) {
+          this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
+          continue;
+        }
+
+        // Get the result from the dependency
+        const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
+          customId: depData.customId, 
+          storeId: depData.storeId 
+        });
+
+        if (typeof response.worthAsFractionOfGDP === 'number') {
+          worthValues.push(response.worthAsFractionOfGDP);
+        }
+      } catch (error) {
+        this.log('warn', `Failed to retrieve dependency result`, { 
+          dependencyId: dep.dependency.id, 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+    }
+
+    return worthValues;
   }
 
   /**
@@ -583,7 +580,7 @@ export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
     const threshold = this.data.threshold || DEFAULT_THRESHOLD;
     
     // Get worth values from dependencies
-    const worthValues = await this.processDependencyResults(task, 'WorthAsFractionOfGDPRunner');
+    const worthValues = await this.processWorthDependencyResults(task);
     
     if (worthValues.length === 0) {
       throw new DependencyError('No valid worth value found in dependencies', undefined, task.id, this.constructor.name);
@@ -613,6 +610,48 @@ export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
       threshold, 
       exceedsThreshold 
     });
+  }
+
+  /**
+   * Process dependency results and extract worth values from WorthAsFractionOfGDPRunner
+   * @param task - The task with dependencies
+   * @returns Array of worth values from dependencies
+   */
+  private async processWorthDependencyResults(task: TaskWithDependencies): Promise<number[]> {
+    const worthValues: number[] = [];
+    
+    for (const dep of task.dependencies) {
+      try {
+        // Get the dependency task data
+        if (!dep.dependency.runnerData) {
+          this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
+          continue;
+        }
+
+        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
+        if (!depData.customId || !depData.storeId) {
+          this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
+          continue;
+        }
+
+        // Get the result from the dependency
+        const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
+          customId: depData.customId, 
+          storeId: depData.storeId 
+        });
+
+        if (typeof response.worthAsFractionOfGDP === 'number') {
+          worthValues.push(response.worthAsFractionOfGDP);
+        }
+      } catch (error) {
+        this.log('warn', `Failed to retrieve dependency result`, { 
+          dependencyId: dep.dependency.id, 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+    }
+
+    return worthValues;
   }
 }
 
@@ -686,4 +725,3 @@ export function registerOpenAIRunners(): void {
   TaskRunnerRegistry.register('MedianRunner', MedianRunner);
   TaskRunnerRegistry.register('BanUserRunner', BanUserRunner);
 }
-                                                                                                                    

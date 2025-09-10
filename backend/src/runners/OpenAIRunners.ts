@@ -226,7 +226,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
   }
 
   /**
-   * Make an OpenAI request using the batch API
+   * Make an OpenAI request using the `flexible-batches` API
    * @param prompt - The prompt to send to OpenAI
    * @param schema - The JSON schema for response format
    * @param customId - Unique identifier for this request

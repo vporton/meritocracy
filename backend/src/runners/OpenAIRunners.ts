@@ -1,54 +1,9 @@
 import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIRunner, createAIOutputter } from '../services/openai.js';
-import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt } from '../prompts.js';
+import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scientistCheckSchema, worthAssessmentSchema, promptInjectionSchema, randomizedPromptSchema } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
 
-// Response schemas for OpenAI API
-const scientistCheckSchema = {
-  type: "object",
-  properties: {
-    isActiveScientistOrFOSSDev: {
-      type: "boolean",
-      description: "Whether the person is an active scientist or FOSS developer"
-    },
-    why: {
-      type: "string",
-      description: "Explanation of the decision"
-    }
-  },
-  required: ["isActiveScientistOrFOSSDev", "why"]
-};
-
-const worthAssessmentSchema = {
-  type: "object",
-  properties: {
-    worthAsFractionOfGDP: {
-      type: "number",
-      description: "The fraction of world GDP this person is worth (0-1)"
-    },
-    why: {
-      type: "string",
-      description: "Explanation of the assessment"
-    }
-  },
-  required: ["worthAsFractionOfGDP", "why"]
-};
-
-const promptInjectionSchema = {
-  type: "object",
-  properties: {
-    hasPromptInjection: {
-      type: "boolean",
-      description: "Whether prompt injection was detected"
-    },
-    why: {
-      type: "string",
-      description: "Explanation of the detection result"
-    }
-  },
-  required: ["hasPromptInjection", "why"]
-};
 
 /**
  * Base class for OpenAI TaskRunners with common functionality
@@ -281,18 +236,8 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     const originalPrompt = this.data.originalPrompt;
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
-    const schema = {
-      type: "object",
-      properties: {
-        randomizedPrompt: {
-          type: "string",
-          description: "The randomized version of the prompt"
-        }
-      },
-      required: ["randomizedPrompt"]
-    };
     
-    await this.initiateOpenAIRequest(task, randomizeRequest, schema);
+    await this.initiateOpenAIRequest(task, randomizeRequest, randomizedPromptSchema);
   }
 }
 

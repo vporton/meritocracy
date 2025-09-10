@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { TaskStatus } from '../types/task';
+import { TaskStatus } from '../types/task.js';
 
 export interface UserEvaluationData {
   userId: number;

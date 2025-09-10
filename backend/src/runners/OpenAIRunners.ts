@@ -82,11 +82,6 @@ abstract class BaseOpenAIRunner implements TaskRunner {
         throw new Error(`Task with ID ${taskId} not found`);
       }
 
-      // Execute the specific OpenAI request
-      const result = await this.executeOpenAIRequest(task);
-      
-      // Store the result in the database
-      await this.storeResult(taskId, result);
       
       console.log(`✅ OpenAI TaskRunner ${this.constructor.name} completed for task ${taskId}`);
     } catch (error) {
@@ -97,10 +92,10 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     }
   }
 
-  protected abstract executeOpenAIRequest(task: any): Promise<any>;
+  // protected abstract executeOpenAIRequest(task: any): Promise<any>;
 
-  protected async getOpenAIResult(customId: string): Promise<any> {
-    const store = await createAIBatchStore(undefined);
+  protected async getOpenAIResult(customId: string, storeId: string): Promise<any> {
+    const store = await createAIBatchStore(storeId);
     const outputter = await createAIOutputter(store);
     
     const response = await outputter.getOutputOrThrow(customId);
@@ -114,34 +109,18 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     return JSON.parse(content);
   }
 
-  protected async storeResult(taskId: number, result: any): Promise<void> {
-    // Store the AI response in a custom field or related table
-    // For now, we'll store it in the runnerData field // FIXME: Storing in the runnerData field is wrong.
-    await this.prisma.task.update({
-      where: { id: taskId },
-      data: {
-        runnerData: JSON.stringify({
-          ...this.data,
-          aiResult: result,
-          completedAt: new Date().toISOString()
-        })
-      }
-    });
-  }
-
   protected async makeOpenAIRequest(
     prompt: string,
     schema: any,
-    customId?: string
-  ): Promise<string> {
+    customId: string,
+  ): Promise<{ storeId: string }> {
     const store = await createAIBatchStore(undefined);
     const runner = await createAIRunner(store);
     
-    const requestId = customId || uuidv4();
     
     // Add the request to the runner
     await runner.addItem({
-      custom_id: requestId,
+      custom_id: customId,
       method: "POST",
       body: {
         messages: [ // TODO: Put <DATA> in "user" prompt not "system".
@@ -165,8 +144,8 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     // Flush to execute the request
     await runner.flush();
     
-    // Return the custom ID for later result retrieval
-    return requestId;
+    // Return both the custom ID and store ID for later result retrieval
+    return { storeId: store.getStoreId() };
   }
 }
 
@@ -178,11 +157,11 @@ export class ScientistCheckRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = `scientist-check-${task.id}`;
-    await this.makeOpenAIRequest(prompt, scientistCheckSchema, customId);
+    const customId = uuidv4();
+    const { storeId } = await this.makeOpenAIRequest(prompt, scientistCheckSchema, customId);
     
     // Wait for the result to be available
-    const response = await this.getOpenAIResult(customId);
+    const response = await this.getOpenAIResult(customId, storeId);
 
     return {
       isActiveScientistOrFOSSDev: response.isActiveScientistOrFOSSDev,
@@ -203,11 +182,11 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
     const randomizedPrompt = await this.randomizePrompt(worthPrompt);
     const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = `worth-assessment-${task.id}`;
-    await this.makeOpenAIRequest(finalPrompt, worthAssessmentSchema, customId);
+    const customId = uuidv4();
+    const { storeId } = await this.makeOpenAIRequest(finalPrompt, worthAssessmentSchema, customId);
     
     // Wait for the result to be available
-    const response = await this.getOpenAIResult(customId);
+    const response = await this.getOpenAIResult(customId, storeId);
 
     return {
       worthAsFractionOfGDP: response.worthAsFractionOfGDP,
@@ -220,8 +199,8 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
   private async randomizePrompt(originalPrompt: string): Promise<string> {
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
-    const customId = `randomize-${uuidv4()}`;
-    await this.makeOpenAIRequest(
+    const customId = uuidv4();
+    const { storeId } = await this.makeOpenAIRequest(
       randomizeRequest,
       {
         type: "object",
@@ -236,7 +215,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
       customId
     );
 
-    const response = await this.getOpenAIResult(customId);
+    const response = await this.getOpenAIResult(customId, storeId);
     return response.randomizedPrompt;
   }
 }
@@ -249,11 +228,11 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = injectionPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = `prompt-injection-${task.id}`;
-    await this.makeOpenAIRequest(prompt, promptInjectionSchema, customId);
+    const customId = uuidv4();
+    const { storeId } = await this.makeOpenAIRequest(prompt, promptInjectionSchema, customId);
     
     // Wait for the result to be available
-    const response = await this.getOpenAIResult(customId);
+    const response = await this.getOpenAIResult(customId, storeId);
 
     return {
       hasPromptInjection: response.hasPromptInjection,

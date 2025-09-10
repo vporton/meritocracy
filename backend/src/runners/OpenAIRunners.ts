@@ -250,7 +250,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
   protected async executeOpenAIRequest(task: any): Promise<void> {
-    const originalPrompt = this.data.originalPrompt || worthPrompt;
+    const originalPrompt = this.data.originalPrompt;
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
     const customId = uuidv4();

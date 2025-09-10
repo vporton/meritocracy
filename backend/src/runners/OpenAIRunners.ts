@@ -141,7 +141,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
             content: prompt
           }
         ],
-        model: "gpt-5-nano-2025-08-07",
+        model: "gpt-5-nano-2025-08-07", // FIXME
         temperature: 0,
         response_format: {
           type: "json_schema" as const,

@@ -1,7 +1,7 @@
-import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task';
+import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { PrismaClient } from '@prisma/client';
-import { createAIBatchStore, createAIOutputter } from '../services/openai';
-import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt } from '../prompts';
+import { createAIBatchStore, createAIRunner, createAIOutputter } from '../services/openai.js';
+import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Response schemas for OpenAI API
@@ -99,6 +99,21 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 
   protected abstract executeOpenAIRequest(task: any): Promise<any>;
 
+  protected async getOpenAIResult(customId: string): Promise<any> {
+    const store = await createAIBatchStore(undefined);
+    const outputter = await createAIOutputter(store);
+    
+    const response = await outputter.getOutputOrThrow(customId);
+    
+    // Parse the response content
+    const content = (response as any).choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response content received from OpenAI');
+    }
+    
+    return JSON.parse(content);
+  }
+
   protected async storeResult(taskId: number, result: any): Promise<void> {
     // Store the AI response in a custom field or related table
     // For now, we'll store it in the runnerData field
@@ -118,36 +133,40 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     prompt: string,
     schema: any,
     customId?: string
-  ): Promise<any> {
+  ): Promise<string> {
     const store = await createAIBatchStore(undefined);
-    const outputter = await createAIOutputter(store);
+    const runner = await createAIRunner(store);
     
     const requestId = customId || uuidv4();
     
-    // TODO: Fix the method name - createOutput doesn't exist on the outputter
-    // const response = await outputter.createOutput({
-    //   customId: requestId,
-    //   messages: [
-    //     {
-    //       role: "user" as const,
-    //       content: prompt
-    //     }
-    //   ],
-    //   model: "gpt-4o-mini", // Using gpt-4o-mini as gpt-5-nano is not available
-    //   temperature: 0,
-    //   response_format: {
-    //     type: "json_schema" as const,
-    //     json_schema: {
-    //       name: "response",
-    //       schema: schema
-    //     }
-    //   }
-    // });
+    // Add the request to the runner
+    await runner.addItem({
+      custom_id: requestId,
+      method: "POST",
+      body: {
+        messages: [
+          {
+            role: "user" as const,
+            content: prompt
+          }
+        ],
+        model: "gpt-4o-mini", // Using gpt-4o-mini as gpt-5-nano is not available
+        temperature: 0,
+        response_format: {
+          type: "json_schema" as const,
+          json_schema: {
+            name: "response",
+            schema: schema
+          }
+        }
+      }
+    });
     
-    // Temporary mock response until the correct method is found
-    const response = { result: "Mock response - method needs to be fixed" };
-
-    return response;
+    // Flush to execute the request
+    await runner.flush();
+    
+    // Return the custom ID for later result retrieval
+    return requestId;
   }
 }
 
@@ -159,11 +178,11 @@ export class ScientistCheckRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const response = await this.makeOpenAIRequest(
-      prompt,
-      scientistCheckSchema,
-      `scientist-check-${task.id}`
-    );
+    const customId = `scientist-check-${task.id}`;
+    await this.makeOpenAIRequest(prompt, scientistCheckSchema, customId);
+    
+    // Wait for the result to be available
+    const response = await this.getOpenAIResult(customId);
 
     return {
       isActiveScientistOrFOSSDev: response.isActiveScientistOrFOSSDev,
@@ -184,11 +203,11 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
     const randomizedPrompt = await this.randomizePrompt(worthPrompt);
     const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const response = await this.makeOpenAIRequest(
-      finalPrompt,
-      worthAssessmentSchema,
-      `worth-assessment-${task.id}`
-    );
+    const customId = `worth-assessment-${task.id}`;
+    await this.makeOpenAIRequest(finalPrompt, worthAssessmentSchema, customId);
+    
+    // Wait for the result to be available
+    const response = await this.getOpenAIResult(customId);
 
     return {
       worthAsFractionOfGDP: response.worthAsFractionOfGDP,
@@ -201,7 +220,8 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
   private async randomizePrompt(originalPrompt: string): Promise<string> {
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
-    const response = await this.makeOpenAIRequest(
+    const customId = `randomize-${uuidv4()}`;
+    await this.makeOpenAIRequest(
       randomizeRequest,
       {
         type: "object",
@@ -213,9 +233,10 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
         },
         required: ["randomizedPrompt"]
       },
-      `randomize-${uuidv4()}`
+      customId
     );
 
+    const response = await this.getOpenAIResult(customId);
     return response.randomizedPrompt;
   }
 }
@@ -228,11 +249,11 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = injectionPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const response = await this.makeOpenAIRequest(
-      prompt,
-      promptInjectionSchema,
-      `prompt-injection-${task.id}`
-    );
+    const customId = `prompt-injection-${task.id}`;
+    await this.makeOpenAIRequest(prompt, promptInjectionSchema, customId);
+    
+    // Wait for the result to be available
+    const response = await this.getOpenAIResult(customId);
 
     return {
       hasPromptInjection: response.hasPromptInjection,
@@ -274,19 +295,30 @@ export class MedianRunner implements TaskRunner {
         throw new Error(`Task with ID ${taskId} not found`);
       }
 
-      // Extract worth values from dependency results
+      // Extract worth values from dependency results using createAIOutputter
       const worthValues: number[] = [];
       
       for (const dep of task.dependencies) {
-        if (dep.dependency.runnerData) {
-          try {
-            const depData = JSON.parse(dep.dependency.runnerData);
-            if (depData.aiResult && typeof depData.aiResult.worthAsFractionOfGDP === 'number') {
-              worthValues.push(depData.aiResult.worthAsFractionOfGDP);
+        try {
+          // Create a store and outputter to retrieve the dependency result
+          const store = await createAIBatchStore(undefined);
+          const outputter = await createAIOutputter(store);
+          
+          // Try to get the result using the custom ID pattern
+          const customId = `worth-assessment-${dep.dependency.id}`;
+          const response = await outputter.getOutput(customId);
+          
+          if (response) {
+            const content = (response as any).choices[0]?.message?.content;
+            if (content) {
+              const result = JSON.parse(content);
+              if (typeof result.worthAsFractionOfGDP === 'number') {
+                worthValues.push(result.worthAsFractionOfGDP);
+              }
             }
-          } catch (error) {
-            console.warn(`Failed to parse dependency ${dep.dependency.id} data:`, error);
           }
+        } catch (error) {
+          console.warn(`Failed to retrieve dependency ${dep.dependency.id} result:`, error);
         }
       }
 
@@ -363,21 +395,32 @@ export class WorthThresholdCheckRunner implements TaskRunner {
         throw new Error(`Task with ID ${taskId} not found`);
       }
 
-      // Get the worth value from the first dependency
+      // Get the worth value from the first dependency using createAIOutputter
       let worthValue: number | null = null;
       const threshold = this.data.threshold || 1e-11;
 
       for (const dep of task.dependencies) {
-        if (dep.dependency.runnerData) {
-          try {
-            const depData = JSON.parse(dep.dependency.runnerData);
-            if (depData.aiResult && typeof depData.aiResult.worthAsFractionOfGDP === 'number') {
-              worthValue = depData.aiResult.worthAsFractionOfGDP;
-              break;
+        try {
+          // Create a store and outputter to retrieve the dependency result
+          const store = await createAIBatchStore(undefined);
+          const outputter = await createAIOutputter(store);
+          
+          // Try to get the result using the custom ID pattern
+          const customId = `worth-assessment-${dep.dependency.id}`;
+          const response = await outputter.getOutput(customId);
+          
+          if (response) {
+            const content = (response as any).choices[0]?.message?.content;
+            if (content) {
+              const result = JSON.parse(content);
+              if (typeof result.worthAsFractionOfGDP === 'number') {
+                worthValue = result.worthAsFractionOfGDP;
+                break;
+              }
             }
-          } catch (error) {
-            console.warn(`Failed to parse dependency ${dep.dependency.id} data:`, error);
           }
+        } catch (error) {
+          console.warn(`Failed to retrieve dependency ${dep.dependency.id} result:`, error);
         }
       }
 

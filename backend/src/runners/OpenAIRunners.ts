@@ -414,7 +414,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
 }
 
 /**
- * TaskRunner for assessing user worth as fraction of GDP
+ * TaskRunner for assessing user worth as fraction of GDP using randomized prompts
  * Uses a randomized prompt from a dependency to assess user worth
  */
 export class WorthAssessmentRunner extends BaseOpenAIRunner {
@@ -441,6 +441,24 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
   private async getRandomizedPromptFromDependency(task: TaskWithDependencies): Promise<string> {
     const response: RandomizedPromptResponse = await this.getDependencyResult(task, 'RandomizePromptRunner');
     return response.randomizedPrompt;
+  }
+}
+
+/**
+ * Specialized TaskRunner for assessing user worth as fraction of GDP using worthPrompt directly
+ * This runner uses the original worthPrompt without randomization and handles the specific
+ * execution pattern: once initially, then twice more if value > 1e-11
+ */
+export class WorthAsFractionOfGDPRunner extends BaseOpenAIRunner {
+  /**
+   * Initiate the worth assessment request using the original worthPrompt
+   * @param task - The task containing user data
+   */
+  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+    const userData = this.data.userData || {};
+    const finalPrompt = worthPrompt.replace('<DATA>', JSON.stringify(userData));
+    
+    await this.initiateOpenAIRequest(task, finalPrompt, worthAssessmentSchema);
   }
 }
 
@@ -501,7 +519,7 @@ export class MedianRunner extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     // Extract worth values from dependency results
-    const worthValues = await this.processDependencyResults(task, 'WorthAssessmentRunner');
+    const worthValues = await this.processDependencyResults(task, 'WorthAsFractionOfGDPRunner');
 
     if (worthValues.length === 0) {
       throw new DependencyError('No valid worth values found in dependencies', undefined, task.id, this.constructor.name);
@@ -565,7 +583,7 @@ export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
     const threshold = this.data.threshold || DEFAULT_THRESHOLD;
     
     // Get worth values from dependencies
-    const worthValues = await this.processDependencyResults(task, 'WorthAssessmentRunner');
+    const worthValues = await this.processDependencyResults(task, 'WorthAsFractionOfGDPRunner');
     
     if (worthValues.length === 0) {
       throw new DependencyError('No valid worth value found in dependencies', undefined, task.id, this.constructor.name);
@@ -662,6 +680,7 @@ export function registerOpenAIRunners(): void {
   TaskRunnerRegistry.register('ScientistCheckRunner', ScientistOnboardingRunner);
   TaskRunnerRegistry.register('RandomizePromptRunner', RandomizePromptRunner);
   TaskRunnerRegistry.register('WorthAssessmentRunner', WorthAssessmentRunner);
+  TaskRunnerRegistry.register('WorthAsFractionOfGDPRunner', WorthAsFractionOfGDPRunner);
   TaskRunnerRegistry.register('PromptInjectionRunner', PromptInjectionRunner);
   TaskRunnerRegistry.register('WorthThresholdCheckRunner', WorthThresholdCheckRunner);
   TaskRunnerRegistry.register('MedianRunner', MedianRunner);

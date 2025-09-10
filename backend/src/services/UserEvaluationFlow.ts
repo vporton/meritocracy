@@ -30,11 +30,8 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistCheckTask = await this.createScientistCheckTask(evaluationData);
     
-    // Step 2: Create the randomize prompt task (depends on scientist check)
-    const randomizePromptTask = await this.createRandomizePromptTask(evaluationData, [scientistCheckTask.id]);
-    
-    // Step 3: Create the first worth assessment task (depends on randomize prompt)
-    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizePromptTask.id]);
+    // Step 2: Create the first worth assessment task using WorthAsFractionOfGDPRunner (depends on scientist check)
+    const firstWorthTask = await this.createWorthAsFractionOfGDPTask(evaluationData, [scientistCheckTask.id]);
     
     // Step 3: Create conditional tasks based on worth threshold
     const conditionalTasks = await this.createConditionalTasks(evaluationData, firstWorthTask.id);
@@ -93,7 +90,7 @@ export class UserEvaluationFlow {
   }
 
   /**
-   * Create a worth assessment task
+   * Create a worth assessment task using randomized prompts
    */
   private async createWorthAssessmentTask(
     evaluationData: UserEvaluationData, 
@@ -103,6 +100,36 @@ export class UserEvaluationFlow {
       data: {
         status: TaskStatus.PENDING,
         runnerClassName: 'WorthAssessmentRunner',
+        runnerData: JSON.stringify({
+          userData: evaluationData.userData
+        })
+      }
+    });
+
+    // Create dependencies
+    for (const depId of dependencies) {
+      await this.prisma.taskDependency.create({
+        data: {
+          taskId: task.id,
+          dependencyId: depId
+        }
+      });
+    }
+
+    return task;
+  }
+
+  /**
+   * Create a worth assessment task using WorthAsFractionOfGDPRunner (worthPrompt directly)
+   */
+  private async createWorthAsFractionOfGDPTask(
+    evaluationData: UserEvaluationData, 
+    dependencies: number[]
+  ) {
+    const task = await this.prisma.task.create({
+      data: {
+        status: TaskStatus.PENDING,
+        runnerClassName: 'WorthAsFractionOfGDPRunner',
         runnerData: JSON.stringify({
           userData: evaluationData.userData
         })
@@ -219,7 +246,7 @@ export class UserEvaluationFlow {
   }
 
   /**
-   * Create 2 additional worth assessment tasks
+   * Create 2 additional worth assessment tasks using WorthAsFractionOfGDPRunner
    */
   private async createAdditionalWorthTasks(
     evaluationData: UserEvaluationData,
@@ -228,9 +255,8 @@ export class UserEvaluationFlow {
     const tasks = [];
     
     for (let i = 0; i < 2; i++) {
-      // Create a new randomize prompt task for each worth assessment
-      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
-      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+      // Create additional worth assessment tasks using WorthAsFractionOfGDPRunner directly
+      const worthTask = await this.createWorthAsFractionOfGDPTask(evaluationData, dependencies);
       tasks.push(worthTask);
     }
 

@@ -106,7 +106,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 
   protected abstract executeOpenAIRequest(task: any): Promise<void>;
 
-  protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
+  public async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId);
     const outputter = await createAIOutputter(store);
     
@@ -313,28 +313,10 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
 /**
  * TaskRunner for calculating median from dependency results
  */
-export class MedianRunner implements TaskRunner {
-  private data: TaskRunnerData;
-  private prisma: PrismaClient;
-
-  constructor(data: TaskRunnerData) {
-    this.data = data;
-    this.prisma = new PrismaClient();
-  }
-
-  private async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
-    const store = await createAIBatchStore(storeId);
-    const outputter = await createAIOutputter(store);
-    
-    const response = await outputter.getOutputOrThrow(customId);
-    
-    // Parse the response content
-    const content = (response as any).choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response content received from OpenAI');
-    }
-    
-    return JSON.parse(content);
+export class MedianRunner extends BaseOpenAIRunner {
+  protected async executeOpenAIRequest(task: any): Promise<void> {
+    // This runner doesn't make OpenAI requests, it processes results from dependencies
+    // The actual work is done in the run method
   }
 
   async run(taskId: number): Promise<void> {
@@ -442,28 +424,10 @@ export class MedianRunner implements TaskRunner {
 /**
  * TaskRunner for checking if worth exceeds threshold
  */
-export class WorthThresholdCheckRunner implements TaskRunner {
-  private data: TaskRunnerData;
-  private prisma: PrismaClient;
-
-  constructor(data: TaskRunnerData) {
-    this.data = data;
-    this.prisma = new PrismaClient();
-  }
-
-  private async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
-    const store = await createAIBatchStore(storeId);
-    const outputter = await createAIOutputter(store);
-    
-    const response = await outputter.getOutputOrThrow(customId);
-    
-    // Parse the response content
-    const content = (response as any).choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response content received from OpenAI');
-    }
-    
-    return JSON.parse(content);
+export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
+  protected async executeOpenAIRequest(task: any): Promise<void> {
+    // This runner doesn't make OpenAI requests, it processes results from dependencies
+    // The actual work is done in the run method
   }
 
   async run(taskId: number): Promise<void> {

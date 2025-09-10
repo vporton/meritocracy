@@ -67,41 +67,63 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       console.log(`🤖 Running OpenAI TaskRunner: ${this.constructor.name} for task ${taskId}`);
       
       // Get task data from database
-      const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          dependencies: {
-            include: {
-              dependency: true,
-            },
-          },
-        },
-      });
-
-      if (!task) {
-        throw new Error(`Task with ID ${taskId} not found`);
-      }
+      const task = await this.getTaskWithDependencies(taskId);
 
       // Check if all dependencies are completed
-      const incompleteDependencies = task.dependencies.filter(dep => 
-        dep.dependency.status !== 'COMPLETED'
-      );
-
-      if (incompleteDependencies.length > 0) {
+      if (!this.areDependenciesCompleted(task)) {
         console.log(`⏳ Task ${taskId} has incomplete dependencies, remaining PENDING`);
         return; // Task remains in PENDING state
       }
 
-      // Execute the specific OpenAI request (this should only initiate the request)
-      await this.initiateRequest(task);
+      // Execute the specific logic (either OpenAI request or custom processing)
+      await this.executeTask(task);
       
-      console.log(`✅ OpenAI TaskRunner ${this.constructor.name} initiated request for task ${taskId}`);
+      console.log(`✅ OpenAI TaskRunner ${this.constructor.name} completed for task ${taskId}`);
     } catch (error) {
       console.error(`❌ Error in OpenAI TaskRunner ${this.constructor.name}:`, error);
       throw error;
     } finally {
       await this.prisma.$disconnect();
     }
+  }
+
+  /**
+   * Get task with dependencies from database
+   */
+  protected async getTaskWithDependencies(taskId: number): Promise<any> {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        dependencies: {
+          include: {
+            dependency: true,
+          },
+        },
+      },
+    });
+
+    if (!task) {
+      throw new Error(`Task with ID ${taskId} not found`);
+    }
+
+    return task;
+  }
+
+  /**
+   * Check if all dependencies are completed
+   */
+  protected areDependenciesCompleted(task: any): boolean {
+    const incompleteDependencies = task.dependencies.filter((dep: any) => 
+      dep.dependency.status !== 'COMPLETED'
+    );
+    return incompleteDependencies.length === 0;
+  }
+
+  /**
+   * Execute the task - can be overridden for custom logic
+   */
+  protected async executeTask(task: any): Promise<void> {
+    await this.initiateRequest(task);
   }
 
   protected abstract initiateRequest(task: any): Promise<void>;
@@ -292,97 +314,62 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
 export class MedianRunner extends BaseOpenAIRunner {
   protected async initiateRequest(task: any): Promise<void> {
     // This runner doesn't make OpenAI requests, it processes results from dependencies
-    // The actual work is done in the run method
+    // The actual work is done in executeTask
   }
 
-  async run(taskId: number): Promise<void> {
-    try {
-      console.log(`📊 Running Median TaskRunner for task ${taskId}`);
-      
-      // Get task and its dependencies
-      const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          dependencies: {
-            include: {
-              dependency: true,
-            },
-          },
-        },
-      });
-
-      if (!task) {
-        throw new Error(`Task with ID ${taskId} not found`);
-      }
-
-      // Check if all dependencies are completed
-      const incompleteDependencies = task.dependencies.filter(dep => 
-        dep.dependency.status !== 'COMPLETED'
-      );
-
-      if (incompleteDependencies.length > 0) {
-        console.log(`⏳ Task ${taskId} has incomplete dependencies, remaining PENDING`);
-        return; // Task remains in PENDING state
-      }
-
-      // Extract worth values from dependency results
-      const worthValues: number[] = [];
-      
-      for (const dep of task.dependencies) {
-        try {
-          // Get the dependency task data
-          if (!dep.dependency.runnerData) {
-            console.warn(`Dependency ${dep.dependency.id} has no runner data`);
-            continue;
-          }
-
-          const depData = JSON.parse(dep.dependency.runnerData);
-          if (!depData.customId || !depData.storeId) {
-            console.warn(`Dependency ${dep.dependency.id} missing customId or storeId`);
-            continue;
-          }
-
-          // Get the result from the dependency
-          const response = await this.getOpenAIResult({ 
-            customId: depData.customId, 
-            storeId: depData.storeId 
-          });
-
-          if (typeof response.worthAsFractionOfGDP === 'number') {
-            worthValues.push(response.worthAsFractionOfGDP);
-          }
-        } catch (error) {
-          console.warn(`Failed to retrieve dependency ${dep.dependency.id} result:`, error);
+  protected async executeTask(task: any): Promise<void> {
+    // Extract worth values from dependency results
+    const worthValues: number[] = [];
+    
+    for (const dep of task.dependencies) {
+      try {
+        // Get the dependency task data
+        if (!dep.dependency.runnerData) {
+          console.warn(`Dependency ${dep.dependency.id} has no runner data`);
+          continue;
         }
-      }
 
-      if (worthValues.length === 0) {
-        throw new Error('No valid worth values found in dependencies');
-      }
-
-      // Calculate median
-      const median = this.calculateMedian(worthValues);
-      
-      // Store the result
-      await this.prisma.task.update({
-        where: { id: taskId },
-        data: {
-          runnerData: JSON.stringify({
-            ...this.data,
-            medianWorth: median,
-            sourceValues: worthValues,
-            completedAt: new Date().toISOString()
-          })
+        const depData = JSON.parse(dep.dependency.runnerData);
+        if (!depData.customId || !depData.storeId) {
+          console.warn(`Dependency ${dep.dependency.id} missing customId or storeId`);
+          continue;
         }
-      });
 
-      console.log(`✅ Median TaskRunner completed for task ${taskId}. Median: ${median}`);
-    } catch (error) {
-      console.error(`❌ Error in Median TaskRunner:`, error);
-      throw error;
-    } finally {
-      await this.prisma.$disconnect();
+        // Get the result from the dependency
+        const response = await this.getOpenAIResult({ 
+          customId: depData.customId, 
+          storeId: depData.storeId 
+        });
+
+        if (typeof response.worthAsFractionOfGDP === 'number') {
+          worthValues.push(response.worthAsFractionOfGDP);
+        }
+      } catch (error) {
+        console.warn(`Failed to retrieve dependency ${dep.dependency.id} result:`, error);
+      }
     }
+
+    if (worthValues.length === 0) {
+      throw new Error('No valid worth values found in dependencies');
+    }
+
+    // Calculate median
+    const median = this.calculateMedian(worthValues);
+    
+    // Store the result
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        runnerData: JSON.stringify({
+          ...this.data,
+          medianWorth: median,
+          sourceValues: worthValues,
+          completedAt: new Date().toISOString()
+        })
+      }
+    });
+
+    console.log(`✅ Median TaskRunner completed for task ${task.id}. Median: ${median}`);
   }
 
   private calculateMedian(values: number[]): number {
@@ -403,154 +390,107 @@ export class MedianRunner extends BaseOpenAIRunner {
 export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
   protected async initiateRequest(task: any): Promise<void> {
     // This runner doesn't make OpenAI requests, it processes results from dependencies
-    // The actual work is done in the run method
+    // The actual work is done in executeTask
   }
 
-  async run(taskId: number): Promise<void> {
-    try {
-      console.log(`📊 Running Worth Threshold Check TaskRunner for task ${taskId}`);
-      
-      // Get task and its dependencies
-      const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          dependencies: {
-            include: {
-              dependency: true,
-            },
-          },
-        },
-      });
+  protected async executeTask(task: any): Promise<void> {
+    // Get the worth value from the first dependency
+    let worthValue: number | null = null;
+    const threshold = this.data.threshold || 1e-11;
 
-      if (!task) {
-        throw new Error(`Task with ID ${taskId} not found`);
-      }
-
-      // Check if all dependencies are completed
-      const incompleteDependencies = task.dependencies.filter(dep => 
-        dep.dependency.status !== 'COMPLETED'
-      );
-
-      if (incompleteDependencies.length > 0) {
-        console.log(`⏳ Task ${taskId} has incomplete dependencies, remaining PENDING`);
-        return; // Task remains in PENDING state
-      }
-
-      // Get the worth value from the first dependency
-      let worthValue: number | null = null;
-      const threshold = this.data.threshold || 1e-11;
-
-      for (const dep of task.dependencies) {
-        try {
-          // Get the dependency task data
-          if (!dep.dependency.runnerData) {
-            console.warn(`Dependency ${dep.dependency.id} has no runner data`);
-            continue;
-          }
-
-          const depData = JSON.parse(dep.dependency.runnerData);
-          if (!depData.customId || !depData.storeId) {
-            console.warn(`Dependency ${dep.dependency.id} missing customId or storeId`);
-            continue;
-          }
-
-          // Get the result from the dependency
-          const response = await this.getOpenAIResult({ 
-            customId: depData.customId, 
-            storeId: depData.storeId 
-          });
-
-          if (typeof response.worthAsFractionOfGDP === 'number') {
-            worthValue = response.worthAsFractionOfGDP;
-            break;
-          }
-        } catch (error) {
-          console.warn(`Failed to retrieve dependency ${dep.dependency.id} result:`, error);
+    for (const dep of task.dependencies) {
+      try {
+        // Get the dependency task data
+        if (!dep.dependency.runnerData) {
+          console.warn(`Dependency ${dep.dependency.id} has no runner data`);
+          continue;
         }
-      }
 
-      if (worthValue === null) {
-        throw new Error('No valid worth value found in dependencies');
-      }
-
-      const exceedsThreshold = worthValue > threshold;
-      
-      // Store the result
-      await this.prisma.task.update({
-        where: { id: taskId },
-        data: {
-          runnerData: JSON.stringify({
-            ...this.data,
-            worthValue,
-            threshold,
-            exceedsThreshold,
-            completedAt: new Date().toISOString()
-          })
+        const depData = JSON.parse(dep.dependency.runnerData);
+        if (!depData.customId || !depData.storeId) {
+          console.warn(`Dependency ${dep.dependency.id} missing customId or storeId`);
+          continue;
         }
-      });
 
-      console.log(`✅ Worth Threshold Check completed for task ${taskId}. Worth: ${worthValue}, Exceeds: ${exceedsThreshold}`);
-    } catch (error) {
-      console.error(`❌ Error in Worth Threshold Check TaskRunner:`, error);
-      throw error;
-    } finally {
-      await this.prisma.$disconnect();
+        // Get the result from the dependency
+        const response = await this.getOpenAIResult({ 
+          customId: depData.customId, 
+          storeId: depData.storeId 
+        });
+
+        if (typeof response.worthAsFractionOfGDP === 'number') {
+          worthValue = response.worthAsFractionOfGDP;
+          break;
+        }
+      } catch (error) {
+        console.warn(`Failed to retrieve dependency ${dep.dependency.id} result:`, error);
+      }
     }
+
+    if (worthValue === null) {
+      throw new Error('No valid worth value found in dependencies');
+    }
+
+    const exceedsThreshold = worthValue > threshold;
+    
+    // Store the result
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        runnerData: JSON.stringify({
+          ...this.data,
+          worthValue,
+          threshold,
+          exceedsThreshold,
+          completedAt: new Date().toISOString()
+        })
+      }
+    });
+
+    console.log(`✅ Worth Threshold Check completed for task ${task.id}. Worth: ${worthValue}, Exceeds: ${exceedsThreshold}`);
   }
 }
 
 /**
  * TaskRunner for banning users (when prompt injection is detected)
  */
-export class BanUserRunner implements TaskRunner {
-  private data: TaskRunnerData;
-  private prisma: PrismaClient;
-
-  constructor(data: TaskRunnerData) {
-    this.data = data;
-    this.prisma = new PrismaClient();
+export class BanUserRunner extends BaseOpenAIRunner {
+  protected async initiateRequest(task: any): Promise<void> {
+    // This runner doesn't make OpenAI requests, it bans users
+    // The actual work is done in executeTask
   }
 
-  async run(taskId: number): Promise<void> {
-    try {
-      console.log(`🚫 Running Ban User TaskRunner for task ${taskId}`);
-      
-      const userId = this.data.userId;
-      if (!userId) {
-        throw new Error('User ID is required for banning');
-      }
-
-      // Ban user for 1 year
-      const banUntil = new Date();
-      banUntil.setFullYear(banUntil.getFullYear() + 1);
-
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          bannedTill: banUntil
-        }
-      });
-
-      // Store the result
-      await this.prisma.task.update({
-        where: { id: taskId },
-        data: {
-          runnerData: JSON.stringify({
-            ...this.data,
-            bannedUntil: banUntil.toISOString(),
-            reason: 'Prompt injection detected',
-            completedAt: new Date().toISOString()
-          })
-        }
-      });
-
-      console.log(`✅ User ${userId} banned until ${banUntil.toISOString()}`);
-    } catch (error) {
-      console.error(`❌ Error in Ban User TaskRunner:`, error);
-      throw error;
-    } finally {
-      await this.prisma.$disconnect();
+  protected async executeTask(task: any): Promise<void> {
+    const userId = this.data.userId;
+    if (!userId) {
+      throw new Error('User ID is required for banning');
     }
+
+    // Ban user for 1 year
+    const banUntil = new Date();
+    banUntil.setFullYear(banUntil.getFullYear() + 1);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        bannedTill: banUntil
+      }
+    });
+
+    // Store the result
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        runnerData: JSON.stringify({
+          ...this.data,
+          bannedUntil: banUntil.toISOString(),
+          reason: 'Prompt injection detected',
+          completedAt: new Date().toISOString()
+        })
+      }
+    });
+
+    console.log(`✅ User ${userId} banned until ${banUntil.toISOString()}`);
   }
 }
 

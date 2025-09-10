@@ -85,11 +85,14 @@ model NonBatchMapping {
 }
 
 model Task {
-  id          Int        @id @default(autoincrement())
-  status      TaskStatus @default(PENDING)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  completedAt DateTime?
+  id             Int      @id @default(autoincrement())
+  status         String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  runnerName     String?  // Name of the TaskRunner
+  runnerClassName String? // Name of the class implementing TaskRunner interface
+  runnerData     String?  // JSON data to pass to the runner
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  completedAt    DateTime?
   
   // Self-referencing relationships for dependencies
   // Tasks that this task depends on (prerequisites)
@@ -115,9 +118,4 @@ model TaskDependency {
   @@map("task_dependencies")
 }
 
-enum TaskStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
+

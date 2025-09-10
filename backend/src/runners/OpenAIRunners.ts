@@ -135,6 +135,12 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       // Get task data from database
       const task = await this.getTaskWithDependencies(taskId);
 
+      // Check if any dependencies are cancelled - if so, cancel this task too
+      if (this.areAnyDependenciesCancelled(task)) {
+        await this.markTaskAsCancelled(task, 'Dependency was cancelled');
+        return;
+      }
+
       // Check if all dependencies are completed
       if (!this.areDependenciesCompleted(task)) {
         this.log('info', `⏳ Task has incomplete dependencies, remaining PENDING`, { taskId, dependenciesCount: task.dependencies.length });
@@ -188,6 +194,43 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       dep.dependency.status !== 'COMPLETED'
     );
     return incompleteDependencies.length === 0;
+  }
+
+  /**
+   * Check if any dependencies are cancelled
+   * @param task - The task with dependencies to check
+   * @returns True if any dependency is cancelled, false otherwise
+   */
+  protected areAnyDependenciesCancelled(task: TaskWithDependencies): boolean {
+    const cancelledDependencies = task.dependencies.filter(dep => 
+      dep.dependency.status === 'CANCELLED'
+    );
+    return cancelledDependencies.length > 0;
+  }
+
+  /**
+   * Mark task as cancelled
+   * @param task - The task to mark as cancelled
+   * @param reason - Reason for cancellation
+   */
+  protected async markTaskAsCancelled(task: TaskWithDependencies, reason: string): Promise<void> {
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        status: 'CANCELLED',
+        runnerData: JSON.stringify({
+          ...this.data,
+          cancelled: true,
+          reason,
+          cancelledAt: new Date().toISOString()
+        })
+      }
+    });
+
+    this.log('info', `🚫 Task cancelled`, { 
+      taskId: task.id, 
+      reason 
+    });
   }
 
   /**
@@ -572,8 +615,44 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
 /**
  * TaskRunner for randomizing prompts
  * Takes an original prompt and creates a randomized version while preserving meaning
+ * Can be conditionally cancelled based on worth threshold dependencies
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
+  /**
+   * Execute the task with conditional logic based on worth threshold
+   * @param task - The task to execute
+   */
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
+    // Check if this is a randomization task for prompt injection that depends on worth threshold
+    const isInjectionRandomization = this.data.originalPrompt === injectionPrompt;
+    
+    if (isInjectionRandomization) {
+      // Check if any dependency is a WorthThresholdCheckRunner that didn't exceed threshold
+      const thresholdDep = task.dependencies.find(dep => 
+        dep.dependency.runnerClassName === 'WorthThresholdCheckRunner'
+      );
+
+      if (thresholdDep && thresholdDep.dependency.status === 'COMPLETED' && thresholdDep.dependency.runnerData) {
+        try {
+          const thresholdData = JSON.parse(thresholdDep.dependency.runnerData);
+          if (!thresholdData.exceedsThreshold) {
+            // Worth <= 1e-11, cancel this randomization task
+            await this.markTaskAsCancelled(task, 'Worth threshold not exceeded (<=1e-11), skipping prompt injection randomization');
+            return;
+          }
+        } catch (error) {
+          this.log('warn', `Failed to parse threshold check result`, { 
+            thresholdTaskId: thresholdDep.dependency.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+    }
+
+    // If no cancellation condition met, proceed with normal execution
+    await this.initiateRequest(task);
+  }
+
   /**
    * Initiate the prompt randomization request
    * @param task - The task containing the original prompt to randomize
@@ -592,6 +671,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
 /**
  * TaskRunner for detecting prompt injection using randomized prompts
  * Analyzes user data to detect deliberate prompt injection attempts
+ * If injection is detected, bans the user directly and marks task as CANCELLED
  */
 export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   /**
@@ -619,27 +699,109 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     const hasParentInjectionDetection = await this.checkParentInjectionDetection(task);
     
     if (hasParentInjectionDetection) {
-      // Skip the actual injection check and return true directly
-      await this.prisma.task.update({
-        where: { id: task.id },
-        data: {
-          runnerData: JSON.stringify({
-            ...this.data,
-            hasPromptInjection: true,
-            why: 'Injection already detected by parent PromptInjectionRunner task',
-            completedAt: new Date().toISOString()
-          })
-        }
-      });
-
-      this.log('info', `✅ PromptInjectionRunner skipped - parent already detected injection`, { 
-        taskId: task.id 
-      });
+      // Skip the actual injection check and return true directly, then ban user
+      await this.handleInjectionDetected(task, 'Injection already detected by parent PromptInjectionRunner task');
       return;
     }
 
     // If no parent detected injection, proceed with normal execution
     await this.initiateRequest(task);
+  }
+
+  /**
+   * Handle the case when prompt injection is detected
+   * Bans the user and marks the task as CANCELLED
+   * @param task - The task to process
+   * @param reason - Reason for injection detection
+   */
+  private async handleInjectionDetected(task: TaskWithDependencies, reason: string): Promise<void> {
+    const userId = this.data.userId;
+    if (!userId) {
+      throw new TaskRunnerError('User ID is required for banning when injection is detected', task.id, this.constructor.name);
+    }
+
+    // Ban user for specified duration
+    const banUntil = new Date();
+    banUntil.setFullYear(banUntil.getFullYear() + BAN_DURATION_YEARS);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        bannedTill: banUntil
+      }
+    });
+
+    // Mark task as CANCELLED (not COMPLETED) since injection was detected
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        status: 'CANCELLED',
+        runnerData: JSON.stringify({
+          ...this.data,
+          hasPromptInjection: true,
+          why: reason,
+          bannedUntil: banUntil.toISOString(),
+          reason: 'Prompt injection detected - user banned',
+          cancelledAt: new Date().toISOString()
+        })
+      }
+    });
+
+    this.log('info', `🚫 Prompt injection detected - user banned and task cancelled`, { 
+      taskId: task.id,
+      userId, 
+      bannedUntil: banUntil.toISOString(),
+      reason
+    });
+  }
+
+  /**
+   * Override the base method to handle injection detection after OpenAI request
+   * @param task - The task to process
+   */
+  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+    const userData = this.data.userData || {};
+    
+    // Get randomized prompt from dependency (randomizePrompt task)
+    const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
+    const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
+    
+    // Make the OpenAI request
+    const customId = uuidv4();
+    await this.updateTaskWithRequestData(task, customId);
+    const result = await this.makeOpenAIRequest(finalPrompt, this.getResponseSchema(), customId);
+    
+    // Get the result and check for injection
+    const response: PromptInjectionResponse = await this.getOpenAIResult({ 
+      customId, 
+      storeId: result.storeId 
+    });
+
+    if (response.hasPromptInjection) {
+      // Injection detected - ban user and mark as CANCELLED
+      await this.handleInjectionDetected(task, response.why);
+    } else {
+      // No injection detected - mark as completed normally
+      await this.prisma.task.update({
+        where: { id: task.id },
+        data: {
+          status: 'COMPLETED',
+          runnerData: JSON.stringify({
+            ...this.data,
+            customId,
+            storeId: result.storeId,
+            hasPromptInjection: false,
+            why: response.why,
+            completedAt: new Date().toISOString()
+          })
+        }
+      });
+
+      this.log('info', `✅ No prompt injection detected`, { 
+        taskId: task.id,
+        why: response.why
+      });
+    }
   }
 
   /**
@@ -899,61 +1061,6 @@ export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
   }
 }
 
-/**
- * TaskRunner for banning users (when prompt injection is detected)
- * Bans users for a specified duration when prompt injection is detected
- */
-export class BanUserRunner extends BaseOpenAIRunner {
-  /**
-   * No OpenAI request needed - this runner bans users
-   * @param task - The task to process
-   */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    // This runner doesn't make OpenAI requests, it bans users
-    // The actual work is done in executeTask
-  }
-
-  /**
-   * Execute the user ban operation
-   * @param task - The task containing user ID to ban
-   */
-  protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    const userId = this.data.userId;
-    if (!userId) {
-      throw new TaskRunnerError('User ID is required for banning', task.id, this.constructor.name);
-    }
-
-    // Ban user for specified duration
-    const banUntil = new Date();
-    banUntil.setFullYear(banUntil.getFullYear() + BAN_DURATION_YEARS);
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        bannedTill: banUntil
-      }
-    });
-
-    // Store the result
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        runnerData: JSON.stringify({
-          ...this.data,
-          bannedUntil: banUntil.toISOString(),
-          reason: 'Prompt injection detected',
-          completedAt: new Date().toISOString()
-        })
-      }
-    });
-
-    this.log('info', `✅ User banned`, { 
-      userId, 
-      bannedUntil: banUntil.toISOString(),
-      reason: 'Prompt injection detected'
-    });
-  }
-}
 
 /**
  * Register all OpenAI TaskRunners with the TaskRunnerRegistry
@@ -966,5 +1073,4 @@ export function registerOpenAIRunners(): void {
   TaskRunnerRegistry.register('PromptInjectionRunner', PromptInjectionRunner);
   TaskRunnerRegistry.register('WorthThresholdCheckRunner', WorthThresholdCheckRunner);
   TaskRunnerRegistry.register('MedianRunner', MedianRunner);
-  TaskRunnerRegistry.register('BanUserRunner', BanUserRunner);
 }

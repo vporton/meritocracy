@@ -140,14 +140,10 @@ export class UserEvaluationFlow {
     // Create additional worth assessment tasks (2 more)
     const additionalWorthTasks = await this.createAdditionalWorthTasks(evaluationData, [worthCheckTask.id]);
     
-    // Create ban task (depends on prompt injection tasks)
-    const banTask = await this.createBanTask(evaluationData, promptInjectionTasks.map(t => t.id));
-
     return {
       worthCheckTask,
       promptInjectionTasks,
       additionalWorthTasks,
-      banTask,
       worthTasks: [firstWorthTaskId, ...additionalWorthTasks.map(t => t.id)]
     };
   }
@@ -202,6 +198,7 @@ export class UserEvaluationFlow {
           status: TaskStatus.PENDING,
           runnerClassName: 'PromptInjectionRunner',
           runnerData: JSON.stringify({
+            userId: evaluationData.userId,
             userData: evaluationData.userData,
             checkNumber: i + 1
           })
@@ -244,36 +241,6 @@ export class UserEvaluationFlow {
     return tasks;
   }
 
-  /**
-   * Create ban task
-   */
-  private async createBanTask(
-    evaluationData: UserEvaluationData,
-    dependencies: number[]
-  ) {
-    const task = await this.prisma.task.create({
-      data: {
-        status: TaskStatus.PENDING,
-        runnerClassName: 'BanUserRunner',
-        runnerData: JSON.stringify({
-          userId: evaluationData.userId,
-          reason: 'Prompt injection detected'
-        })
-      }
-    });
-
-    // Create dependencies
-    for (const depId of dependencies) {
-      await this.prisma.taskDependency.create({
-        data: {
-          taskId: task.id,
-          dependencyId: depId
-        }
-      });
-    }
-
-    return task;
-  }
 
   /**
    * Create median calculation task

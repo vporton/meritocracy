@@ -117,8 +117,11 @@ const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
 /// Centralized code. Probably, should be refactored.
 export async function createAIBatchStore(storeId: string | undefined) {
-  // Temporarily return null to avoid flexible-batches dependency
-  return null;
+  const result = openAIFlexMode === 'batch' ?
+    new OurBatchStore(prisma, storeId) :
+    new OurNonBatchStore(prisma, storeId);
+  await result.init();
+  return result;
 }
 
 export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
@@ -129,9 +132,12 @@ export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatc
   return result;
 }
 
-export async function createAIOutputter(store: any) {
-  // Temporarily return null to avoid flexible-batches dependency
-  return null;
+export async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+  const result = openAIFlexMode === 'batch' ?
+    new FlexibleOpenAIBatchOutput(openai, store as FlexibleBatchStore) :
+    new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);
+  await result.init();
+  return result;
 }
 
 /**

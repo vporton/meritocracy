@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { TaskStatus } from '../types/task.js';
-import { worthPrompt } from '../prompts.js';
+import { worthPrompt, injectionPrompt } from '../prompts.js';
 
 export interface UserEvaluationData {
   userId: number;
@@ -30,13 +30,16 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistCheckTask = await this.createScientistCheckTask(evaluationData);
     
-    // Step 2: Create the first worth assessment task using WorthAsFractionOfGDPRunner (depends on scientist check)
-    const firstWorthTask = await this.createWorthAsFractionOfGDPTask(evaluationData, [scientistCheckTask.id]);
+    // Step 2: Create a randomization task for the worth prompt
+    const randomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistCheckTask.id]);
     
-    // Step 3: Create conditional tasks based on worth threshold
+    // Step 3: Create the first worth assessment task using WorthAssessmentRunner (depends on randomization)
+    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+    
+    // Step 4: Create conditional tasks based on worth threshold
     const conditionalTasks = await this.createConditionalTasks(evaluationData, firstWorthTask.id);
     
-    // Step 4: Create the final median calculation task
+    // Step 5: Create the final median calculation task
     const medianTask = await this.createMedianTask(evaluationData, conditionalTasks.worthTasks);
     
     console.log(`✅ Evaluation flow created with root task ${scientistCheckTask.id}`);
@@ -63,14 +66,15 @@ export class UserEvaluationFlow {
    */
   private async createRandomizePromptTask(
     evaluationData: UserEvaluationData,
-    dependencies: number[]
+    dependencies: number[],
+    originalPrompt: string = worthPrompt
   ) {
     const task = await this.prisma.task.create({
       data: {
         status: TaskStatus.PENDING,
         runnerClassName: 'RandomizePromptRunner',
         runnerData: JSON.stringify({
-          originalPrompt: worthPrompt,
+          originalPrompt,
           userData: evaluationData.userData
         })
       }
@@ -119,35 +123,6 @@ export class UserEvaluationFlow {
     return task;
   }
 
-  /**
-   * Create a worth assessment task using WorthAsFractionOfGDPRunner (worthPrompt directly)
-   */
-  private async createWorthAsFractionOfGDPTask(
-    evaluationData: UserEvaluationData, 
-    dependencies: number[]
-  ) {
-    const task = await this.prisma.task.create({
-      data: {
-        status: TaskStatus.PENDING,
-        runnerClassName: 'WorthAsFractionOfGDPRunner',
-        runnerData: JSON.stringify({
-          userData: evaluationData.userData
-        })
-      }
-    });
-
-    // Create dependencies
-    for (const depId of dependencies) {
-      await this.prisma.taskDependency.create({
-        data: {
-          taskId: task.id,
-          dependencyId: depId
-        }
-      });
-    }
-
-    return task;
-  }
 
   /**
    * Create conditional tasks based on worth threshold
@@ -209,7 +184,7 @@ export class UserEvaluationFlow {
   }
 
   /**
-   * Create 3 prompt injection check tasks
+   * Create 3 prompt injection check tasks using randomized prompts
    */
   private async createPromptInjectionTasks(
     evaluationData: UserEvaluationData,
@@ -218,6 +193,10 @@ export class UserEvaluationFlow {
     const tasks = [];
     
     for (let i = 0; i < 3; i++) {
+      // Create a randomization task for each prompt injection check
+      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, injectionPrompt);
+      
+      // Create the prompt injection task that depends on the randomization
       const task = await this.prisma.task.create({
         data: {
           status: TaskStatus.PENDING,
@@ -229,15 +208,13 @@ export class UserEvaluationFlow {
         }
       });
 
-      // Create dependencies
-      for (const depId of dependencies) {
-        await this.prisma.taskDependency.create({
-          data: {
-            taskId: task.id,
-            dependencyId: depId
-          }
-        });
-      }
+      // Create dependency on the randomization task
+      await this.prisma.taskDependency.create({
+        data: {
+          taskId: task.id,
+          dependencyId: randomizeTask.id
+        }
+      });
 
       tasks.push(task);
     }
@@ -246,7 +223,7 @@ export class UserEvaluationFlow {
   }
 
   /**
-   * Create 2 additional worth assessment tasks using WorthAsFractionOfGDPRunner
+   * Create 2 additional worth assessment tasks using WorthAssessmentRunner
    */
   private async createAdditionalWorthTasks(
     evaluationData: UserEvaluationData,
@@ -255,8 +232,10 @@ export class UserEvaluationFlow {
     const tasks = [];
     
     for (let i = 0; i < 2; i++) {
-      // Create additional worth assessment tasks using WorthAsFractionOfGDPRunner directly
-      const worthTask = await this.createWorthAsFractionOfGDPTask(evaluationData, dependencies);
+      // Create a randomization task for each worth assessment
+      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
+      // Create additional worth assessment tasks using WorthAssessmentRunner
+      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
       tasks.push(worthTask);
     }
 

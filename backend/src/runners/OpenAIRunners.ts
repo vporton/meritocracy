@@ -352,6 +352,49 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 }
 
 /**
+ * Abstract base class for runners that use randomized prompts from dependencies
+ * Provides common functionality for retrieving and using randomized prompts
+ */
+abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
+  /**
+   * Retrieve the randomized prompt from the RandomizePromptRunner dependency
+   * @param task - The task with dependencies
+   * @returns The randomized prompt string
+   * @throws Error if dependency is not found or has invalid data
+   */
+  protected async getRandomizedPromptFromDependency(task: TaskWithDependencies): Promise<string> {
+    const response: RandomizedPromptResponse = await this.getDependencyResult(task, 'RandomizePromptRunner');
+    return response.randomizedPrompt;
+  }
+
+  /**
+   * Abstract method to get the original prompt that should be randomized
+   * @returns The original prompt string
+   */
+  protected abstract getOriginalPrompt(): string;
+
+  /**
+   * Abstract method to get the JSON schema for the response
+   * @returns The JSON schema object
+   */
+  protected abstract getResponseSchema(): any;
+
+  /**
+   * Initiate the request using a randomized prompt from dependency
+   * @param task - The task containing user data and dependencies
+   */
+  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+    const userData = this.data.userData || {};
+    
+    // Get randomized prompt from dependency (randomizePrompt task)
+    const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
+    const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
+    
+    await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema());
+  }
+}
+
+/**
  * TaskRunner for checking if a user is an active scientist or FOSS developer
  * Uses OpenAI to analyze user data and determine if they are an active scientist or FOSS developer
  */
@@ -372,50 +415,24 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
  * TaskRunner for assessing user worth as fraction of GDP using randomized prompts
  * Uses a randomized prompt from a dependency to assess user worth
  */
-export class WorthAssessmentRunner extends BaseOpenAIRunner {
+export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
   /**
-   * Initiate the worth assessment request using a randomized prompt
-   * @param task - The task containing user data and dependencies
+   * Get the original prompt that should be randomized
+   * @returns The original worth prompt
    */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    const userData = this.data.userData || {};
-    
-    // Get randomized prompt from dependency (randomizePrompt task)
-    const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
-    const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
-    
-    await this.initiateOpenAIRequest(task, finalPrompt, worthAssessmentSchema);
+  protected getOriginalPrompt(): string {
+    return worthPrompt;
   }
 
   /**
-   * Retrieve the randomized prompt from the RandomizePromptRunner dependency
-   * @param task - The task with dependencies
-   * @returns The randomized prompt string
-   * @throws Error if dependency is not found or has invalid data
+   * Get the JSON schema for the response
+   * @returns The worth assessment schema
    */
-  private async getRandomizedPromptFromDependency(task: TaskWithDependencies): Promise<string> {
-    const response: RandomizedPromptResponse = await this.getDependencyResult(task, 'RandomizePromptRunner');
-    return response.randomizedPrompt;
+  protected getResponseSchema(): any {
+    return worthAssessmentSchema;
   }
 }
 
-/**
- * Specialized TaskRunner for assessing user worth as fraction of GDP using worthPrompt directly
- * This runner uses the original worthPrompt without randomization and handles the specific
- * execution pattern: once initially, then twice more if value > 1e-11
- */
-export class WorthAsFractionOfGDPRunner extends BaseOpenAIRunner {
-  /**
-   * Initiate the worth assessment request using the original worthPrompt
-   * @param task - The task containing user data
-   */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    const userData = this.data.userData || {};
-    const finalPrompt = worthPrompt.replace('<DATA>', JSON.stringify(userData));
-    
-    await this.initiateOpenAIRequest(task, finalPrompt, worthAssessmentSchema);
-  }
-}
 
 /**
  * TaskRunner for randomizing prompts
@@ -438,19 +455,24 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
 }
 
 /**
- * TaskRunner for detecting prompt injection
+ * TaskRunner for detecting prompt injection using randomized prompts
  * Analyzes user data to detect deliberate prompt injection attempts
  */
-export class PromptInjectionRunner extends BaseOpenAIRunner {
+export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   /**
-   * Initiate the prompt injection detection request
-   * @param task - The task containing user data to analyze
+   * Get the original prompt that should be randomized
+   * @returns The original injection prompt
    */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    const userData = this.data.userData || {};
-    const prompt = injectionPrompt.replace('<DATA>', JSON.stringify(userData));
-    
-    await this.initiateOpenAIRequest(task, prompt, promptInjectionSchema);
+  protected getOriginalPrompt(): string {
+    return injectionPrompt;
+  }
+
+  /**
+   * Get the JSON schema for the response
+   * @returns The prompt injection schema
+   */
+  protected getResponseSchema(): any {
+    return promptInjectionSchema;
   }
 }
 
@@ -500,7 +522,7 @@ export class MedianRunner extends BaseOpenAIRunner {
   }
 
   /**
-   * Process dependency results and extract worth values from WorthAsFractionOfGDPRunner
+   * Process dependency results and extract worth values from WorthAssessmentRunner
    * @param task - The task with dependencies
    * @returns Array of worth values from dependencies
    */
@@ -613,7 +635,7 @@ export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
   }
 
   /**
-   * Process dependency results and extract worth values from WorthAsFractionOfGDPRunner
+   * Process dependency results and extract worth values from WorthAssessmentRunner
    * @param task - The task with dependencies
    * @returns Array of worth values from dependencies
    */
@@ -719,7 +741,6 @@ export function registerOpenAIRunners(): void {
   TaskRunnerRegistry.register('ScientistCheckRunner', ScientistOnboardingRunner);
   TaskRunnerRegistry.register('RandomizePromptRunner', RandomizePromptRunner);
   TaskRunnerRegistry.register('WorthAssessmentRunner', WorthAssessmentRunner);
-  TaskRunnerRegistry.register('WorthAsFractionOfGDPRunner', WorthAsFractionOfGDPRunner);
   TaskRunnerRegistry.register('PromptInjectionRunner', PromptInjectionRunner);
   TaskRunnerRegistry.register('WorthThresholdCheckRunner', WorthThresholdCheckRunner);
   TaskRunnerRegistry.register('MedianRunner', MedianRunner);

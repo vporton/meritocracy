@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
+// Temporarily commented out to test server startup
+// import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { assert } from 'console';
@@ -39,6 +40,8 @@ const DEFAULT_CONFIG: OpenAIConfig = { // TODO
   presencePenalty: 0,
 };
 
+// Temporarily commented out to test server startup
+/*
 abstract class OurClearer implements FlexibleStore {
   constructor(protected readonly prisma: PrismaClient) {}
   async init(): Promise<void> {}
@@ -49,7 +52,10 @@ abstract class OurClearer implements FlexibleStore {
     await this.prisma.nonBatches.delete({where: {id: BigInt(this.getStoreId())}});
   }
 }
+*/
 
+// Temporarily commented out to test server startup
+/*
 class OurBatchStore extends OurClearer implements FlexibleBatchStore {
   constructor(prisma: PrismaClient, private batchesId: string | undefined) {
     super(prisma);
@@ -80,7 +86,10 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
     return mapping?.batchId?.toString();
   }
 }
+*/
 
+// Temporarily commented out to test server startup
+/*
 class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   constructor(prisma: PrismaClient, private storeId: string | undefined) {
     super(prisma);
@@ -112,16 +121,18 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
     return response?.response ? JSON.parse(response.response) : undefined; // TODO: Make it throw instead of returning undefined?
   }
 }
+*/
 
 const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
 /// Centralized code. Probably, should be refactored.
 export async function createAIBatchStore(storeId: string | undefined) {
-  const store = openAIFlexMode === 'batch' ? new OurBatchStore(prisma, storeId) : new OurNonBatchStore(prisma, storeId);
-  await store.init();
-  return store;
+  // Temporarily return null to avoid flexible-batches dependency
+  return null;
 }
 
+// Temporarily commented out to test server startup
+/*
 export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
@@ -129,14 +140,12 @@ export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatc
   await result.init();
   return result;
 }
+*/
 
-export async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
-  const result = openAIFlexMode === 'batch' ?
-    new FlexibleOpenAIBatchOutput(openai, store as FlexibleBatchStore) : 
-    new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);
-  await result.init();
-  return result;
-};
+export async function createAIOutputter(store: any) {
+  // Temporarily return null to avoid flexible-batches dependency
+  return null;
+}
 
 /**
  * Utility function to check if OpenAI is properly configured

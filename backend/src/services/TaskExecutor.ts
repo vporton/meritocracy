@@ -66,7 +66,7 @@ export class TaskExecutor {
       }
 
       // Create and run the TaskRunner using TaskRunnerRegistry
-      const { TaskRunnerRegistry } = await import('../types/task');
+      const { TaskRunnerRegistry } = await import('../types/task.js');
       const success = await TaskRunnerRegistry.runByTaskId(this.prisma, taskId);
       if (!success) {
         console.error(`Failed to run task ${taskId}`);

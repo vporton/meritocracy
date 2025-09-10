@@ -4,6 +4,12 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 
+// Polyfill fetch for Node.js
+if (!globalThis.fetch) {
+  const fetch = require('node-fetch');
+  globalThis.fetch = fetch;
+}
+
 dotenv.config();
 
 import userRoutes from './routes/users';

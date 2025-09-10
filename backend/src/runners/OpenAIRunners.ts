@@ -152,7 +152,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 /**
  * TaskRunner for checking if a user is an active scientist or FOSS developer
  */
-export class ScientistCheckRunner extends BaseOpenAIRunner {
+export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   protected async executeOpenAIRequest(task: any): Promise<any> {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
@@ -490,7 +490,7 @@ export class BanUserRunner implements TaskRunner {
 
 // Register all OpenAI TaskRunners
 export function registerOpenAIRunners(): void {
-  TaskRunnerRegistry.register('ScientistCheckRunner', ScientistCheckRunner);
+  TaskRunnerRegistry.register('ScientistCheckRunner', ScientistOnboardingRunner);
   TaskRunnerRegistry.register('WorthAssessmentRunner', WorthAssessmentRunner);
   TaskRunnerRegistry.register('PromptInjectionRunner', PromptInjectionRunner);
   TaskRunnerRegistry.register('WorthThresholdCheckRunner', WorthThresholdCheckRunner);

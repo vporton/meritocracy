@@ -1,12 +1,10 @@
-// Task status constants for type safety
-export const TASK_STATUS = {
-  PENDING: 'PENDING',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED'
-} as const;
-
-export type TaskStatus = typeof TASK_STATUS[keyof typeof TASK_STATUS];
+// Task status enum for type safety
+export enum TaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
 
 // Helper functions for task management
 export class TaskHelper {
@@ -14,12 +12,12 @@ export class TaskHelper {
    * Check if a task is ready to start (all dependencies completed)
    */
   static isTaskReady(task: any): boolean {
-    if (task.status !== TASK_STATUS.PENDING) {
+    if (task.status !== TaskStatus.PENDING) {
       return false;
     }
     
     return task.dependencies.every((dep: any) => 
-      dep.dependency.status === TASK_STATUS.COMPLETED
+      dep.dependency.status === TaskStatus.COMPLETED
     );
   }
 

@@ -85,15 +85,15 @@ model NonBatchMapping {
 }
 
 model Task {
-  id          Int      @id @default(autoincrement())
-  status      String @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int        @id @default(autoincrement())
+  status      TaskStatus @default(PENDING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   completedAt DateTime?
   
   // Self-referencing relationships for dependencies
   // Tasks that this task depends on (prerequisites)
-  dependencies TaskDependency[] @relation("TaskDependencies")
+  dependencies TaskDependeusency[] @relation("TaskDependencies")
   // Tasks that depend on this task (dependents)
   dependents   TaskDependency[] @relation("TaskDependents")
 
@@ -113,4 +113,11 @@ model TaskDependency {
   // Ensure no duplicate dependencies
   @@unique([taskId, dependencyId])
   @@map("task_dependencies")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }

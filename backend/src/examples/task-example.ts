@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { TaskStatus } from '../types/task';
 
 const prisma = new PrismaClient();
 
@@ -7,19 +8,19 @@ async function taskExample() {
     // Create some tasks
     const task1 = await prisma.task.create({
       data: {
-        status: 'PENDING',
+        status: TaskStatus.PENDING,
       },
     });
 
     const task2 = await prisma.task.create({
       data: {
-        status: 'PENDING',
+        status: TaskStatus.PENDING,
       },
     });
 
     const task3 = await prisma.task.create({
       data: {
-        status: 'PENDING',
+        status: TaskStatus.PENDING,
       },
     });
 
@@ -66,7 +67,7 @@ async function taskExample() {
     await prisma.task.update({
       where: { id: task1.id },
       data: {
-        status: 'COMPLETED',
+        status: TaskStatus.COMPLETED,
         completedAt: new Date(),
       },
     });
@@ -74,11 +75,11 @@ async function taskExample() {
     // Query tasks that are now ready to start (all dependencies completed)
     const readyTasks = await prisma.task.findMany({
       where: {
-        status: 'PENDING',
+        status: TaskStatus.PENDING,
         dependencies: {
           every: {
             dependency: {
-              status: 'COMPLETED',
+              status: TaskStatus.COMPLETED,
             },
           },
         },

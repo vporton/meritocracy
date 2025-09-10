@@ -188,8 +188,10 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     additionalData: any = {}
   ): Promise<void> {
     const customId = uuidv4();
-    await this.makeOpenAIRequest(prompt, schema, customId);
+    // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
+    // Then initiate the OpenAI request
+    await this.makeOpenAIRequest(prompt, schema, customId);
   }
 }
 

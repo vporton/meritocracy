@@ -87,7 +87,6 @@ model NonBatchMapping {
 model Task {
   id             Int      @id @default(autoincrement())
   status         String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
-  runnerName     String?  // Name of the TaskRunner
   runnerClassName String? // Name of the class implementing TaskRunner interface
   runnerData     String?  // JSON data to pass to the runner
   createdAt      DateTime @default(now())

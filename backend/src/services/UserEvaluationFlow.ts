@@ -224,6 +224,7 @@ export class UserEvaluationFlow {
 
   /**
    * Create 2 additional worth assessment tasks using WorthAssessmentRunner
+   * These tasks depend on both randomization and the worth threshold check
    */
   private async createAdditionalWorthTasks(
     evaluationData: UserEvaluationData,
@@ -235,7 +236,8 @@ export class UserEvaluationFlow {
       // Create a randomization task for each worth assessment
       const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
       // Create additional worth assessment tasks using WorthAssessmentRunner
-      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+      // These depend on both randomization and the threshold check (dependencies includes threshold check)
+      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id, ...dependencies]);
       tasks.push(worthTask);
     }
 

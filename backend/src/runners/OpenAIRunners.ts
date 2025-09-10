@@ -414,6 +414,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
 /**
  * TaskRunner for assessing user worth as fraction of GDP using randomized prompts
  * Uses a randomized prompt from a dependency to assess user worth
+ * Can optionally depend on WorthThresholdCheckRunner and return undefined if threshold not met
  */
 export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
   /**
@@ -430,6 +431,73 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
    */
   protected getResponseSchema(): any {
     return worthAssessmentSchema;
+  }
+
+  /**
+   * Execute the task with optional threshold check dependency
+   * @param task - The task to execute
+   */
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
+    // Check if this runner depends on WorthThresholdCheckRunner
+    const thresholdCheckDep = task.dependencies.find(dep => 
+      dep.dependency.runnerClassName === 'WorthThresholdCheckRunner'
+    );
+
+    if (thresholdCheckDep) {
+      // If we have a threshold check dependency, check its result first
+      const thresholdResult = await this.getThresholdCheckResult(thresholdCheckDep.dependency);
+      
+      if (thresholdResult && !thresholdResult.exceedsThreshold) {
+        // If threshold not exceeded, return undefined instead of making OpenAI request
+        await this.prisma.task.update({
+          where: { id: task.id },
+          data: {
+            runnerData: JSON.stringify({
+              ...this.data,
+              worthAsFractionOfGDP: undefined,
+              why: 'Threshold not exceeded, skipping assessment',
+              completedAt: new Date().toISOString()
+            })
+          }
+        });
+
+        this.log('info', `✅ Worth Assessment skipped due to threshold`, { 
+          taskId: task.id, 
+          thresholdValue: thresholdResult.worthValue,
+          threshold: thresholdResult.threshold
+        });
+        return;
+      }
+    }
+
+    // If no threshold dependency or threshold exceeded, proceed with normal OpenAI request
+    await this.initiateRequest(task);
+  }
+
+  /**
+   * Get the threshold check result from a dependency
+   * @param thresholdTask - The threshold check task
+   * @returns The threshold check result or null if not available
+   */
+  private async getThresholdCheckResult(thresholdTask: any): Promise<any> {
+    if (!thresholdTask.runnerData) {
+      return null;
+    }
+
+    try {
+      const thresholdData = JSON.parse(thresholdTask.runnerData);
+      return {
+        worthValue: thresholdData.worthValue,
+        threshold: thresholdData.threshold,
+        exceedsThreshold: thresholdData.exceedsThreshold
+      };
+    } catch (error) {
+      this.log('warn', `Failed to parse threshold check result`, { 
+        thresholdTaskId: thresholdTask.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
   }
 }
 
@@ -538,6 +606,17 @@ export class MedianRunner extends BaseOpenAIRunner {
         }
 
         const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
+        
+        // Check if this is a WorthAssessmentRunner that returned undefined directly
+        if (dep.dependency.runnerClassName === 'WorthAssessmentRunner' && 
+            depData.worthAsFractionOfGDP !== undefined) {
+          // This runner returned undefined (threshold not met), skip it
+          this.log('info', `Skipping WorthAssessmentRunner with undefined result (threshold not met)`, { 
+            dependencyId: dep.dependency.id 
+          });
+          continue;
+        }
+        
         if (!depData.customId || !depData.storeId) {
           this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
           continue;

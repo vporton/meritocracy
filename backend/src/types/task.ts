@@ -88,4 +88,31 @@ export class TaskRunnerRegistry {
       return false;
     }
   }
+
+  /**
+   * Mark a task as completed by task ID
+   * This method updates the task status to COMPLETED and sets the completedAt timestamp
+   */
+  static async completeTask(
+    prisma: any,
+    taskId: number
+  ): Promise<boolean> {
+    try {
+      // Update the task status to COMPLETED and set completedAt timestamp
+      const updatedTask = await prisma.task.update({
+        where: { id: taskId },
+        data: {
+          status: TaskStatus.COMPLETED,
+          completedAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+
+      console.log(`✅ Task ${taskId} marked as COMPLETED`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Error completing task ${taskId}:`, error);
+      return false;
+    }
+  }
 }

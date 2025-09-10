@@ -83,3 +83,34 @@ model NonBatchMapping {
 
   @@map("non_batch_mappings")
 }
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  status      String @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  completedAt DateTime?
+  
+  // Self-referencing relationships for dependencies
+  // Tasks that this task depends on (prerequisites)
+  dependencies TaskDependency[] @relation("TaskDependencies")
+  // Tasks that depend on this task (dependents)
+  dependents   TaskDependency[] @relation("TaskDependents")
+
+  @@map("tasks")
+}
+
+model TaskDependency {
+  id           Int @id @default(autoincrement())
+  taskId       Int
+  dependencyId Int
+  
+  // The task that has the dependency
+  task         Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  // The task that is the dependency (prerequisite)
+  dependency   Task @relation("TaskDependents", fields: [dependencyId], references: [id], onDelete: Cascade)
+
+  // Ensure no duplicate dependencies
+  @@unique([taskId, dependencyId])
+  @@map("task_dependencies")
+}

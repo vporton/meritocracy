@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { TaskStatus } from '../types/task.js';
+import { worthPrompt } from '../prompts.js';
 
 export interface UserEvaluationData {
   userId: number;
@@ -29,8 +30,11 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistCheckTask = await this.createScientistCheckTask(evaluationData);
     
-    // Step 2: Create the first worth assessment task (depends on scientist check)
-    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [scientistCheckTask.id]);
+    // Step 2: Create the randomize prompt task (depends on scientist check)
+    const randomizePromptTask = await this.createRandomizePromptTask(evaluationData, [scientistCheckTask.id]);
+    
+    // Step 3: Create the first worth assessment task (depends on randomize prompt)
+    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizePromptTask.id]);
     
     // Step 3: Create conditional tasks based on worth threshold
     const conditionalTasks = await this.createConditionalTasks(evaluationData, firstWorthTask.id);
@@ -55,6 +59,37 @@ export class UserEvaluationFlow {
         })
       }
     });
+  }
+
+  /**
+   * Create a randomize prompt task
+   */
+  private async createRandomizePromptTask(
+    evaluationData: UserEvaluationData,
+    dependencies: number[]
+  ) {
+    const task = await this.prisma.task.create({
+      data: {
+        status: TaskStatus.PENDING,
+        runnerClassName: 'RandomizePromptRunner',
+        runnerData: JSON.stringify({
+          originalPrompt: worthPrompt,
+          userData: evaluationData.userData
+        })
+      }
+    });
+
+    // Create dependencies
+    for (const depId of dependencies) {
+      await this.prisma.taskDependency.create({
+        data: {
+          taskId: task.id,
+          dependencyId: depId
+        }
+      });
+    }
+
+    return task;
   }
 
   /**
@@ -193,8 +228,10 @@ export class UserEvaluationFlow {
     const tasks = [];
     
     for (let i = 0; i < 2; i++) {
-      const task = await this.createWorthAssessmentTask(evaluationData, dependencies);
-      tasks.push(task);
+      // Create a new randomize prompt task for each worth assessment
+      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
+      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+      tasks.push(worthTask);
     }
 
     return tasks;

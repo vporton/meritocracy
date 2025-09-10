@@ -16,16 +16,26 @@ The user evaluation system creates a flow graph of tasks that:
 
 ## Architecture
 
+### Asynchronous Task Execution
+
+The system uses an asynchronous task execution model:
+
+- **TaskRunners only initiate requests** - they don't wait for OpenAI responses
+- **Dependency validation** - Tasks only run when all dependencies are COMPLETED
+- **Result retrieval** - Tasks that depend on others retrieve results from completed dependencies
+- **Flexible-batch integration** - Uses `createAIBatchStore()` and `createAIOutputter()` for efficient OpenAI API usage
+
 ### TaskRunners
 
 The system implements several TaskRunner classes:
 
-- **`ScientistCheckRunner`**: Uses OpenAI to check if user is an active scientist/FOSS dev
-- **`WorthAssessmentRunner`**: Uses OpenAI to assess user worth with randomized prompts
+- **`ScientistOnboardingRunner`**: Uses OpenAI to check if user is an active scientist/FOSS dev
+- **`RandomizePromptRunner`**: Uses OpenAI to randomize prompts while preserving meaning
+- **`WorthAssessmentRunner`**: Uses OpenAI to assess user worth with randomized prompts (depends on RandomizePromptRunner)
 - **`PromptInjectionRunner`**: Uses OpenAI to detect prompt injection attempts
-- **`WorthThresholdCheckRunner`**: Checks if worth exceeds 1e-11 threshold
-- **`MedianRunner`**: Calculates median from dependency results
-- **`BanUserRunner`**: Bans users when prompt injection is detected
+- **`WorthThresholdCheckRunner`**: Checks if worth exceeds 1e-11 threshold (depends on WorthAssessmentRunner)
+- **`MedianRunner`**: Calculates median from dependency results (depends on WorthAssessmentRunners)
+- **`BanUserRunner`**: Bans users when prompt injection is detected (depends on PromptInjectionRunners)
 
 ### Flow Graph
 
@@ -33,6 +43,12 @@ The system implements several TaskRunner classes:
                     ┌─────────────────┐
                     │  Scientist      │
                     │  Check          │
+                    └─────────┬───────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Randomize      │
+                    │  Prompt         │
                     └─────────┬───────┘
                               │
                               ▼
@@ -59,11 +75,23 @@ The system implements several TaskRunner classes:
                                │                   │
                                ▼                   ▼
                        ┌─────────────┐    ┌─────────────────┐
-                       │  Ban User   │    │  Worth          │
-                       │ (1 year)    │    │  Assessment #2  │
+                       │  Ban User   │    │  Randomize      │
+                       │ (1 year)    │    │  Prompt #2      │
                        └─────────────┘    └─────────┬───────┘
                                                     │
                                                     ▼
+                                           ┌─────────────────┐
+                                           │  Worth          │
+                                           │  Assessment #2  │
+                                           └─────────┬───────┘
+                                                     │
+                                                     ▼
+                                           ┌─────────────────┐
+                                           │  Randomize      │
+                                           │  Prompt #3      │
+                                           └─────────┬───────┘
+                                                     │
+                                                     ▼
                                            ┌─────────────────┐
                                            │  Worth          │
                                            │  Assessment #3  │

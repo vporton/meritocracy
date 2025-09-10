@@ -17,3 +17,5 @@
 
 - If I close MetaMask window immediately after clicking "Connect with Ethereum",
   the button stucks in unclickable state "Connecting..."
+
+- Inefficient checking for whether all dependencies are COMPLETE.

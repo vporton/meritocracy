@@ -267,7 +267,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     await runner.flush();
     
     // Return the store ID for later result retrieval
-    return { storeId: store.getStoreId() };
+    return { storeId: store.getStoreId() }; // TODO: `storeId` should be stored in the database before flushing?
   }
 
   /**

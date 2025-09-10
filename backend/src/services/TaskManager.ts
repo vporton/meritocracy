@@ -216,9 +216,9 @@ export class TaskManager {
       const orphanedTaskIds: number[] = [];
       
       for (const [dependencyId, dependents] of dependencyMap) {
-        // Check if all dependent tasks are COMPLETED
+        // Check if all dependent tasks are COMPLETED or CANCELLED
         const allDependentsCompleted = dependents.every(
-          (dependent) => dependent.status === TaskStatus.COMPLETED
+          (dependent) => dependent.status === TaskStatus.COMPLETED || dependent.status === TaskStatus.CANCELLED
         );
 
         if (allDependentsCompleted && dependents.length > 0) {

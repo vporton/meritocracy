@@ -93,7 +93,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       }
 
       // Execute the specific OpenAI request (this should only initiate the request)
-      await this.executeOpenAIRequest(task);
+      await this.initiateRequest(task);
       
       console.log(`✅ OpenAI TaskRunner ${this.constructor.name} initiated request for task ${taskId}`);
     } catch (error) {
@@ -104,7 +104,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     }
   }
 
-  protected abstract executeOpenAIRequest(task: any): Promise<void>;
+  protected abstract initiateRequest(task: any): Promise<void>;
 
   public async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId);
@@ -197,7 +197,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
  * TaskRunner for checking if a user is an active scientist or FOSS developer
  */
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
-  protected async executeOpenAIRequest(task: any): Promise<void> {
+  protected async initiateRequest(task: any): Promise<void> {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     
@@ -209,7 +209,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
  * TaskRunner for assessing user worth as fraction of GDP
  */
 export class WorthAssessmentRunner extends BaseOpenAIRunner {
-  protected async executeOpenAIRequest(task: any): Promise<void> {
+  protected async initiateRequest(task: any): Promise<void> {
     const userData = this.data.userData || {};
     
     // Get randomized prompt from dependency (randomizePrompt task)
@@ -253,7 +253,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
  * TaskRunner for randomizing prompts
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
-  protected async executeOpenAIRequest(task: any): Promise<void> {
+  protected async initiateRequest(task: any): Promise<void> {
     const originalPrompt = this.data.originalPrompt;
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
@@ -276,7 +276,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
  * TaskRunner for detecting prompt injection
  */
 export class PromptInjectionRunner extends BaseOpenAIRunner {
-  protected async executeOpenAIRequest(task: any): Promise<void> {
+  protected async initiateRequest(task: any): Promise<void> {
     const userData = this.data.userData || {};
     const prompt = injectionPrompt.replace('<DATA>', JSON.stringify(userData));
     
@@ -288,7 +288,7 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
  * TaskRunner for calculating median from dependency results
  */
 export class MedianRunner extends BaseOpenAIRunner {
-  protected async executeOpenAIRequest(task: any): Promise<void> {
+  protected async initiateRequest(task: any): Promise<void> {
     // This runner doesn't make OpenAI requests, it processes results from dependencies
     // The actual work is done in the run method
   }
@@ -399,7 +399,7 @@ export class MedianRunner extends BaseOpenAIRunner {
  * TaskRunner for checking if worth exceeds threshold
  */
 export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
-  protected async executeOpenAIRequest(task: any): Promise<void> {
+  protected async initiateRequest(task: any): Promise<void> {
     // This runner doesn't make OpenAI requests, it processes results from dependencies
     // The actual work is done in the run method
   }

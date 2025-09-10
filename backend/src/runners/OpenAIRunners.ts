@@ -116,7 +116,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 
   protected async storeResult(taskId: number, result: any): Promise<void> {
     // Store the AI response in a custom field or related table
-    // For now, we'll store it in the runnerData field
+    // For now, we'll store it in the runnerData field // FIXME: Storing in the runnerData field is wrong.
     await this.prisma.task.update({
       where: { id: taskId },
       data: {

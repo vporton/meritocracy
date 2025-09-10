@@ -169,7 +169,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = `scientist-check-${task.id}`;
+    const customId = uuidv4();
     await this.makeOpenAIRequest(prompt, scientistCheckSchema, customId);
     
     // Store the customId and storeId for later result retrieval
@@ -198,7 +198,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
     const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = `worth-assessment-${task.id}`;
+    const customId = uuidv4();
     await this.makeOpenAIRequest(finalPrompt, worthAssessmentSchema, customId);
     
     // Store the customId and storeId for later result retrieval
@@ -253,7 +253,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     const originalPrompt = this.data.originalPrompt || worthPrompt;
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
-    const customId = `randomize-prompt-${task.id}`;
+    const customId = uuidv4();
     await this.makeOpenAIRequest(
       randomizeRequest,
       {
@@ -292,7 +292,7 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = injectionPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = `prompt-injection-${task.id}`;
+    const customId = uuidv4();
     await this.makeOpenAIRequest(prompt, promptInjectionSchema, customId);
     
     // Store the customId and storeId for later result retrieval

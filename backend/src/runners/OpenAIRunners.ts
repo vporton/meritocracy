@@ -434,10 +434,33 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
   }
 
   /**
-   * Execute the task with optional threshold check dependency
+   * Execute the task with optional threshold check dependency and prompt injection check
    * @param task - The task to execute
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
+    // First, check if any parent dependency (or their parents) is a PromptInjectionRunner that detected injection
+    const hasParentInjectionDetection = await this.checkParentInjectionDetection(task);
+    
+    if (hasParentInjectionDetection) {
+      // If injection detected by parent, return undefined instead of making OpenAI request
+      await this.prisma.task.update({
+        where: { id: task.id },
+        data: {
+          runnerData: JSON.stringify({
+            ...this.data,
+            worthAsFractionOfGDP: undefined,
+            why: 'Prompt injection detected by parent PromptInjectionRunner task, skipping worth assessment',
+            completedAt: new Date().toISOString()
+          })
+        }
+      });
+
+      this.log('info', `✅ Worth Assessment skipped due to parent injection detection`, { 
+        taskId: task.id 
+      });
+      return;
+    }
+
     // Check if this runner depends on WorthThresholdCheckRunner
     const thresholdCheckDep = task.dependencies.find(dep => 
       dep.dependency.runnerClassName === 'WorthThresholdCheckRunner'
@@ -470,7 +493,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
       }
     }
 
-    // If no threshold dependency or threshold exceeded, proceed with normal OpenAI request
+    // If no injection detected and no threshold dependency or threshold exceeded, proceed with normal OpenAI request
     await this.initiateRequest(task);
   }
 
@@ -498,6 +521,50 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
       });
       return null;
     }
+  }
+
+  /**
+   * Recursively check if any parent dependency (or their parents) is a PromptInjectionRunner that detected injection
+   * @param task - The task to check dependencies for
+   * @returns True if any parent PromptInjectionRunner detected injection
+   */
+  private async checkParentInjectionDetection(task: TaskWithDependencies): Promise<boolean> {
+    for (const dep of task.dependencies) {
+      const depTask = dep.dependency;
+      
+      // Check if this dependency is a PromptInjectionRunner
+      if (depTask.runnerClassName === 'PromptInjectionRunner') {
+        // Check if it's completed and has detected injection
+        if (depTask.status === 'COMPLETED' && depTask.runnerData) {
+          try {
+            const depData = JSON.parse(depTask.runnerData);
+            if (depData.hasPromptInjection === true) {
+              this.log('info', `Found parent PromptInjectionRunner with injection detection`, { 
+                parentTaskId: depTask.id,
+                currentTaskId: task.id
+              });
+              return true;
+            }
+          } catch (error) {
+            this.log('warn', `Failed to parse parent PromptInjectionRunner data`, { 
+              parentTaskId: depTask.id,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      }
+
+      // Recursively check this dependency's dependencies
+      if (depTask.status === 'COMPLETED') {
+        const depTaskWithDeps = await this.getTaskWithDependencies(depTask.id);
+        const hasNestedInjectionDetection = await this.checkParentInjectionDetection(depTaskWithDeps);
+        if (hasNestedInjectionDetection) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 }
 
@@ -541,6 +608,82 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    */
   protected getResponseSchema(): any {
     return promptInjectionSchema;
+  }
+
+  /**
+   * Execute the task with optimization: skip if parent PromptInjectionRunner already detected injection
+   * @param task - The task to execute
+   */
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
+    // Check if any parent dependency (or their parents) is a PromptInjectionRunner that returned true
+    const hasParentInjectionDetection = await this.checkParentInjectionDetection(task);
+    
+    if (hasParentInjectionDetection) {
+      // Skip the actual injection check and return true directly
+      await this.prisma.task.update({
+        where: { id: task.id },
+        data: {
+          runnerData: JSON.stringify({
+            ...this.data,
+            hasPromptInjection: true,
+            why: 'Injection already detected by parent PromptInjectionRunner task',
+            completedAt: new Date().toISOString()
+          })
+        }
+      });
+
+      this.log('info', `✅ PromptInjectionRunner skipped - parent already detected injection`, { 
+        taskId: task.id 
+      });
+      return;
+    }
+
+    // If no parent detected injection, proceed with normal execution
+    await this.initiateRequest(task);
+  }
+
+  /**
+   * Recursively check if any parent dependency (or their parents) is a PromptInjectionRunner that detected injection
+   * @param task - The task to check dependencies for
+   * @returns True if any parent PromptInjectionRunner detected injection
+   */
+  private async checkParentInjectionDetection(task: TaskWithDependencies): Promise<boolean> {
+    for (const dep of task.dependencies) {
+      const depTask = dep.dependency;
+      
+      // Check if this dependency is a PromptInjectionRunner
+      if (depTask.runnerClassName === 'PromptInjectionRunner') {
+        // Check if it's completed and has detected injection
+        if (depTask.status === 'COMPLETED' && depTask.runnerData) {
+          try {
+            const depData = JSON.parse(depTask.runnerData);
+            if (depData.hasPromptInjection === true) {
+              this.log('info', `Found parent PromptInjectionRunner with injection detection`, { 
+                parentTaskId: depTask.id,
+                currentTaskId: task.id
+              });
+              return true;
+            }
+          } catch (error) {
+            this.log('warn', `Failed to parse parent PromptInjectionRunner data`, { 
+              parentTaskId: depTask.id,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      }
+
+      // Recursively check this dependency's dependencies
+      if (depTask.status === 'COMPLETED') {
+        const depTaskWithDeps = await this.getTaskWithDependencies(depTask.id);
+        const hasNestedInjectionDetection = await this.checkParentInjectionDetection(depTaskWithDeps);
+        if (hasNestedInjectionDetection) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 }
 

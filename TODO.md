@@ -19,3 +19,6 @@
   the button stucks in unclickable state "Connecting..."
 
 - Inefficient checking for whether all dependencies are COMPLETE.
+
+- I mistakenly Vibe-coded thee dependency of "How much is the user worth?" both to >1e-11 and
+  "Is there prompt injection?" as parent of parent. So, I do run prompt randomization in any case. That's wrong.

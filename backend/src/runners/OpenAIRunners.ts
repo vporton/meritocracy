@@ -144,9 +144,9 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       custom_id: requestId,
       method: "POST",
       body: {
-        messages: [
+        messages: [ // TODO: Put <DATA> in "user" prompt not "system".
           {
-            role: "user" as const,
+            role: "system" as const,
             content: prompt
           }
         ],

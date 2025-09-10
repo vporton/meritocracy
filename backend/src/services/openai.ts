@@ -1,10 +1,9 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-// Temporarily commented out to test server startup
-// import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { assert } from 'console';
+import { FlexibleBatchClearer, FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
 
 // Load environment variables
 dotenv.config();
@@ -40,8 +39,6 @@ const DEFAULT_CONFIG: OpenAIConfig = { // TODO
   presencePenalty: 0,
 };
 
-// Temporarily commented out to test server startup
-/*
 abstract class OurClearer implements FlexibleStore {
   constructor(protected readonly prisma: PrismaClient) {}
   async init(): Promise<void> {}
@@ -52,10 +49,7 @@ abstract class OurClearer implements FlexibleStore {
     await this.prisma.nonBatches.delete({where: {id: BigInt(this.getStoreId())}});
   }
 }
-*/
 
-// Temporarily commented out to test server startup
-/*
 class OurBatchStore extends OurClearer implements FlexibleBatchStore {
   constructor(prisma: PrismaClient, private batchesId: string | undefined) {
     super(prisma);
@@ -86,10 +80,7 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
     return mapping?.batchId?.toString();
   }
 }
-*/
 
-// Temporarily commented out to test server startup
-/*
 class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   constructor(prisma: PrismaClient, private storeId: string | undefined) {
     super(prisma);
@@ -121,7 +112,6 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
     return response?.response ? JSON.parse(response.response) : undefined; // TODO: Make it throw instead of returning undefined?
   }
 }
-*/
 
 const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
@@ -131,8 +121,6 @@ export async function createAIBatchStore(storeId: string | undefined) {
   return null;
 }
 
-// Temporarily commented out to test server startup
-/*
 export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
@@ -140,7 +128,6 @@ export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatc
   await result.init();
   return result;
 }
-*/
 
 export async function createAIOutputter(store: any) {
   // Temporarily return null to avoid flexible-batches dependency
@@ -160,32 +147,35 @@ export function isOpenAIConfigured(): boolean {
  * Health check function to test OpenAI connection
  * @returns Promise with test result
  */
-// export async function testOpenAIConnection(): Promise<{ success: boolean; message: string }> {
-//   try {
-//     if (!isOpenAIConfigured()) {
-//       return {
-//         success: false,
-//         message: 'OpenAI API key not configured'
-//       };
-//     }
+export async function testOpenAIConnection(): Promise<{ success: boolean; message: string }> {
+  try {
+    if (!isOpenAIConfigured()) {
+      return {
+        success: false,
+        message: 'OpenAI API key not configured'
+      };
+    }
 
-//     // Simple test call
-//     const response = await generateText('Say "Hello" to test the connection.', {
-//       maxTokens: 10,
-//       temperature: 0
-//     });
+    // Simple test call using OpenAI chat completions
+    const response = await openai.chat.completions.create({
+      model: DEFAULT_CONFIG.model || 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: 'Say "Hello" to test the connection.' }],
+      max_tokens: 10,
+      temperature: 0
+    });
 
-//     return {
-//       success: true,
-//       message: `Connection successful. Response: ${response.trim()}`
-//     };
-//   } catch (error) {
-//     return {
-//       success: false,
-//       message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-//     };
-//   }
-// }
+    const content = response.choices[0]?.message?.content || 'No response';
+    return {
+      success: true,
+      message: `Connection successful. Response: ${content.trim()}`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
 
 // Export the OpenAI client instance for advanced usage
 export { openai };

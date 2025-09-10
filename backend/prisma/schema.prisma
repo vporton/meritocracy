@@ -93,7 +93,7 @@ model Task {
   
   // Self-referencing relationships for dependencies
   // Tasks that this task depends on (prerequisites)
-  dependencies TaskDependeusency[] @relation("TaskDependencies")
+  dependencies TaskDependency[] @relation("TaskDependencies")
   // Tasks that depend on this task (dependents)
   dependents   TaskDependency[] @relation("TaskDependents")
 

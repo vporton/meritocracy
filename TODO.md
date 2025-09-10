@@ -21,3 +21,5 @@
 - Inefficient checking for whether all dependencies are COMPLETE.
 
 - Remove tasks after finishing.
+
+- `MedianRunner.run` is duplicate code.

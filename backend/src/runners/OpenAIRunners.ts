@@ -852,8 +852,40 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
 /**
  * TaskRunner for calculating median from dependency results
  * Processes worth assessment results from multiple dependencies and calculates the median
+ * EXCEPTION: This runner is not cancelled if dependencies are cancelled - it processes available data
  */
 export class MedianRunner extends BaseOpenAIRunner {
+  /**
+   * Override the base run method to bypass dependency cancellation checks
+   * MedianRunner should run even if some dependencies are cancelled, as long as it has enough data
+   * @param taskId - The ID of the task to run
+   * @throws Error if task execution fails
+   */
+  async run(taskId: number): Promise<void> {
+    try {
+      this.log('info', `🤖 Running MedianRunner for task ${taskId} (bypassing cancellation checks)`, { taskId });
+      
+      // Get task data from database
+      const task = await this.getTaskWithDependencies(taskId);
+
+      // Check if all dependencies are completed (but don't check for cancelled dependencies)
+      if (!this.areDependenciesCompleted(task)) {
+        this.log('info', `⏳ Task has incomplete dependencies, remaining PENDING`, { taskId, dependenciesCount: task.dependencies.length });
+        return; // Task remains in PENDING state
+      }
+
+      // Execute the median calculation (bypassing cancellation checks)
+      await this.executeTask(task);
+      
+      this.log('info', `✅ MedianRunner completed for task ${taskId}`, { taskId });
+    } catch (error) {
+      this.log('error', `❌ Error in MedianRunner`, { taskId, error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    } finally {
+      await this.prisma.$disconnect();
+    }
+  }
+
   /**
    * No OpenAI request needed - this runner processes dependency results
    * @param task - The task to process
@@ -882,6 +914,7 @@ export class MedianRunner extends BaseOpenAIRunner {
     await this.prisma.task.update({
       where: { id: task.id },
       data: {
+        status: 'COMPLETED',
         runnerData: JSON.stringify({
           ...this.data,
           medianWorth: median,
@@ -896,14 +929,36 @@ export class MedianRunner extends BaseOpenAIRunner {
 
   /**
    * Process dependency results and extract worth values from WorthAssessmentRunner
+   * Handles both COMPLETED and CANCELLED dependencies gracefully
    * @param task - The task with dependencies
    * @returns Array of worth values from dependencies
    */
   private async processWorthDependencyResults(task: TaskWithDependencies): Promise<number[]> {
     const worthValues: number[] = [];
+    let completedCount = 0;
+    let cancelledCount = 0;
     
     for (const dep of task.dependencies) {
       try {
+        // Skip cancelled dependencies - they don't have valid data
+        if (dep.dependency.status === 'CANCELLED') {
+          cancelledCount++;
+          this.log('info', `Skipping cancelled dependency`, { 
+            dependencyId: dep.dependency.id,
+            runnerClassName: dep.dependency.runnerClassName
+          });
+          continue;
+        }
+
+        // Only process COMPLETED dependencies
+        if (dep.dependency.status !== 'COMPLETED') {
+          this.log('warn', `Dependency not completed`, { 
+            dependencyId: dep.dependency.id,
+            status: dep.dependency.status
+          });
+          continue;
+        }
+
         // Get the dependency task data
         if (!dep.dependency.runnerData) {
           this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
@@ -914,10 +969,11 @@ export class MedianRunner extends BaseOpenAIRunner {
         
         // Check if this is a WorthAssessmentRunner that returned undefined directly
         if (dep.dependency.runnerClassName === 'WorthAssessmentRunner' && 
-            depData.worthAsFractionOfGDP !== undefined) {
-          // This runner returned undefined (threshold not met), skip it
-          this.log('info', `Skipping WorthAssessmentRunner with undefined result (threshold not met)`, { 
-            dependencyId: dep.dependency.id 
+            depData.worthAsFractionOfGDP === undefined) {
+          // This runner returned undefined (threshold not met or injection detected), skip it
+          this.log('info', `Skipping WorthAssessmentRunner with undefined result`, { 
+            dependencyId: dep.dependency.id,
+            reason: depData.why || 'Unknown reason'
           });
           continue;
         }
@@ -935,6 +991,7 @@ export class MedianRunner extends BaseOpenAIRunner {
 
         if (typeof response.worthAsFractionOfGDP === 'number') {
           worthValues.push(response.worthAsFractionOfGDP);
+          completedCount++;
         }
       } catch (error) {
         this.log('warn', `Failed to retrieve dependency result`, { 
@@ -943,6 +1000,13 @@ export class MedianRunner extends BaseOpenAIRunner {
         });
       }
     }
+
+    this.log('info', `Processed dependencies for median calculation`, {
+      totalDependencies: task.dependencies.length,
+      completedCount,
+      cancelledCount,
+      validWorthValues: worthValues.length
+    });
 
     return worthValues;
   }

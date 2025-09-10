@@ -159,6 +159,38 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     // Return both the custom ID and store ID for later result retrieval
     return { storeId: store.getStoreId() };
   }
+
+  /**
+   * Common method to update task with runner data after initiating an OpenAI request
+   */
+  protected async updateTaskWithRequestData(task: any, customId: string, additionalData: any = {}): Promise<void> {
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        runnerData: JSON.stringify({
+          ...this.data,
+          ...additionalData,
+          customId,
+          requestInitiated: true,
+          initiatedAt: new Date().toISOString()
+        })
+      }
+    });
+  }
+
+  /**
+   * Common method to initiate an OpenAI request and update task data
+   */
+  protected async initiateOpenAIRequest(
+    task: any,
+    prompt: string,
+    schema: any,
+    additionalData: any = {}
+  ): Promise<void> {
+    const customId = uuidv4();
+    await this.makeOpenAIRequest(prompt, schema, customId);
+    await this.updateTaskWithRequestData(task, customId, additionalData);
+  }
 }
 
 /**
@@ -169,21 +201,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = uuidv4();
-    await this.makeOpenAIRequest(prompt, scientistCheckSchema, customId);
-    
-    // Store the customId and storeId for later result retrieval
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        runnerData: JSON.stringify({
-          ...this.data,
-          customId,
-          requestInitiated: true,
-          initiatedAt: new Date().toISOString()
-        })
-      }
-    });
+    await this.initiateOpenAIRequest(task, prompt, scientistCheckSchema);
   }
 }
 
@@ -198,21 +216,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
     const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = uuidv4();
-    await this.makeOpenAIRequest(finalPrompt, worthAssessmentSchema, customId);
-    
-    // Store the customId and storeId for later result retrieval
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        runnerData: JSON.stringify({
-          ...this.data,
-          customId,
-          requestInitiated: true,
-          initiatedAt: new Date().toISOString()
-        })
-      }
-    });
+    await this.initiateOpenAIRequest(task, finalPrompt, worthAssessmentSchema);
   }
 
   private async getRandomizedPromptFromDependency(task: any): Promise<string> {
@@ -253,34 +257,18 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     const originalPrompt = this.data.originalPrompt;
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
     
-    const customId = uuidv4();
-    await this.makeOpenAIRequest(
-      randomizeRequest,
-      {
-        type: "object",
-        properties: {
-          randomizedPrompt: {
-            type: "string",
-            description: "The randomized version of the prompt"
-          }
-        },
-        required: ["randomizedPrompt"]
+    const schema = {
+      type: "object",
+      properties: {
+        randomizedPrompt: {
+          type: "string",
+          description: "The randomized version of the prompt"
+        }
       },
-      customId
-    );
+      required: ["randomizedPrompt"]
+    };
     
-    // Store the customId and storeId for later result retrieval
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        runnerData: JSON.stringify({
-          ...this.data,
-          customId,
-          requestInitiated: true,
-          initiatedAt: new Date().toISOString()
-        })
-      }
-    });
+    await this.initiateOpenAIRequest(task, randomizeRequest, schema);
   }
 }
 
@@ -292,21 +280,7 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = injectionPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    const customId = uuidv4();
-    await this.makeOpenAIRequest(prompt, promptInjectionSchema, customId);
-    
-    // Store the customId and storeId for later result retrieval
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        runnerData: JSON.stringify({
-          ...this.data,
-          customId,
-          requestInitiated: true,
-          initiatedAt: new Date().toISOString()
-        })
-      }
-    });
+    await this.initiateOpenAIRequest(task, prompt, promptInjectionSchema);
   }
 }
 

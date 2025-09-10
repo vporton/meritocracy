@@ -7,7 +7,7 @@ export enum TaskStatus {
 }
 
 export interface TaskRunner {
-  run(): Promise<void>;
+  run(taskId: number): Promise<void>;
 }
 
 // Task runner data interface for type safety
@@ -24,22 +24,22 @@ export class TaskRunnerRegistry {
     this.runners.set(name, runnerClass);
   }
 
-  static get(name: string): (new (data: TaskRunnerData) => TaskRunner) | undefined {
-    return this.runners.get(name);
+  private static get(name: string): (new (data: TaskRunnerData) => TaskRunner) {
+    const result = this.runners.get(name);
+    if (result === undefined) {
+      throw new Error(`TaskRunner class '${name}' not found in registry`);
+    }
+    return result;
   }
 
-  static createRunner(className: string, data: TaskRunnerData): TaskRunner | null {
+  private static createRunner(className: string, data: TaskRunnerData): TaskRunner | null {
     const RunnerClass = this.get(className);
-    if (!RunnerClass) {
-      console.error(`TaskRunner class '${className}' not found in registry`);
-      return null;
-    }
     return new RunnerClass(data);
   }
 
-  static getAvailableRunners(): string[] {
-    return Array.from(this.runners.keys());
-  }
+  // private static getAvailableRunners(): string[] {
+  //   return Array.from(this.runners.keys());
+  // }
 
   /**
    * Run a TaskRunner by task ID
@@ -57,11 +57,6 @@ export class TaskRunnerRegistry {
 
       if (!task) {
         console.error(`Task with ID ${taskId} not found in database`);
-        return false;
-      }
-
-      if (!task.runnerClassName) {
-        console.error(`Task ${taskId} has no runner class specified`);
         return false;
       }
 
@@ -84,18 +79,13 @@ export class TaskRunnerRegistry {
       }
 
       console.log(`🚀 Running TaskRunner: ${task.runnerName || 'Unknown'} (${task.runnerClassName})`);
-      await runnerInstance.run();
+      await runnerInstance.run(taskId);
       console.log(`✅ TaskRunner ${task.runnerName || 'Unknown'} completed successfully`);
 
       return true;
-
     } catch (error) {
       console.error(`❌ Error running TaskRunner by task ID ${taskId}:`, error);
       return false;
     }
   }
-}
-
-// Helper functions for task management
-export class TaskHelper {
 }

@@ -19,11 +19,9 @@ import evaluationRoutes from './routes/evaluation';
 
 // Register TaskRunners
 import { registerOpenAIRunners } from './runners/OpenAIRunners';
-import { registerExampleRunners } from './runners/ExampleRunners';
 
 // Register all TaskRunners on startup
 registerOpenAIRunners();
-registerExampleRunners();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

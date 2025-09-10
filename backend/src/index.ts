@@ -9,6 +9,15 @@ dotenv.config();
 import userRoutes from './routes/users';
 import authRoutes from './routes/auth';
 import ethereumRoutes from './routes/ethereum';
+import evaluationRoutes from './routes/evaluation';
+
+// Register TaskRunners
+import { registerOpenAIRunners } from './runners/OpenAIRunners';
+import { registerExampleRunners } from './runners/ExampleRunners';
+
+// Register all TaskRunners on startup
+registerOpenAIRunners();
+registerExampleRunners();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +44,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/ethereum', ethereumRoutes);
+app.use('/api/evaluation', evaluationRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

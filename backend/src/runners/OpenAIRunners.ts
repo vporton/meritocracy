@@ -94,7 +94,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 
   // protected abstract executeOpenAIRequest(task: any): Promise<any>;
 
-  protected async getOpenAIResult(customId: string, storeId: string): Promise<any> {
+  protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId);
     const outputter = await createAIOutputter(store);
     
@@ -161,7 +161,7 @@ export class ScientistCheckRunner extends BaseOpenAIRunner {
     const { storeId } = await this.makeOpenAIRequest(prompt, scientistCheckSchema, customId);
     
     // Wait for the result to be available
-    const response = await this.getOpenAIResult(customId, storeId);
+    const response = await this.getOpenAIResult({ customId, storeId });
 
     return {
       isActiveScientistOrFOSSDev: response.isActiveScientistOrFOSSDev,
@@ -186,7 +186,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
     const { storeId } = await this.makeOpenAIRequest(finalPrompt, worthAssessmentSchema, customId);
     
     // Wait for the result to be available
-    const response = await this.getOpenAIResult(customId, storeId);
+    const response = await this.getOpenAIResult({ customId, storeId });
 
     return {
       worthAsFractionOfGDP: response.worthAsFractionOfGDP,
@@ -215,7 +215,7 @@ export class WorthAssessmentRunner extends BaseOpenAIRunner {
       customId
     );
 
-    const response = await this.getOpenAIResult(customId, storeId);
+    const response = await this.getOpenAIResult({ customId, storeId });
     return response.randomizedPrompt;
   }
 }
@@ -232,7 +232,7 @@ export class PromptInjectionRunner extends BaseOpenAIRunner {
     const { storeId } = await this.makeOpenAIRequest(prompt, promptInjectionSchema, customId);
     
     // Wait for the result to be available
-    const response = await this.getOpenAIResult(customId, storeId);
+    const response = await this.getOpenAIResult({ customId, storeId });
 
     return {
       hasPromptInjection: response.hasPromptInjection,

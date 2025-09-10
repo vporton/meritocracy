@@ -14,7 +14,6 @@ async function consolidatedTaskExample() {
     const task1 = await prisma.task.create({
       data: {
         status: TaskStatus.PENDING,
-        runnerName: 'EmailRunner',
         runnerClassName: 'EmailRunner',
         runnerData: JSON.stringify({
           to: 'user@example.com',
@@ -27,7 +26,6 @@ async function consolidatedTaskExample() {
     const task2 = await prisma.task.create({
       data: {
         status: TaskStatus.PENDING,
-        runnerName: 'FileProcessorRunner',
         runnerClassName: 'FileProcessorRunner',
         runnerData: JSON.stringify({
           filePath: '/uploads/document.pdf',
@@ -39,7 +37,6 @@ async function consolidatedTaskExample() {
     const task3 = await prisma.task.create({
       data: {
         status: TaskStatus.PENDING,
-        runnerName: 'ApiCallRunner',
         runnerClassName: 'ApiCallRunner',
         runnerData: JSON.stringify({
           url: 'https://api.example.com/webhook',
@@ -52,7 +49,6 @@ async function consolidatedTaskExample() {
     const task4 = await prisma.task.create({
       data: {
         status: TaskStatus.PENDING,
-        runnerName: 'DatabaseRunner',
         runnerClassName: 'DatabaseRunner',
         runnerData: JSON.stringify({
           operation: 'backup',

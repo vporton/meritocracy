@@ -42,22 +42,35 @@ async function taskManagerExample() {
     const deletedCount = await taskManager.deleteOrphanedDependencies();
     console.log(`   Deleted ${deletedCount} orphaned dependency tasks\n`);
 
-    // 5. Show tasks with dependencies
+    // 5. Show tasks with dependencies (using direct Prisma query since method is not available)
     console.log('📋 Tasks with Dependencies:');
-    const tasksWithDeps = await taskManager.getTasksWithDependencies();
+    const tasksWithDeps = await prisma.task.findMany({
+      include: {
+        dependencies: {
+          include: {
+            dependency: true,
+          },
+        },
+        dependents: {
+          include: {
+            task: true,
+          },
+        },
+      },
+    });
     
     for (const task of tasksWithDeps) {
       console.log(`   Task ${task.id} (${task.status}):`);
       console.log(`     Runner: ${task.runnerClassName}`);
       console.log(`     Dependencies: ${task.dependencies.length}`);
       if (task.dependencies.length > 0) {
-        task.dependencies.forEach(dep => {
+        task.dependencies.forEach((dep: any) => {
           console.log(`       - Task ${dep.dependency.id} (${dep.dependency.status})`);
         });
       }
       console.log(`     Dependents: ${task.dependents.length}`);
       if (task.dependents.length > 0) {
-        task.dependents.forEach(dep => {
+        task.dependents.forEach((dep: any) => {
           console.log(`       - Task ${dep.task.id} (${dep.task.status})`);
         });
       }
@@ -141,9 +154,22 @@ async function createTaskDependencyExample() {
     console.log(`   Skipped: ${results.skipped}\n`);
 
     // Show current status
-    const tasks = await taskManager.getTasksWithDependencies();
+    const tasks = await prisma.task.findMany({
+      include: {
+        dependencies: {
+          include: {
+            dependency: true,
+          },
+        },
+        dependents: {
+          include: {
+            task: true,
+          },
+        },
+      },
+    });
     console.log('📋 Current Task Status:');
-    tasks.forEach(task => {
+    tasks.forEach((task: any) => {
       console.log(`   Task ${task.id}: ${task.status}`);
     });
 

@@ -48,7 +48,7 @@ export class TaskExecutor {
         data: { status: TaskStatus.IN_PROGRESS },
       });
 
-      console.log(`🚀 Starting execution of task ${taskId} with runner: ${task.runnerName || 'Unknown'} (${task.runnerClassName})`);
+      console.log(`🚀 Starting execution of task ${taskId} with runner: ${task.runnerClassName || 'Unknown'}`);
 
       // Parse runner data
       let runnerData: TaskRunnerData = {};

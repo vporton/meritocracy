@@ -39,7 +39,7 @@ router.post('/start', async (req, res) => {
       userData
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Evaluation flow started',
       rootTaskId,
@@ -48,7 +48,7 @@ router.post('/start', async (req, res) => {
 
   } catch (error) {
     console.error('Error starting evaluation:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to start evaluation',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -64,7 +64,7 @@ router.post('/execute', async (req, res) => {
     const taskExecutor = new TaskExecutor(prisma);
     const executedCount = await taskExecutor.executeReadyTasks();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Tasks executed',
       executedCount
@@ -72,7 +72,7 @@ router.post('/execute', async (req, res) => {
 
   } catch (error) {
     console.error('Error executing tasks:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to execute tasks',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -102,14 +102,14 @@ router.get('/result/:userId', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       result
     });
 
   } catch (error) {
     console.error('Error getting evaluation result:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get evaluation result',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -159,7 +159,7 @@ router.get('/status/:userId', async (req, res) => {
       ban: tasks.filter(t => t.runnerClassName === 'BanUserRunner')
     };
 
-    res.json({
+    return res.json({
       success: true,
       userId,
       totalTasks: tasks.length,
@@ -176,7 +176,7 @@ router.get('/status/:userId', async (req, res) => {
 
   } catch (error) {
     console.error('Error getting evaluation status:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get evaluation status',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -233,7 +233,7 @@ router.post('/complete', async (req, res) => {
     // Get the final result
     const result = await evaluationFlow.getEvaluationResult(userId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Evaluation completed',
       rootTaskId,
@@ -244,7 +244,7 @@ router.post('/complete', async (req, res) => {
 
   } catch (error) {
     console.error('Error completing evaluation:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to complete evaluation',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

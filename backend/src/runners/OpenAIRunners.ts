@@ -305,7 +305,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     await runner.addItem({
       custom_id: customId,
       method: "POST",
-      body: {
+      body: <ResponseCreateParamsNonStreaming>{
         instructions: prompt, // system/developer message.
         // input: TODO, // user's message
         model: options?.model ?? DEFAULT_MODEL,
@@ -321,7 +321,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
             schema: schema
           }
         }
-      } as ResponseCreateParamsNonStreaming
+      } 
     });
     
     // Flush to execute the request

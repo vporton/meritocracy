@@ -314,6 +314,10 @@ abstract class BaseOpenAIRunner implements TaskRunner {
         ],
         model: options?.model ?? DEFAULT_MODEL,
         temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
+        include: ['web_search_call.action.sources'],
+        reasoning: options?.reasoning === null ? null : {
+          effort: options?.reasoning?.effort ?? 'medium'
+        },
         response_format: {
           type: "json_schema" as const,
           json_schema: {
@@ -464,7 +468,11 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   protected getModelOptions(): ResponseCreateParams | undefined {
     return {
       model: 'gpt-5-nano-2025-08-07', // TODO: Update the model name.
-      temperature: 0.0
+      temperature: 0.0,
+      prompt_cache_key: 'scientist-onboarding',
+      reasoning: {
+        effort: 'low'
+      }
     };
   }
 

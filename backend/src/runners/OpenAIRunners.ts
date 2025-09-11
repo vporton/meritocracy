@@ -146,24 +146,18 @@ abstract class BaseRunner implements TaskRunner {
     }
   }
 
+  shouldCheckCancelledDependencies(): boolean {
+    return true;
+  }
+
   /**
    * Main entry point for running a task
    * @param taskId - The ID of the task to run
    * @throws Error if task execution fails
    */
   async run(taskId: number): Promise<void> {
-    await this.executeTaskIfReady(taskId, true);
-  }
-
-  /**
-   * Common task execution logic shared between different runner types
-   * @param taskId - The ID of the task to run
-   * @param checkCancelledDependencies - Whether to check for cancelled dependencies and cancel the task if found
-   * @throws Error if task execution fails
-   */
-  protected async executeTaskIfReady(taskId: number, checkCancelledDependencies: boolean = true): Promise<void> {
     const runnerType = this.constructor.name;
-    const logPrefix = checkCancelledDependencies ? 'OpenAI TaskRunner' : `${runnerType} (bypassing cancellation checks)`;
+    const logPrefix = this.shouldCheckCancelledDependencies() ? 'OpenAI TaskRunner' : `${runnerType} (bypassing cancellation checks)`;
     
     try {
       this.log('info', `🤖 Running ${logPrefix} for task ${taskId}`, { taskId });
@@ -172,7 +166,7 @@ abstract class BaseRunner implements TaskRunner {
       const task = await this.getTaskWithDependencies(taskId);
 
       // Check if any dependencies are cancelled - if so, cancel this task too (unless bypassed)
-      if (checkCancelledDependencies && this.areAnyDependenciesCancelled(task)) {
+      if (this.shouldCheckCancelledDependencies() && this.areAnyDependenciesCancelled(task)) {
         await this.markTaskAsCancelled(task, 'Dependency was cancelled');
         return;
       }
@@ -931,14 +925,8 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
  * EXCEPTION: This runner is not cancelled if dependencies are cancelled - it processes available data
  */
 export class MedianRunner extends BaseRunner {
-  /**
-   * Override the base run method to bypass dependency cancellation checks
-   * MedianRunner should run even if some dependencies are cancelled, as long as it has enough data
-   * @param taskId - The ID of the task to run
-   * @throws Error if task execution fails
-   */
-  async run(taskId: number): Promise<void> {
-    await this.executeTaskIfReady(taskId, false);
+  shouldCheckCancelledDependencies(): boolean {
+    return false;
   }
 
   /**

@@ -79,6 +79,11 @@ interface TaskRunnerResult {
   [key: string]: any;
 }
 
+// TODO: Use an OpenAI type instead.
+type MyModelOptions = {
+  model?: string;
+  temperature?: number;
+} | undefined;
 
 /**
  * Base class for OpenAI TaskRunners with common functionality
@@ -93,6 +98,10 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     this.data = data;
     this.prisma = new PrismaClient();
     this.runnerName = this.constructor.name;
+  }
+
+  protected getModelOptions(): MyModelOptions | undefined {
+    return undefined;
   }
 
   /**
@@ -292,6 +301,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     prompt: string,
     schema: any,
     customId: string,
+    options: MyModelOptions = undefined
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined);
     const runner = await createAIRunner(store);
@@ -307,8 +317,8 @@ abstract class BaseOpenAIRunner implements TaskRunner {
             content: prompt
           }
         ],
-        model: DEFAULT_MODEL,
-        temperature: DEFAULT_TEMPERATURE,
+        model: options?.model ?? DEFAULT_MODEL,
+        temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
         response_format: {
           type: "json_schema" as const,
           json_schema: {
@@ -362,13 +372,14 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     task: TaskWithDependencies,
     prompt: string,
     schema: any,
+    options: MyModelOptions = undefined,
     additionalData: Record<string, any> = {}
   ): Promise<void> {
     const customId = uuidv4();
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
     // Then initiate the OpenAI request
-    await this.makeOpenAIRequest(prompt, schema, customId);
+    await this.makeOpenAIRequest(prompt, schema, customId, options);
   }
 
 
@@ -446,7 +457,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
     const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema());
+    await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 }
 
@@ -463,7 +474,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    await this.initiateOpenAIRequest(task, prompt, scientistCheckSchema);
+    await this.initiateOpenAIRequest(task, prompt, scientistCheckSchema, this.getModelOptions());
   }
 }
 
@@ -677,7 +688,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     }
     
     const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
-    await this.initiateOpenAIRequest(task, randomizeRequest, randomizedPromptSchema);
+    await this.initiateOpenAIRequest(task, randomizeRequest, randomizedPromptSchema, this.getModelOptions());
   }
 }
 

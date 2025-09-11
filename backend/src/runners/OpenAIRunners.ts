@@ -5,8 +5,7 @@ import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scient
 import { v4 as uuidv4 } from 'uuid';
 import { ResponseCreateParams, ResponseCreateParamsNonStreaming, Tool, ToolChoiceOptions } from 'openai/resources/responses/responses';
 import { ReasoningEffort } from 'openai/resources';
-import { BaseRunner } from './UtilityRunners.js';
-import { registerUtilityRunners } from './UtilityRunners.js';
+import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;

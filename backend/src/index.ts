@@ -3,11 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
 // Polyfill fetch for Node.js
 if (!globalThis.fetch) {
-  const fetch = require('node-fetch');
-  globalThis.fetch = fetch;
+  globalThis.fetch = fetch as any;
 }
 
 dotenv.config();

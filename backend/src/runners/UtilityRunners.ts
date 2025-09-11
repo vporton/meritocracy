@@ -1,4 +1,4 @@
-import { TaskRunner, TaskRunnerData } from '../types/task.js';
+import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
 
@@ -668,7 +668,6 @@ export class WorthThresholdCheckRunner extends BaseRunner {
  * This function should be called during application initialization to make all utility runners available
  */
 export function registerUtilityRunners(): void {
-  const { TaskRunnerRegistry } = require('../types/task.js');
   TaskRunnerRegistry.register('WorthThresholdCheckRunner', WorthThresholdCheckRunner);
   TaskRunnerRegistry.register('MedianRunner', MedianRunner);
 }

@@ -152,7 +152,7 @@ abstract class BaseRunner implements TaskRunner {
    * @throws Error if task execution fails
    */
   async run(taskId: number): Promise<void> {
-    await this.executeTaskRunner(taskId, true);
+    await this.executeTaskIfReady(taskId, true);
   }
 
   /**
@@ -161,7 +161,7 @@ abstract class BaseRunner implements TaskRunner {
    * @param checkCancelledDependencies - Whether to check for cancelled dependencies and cancel the task if found
    * @throws Error if task execution fails
    */
-  protected async executeTaskRunner(taskId: number, checkCancelledDependencies: boolean = true): Promise<void> {
+  protected async executeTaskIfReady(taskId: number, checkCancelledDependencies: boolean = true): Promise<void> {
     const runnerType = this.constructor.name;
     const logPrefix = checkCancelledDependencies ? 'OpenAI TaskRunner' : `${runnerType} (bypassing cancellation checks)`;
     
@@ -938,7 +938,7 @@ export class MedianRunner extends BaseRunner {
    * @throws Error if task execution fails
    */
   async run(taskId: number): Promise<void> {
-    await this.executeTaskRunner(taskId, false);
+    await this.executeTaskIfReady(taskId, false);
   }
 
   /**

@@ -4,6 +4,44 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Middleware to extract user ID from authorization token
+async function getCurrentUserFromToken(req: express.Request): Promise<number | null> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Find session
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+    
+    return session.user.id;
+  } catch (error) {
+    console.error('Error extracting user from token:', error);
+    return null;
+  }
+}
+
+// Middleware to require authentication
+async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const userId = await getCurrentUserFromToken(req);
+  if (!userId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  (req as any).userId = userId;
+  next();
+}
+
 // GET /api/users - Get all users
 router.get('/', async (req, res): Promise<void> => {
   try {
@@ -63,12 +101,18 @@ router.post('/', async (req, res): Promise<void> => {
   }
 });
 
-// FIXME: Protect this route from unauthenticated users.
 // PUT /api/users/:id - Update user
-router.put('/:id', async (req, res): Promise<void> => {
+router.put('/:id', requireAuth, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
     const { email, name } = req.body;
+    const authenticatedUserId = (req as any).userId;
+
+    // Check if user is trying to update their own account
+    if (parseInt(id) !== authenticatedUserId) {
+      res.status(403).json({ error: 'Forbidden: You can only update your own account' });
+      return;
+    }
 
     const user = await prisma.user.update({
       where: { id: parseInt(id) },
@@ -93,11 +137,17 @@ router.put('/:id', async (req, res): Promise<void> => {
   }
 });
 
-// FIXME: Protect this route from unauthenticated users.
 // DELETE /api/users/:id - Delete user
-router.delete('/:id', async (req, res): Promise<void> => {
+router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
+    const authenticatedUserId = (req as any).userId;
+
+    // Check if user is trying to delete their own account
+    if (parseInt(id) !== authenticatedUserId) {
+      res.status(403).json({ error: 'Forbidden: You can only delete your own account' });
+      return;
+    }
 
     await prisma.user.delete({
       where: { id: parseInt(id) },

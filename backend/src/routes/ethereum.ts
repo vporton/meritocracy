@@ -3,8 +3,6 @@ import { ethereumService } from '../services/ethereum';
 
 const router = Router();
 
-// FIXME: This file seems to be superfluous and it may be even security risk.
-
 // Get wallet information
 router.get('/wallet-info', async (req: Request, res: Response) => {
     try {

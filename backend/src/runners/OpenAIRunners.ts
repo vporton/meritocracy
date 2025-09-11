@@ -103,10 +103,10 @@ interface TaskRunnerResult {
 }
 
 /**
- * Base class for OpenAI TaskRunners with common functionality
- * Provides shared methods for dependency checking, OpenAI requests, and task management
+ * Base class for all TaskRunners with common functionality
+ * Provides shared methods for dependency checking and task management
  */
-abstract class BaseOpenAIRunner implements TaskRunner {
+abstract class BaseRunner implements TaskRunner {
   protected readonly data: TaskRunnerData;
   protected readonly prisma: PrismaClient;
   protected readonly runnerName: string;
@@ -117,13 +117,6 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     this.runnerName = this.constructor.name;
   }
 
-  protected getModelOptions(): ResponseCreateParams | undefined {
-    return undefined;
-  }
-
-  protected useWebSearchTool(): boolean {
-    return false;
-  }
 
   /**
    * Structured logging utility for consistent log formatting
@@ -296,7 +289,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
    * @returns Promise resolving to the parsed OpenAI response
    * @throws Error if no response content is received
    */
-  public async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
+  protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId);
     const outputter = await createAIOutputter(store);
     
@@ -310,6 +303,22 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     
     return JSON.parse(content);
   }
+
+}
+
+/**
+ * Base class for OpenAI TaskRunners with OpenAI-specific functionality
+ * Extends BaseRunner with OpenAI request capabilities
+ */
+abstract class BaseOpenAIRunner extends BaseRunner {
+  protected getModelOptions(): ResponseCreateParams | undefined {
+    return undefined;
+  }
+
+  protected useWebSearchTool(): boolean {
+    return false;
+  }
+
 
   /**
    * Make an OpenAI request using the `flexible-batches` API
@@ -929,7 +938,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
  * Processes worth assessment results from multiple dependencies and calculates the median
  * EXCEPTION: This runner is not cancelled if dependencies are cancelled - it processes available data
  */
-export class MedianRunner extends BaseOpenAIRunner {
+export class MedianRunner extends BaseRunner {
   /**
    * Override the base run method to bypass dependency cancellation checks
    * MedianRunner should run even if some dependencies are cancelled, as long as it has enough data
@@ -1082,7 +1091,7 @@ export class MedianRunner extends BaseOpenAIRunner {
  * TaskRunner for checking if worth exceeds threshold
  * Compares a worth assessment result against a configurable threshold
  */
-export class WorthThresholdCheckRunner extends BaseOpenAIRunner {
+export class WorthThresholdCheckRunner extends BaseRunner {
   /**
    * No OpenAI request needed - this runner processes dependency results
    * @param task - The task to process

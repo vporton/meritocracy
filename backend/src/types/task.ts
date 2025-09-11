@@ -177,27 +177,11 @@ export class TaskRunnerRegistry {
     taskId: number,
   ): Promise<boolean> {
     try {
-      // Get current task data to preserve existing runnerData
-      const currentTask = await prisma.task.findUnique({
-        where: { id: taskId },
-        select: { runnerData: true }
-      });
-
-      let updatedRunnerData = {};
-      if (currentTask?.runnerData) {
-        try {
-          updatedRunnerData = JSON.parse(currentTask.runnerData);
-        } catch (error) {
-          console.warn(`Failed to parse existing runner data for task ${taskId}, using empty object`);
-        }
-      }
-
       // Update the task status to CANCELLED and add cancellation info to runnerData
       const updatedTask = await prisma.task.update({
         where: { id: taskId },
         data: {
           status: TaskStatus.CANCELLED,
-          runnerData: JSON.stringify(updatedRunnerData),
           completedAt: new Date(),
           updatedAt: new Date()
         }

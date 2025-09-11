@@ -153,7 +153,7 @@ export class TaskRunnerRegistry {
         }
       });
 
-      console.log(`❌ Task ${taskId} marked as CANCELLED: ${reason}`);
+      console.log(`❌ Task ${taskId} marked as CANCELLED`);
       return true;
     } catch (error) {
       console.error(`❌ Error cancelling task ${taskId}:`, error);

@@ -115,4 +115,52 @@ export class TaskRunnerRegistry {
       return false;
     }
   }
+
+  /**
+   * Mark a task as cancelled by task ID
+   * This method updates the task status to CANCELLED and sets the cancellation reason
+   */
+  static async markTaskAsCancelled(
+    prisma: any,
+    taskId: number,
+    reason: string
+  ): Promise<boolean> {
+    try {
+      // Get current task data to preserve existing runnerData
+      const currentTask = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: { runnerData: true }
+      });
+
+      let updatedRunnerData = {};
+      if (currentTask?.runnerData) {
+        try {
+          updatedRunnerData = JSON.parse(currentTask.runnerData);
+        } catch (error) {
+          console.warn(`Failed to parse existing runner data for task ${taskId}, using empty object`);
+        }
+      }
+
+      // Update the task status to CANCELLED and add cancellation info to runnerData
+      const updatedTask = await prisma.task.update({
+        where: { id: taskId },
+        data: {
+          status: TaskStatus.CANCELLED,
+          runnerData: JSON.stringify({
+            ...updatedRunnerData,
+            cancelled: true,
+            reason,
+            cancelledAt: new Date().toISOString()
+          }),
+          updatedAt: new Date()
+        }
+      });
+
+      console.log(`❌ Task ${taskId} marked as CANCELLED: ${reason}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Error cancelling task ${taskId}:`, error);
+      return false;
+    }
+  }
 }

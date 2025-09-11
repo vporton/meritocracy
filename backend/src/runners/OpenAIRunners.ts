@@ -167,7 +167,7 @@ abstract class BaseRunner implements TaskRunner {
 
       // Check if any dependencies are cancelled - if so, cancel this task too (unless bypassed)
       if (this.shouldCheckCancelledDependencies() && this.areAnyDependenciesCancelled(task)) {
-        await this.markTaskAsCancelled(task, 'Dependency was cancelled');
+        await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id, 'Dependency was cancelled');
         return;
       }
 
@@ -238,30 +238,6 @@ abstract class BaseRunner implements TaskRunner {
     return cancelledDependencies.length > 0;
   }
 
-  /**
-   * Mark task as cancelled
-   * @param task - The task to mark as cancelled
-   * @param reason - Reason for cancellation
-   */
-  protected async markTaskAsCancelled(task: TaskWithDependencies, reason: string): Promise<void> {
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        status: 'CANCELLED',
-        runnerData: JSON.stringify({
-          ...this.data,
-          cancelled: true,
-          reason,
-          cancelledAt: new Date().toISOString()
-        })
-      }
-    });
-
-    this.log('info', `🚫 Task cancelled`, { 
-      taskId: task.id, 
-      reason 
-    });
-  }
 
   /**
    * Execute the task - can be overridden for custom logic
@@ -705,7 +681,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
           const thresholdData = JSON.parse(thresholdDep.dependency.runnerData);
           if (!thresholdData.exceedsThreshold) {
             // Worth <= 1e-11, cancel this randomization task
-            await this.markTaskAsCancelled(task, 'Worth threshold not exceeded (<=1e-11), skipping prompt injection randomization');
+            await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id, 'Worth threshold not exceeded (<=1e-11), skipping prompt injection randomization');
             return;
           }
         } catch (error) {

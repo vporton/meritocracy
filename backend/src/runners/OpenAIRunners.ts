@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIRunner, createAIOutputter } from '../services/openai.js';
 import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scientistCheckSchema, worthAssessmentSchema, promptInjectionSchema, randomizedPromptSchema } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
-import { ResponseCreateParams, ResponseCreateParamsNonStreaming, Tool, ToolChoiceOptions } from 'openai/resources/responses/responses';
+import { ResponseCreateParams, ResponseCreateParamsNonStreaming, ResponseTextConfig, Tool, ToolChoiceOptions } from 'openai/resources/responses/responses';
 import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 
@@ -146,12 +146,14 @@ abstract class BaseOpenAIRunner extends BaseRunner {
           effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
         },
         ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
-        response_format: {
-          type: "json_schema" as const,
-          json_schema: {
+        text: <ResponseTextConfig>{
+          format: {
+            type: "json_schema" as const,
             name: "response",
-            schema: schema
-          }
+            schema: schema,
+            strict: true
+          },
+          verbosity: 'medium'
         }
       } 
     });

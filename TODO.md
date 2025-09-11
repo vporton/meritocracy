@@ -29,3 +29,6 @@
 - `WorthThresholdCheckRunner` and `MedianRunner` are clearly too complex. Refactor.
 
 - Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.
+
+- Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
+  If this is the case, we should rewrite this in ICP.

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIRunner, createAIOutputter } from '../services/openai.js';
 import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scientistCheckSchema, worthAssessmentSchema, promptInjectionSchema, randomizedPromptSchema } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
-import { ResponseCreateParams } from 'openai/resources/responses/responses.mjs';
+import { ResponseCreateParams, ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -306,15 +306,11 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       custom_id: customId,
       method: "POST",
       body: {
-        messages: [
-          {
-            role: "system" as const,
-            content: prompt
-          }
-        ],
+        instructions: prompt, // system/developer message.
+        // input: TODO, // user's message
         model: options?.model ?? DEFAULT_MODEL,
         temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
-        include: ['web_search_call.action.sources'],
+        // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
         reasoning: options?.reasoning === null ? null : {
           effort: options?.reasoning?.effort ?? 'medium'
         },
@@ -325,7 +321,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
             schema: schema
           }
         }
-      }
+      } as ResponseCreateParamsNonStreaming
     });
     
     // Flush to execute the request

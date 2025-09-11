@@ -278,10 +278,12 @@ abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Abstract method to initiate the specific request for each runner type
+   * Default implementation for initiating requests - can be overridden by subclasses
    * @param task - The task to process
    */
-  protected abstract initiateRequest(task: TaskWithDependencies): Promise<void>;
+  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+    // Default implementation does nothing - subclasses can override if needed
+  }
 
   /**
    * Retrieve OpenAI result from the batch store
@@ -950,15 +952,6 @@ export class MedianRunner extends BaseRunner {
   }
 
   /**
-   * No OpenAI request needed - this runner processes dependency results
-   * @param task - The task to process
-   */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    // This runner doesn't make OpenAI requests, it processes results from dependencies
-    // The actual work is done in executeTask
-  }
-
-  /**
    * Execute the median calculation from dependency results
    * @param task - The task with dependencies containing worth assessment results
    */
@@ -1092,15 +1085,6 @@ export class MedianRunner extends BaseRunner {
  * Compares a worth assessment result against a configurable threshold
  */
 export class WorthThresholdCheckRunner extends BaseRunner {
-  /**
-   * No OpenAI request needed - this runner processes dependency results
-   * @param task - The task to process
-   */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    // This runner doesn't make OpenAI requests, it processes results from dependencies
-    // The actual work is done in executeTask
-  }
-
   /**
    * Execute the threshold check from dependency results
    * @param task - The task with dependencies containing worth assessment results

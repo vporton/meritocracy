@@ -99,7 +99,6 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       // No current user, create new one
       return await prisma.user.create({
         data: {
-          email: email || `temp_${uuidv4()}@example.com`, // Fallback email if not provided // FIXME: It makes no sense to generate a random email.
           name,
           ethereumAddress,
           orcidId,

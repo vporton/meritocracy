@@ -171,7 +171,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
    * @param customId - Unique identifier for the request
    * @param additionalData - Additional data to include in runner data
    */
-  protected async updateTaskWithRequestData(
+  protected async updateTaskWithRequestData( // TODO: Is this needed?
     task: TaskWithDependencies, 
     customId: string, 
     additionalData: Record<string, any> = {}
@@ -218,7 +218,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
    * @param runnerClassName - The class name of the runner to look for
    * @returns The dependency result or null if not found
    */
-  protected async getDependencyResult(
+  protected async getDependencyResult( // TODO: This function is suspected, because we may need to get data from several dependencies.
     task: TaskWithDependencies, 
     runnerClassName: string
   ): Promise<any> {
@@ -288,6 +288,14 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
     
     await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema(), this.getModelOptions());
   }
+
+  /**
+   * Initiate the scientist check request
+   * @param task - The task containing user data to analyze
+   */
+  protected async executeTask(task: TaskWithDependencies): Promise<void> { // TODO: two identical methods
+    await this.initiateRequest(task);
+  }
 }
 
 /**
@@ -325,14 +333,13 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
 /**
  * TaskRunner for assessing user worth as fraction of GDP using randomized prompts
  * Uses a randomized prompt from a dependency to assess user worth
- * Can optionally depend on WorthThresholdCheckRunner and return undefined if threshold not met
  */
 export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
   /**
    * Get the original prompt that should be randomized
    * @returns The original worth prompt
    */
-  protected getOriginalPrompt(): string {
+  protected getOriginalPrompt(): string { // TODO: This method (in parent class, too) seems to be useless.
     return worthPrompt;
   }
 
@@ -346,140 +353,6 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
    */
   protected getResponseSchema(): any {
     return worthAssessmentSchema;
-  }
-
-  /**
-   * Execute the task with optional threshold check dependency and prompt injection check
-   * @param task - The task to execute
-   */
-  protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    // First, check if any parent dependency (or their parents) is a PromptInjectionRunner that detected injection
-    const hasParentInjectionDetection = await this.checkParentInjectionDetection(task);
-    
-    if (hasParentInjectionDetection) {
-      // If injection detected by parent, return undefined instead of making OpenAI request
-      await this.prisma.task.update({
-        where: { id: task.id },
-        data: {
-          runnerData: JSON.stringify({
-            ...this.data,
-            worthAsFractionOfGDP: undefined,
-            why: 'Prompt injection detected by parent PromptInjectionRunner task, skipping worth assessment',
-            completedAt: new Date().toISOString()
-          })
-        }
-      });
-
-      this.log('info', `✅ Worth Assessment skipped due to parent injection detection`, { 
-        taskId: task.id 
-      });
-      return;
-    }
-
-    // Check if this runner depends on WorthThresholdCheckRunner
-    const thresholdCheckDep = task.dependencies.find(dep => 
-      dep.dependency.runnerClassName === 'WorthThresholdCheckRunner'
-    );
-
-    if (thresholdCheckDep) {
-      // If we have a threshold check dependency, check its result first
-      const thresholdResult = await this.getThresholdCheckResult(thresholdCheckDep.dependency);
-      
-      if (thresholdResult && !thresholdResult.exceedsThreshold) {
-        // If threshold not exceeded, return undefined instead of making OpenAI request
-        await this.prisma.task.update({
-          where: { id: task.id },
-          data: {
-            runnerData: JSON.stringify({
-              ...this.data,
-              worthAsFractionOfGDP: undefined,
-              why: 'Threshold not exceeded, skipping assessment',
-              completedAt: new Date().toISOString()
-            })
-          }
-        });
-
-        this.log('info', `✅ Worth Assessment skipped due to threshold`, { 
-          taskId: task.id, 
-          thresholdValue: thresholdResult.worthValue,
-          threshold: thresholdResult.threshold
-        });
-        return;
-      }
-    }
-
-    // If no injection detected and no threshold dependency or threshold exceeded, proceed with normal OpenAI request
-    await this.initiateRequest(task);
-  }
-
-  /**
-   * Get the threshold check result from a dependency
-   * @param thresholdTask - The threshold check task
-   * @returns The threshold check result or null if not available
-   */
-  private async getThresholdCheckResult(thresholdTask: any): Promise<any> {
-    if (!thresholdTask.runnerData) {
-      return null;
-    }
-
-    try {
-      const thresholdData = JSON.parse(thresholdTask.runnerData);
-      return {
-        worthValue: thresholdData.worthValue,
-        threshold: thresholdData.threshold,
-        exceedsThreshold: thresholdData.exceedsThreshold
-      };
-    } catch (error) {
-      this.log('warn', `Failed to parse threshold check result`, { 
-        thresholdTaskId: thresholdTask.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return null;
-    }
-  }
-
-  /**
-   * Recursively check if any parent dependency (or their parents) is a PromptInjectionRunner that detected injection
-   * @param task - The task to check dependencies for
-   * @returns True if any parent PromptInjectionRunner detected injection
-   */
-  private async checkParentInjectionDetection(task: TaskWithDependencies): Promise<boolean> {
-    for (const dep of task.dependencies) {
-      const depTask = dep.dependency;
-      
-      // Check if this dependency is a PromptInjectionRunner
-      if (depTask.runnerClassName === 'PromptInjectionRunner') {
-        // Check if it's completed and has detected injection
-        if (depTask.status === 'COMPLETED' && depTask.runnerData) {
-          try {
-            const depData = JSON.parse(depTask.runnerData);
-            if (depData.hasPromptInjection === true) {
-              this.log('info', `Found parent PromptInjectionRunner with injection detection`, { 
-                parentTaskId: depTask.id,
-                currentTaskId: task.id
-              });
-              return true;
-            }
-          } catch (error) {
-            this.log('warn', `Failed to parse parent PromptInjectionRunner data`, { 
-              parentTaskId: depTask.id,
-              error: error instanceof Error ? error.message : String(error)
-            });
-          }
-        }
-      }
-
-      // Recursively check this dependency's dependencies
-      if (depTask.status === 'COMPLETED') {
-        const depTaskWithDeps = await this.getTaskWithDependencies(depTask.id);
-        const hasNestedInjectionDetection = await this.checkParentInjectionDetection(depTaskWithDeps);
-        if (hasNestedInjectionDetection) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 }
 
@@ -501,33 +374,6 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
    * @param task - The task to execute
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    // Check if this is a randomization task for prompt injection that depends on worth threshold
-    const isInjectionRandomization = this.data.originalPrompt === injectionPrompt;
-    
-    if (isInjectionRandomization) {
-      // Check if any dependency is a WorthThresholdCheckRunner that didn't exceed threshold
-      const thresholdDep = task.dependencies.find(dep => 
-        dep.dependency.runnerClassName === 'WorthThresholdCheckRunner'
-      );
-
-      if (thresholdDep && thresholdDep.dependency.status === 'COMPLETED' && thresholdDep.dependency.runnerData) {
-        try {
-          const thresholdData = JSON.parse(thresholdDep.dependency.runnerData);
-          if (!thresholdData.exceedsThreshold) {
-            // Worth <= 1e-11, cancel this randomization task
-            await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id);
-            return;
-          }
-        } catch (error) {
-          this.log('warn', `Failed to parse threshold check result`, { 
-            thresholdTaskId: thresholdDep.dependency.id,
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
-      }
-    }
-
-    // If no cancellation condition met, proceed with normal execution
     await this.initiateRequest(task);
   }
 
@@ -537,7 +383,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
    */
   protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
     const originalPrompt = this.data.originalPrompt;
-    if (!originalPrompt) {
+    if (!originalPrompt) { // TODO: Should not happen.
       throw new TaskRunnerError('Original prompt is required for randomization', task.id, this.constructor.name);
     }
     
@@ -577,16 +423,6 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    * @param task - The task to execute
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    // Check if any parent dependency (or their parents) is a PromptInjectionRunner that returned true
-    const hasParentInjectionDetection = await this.checkParentInjectionDetection(task);
-    
-    if (hasParentInjectionDetection) {
-      // Skip the actual injection check and return true directly, then ban user
-      await this.handleInjectionDetected(task, 'Injection already detected by parent PromptInjectionRunner task');
-      return;
-    }
-
-    // If no parent detected injection, proceed with normal execution
     await this.initiateRequest(task);
   }
 
@@ -614,7 +450,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     });
 
     // Mark task as CANCELLED (not COMPLETED) since injection was detected
-    await this.prisma.task.update({
+    await this.prisma.task.update({ // TODO: seems to have superfluous parameters.
       where: { id: task.id },
       data: {
         status: 'CANCELLED',
@@ -648,89 +484,9 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
     const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
     
-    // Make the OpenAI request
-    const customId = uuidv4();
-    await this.updateTaskWithRequestData(task, customId);
-    const result = await this.makeOpenAIRequest(finalPrompt, this.getResponseSchema(), customId);
-    
-    // Get the result and check for injection
-    const response: PromptInjectionResponse = await this.getOpenAIResult({ 
-      customId, 
-      storeId: result.storeId 
-    });
-
-    if (response.hasPromptInjection) {
-      // Injection detected - ban user and mark as CANCELLED
-      await this.handleInjectionDetected(task, response.why);
-    } else {
-      // No injection detected - mark as completed normally
-      await this.prisma.task.update({
-        where: { id: task.id },
-        data: {
-          status: 'COMPLETED',
-          runnerData: JSON.stringify({
-            ...this.data,
-            customId,
-            storeId: result.storeId,
-            hasPromptInjection: false,
-            why: response.why,
-            completedAt: new Date().toISOString()
-          })
-        }
-      });
-
-      this.log('info', `✅ No prompt injection detected`, { 
-        taskId: task.id,
-        why: response.why
-      });
-    }
-  }
-
-  /**
-   * Recursively check if any parent dependency (or their parents) is a PromptInjectionRunner that detected injection
-   * @param task - The task to check dependencies for
-   * @returns True if any parent PromptInjectionRunner detected injection
-   */
-  private async checkParentInjectionDetection(task: TaskWithDependencies): Promise<boolean> {
-    for (const dep of task.dependencies) {
-      const depTask = dep.dependency;
-      
-      // Check if this dependency is a PromptInjectionRunner
-      if (depTask.runnerClassName === 'PromptInjectionRunner') {
-        // Check if it's completed and has detected injection
-        if (depTask.status === 'COMPLETED' && depTask.runnerData) {
-          try {
-            const depData = JSON.parse(depTask.runnerData);
-            if (depData.hasPromptInjection === true) {
-              this.log('info', `Found parent PromptInjectionRunner with injection detection`, { 
-                parentTaskId: depTask.id,
-                currentTaskId: task.id
-              });
-              return true;
-            }
-          } catch (error) {
-            this.log('warn', `Failed to parse parent PromptInjectionRunner data`, { 
-              parentTaskId: depTask.id,
-              error: error instanceof Error ? error.message : String(error)
-            });
-          }
-        }
-      }
-
-      // Recursively check this dependency's dependencies
-      if (depTask.status === 'COMPLETED') {
-        const depTaskWithDeps = await this.getTaskWithDependencies(depTask.id);
-        const hasNestedInjectionDetection = await this.checkParentInjectionDetection(depTaskWithDeps);
-        if (hasNestedInjectionDetection) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 }
-
 
 
 /**

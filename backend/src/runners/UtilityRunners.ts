@@ -598,10 +598,24 @@ export class WorthThresholdCheckRunner extends BaseRunner {
     const worthValue = worthValues[0];
     const exceedsThreshold = worthValue > threshold;
     
-    // Store the result
+    if (!exceedsThreshold) {
+      // If threshold not exceeded, mark task as CANCELLED
+      const { TaskRunnerRegistry } = await import('../types/task.js');
+      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id);
+      
+      this.log('info', `🚫 Worth Threshold Check cancelled - threshold not exceeded`, { 
+        taskId: task.id, 
+        worthValue, 
+        threshold
+      });
+      return;
+    }
+    
+    // Store the result as COMPLETED
     await this.prisma.task.update({
       where: { id: task.id },
       data: {
+        status: 'COMPLETED',
         runnerData: JSON.stringify({
           ...this.data,
           worthValue,
@@ -612,7 +626,7 @@ export class WorthThresholdCheckRunner extends BaseRunner {
       }
     });
 
-    this.log('info', `✅ Worth Threshold Check completed`, { 
+    this.log('info', `✅ Worth Threshold Check completed - threshold exceeded`, { 
       taskId: task.id, 
       worthValue, 
       threshold, 

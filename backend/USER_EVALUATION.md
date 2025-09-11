@@ -279,9 +279,10 @@ if (this.areAnyDependenciesCancelled(task)) {
 
 #### 3. **Worth Threshold Not Met**
 ```typescript
-// RandomizePromptRunner for injection prompts checks worth threshold
-if (thresholdData.exceedsThreshold === false) {
-  await this.markTaskAsCancelled(task, 'Worth threshold not exceeded (<=1e-11)');
+// WorthThresholdCheckRunner marks itself as CANCELLED when threshold not exceeded
+if (!exceedsThreshold) {
+  await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id, 'Worth threshold not exceeded');
+  return;
 }
 ```
 
@@ -318,7 +319,7 @@ async run(taskId: number): Promise<void> {
 Scientist Check → COMPLETED
 Randomize Prompt → COMPLETED  
 Worth Assessment #1 → COMPLETED
-Worth Threshold Check → COMPLETED (exceedsThreshold: false)
+Worth Threshold Check → CANCELLED (threshold not exceeded)
 ├─ Prompt Injection Randomize → CANCELLED (threshold not met)
 ├─ Prompt Injection Check #1 → CANCELLED (dependency cancelled)
 ├─ Prompt Injection Check #2 → CANCELLED (dependency cancelled)  
@@ -335,7 +336,7 @@ Worth Threshold Check → COMPLETED (exceedsThreshold: false)
 Scientist Check → COMPLETED
 Randomize Prompt → COMPLETED
 Worth Assessment #1 → COMPLETED  
-Worth Threshold Check → COMPLETED (exceedsThreshold: true)
+Worth Threshold Check → COMPLETED (threshold exceeded)
 ├─ Prompt Injection Randomize → COMPLETED
 ├─ Prompt Injection Check #1 → CANCELLED (injection detected, user banned)
 ├─ Prompt Injection Check #2 → CANCELLED (dependency cancelled)
@@ -352,7 +353,7 @@ Worth Threshold Check → COMPLETED (exceedsThreshold: true)
 Scientist Check → COMPLETED
 Randomize Prompt → COMPLETED
 Worth Assessment #1 → COMPLETED
-Worth Threshold Check → COMPLETED (exceedsThreshold: true)
+Worth Threshold Check → COMPLETED (threshold exceeded)
 ├─ Prompt Injection Randomize → COMPLETED
 ├─ Prompt Injection Check #1 → COMPLETED (no injection)
 ├─ Prompt Injection Check #2 → COMPLETED (no injection)

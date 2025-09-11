@@ -129,14 +129,27 @@ abstract class BaseOpenAIRunner implements TaskRunner {
    * @throws Error if task execution fails
    */
   async run(taskId: number): Promise<void> {
+    await this.executeTaskRunner(taskId, true);
+  }
+
+  /**
+   * Common task execution logic shared between different runner types
+   * @param taskId - The ID of the task to run
+   * @param checkCancelledDependencies - Whether to check for cancelled dependencies and cancel the task if found
+   * @throws Error if task execution fails
+   */
+  protected async executeTaskRunner(taskId: number, checkCancelledDependencies: boolean = true): Promise<void> {
+    const runnerType = this.constructor.name;
+    const logPrefix = checkCancelledDependencies ? 'OpenAI TaskRunner' : `${runnerType} (bypassing cancellation checks)`;
+    
     try {
-      this.log('info', `🤖 Running OpenAI TaskRunner for task ${taskId}`, { taskId });
+      this.log('info', `🤖 Running ${logPrefix} for task ${taskId}`, { taskId });
       
       // Get task data from database
       const task = await this.getTaskWithDependencies(taskId);
 
-      // Check if any dependencies are cancelled - if so, cancel this task too
-      if (this.areAnyDependenciesCancelled(task)) {
+      // Check if any dependencies are cancelled - if so, cancel this task too (unless bypassed)
+      if (checkCancelledDependencies && this.areAnyDependenciesCancelled(task)) {
         await this.markTaskAsCancelled(task, 'Dependency was cancelled');
         return;
       }
@@ -150,9 +163,9 @@ abstract class BaseOpenAIRunner implements TaskRunner {
       // Execute the specific logic (either OpenAI request or custom processing)
       await this.executeTask(task);
       
-      this.log('info', `✅ OpenAI TaskRunner completed for task ${taskId}`, { taskId });
+      this.log('info', `✅ ${logPrefix} completed for task ${taskId}`, { taskId });
     } catch (error) {
-      this.log('error', `❌ Error in OpenAI TaskRunner`, { taskId, error: error instanceof Error ? error.message : String(error) });
+      this.log('error', `❌ Error in ${logPrefix}`, { taskId, error: error instanceof Error ? error.message : String(error) });
       throw error;
     } finally {
       await this.prisma.$disconnect();
@@ -862,28 +875,7 @@ export class MedianRunner extends BaseOpenAIRunner {
    * @throws Error if task execution fails
    */
   async run(taskId: number): Promise<void> {
-    try {
-      this.log('info', `🤖 Running MedianRunner for task ${taskId} (bypassing cancellation checks)`, { taskId });
-      
-      // Get task data from database
-      const task = await this.getTaskWithDependencies(taskId);
-
-      // Check if all dependencies are completed (but don't check for cancelled dependencies)
-      if (!this.areDependenciesCompleted(task)) {
-        this.log('info', `⏳ Task has incomplete dependencies, remaining PENDING`, { taskId, dependenciesCount: task.dependencies.length });
-        return; // Task remains in PENDING state
-      }
-
-      // Execute the median calculation (bypassing cancellation checks)
-      await this.executeTask(task);
-      
-      this.log('info', `✅ MedianRunner completed for task ${taskId}`, { taskId });
-    } catch (error) {
-      this.log('error', `❌ Error in MedianRunner`, { taskId, error: error instanceof Error ? error.message : String(error) });
-      throw error;
-    } finally {
-      await this.prisma.$disconnect();
-    }
+    await this.executeTaskRunner(taskId, false);
   }
 
   /**

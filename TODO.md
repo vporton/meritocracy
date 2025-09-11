@@ -27,3 +27,5 @@
 - Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
 - `WorthThresholdCheckRunner` and `MedianRunner` are clearly too complex. Refactor.
+
+- Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.

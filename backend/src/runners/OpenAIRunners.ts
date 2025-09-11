@@ -116,7 +116,6 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     return false;
   }
 
-
   /**
    * Make an OpenAI request using the `flexible-batches` API
    * @param prompt - The prompt to send to OpenAI

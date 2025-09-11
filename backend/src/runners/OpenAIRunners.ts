@@ -167,7 +167,7 @@ abstract class BaseRunner implements TaskRunner {
 
       // Check if any dependencies are cancelled - if so, cancel this task too (unless bypassed)
       if (this.shouldCheckCancelledDependencies() && this.areAnyDependenciesCancelled(task)) {
-        await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id, 'Dependency was cancelled');
+        await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id);
         return;
       }
 
@@ -681,7 +681,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
           const thresholdData = JSON.parse(thresholdDep.dependency.runnerData);
           if (!thresholdData.exceedsThreshold) {
             // Worth <= 1e-11, cancel this randomization task
-            await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id, 'Worth threshold not exceeded (<=1e-11), skipping prompt injection randomization');
+            await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id);
             return;
           }
         } catch (error) {

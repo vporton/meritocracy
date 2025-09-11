@@ -273,17 +273,7 @@ abstract class BaseRunner implements TaskRunner {
    * Execute the task - can be overridden for custom logic
    * @param task - The task to execute
    */
-  protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    await this.initiateRequest(task);
-  }
-
-  /**
-   * Default implementation for initiating requests - can be overridden by subclasses
-   * @param task - The task to process
-   */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
-    // Default implementation does nothing - subclasses can override if needed
-  }
+  protected abstract executeTask(task: TaskWithDependencies): Promise<void>;
 
   /**
    * Retrieve OpenAI result from the batch store
@@ -518,7 +508,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
    * Initiate the scientist check request
    * @param task - The task containing user data to analyze
    */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
     const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
     

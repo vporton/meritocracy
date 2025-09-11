@@ -7,6 +7,7 @@ import { ResponseCreateParams, ResponseCreateParamsNonStreaming } from 'openai/r
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
+const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ? process.env.OPENAI_OVERRIDE_REASONING_EFFORT : undefined;
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_THRESHOLD = 1e-11;
 const BAN_DURATION_YEARS = 1;
@@ -312,7 +313,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
         temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
         // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
         reasoning: options?.reasoning === null ? null : {
-          effort: options?.reasoning?.effort ?? 'medium'
+          effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
         },
         response_format: {
           type: "json_schema" as const,
@@ -467,7 +468,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
       temperature: 0.0,
       prompt_cache_key: 'scientist-onboarding',
       reasoning: {
-        effort: 'low'
+        effort: OVERRIDE_REASONING_EFFORT ?? 'low'
       }
     };
   }

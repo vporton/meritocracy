@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { UserEvaluationFlow } from '../services/UserEvaluationFlow';
-import { registerOpenAIRunners } from '../runners/OpenAIRunners';
+import { registerAllRunners } from '../runners/OpenAIRunners';
 import { TaskExecutor } from '../services/TaskExecutor';
 
 /**
@@ -12,7 +12,7 @@ async function runUserEvaluationExample() {
   
   try {
     // Register all TaskRunners
-    registerOpenAIRunners();
+    registerAllRunners();
     
     // Create the evaluation flow service
     const evaluationFlow = new UserEvaluationFlow(prisma);
@@ -99,7 +99,7 @@ export async function evaluateUser(
   
   try {
     // Register all TaskRunners
-    registerOpenAIRunners();
+    registerAllRunners();
     
     // Create the evaluation flow service
     const evaluationFlow = new UserEvaluationFlow(prisma);

@@ -2,13 +2,13 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { UserEvaluationFlow } from '../services/UserEvaluationFlow';
 import { TaskExecutor } from '../services/TaskExecutor';
-import { registerOpenAIRunners } from '../runners/OpenAIRunners';
+import { registerAllRunners } from '../runners/OpenAIRunners';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // Register TaskRunners
-registerOpenAIRunners();
+registerAllRunners();
 
 /**
  * POST /api/evaluation/start

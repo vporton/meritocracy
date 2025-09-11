@@ -18,10 +18,10 @@ import ethereumRoutes from './routes/ethereum';
 import evaluationRoutes from './routes/evaluation';
 
 // Register TaskRunners
-import { registerOpenAIRunners } from './runners/OpenAIRunners';
+import { registerAllRunners } from './runners/OpenAIRunners';
 
 // Register all TaskRunners on startup
-registerOpenAIRunners();
+registerAllRunners();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

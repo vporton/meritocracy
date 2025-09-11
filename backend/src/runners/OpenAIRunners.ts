@@ -895,12 +895,8 @@ export class MedianRunner extends BaseOpenAIRunner {
     // Extract worth values from dependency results
     const worthValues = await this.processWorthDependencyResults(task);
 
-    if (worthValues.length === 0) {
-      throw new DependencyError('No valid worth values found in dependencies', undefined, task.id, this.constructor.name);
-    }
-
     // Calculate median
-    const median = this.calculateMedian(worthValues);
+    const median = worthValues.length === 0 ? 0 : this.calculateMedian(worthValues);
     
     // Store the result
     await this.prisma.task.update({

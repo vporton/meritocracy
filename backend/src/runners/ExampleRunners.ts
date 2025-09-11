@@ -11,7 +11,7 @@ export class EmailRunner implements TaskRunner {
     this.data = data;
   }
 
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     console.log(`📧 EmailRunner: Sending email to ${this.data.to}`);
     console.log(`   Subject: ${this.data.subject}`);
     console.log(`   Body: ${this.data.body}`);
@@ -33,7 +33,7 @@ export class FileProcessorRunner implements TaskRunner {
     this.data = data;
   }
 
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     console.log(`📁 FileProcessorRunner: Processing file ${this.data.filePath}`);
     console.log(`   Operation: ${this.data.operation}`);
     
@@ -54,7 +54,7 @@ export class ApiCallRunner implements TaskRunner {
     this.data = data;
   }
 
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     console.log(`🌐 ApiCallRunner: Making ${this.data.method} request to ${this.data.url}`);
     console.log(`   Payload:`, this.data.payload);
     
@@ -75,7 +75,7 @@ export class DatabaseRunner implements TaskRunner {
     this.data = data;
   }
 
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     console.log(`🗄️  DatabaseRunner: Performing ${this.data.operation} operation`);
     console.log(`   Table: ${this.data.table}`);
     console.log(`   Query: ${this.data.query}`);
@@ -97,7 +97,7 @@ export class DataProcessingRunner implements TaskRunner {
     this.data = data;
   }
 
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     console.log(`📊 DataProcessingRunner: Processing data`);
     console.log(`   Dataset: ${this.data.dataset}`);
     console.log(`   Algorithm: ${this.data.algorithm}`);
@@ -119,7 +119,7 @@ export class NotificationRunner implements TaskRunner {
     this.data = data;
   }
 
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     console.log(`🔔 NotificationRunner: Sending notification`);
     console.log(`   Type: ${this.data.type}`);
     console.log(`   Recipient: ${this.data.recipient}`);

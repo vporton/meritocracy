@@ -155,7 +155,7 @@ abstract class BaseRunner implements TaskRunner {
    * @param taskId - The ID of the task to run
    * @throws Error if task execution fails
    */
-  async run(taskId: number): Promise<void> {
+  async initiateTask(taskId: number): Promise<void> {
     const runnerType = this.constructor.name;
     const logPrefix = this.shouldCheckCancelledDependencies() ? 'OpenAI TaskRunner' : `${runnerType} (bypassing cancellation checks)`;
     

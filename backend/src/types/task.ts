@@ -7,7 +7,7 @@ export enum TaskStatus {
 }
 
 export interface TaskRunner {
-  run(taskId: number): Promise<void>;
+  initiateTask(taskId: number): Promise<void>;
 }
 
 // Task runner data interface for type safety
@@ -79,7 +79,7 @@ export class TaskRunnerRegistry {
       }
 
       console.log(`🚀 Running TaskRunner: ${task.runnerName || 'Unknown'} (${task.runnerClassName})`);
-      await runnerInstance.run(taskId);
+      await runnerInstance.initiateTask(taskId);
       console.log(`✅ TaskRunner ${task.runnerName || 'Unknown'} completed successfully`);
 
       return true;

@@ -5,8 +5,8 @@ import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scient
 import { v4 as uuidv4 } from 'uuid';
 
 // Constants
-const DEFAULT_MODEL = 'gpt-5-nano-2025-08-07';
-const DEFAULT_TEMPERATURE = 0;
+const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
+const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_THRESHOLD = 1e-11;
 const BAN_DURATION_YEARS = 1;
 
@@ -466,6 +466,13 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
  * Uses OpenAI to analyze user data and determine if they are an active scientist or FOSS developer
  */
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
+  protected getModelOptions(): MyModelOptions | undefined {
+    return {
+      model: 'gpt-5-nano-2025-08-07', // TODO: Update the model name.
+      temperature: 0.0
+    };
+  }
+
   /**
    * Initiate the scientist check request
    * @param task - The task containing user data to analyze
@@ -642,6 +649,12 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
  * Can be conditionally cancelled based on worth threshold dependencies
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
+  protected getModelOptions(): MyModelOptions | undefined {
+    return {
+      temperature: 1.0 // We want randomized responses.
+    };
+  }
+
   /**
    * Execute the task with conditional logic based on worth threshold
    * @param task - The task to execute

@@ -123,7 +123,6 @@ export class TaskRunnerRegistry {
   static async markTaskAsCancelled(
     prisma: any,
     taskId: number,
-    reason: string
   ): Promise<boolean> {
     try {
       // Get current task data to preserve existing runnerData
@@ -146,10 +145,8 @@ export class TaskRunnerRegistry {
         where: { id: taskId },
         data: {
           status: TaskStatus.CANCELLED,
-          runnerData: JSON.stringify({
+          runnerData: JSON.stringify({ // FIXME: RunnerData is here but not in `completeTask` - one of the two is an error.
             ...updatedRunnerData,
-            cancelled: true,
-            reason,
             cancelledAt: new Date().toISOString()
           }),
           updatedAt: new Date()

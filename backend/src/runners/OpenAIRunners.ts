@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ResponseCreateParams, ResponseCreateParamsNonStreaming, Tool, ToolChoiceOptions } from 'openai/resources/responses/responses';
 import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner } from './UtilityRunners.js';
+import { registerUtilityRunners } from './UtilityRunners.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -753,6 +754,5 @@ export function registerAllRunners(): void {
   registerOpenAIRunners();
   
   // Register utility runners
-  const { registerUtilityRunners } = require('./UtilityRunners.js');
   registerUtilityRunners();
 }

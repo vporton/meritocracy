@@ -6,7 +6,59 @@ export enum TaskStatus {
   CANCELLED = 'CANCELLED'
 }
 
+/**
+ * Core interface that all task runners must implement.
+ * 
+ * TaskRunners are responsible for executing specific business logic for tasks in the system.
+ * They can be either OpenAI-based runners (that make API calls to OpenAI) or utility runners
+ * (that process data from other runners without external API calls).
+ * 
+ * @interface TaskRunner
+ * 
+ * @example
+ * ```typescript
+ * class MyCustomRunner implements TaskRunner {
+ *   async initiateTask(taskId: number): Promise<void> {
+ *     // Implementation here
+ *   }
+ * }
+ * ```
+ * 
+ * @see {@link BaseRunner} - Abstract base class providing common functionality
+ * @see {@link BaseOpenAIRunner} - Base class for OpenAI-specific runners
+ * @see {@link TaskRunnerRegistry} - Registry for managing runner instances
+ */
 export interface TaskRunner {
+  /**
+   * Initiates the execution of a task with the given ID.
+   * 
+   * This is the main entry point for task execution. The method should:
+   * - Fetch task data and dependencies from the database
+   * - Check if all dependencies are completed
+   * - Execute the specific business logic for this runner type
+   * - Update the task status and runner data in the database
+   * - Handle errors gracefully and provide meaningful error messages
+   * 
+   * @param taskId - The unique identifier of the task to execute
+   * @returns Promise that resolves when task execution is complete
+   * 
+   * @throws {TaskRunnerError} When task execution fails due to business logic errors
+   * @throws {DependencyError} When required dependencies are missing or invalid
+   * @throws {Error} When unexpected errors occur during execution
+   * 
+   * @example
+   * ```typescript
+   * async initiateTask(taskId: number): Promise<void> {
+   *   try {
+   *     const task = await this.getTaskWithDependencies(taskId);
+   *     await this.executeTask(task);
+   *   } catch (error) {
+   *     this.log('error', 'Task execution failed', { taskId, error });
+   *     throw error;
+   *   }
+   * }
+   * ```
+   */
   initiateTask(taskId: number): Promise<void>;
 }
 

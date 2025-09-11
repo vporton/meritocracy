@@ -57,14 +57,82 @@ interface WorthAssessmentResponse {
 }
 
 /**
- * Base class for all TaskRunners with common functionality
- * Provides shared methods for dependency checking and task management
+ * Abstract base class that provides common functionality for all TaskRunners.
+ * 
+ * This class implements the core TaskRunner interface and provides shared functionality
+ * for dependency management, task execution flow, database operations, and logging.
+ * All concrete TaskRunner implementations should extend this class rather than
+ * implementing TaskRunner directly.
+ * 
+ * Key features provided:
+ * - Automatic dependency checking and validation
+ * - Structured logging with consistent formatting
+ * - Database connection management
+ * - Task status management
+ * - Error handling and propagation
+ * - OpenAI result retrieval (for runners that need it)
+ * 
+ * @abstract
+ * @implements {TaskRunner}
+ * 
+ * @example
+ * ```typescript
+ * class MyCustomRunner extends BaseRunner {
+ *   protected async executeTask(task: TaskWithDependencies): Promise<void> {
+ *     // Implement your specific business logic here
+ *     // The base class handles dependency checking, logging, etc.
+ *   }
+ * }
+ * ```
+ * 
+ * @see {@link TaskRunner} - The interface this class implements
+ * @see {@link BaseOpenAIRunner} - Extended base class for OpenAI-specific runners
+ * 
+ * @since 1.0.0
  */
-abstract class BaseRunner implements TaskRunner {
+export abstract class BaseRunner implements TaskRunner {
+  /**
+   * The runner data containing configuration and input parameters for this task.
+   * This data is passed from the task creation system and contains all the
+   * information needed to execute the specific task logic.
+   * 
+   * @readonly
+   * @protected
+   */
   protected readonly data: TaskRunnerData;
+
+  /**
+   * Prisma database client instance for database operations.
+   * Used for fetching task data, dependencies, and updating task status.
+   * 
+   * @readonly
+   * @protected
+   */
   protected readonly prisma: PrismaClient;
+
+  /**
+   * The name of the runner class, automatically derived from the constructor name.
+   * Used for logging and identification purposes.
+   * 
+   * @readonly
+   * @protected
+   */
   protected readonly runnerName: string;
 
+  /**
+   * Creates a new BaseRunner instance.
+   * 
+   * @param data - The runner data containing configuration and input parameters
+   * 
+   * @example
+   * ```typescript
+   * const runner = new MyCustomRunner({
+   *   userId: 123,
+   *   userData: { name: 'John Doe' },
+   *   threshold: 0.01
+   * });
+   * ```
+   */
   constructor(data: TaskRunnerData) {
     this.data = data;
     this.prisma = new PrismaClient();
@@ -72,10 +140,22 @@ abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Structured logging utility for consistent log formatting
-   * @param level - Log level (info, warn, error)
-   * @param message - Log message
-   * @param context - Additional context data
+   * Structured logging utility for consistent log formatting across all runners.
+   * 
+   * Provides standardized logging with timestamps, runner identification, and
+   * structured context data. All logs include the runner name and timestamp
+   * for easy debugging and monitoring.
+   * 
+   * @param level - The log level indicating the severity/type of message
+   * @param message - The main log message to display
+   * @param context - Additional context data to include in the log (optional)
+   * 
+   * @example
+   * ```typescript
+   * this.log('info', 'Task execution started', { taskId: 123, userId: 456 });
+   * this.log('warn', 'Dependency not found', { dependencyId: 789 });
+   * this.log('error', 'Task execution failed', { error: error.message, taskId: 123 });
+   * ```
    */
   protected log(level: 'info' | 'warn' | 'error', message: string, context: Record<string, any> = {}): void {
     const logData = {
@@ -99,14 +179,57 @@ abstract class BaseRunner implements TaskRunner {
     }
   }
 
+  /**
+   * Determines whether this runner should check for cancelled dependencies.
+   * 
+   * By default, runners check if any dependencies are cancelled and will cancel
+   * themselves if so. Some runners (like MedianRunner) may override this to
+   * process available data even when some dependencies are cancelled.
+   * 
+   * @returns `true` if cancelled dependencies should be checked (default), `false` otherwise
+   * 
+   * @example
+   * ```typescript
+   * // In a runner that should be cancelled if dependencies are cancelled
+   * shouldCheckCancelledDependencies(): boolean {
+   *   return true; // default behavior
+   * }
+   * 
+   * // In a runner that processes available data regardless of cancelled dependencies
+   * shouldCheckCancelledDependencies(): boolean {
+   *   return false; // skip cancellation checks
+   * }
+   * ```
+   */
   shouldCheckCancelledDependencies(): boolean {
     return true;
   }
 
   /**
-   * Main entry point for running a task
-   * @param taskId - The ID of the task to run
-   * @throws Error if task execution fails
+   * Main entry point for running a task - implements the TaskRunner interface.
+   * 
+   * This method orchestrates the complete task execution flow:
+   * 1. Fetches task data and dependencies from the database
+   * 2. Checks if dependencies are completed (unless overridden)
+   * 3. Checks if any dependencies are cancelled (unless overridden)
+   * 4. Calls the abstract executeTask method for specific business logic
+   * 5. Handles errors and provides structured logging
+   * 6. Ensures database connection is properly closed
+   * 
+   * @param taskId - The unique identifier of the task to execute
+   * @returns Promise that resolves when task execution is complete
+   * 
+   * @throws {TaskRunnerError} When task is not found in database
+   * @throws {Error} When task execution fails or unexpected errors occur
+   * 
+   * @example
+   * ```typescript
+   * const runner = new MyCustomRunner(data);
+   * await runner.initiateTask(123); // Executes task with ID 123
+   * ```
+   * 
+   * @see {@link executeTask} - Abstract method that subclasses must implement
+   * @see {@link shouldCheckCancelledDependencies} - Controls cancellation checking behavior
    */
   async initiateTask(taskId: number): Promise<void> {
     const runnerType = this.constructor.name;
@@ -144,10 +267,22 @@ abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Get task with dependencies from database
-   * @param taskId - The ID of the task to retrieve
-   * @returns Promise resolving to task with dependencies
-   * @throws Error if task is not found
+   * Retrieves a task with its dependencies from the database.
+   * 
+   * Fetches the complete task information including all dependency relationships.
+   * This method is used internally by the task execution flow to get the current
+   * state of the task and its dependencies before processing.
+   * 
+   * @param taskId - The unique identifier of the task to retrieve
+   * @returns Promise resolving to task object with dependencies included
+   * 
+   * @throws {TaskRunnerError} When task with the given ID is not found in database
+   * 
+   * @example
+   * ```typescript
+   * const task = await this.getTaskWithDependencies(123);
+   * console.log(`Task ${task.id} has ${task.dependencies.length} dependencies`);
+   * ```
    */
   protected async getTaskWithDependencies(taskId: number): Promise<TaskWithDependencies> {
     const task = await this.prisma.task.findUnique({
@@ -169,9 +304,26 @@ abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Check if all dependencies are completed
-   * @param task - The task with dependencies to check
-   * @returns True if all dependencies are completed, false otherwise
+   * Checks if all dependencies of a task are completed.
+   * 
+   * Iterates through all task dependencies and verifies that each one has
+   * a status of 'COMPLETED'. This is used to determine if a task is ready
+   * to be executed or should remain in PENDING state.
+   * 
+   * @param task - The task object with dependencies to check
+   * @returns `true` if all dependencies are completed, `false` if any are not completed
+   * 
+   * @example
+   * ```typescript
+   * const task = await this.getTaskWithDependencies(123);
+   * if (this.areDependenciesCompleted(task)) {
+   *   // All dependencies are done, can proceed with execution
+   *   await this.executeTask(task);
+   * } else {
+   *   // Some dependencies still pending, task remains PENDING
+   *   return;
+   * }
+   * ```
    */
   protected areDependenciesCompleted(task: TaskWithDependencies): boolean {
     const incompleteDependencies = task.dependencies.filter(dep => 
@@ -181,9 +333,24 @@ abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Check if any dependencies are cancelled
-   * @param task - The task with dependencies to check
-   * @returns True if any dependency is cancelled, false otherwise
+   * Checks if any dependencies of a task are cancelled.
+   * 
+   * Iterates through all task dependencies and checks if any have a status
+   * of 'CANCELLED'. If any dependency is cancelled, this task should also
+   * be cancelled (unless shouldCheckCancelledDependencies() returns false).
+   * 
+   * @param task - The task object with dependencies to check
+   * @returns `true` if any dependency is cancelled, `false` if none are cancelled
+   * 
+   * @example
+   * ```typescript
+   * const task = await this.getTaskWithDependencies(123);
+   * if (this.areAnyDependenciesCancelled(task)) {
+   *   // A dependency was cancelled, cancel this task too
+   *   await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id);
+   *   return;
+   * }
+   * ```
    */
   protected areAnyDependenciesCancelled(task: TaskWithDependencies): boolean {
     const cancelledDependencies = task.dependencies.filter(dep => 
@@ -193,16 +360,65 @@ abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Execute the task - can be overridden for custom logic
-   * @param task - The task to execute
+   * Abstract method that subclasses must implement to define their specific business logic.
+   * 
+   * This method is called by initiateTask() after all dependency checks have passed.
+   * Each concrete runner implementation should override this method to implement
+   * their specific task execution logic.
+   * 
+   * @param task - The task object with dependencies that is ready to be executed
+   * @returns Promise that resolves when the task-specific logic is complete
+   * 
+   * @throws {TaskRunnerError} When task-specific business logic fails
+   * @throws {DependencyError} When required dependency data is missing or invalid
+   * @throws {Error} When unexpected errors occur during execution
+   * 
+   * @example
+   * ```typescript
+   * protected async executeTask(task: TaskWithDependencies): Promise<void> {
+   *   // Get data from dependencies
+   *   const userData = this.data.userData;
+   *   
+   *   // Perform specific business logic
+   *   const result = await this.performCalculation(userData);
+   *   
+   *   // Update task with results
+   *   await this.prisma.task.update({
+   *     where: { id: task.id },
+   *     data: {
+   *       status: 'COMPLETED',
+   *       runnerData: JSON.stringify({ result, completedAt: new Date().toISOString() })
+   *     }
+   *   });
+   * }
+   * ```
    */
   protected abstract executeTask(task: TaskWithDependencies): Promise<void>;
 
   /**
-   * Retrieve OpenAI result from the batch store
-   * @param params - Object containing customId and storeId
-   * @returns Promise resolving to the parsed OpenAI response
-   * @throws Error if no response content is received
+   * Retrieves and parses OpenAI results from the batch store.
+   * 
+   * This method is used by runners that need to access results from OpenAI API calls
+   * made by other runners. It connects to the OpenAI batch store, retrieves the
+   * response for the given custom ID, and parses the JSON content.
+   * 
+   * @param params - Object containing the custom ID and store ID for the OpenAI result
+   * @param params.customId - The unique identifier used for the OpenAI request
+   * @param params.storeId - The store ID where the OpenAI result is stored
+   * @returns Promise resolving to the parsed OpenAI response object
+   * 
+   * @throws {OpenAIError} When no response content is received from OpenAI
+   * @throws {Error} When the response cannot be parsed as JSON
+   * 
+   * @example
+   * ```typescript
+   * // Get result from a dependency that made an OpenAI call
+   * const response = await this.getOpenAIResult({
+   *   customId: depData.customId,
+   *   storeId: depData.storeId
+   * });
+   * console.log('OpenAI response:', response);
+   * ```
    */
   protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId);

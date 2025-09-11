@@ -4,10 +4,12 @@ import { createAIBatchStore, createAIRunner, createAIOutputter } from '../servic
 import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scientistCheckSchema, worthAssessmentSchema, promptInjectionSchema, randomizedPromptSchema } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
 import { ResponseCreateParams, ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses';
+import { ReasoningEffort } from 'openai/resources';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
-const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ? process.env.OPENAI_OVERRIDE_REASONING_EFFORT : undefined;
+const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
+  process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_THRESHOLD = 1e-11;
 const BAN_DURATION_YEARS = 1;

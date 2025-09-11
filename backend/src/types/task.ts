@@ -197,10 +197,8 @@ export class TaskRunnerRegistry {
         where: { id: taskId },
         data: {
           status: TaskStatus.CANCELLED,
-          runnerData: JSON.stringify({ // FIXME: RunnerData is here but not in `completeTask` - one of the two is an error.
-            ...updatedRunnerData,
-            cancelledAt: new Date().toISOString()
-          }),
+          runnerData: JSON.stringify(updatedRunnerData),
+          completedAt: new Date(),
           updatedAt: new Date()
         }
       });

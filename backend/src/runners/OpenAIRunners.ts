@@ -286,6 +286,8 @@ abstract class BaseRunner implements TaskRunner {
     if (!content) {
       throw new OpenAIError('No response content received from OpenAI', customId);
     }
+
+    // TaskRunnerRegistry.completeTask(this.prisma, taskId); // FIXME: Where to get `taskId`?
     
     return JSON.parse(content);
   }

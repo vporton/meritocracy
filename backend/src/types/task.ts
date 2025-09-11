@@ -93,7 +93,7 @@ export class TaskRunnerRegistry {
    * Mark a task as completed by task ID
    * This method updates the task status to COMPLETED and sets the completedAt timestamp
    */
-  static async completeTask( // FIXME: Use this method.
+  static async completeTask(
     prisma: any,
     taskId: number
   ): Promise<boolean> {

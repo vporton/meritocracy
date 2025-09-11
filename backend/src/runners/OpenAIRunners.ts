@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIRunner, createAIOutputter } from '../services/openai.js';
 import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scientistCheckSchema, worthAssessmentSchema, promptInjectionSchema, randomizedPromptSchema } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
-import { ResponseCreateParams, ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses';
+import { ResponseCreateParams, ResponseCreateParamsNonStreaming, Tool, ToolChoiceOptions } from 'openai/resources/responses/responses';
 import { ReasoningEffort } from 'openai/resources';
 
 // Constants
@@ -13,6 +13,25 @@ const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_THRESHOLD = 1e-11;
 const BAN_DURATION_YEARS = 1;
+
+const USE_WEB_SEARCH_TOOL = {
+  tools: <Tool[]>[
+    {
+      name: "web_search",
+      type: "function",
+      strict: true,
+      description: "Search the web for information",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" }
+        },
+        required: ["query"]
+      }
+    }
+  ],
+  tool_choice: <ToolChoiceOptions>'required',
+};
 
 // Custom error classes for better error handling
 class TaskRunnerError extends Error {
@@ -100,6 +119,10 @@ abstract class BaseOpenAIRunner implements TaskRunner {
 
   protected getModelOptions(): ResponseCreateParams | undefined {
     return undefined;
+  }
+
+  protected useWebSearchTool(): boolean {
+    return false;
   }
 
   /**
@@ -317,6 +340,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
         reasoning: options?.reasoning === null ? null : {
           effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
         },
+        ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
         response_format: {
           type: "json_schema" as const,
           json_schema: {
@@ -475,6 +499,10 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     };
   }
 
+  protected useWebSearchTool(): boolean {
+    return true;
+  }
+
   /**
    * Initiate the scientist check request
    * @param task - The task containing user data to analyze
@@ -499,6 +527,10 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
    */
   protected getOriginalPrompt(): string {
     return worthPrompt;
+  }
+
+  protected useWebSearchTool(): boolean {
+    return true;
   }
 
   /**
@@ -653,7 +685,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
 export class RandomizePromptRunner extends BaseOpenAIRunner {
   protected getModelOptions(): ResponseCreateParams | undefined {
     return {
-      temperature: 1.0 // We want randomized responses.
+      temperature: 1.0, // We want randomized responses.
     };
   }
 
@@ -719,6 +751,10 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    */
   protected getOriginalPrompt(): string {
     return injectionPrompt;
+  }
+
+  protected useWebSearchTool(): boolean {
+    return true;
   }
 
   /**

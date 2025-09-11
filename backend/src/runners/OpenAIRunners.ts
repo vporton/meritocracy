@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIRunner, createAIOutputter } from '../services/openai.js';
 import { onboardingPrompt, randomizePrompt, worthPrompt, injectionPrompt, scientistCheckSchema, worthAssessmentSchema, promptInjectionSchema, randomizedPromptSchema } from '../prompts.js';
 import { v4 as uuidv4 } from 'uuid';
+import { ResponseCreateParams } from 'openai/resources/responses/responses.mjs';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -79,12 +80,6 @@ interface TaskRunnerResult {
   [key: string]: any;
 }
 
-// TODO: Use an OpenAI type instead.
-type MyModelOptions = {
-  model?: string;
-  temperature?: number;
-} | undefined;
-
 /**
  * Base class for OpenAI TaskRunners with common functionality
  * Provides shared methods for dependency checking, OpenAI requests, and task management
@@ -100,7 +95,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     this.runnerName = this.constructor.name;
   }
 
-  protected getModelOptions(): MyModelOptions | undefined {
+  protected getModelOptions(): ResponseCreateParams | undefined {
     return undefined;
   }
 
@@ -301,7 +296,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     prompt: string,
     schema: any,
     customId: string,
-    options: MyModelOptions = undefined
+    options: ResponseCreateParams = {}
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined);
     const runner = await createAIRunner(store);
@@ -372,7 +367,7 @@ abstract class BaseOpenAIRunner implements TaskRunner {
     task: TaskWithDependencies,
     prompt: string,
     schema: any,
-    options: MyModelOptions = undefined,
+    options: ResponseCreateParams = {},
     additionalData: Record<string, any> = {}
   ): Promise<void> {
     const customId = uuidv4();
@@ -466,7 +461,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
  * Uses OpenAI to analyze user data and determine if they are an active scientist or FOSS developer
  */
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): MyModelOptions | undefined {
+  protected getModelOptions(): ResponseCreateParams | undefined {
     return {
       model: 'gpt-5-nano-2025-08-07', // TODO: Update the model name.
       temperature: 0.0
@@ -649,7 +644,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
  * Can be conditionally cancelled based on worth threshold dependencies
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): MyModelOptions | undefined {
+  protected getModelOptions(): ResponseCreateParams | undefined {
     return {
       temperature: 1.0 // We want randomized responses.
     };

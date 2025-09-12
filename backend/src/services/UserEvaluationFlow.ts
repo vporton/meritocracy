@@ -26,9 +26,8 @@ export class UserEvaluationFlow {
    * 
    * Flow according to diagram:
    * 1. Scientist Onboarding → First Worth Assessment → WorthThresholdCheckRunner
-   * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second Worth Assessment → Median
-   * 3. If worth > 1e-11 AND no injection: Prompt Injection Checks → Third Worth Assessment → Median
-   * 4. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
+   * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second and Third Worth Assessment → Median
+   * 3. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
    */
   async createEvaluationFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);

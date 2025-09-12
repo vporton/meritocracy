@@ -26,7 +26,8 @@ const USE_WEB_SEARCH_TOOL = {
         properties: {
           query: { type: "string", description: "The search query" }
         },
-        required: ["query"]
+        required: ["query"],
+        additionalProperties: false
       }
     }
   ],
@@ -211,9 +212,9 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     
     const requestBody = <ResponseCreateParamsNonStreaming>{
       instructions: prompt, // system/developer message.
-      input: "", // user's message - empty string as the prompt contains all necessary information
+      input: prompt, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
-      temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
+      ...(options?.temperature !== undefined && { temperature: options.temperature }),
       // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
@@ -390,7 +391,6 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   protected getModelOptions(): ResponseCreateParams | undefined {
     return {
       model: 'gpt-5-nano-2025-08-07', // TODO: Update the model name.
-      temperature: 0.0,
       prompt_cache_key: 'scientist-onboarding',
       reasoning: {
         effort: OVERRIDE_REASONING_EFFORT ?? 'low'

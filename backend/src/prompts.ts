@@ -29,7 +29,8 @@ export const scientistCheckSchema = {
       description: "Explanation of the decision"
     }
   },
-  required: ["isActiveScientistOrFOSSDev", "why"]
+  required: ["isActiveScientistOrFOSSDev", "why"],
+  additionalProperties: false
 };
 
 export const worthAssessmentSchema = {
@@ -44,7 +45,8 @@ export const worthAssessmentSchema = {
       description: "Explanation of the assessment"
     }
   },
-  required: ["worthAsFractionOfGDP", "why"]
+  required: ["worthAsFractionOfGDP", "why"],
+  additionalProperties: false
 };
 
 export const promptInjectionSchema = {
@@ -59,7 +61,8 @@ export const promptInjectionSchema = {
       description: "Explanation of the detection result"
     }
   },
-  required: ["hasPromptInjection", "why"]
+  required: ["hasPromptInjection", "why"],
+  additionalProperties: false
 };
 
 export const randomizedPromptSchema = {
@@ -70,5 +73,6 @@ export const randomizedPromptSchema = {
       description: "The randomized version of the prompt"
     }
   },
-  required: ["randomizedPrompt"]
+  required: ["randomizedPrompt"],
+  additionalProperties: false
 };

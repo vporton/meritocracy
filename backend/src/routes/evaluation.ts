@@ -34,7 +34,7 @@ router.post('/start', async (req, res) => {
     const evaluationFlow = new UserEvaluationFlow(prisma);
     
     // Create the evaluation flow
-    await evaluationFlow.createEvaluationFlow({
+    await evaluationFlow.createOnboardindFlow({
       userId,
       userData
     });
@@ -207,7 +207,7 @@ router.post('/complete', async (req, res) => {
     const taskExecutor = new TaskExecutor(prisma);
     
     // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createEvaluationFlow({
+    const rootTaskId = await evaluationFlow.createOnboardindFlow({
       userId,
       userData
     });

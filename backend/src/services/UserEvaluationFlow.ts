@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Task } from '@prisma/client';
 import { TaskStatus } from '../types/task.js';
 import { worthPrompt, injectionPrompt } from '../prompts.js';
 import { GlobalDataService } from './GlobalDataService.js';
@@ -30,15 +30,34 @@ export class UserEvaluationFlow {
    * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second and Third Worth Assessment → Median
    * 3. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
    */
-  async createEvaluationFlow(evaluationData: UserEvaluationData) {
-    console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
+  async createOnboardindFlow(evaluationData: UserEvaluationData) {
+    console.log(`🔄 Creating onboarding flow for user ${evaluationData.userId}`);
 
     // Step 1: Create the initial scientist check task
-    const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
+     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
+    return this.createEvaluationFlow(evaluationData, scientistOnboardingTask);
+  }
+
+  /**
+   * Create the flow graph for user evaluation
+   * Returns the root task ID that can be used to start the evaluation
+   * 
+   * Flow according to diagram:
+   * 1. First Worth Assessment → WorthThresholdCheckRunner
+   * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second and Third Worth Assessment → Median
+   * 3. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
+   */
+  async createEvaluationFlow(evaluationData: UserEvaluationData, scientistOnboardingTask?: Task) {
+    console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
+
     // Step 2: Create the first worth assessment task
     const worthPromptWithGdp = await this.getWorthPromptWithGdp();
-    const firstWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistOnboardingTask.id], worthPromptWithGdp);
+    const firstWorthRandomizeTask = await this.createRandomizePromptTask(
+      evaluationData,
+      scientistOnboardingTask !== undefined ? [scientistOnboardingTask.id] : [],
+      worthPromptWithGdp
+    );
     const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstWorthRandomizeTask.id]);
     
     // Step 3: Create the worth threshold check task
@@ -59,10 +78,10 @@ export class UserEvaluationFlow {
     // Note: The median task will process available worth values even if some dependencies are cancelled
     const medianTask = await this.createMedianTask(evaluationData, [firstWorthTask.id, secondWorthTask.id, thirdWorthTask.id]);
     
-    console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
+    console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask?.id || 'N/A'}`);
     console.log(`📊 Flow structure: Scientist → Worth → Threshold Check → [Injection Checks] → Worth → Median`);
     console.log(`📊 Both Second and Third Worth Assessments depend on injection checks passing`);
-    return scientistOnboardingTask.id;
+    return scientistOnboardingTask?.id || firstWorthTask.id;
   }
 
   /**

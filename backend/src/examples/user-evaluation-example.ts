@@ -33,7 +33,7 @@ async function runUserEvaluationExample() {
     console.log("🚀 Starting user evaluation flow...");
     
     // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createEvaluationFlow(userEvaluationData);
+    const rootTaskId = await evaluationFlow.createOnboardindFlow(userEvaluationData);
     console.log(`📋 Created evaluation flow with root task ID: ${rootTaskId}`);
     
     // Execute the flow
@@ -111,7 +111,7 @@ export async function evaluateUser(
     };
     
     // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createEvaluationFlow(userEvaluationData);
+    const rootTaskId = await evaluationFlow.createOnboardindFlow(userEvaluationData);
     
     // Execute the flow
     let executedCount = 0;

@@ -66,7 +66,7 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
   }
   async init(): Promise<void> {
     assert(this.batchesId === undefined, "cannot initialize batchesId second time");
-    const batches = await this.prisma.batches.create();
+    const batches = await this.prisma.batches.create({});
     this.batchesId = batches.id.toString();
   }
   getStoreId(): string {
@@ -97,7 +97,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   }
   async init(): Promise<void> {
     assert(this.storeId === undefined, "cannot initialize storeId second time");
-    const nonBatches = await this.prisma.nonBatches.create({data: {id: BigInt(Date.now())}});
+    const nonBatches = await this.prisma.nonBatches.create({});
     this.storeId = nonBatches.id.toString();
   }
   getStoreId(): string {

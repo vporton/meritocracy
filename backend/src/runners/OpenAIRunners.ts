@@ -494,7 +494,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
  * This function should be called during application initialization to make all runners available
  */
 export function registerOpenAIRunners(): void {
-  TaskRunnerRegistry.register('ScientistCheckRunner', ScientistOnboardingRunner);
+  TaskRunnerRegistry.register('ScientistOnboardingRunner', ScientistOnboardingRunner);
   TaskRunnerRegistry.register('RandomizePromptRunner', RandomizePromptRunner);
   TaskRunnerRegistry.register('WorthAssessmentRunner', WorthAssessmentRunner);
   TaskRunnerRegistry.register('PromptInjectionRunner', PromptInjectionRunner);

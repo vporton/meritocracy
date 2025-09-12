@@ -151,7 +151,7 @@ router.get('/status/:userId', async (req, res) => {
 
     // Group tasks by type
     const taskGroups = {
-      scientistCheck: tasks.filter(t => t.runnerClassName === 'ScientistCheckRunner'),
+      scientistCheck: tasks.filter(t => t.runnerClassName === 'ScientistOnboardingRunner'),
       worthAssessment: tasks.filter(t => t.runnerClassName === 'WorthAssessmentRunner'),
       promptInjection: tasks.filter(t => t.runnerClassName === 'PromptInjectionRunner'),
       worthThresholdCheck: tasks.filter(t => t.runnerClassName === 'WorthThresholdCheckRunner'),

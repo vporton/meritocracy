@@ -53,7 +53,7 @@ export class UserEvaluationFlow {
     return await this.prisma.task.create({
       data: {
         status: TaskStatus.PENDING,
-        runnerClassName: 'ScientistCheckRunner',
+        runnerClassName: 'ScientistOnboardingRunner',
         runnerData: JSON.stringify({
           userData: evaluationData.userData
         })

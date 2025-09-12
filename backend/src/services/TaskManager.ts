@@ -280,30 +280,4 @@ export class TaskManager {
 
     return { pending, inProgress, completed, cancelled, total };
   }
-
-  /**
-   * Get tasks with their dependency information
-   * @param status - Optional status filter
-   * @returns Promise<Array> - Tasks with dependency information
-   */
-//   async getTasksWithDependencies(status?: TaskStatus) {
-//     const whereClause = status ? { status } : {};
-    
-//     return await this.prisma.task.findMany({
-//       where: whereClause,
-//       include: {
-//         dependencies: {
-//           include: {
-//             dependency: true,
-//           },
-//         },
-//         dependents: {
-//           include: {
-//             task: true,
-//           },
-//         },
-//       },
-//       orderBy: { id: 'asc' },
-//     });
-//   }
 }

@@ -28,10 +28,10 @@ export class UserEvaluationFlow {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
 
     // Step 1: Create the initial scientist check task
-    const scientistCheckTask = await this.createScientistOnboardingTask(evaluationData);
+    const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
     // Step 2: Create a randomization task for the worth prompt
-    const randomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistCheckTask.id]);
+    const randomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistOnboardingTask.id]);
     
     // Step 3: Create the first worth assessment task using WorthAssessmentRunner (depends on randomization)
     const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
@@ -42,8 +42,8 @@ export class UserEvaluationFlow {
     // Step 5: Create the final median calculation task
     const medianTask = await this.createMedianTask(evaluationData, conditionalTasks.worthTasks);
     
-    console.log(`✅ Evaluation flow created with root task ${scientistCheckTask.id}`);
-    return scientistCheckTask.id;
+    console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
+    return scientistOnboardingTask.id;
   }
 
   /**

@@ -9,9 +9,17 @@ interface ServerStatus {
   error?: string;
 }
 
+interface WorldGdpData {
+  worldGdp: number;
+  formatted: string;
+  currency: string;
+  lastUpdated: string;
+}
+
 function Home() {
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
   const [ethereumStatus, setEthereumStatus] = useState<{network: string, balance: bigint, currency: string, address?: string} | undefined>()
+  const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [loading, setLoading] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
 
@@ -49,6 +57,21 @@ function Home() {
     }
 
     checkEthereumStatus()
+  }, [])
+
+  useEffect(() => {
+    const fetchWorldGdp = async () => {
+      try {
+        const response = await api.get('/api/global/gdp')
+        if (response.data.success) {
+          setWorldGdp(response.data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch world GDP:', error)
+      }
+    }
+
+    fetchWorldGdp()
   }, [])
 
   const copyToClipboard = async (text: string) => {
@@ -101,6 +124,20 @@ function Home() {
       <div className="card">
         <p>✅ <strong>EVM network:</strong> {ethereumStatus?.network}</p>
         <p>📦 <strong>EVM gas token balance:</strong> {ethereumStatus ? ethers.formatEther(ethereumStatus.balance) : "n/a"} {ethereumStatus?.currency}</p>
+      </div>
+      
+      <div className="card">
+        <h3>🌍 World Economy</h3>
+        {worldGdp ? (
+          <div>
+            <p>💰 <strong>World GDP:</strong> {worldGdp.formatted} {worldGdp.currency}</p>
+            <p style={{ fontSize: '0.9rem', color: '#888' }}>
+              Last updated: {new Date(worldGdp.lastUpdated).toLocaleDateString()}
+            </p>
+          </div>
+        ) : (
+          <p>📊 <strong>World GDP:</strong> Data not available</p>
+        )}
       </div>
       
       {ethereumStatus?.address && (

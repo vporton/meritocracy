@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { TaskRunnerRegistry, TaskStatus } from '../types/task';
+import { TaskRunnerRegistry, TaskStatus } from '../types/task.js';
 
 /**
  * Example demonstrating how to use the TaskRunnerRegistry.completeTask function

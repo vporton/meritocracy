@@ -3,7 +3,7 @@
  * This file demonstrates how to use the Ethereum service with Ethers.js
  */
 
-import { ethereumService } from '../services/ethereum';
+import { ethereumService } from '../services/ethereum.js';
 
 async function ethereumExample() {
     try {

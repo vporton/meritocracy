@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { ethereumService } from '../services/ethereum';
+import { ethereumService } from '../services/ethereum.js';
 
 const router = Router();
 

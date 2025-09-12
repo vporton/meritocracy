@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import { UserEvaluationFlow } from '../services/UserEvaluationFlow';
-import { registerAllRunners } from '../runners/OpenAIRunners';
-import { TaskExecutor } from '../services/TaskExecutor';
+import { UserEvaluationFlow } from '../services/UserEvaluationFlow.js';
+import { registerAllRunners } from '../runners/OpenAIRunners.js';
+import { TaskExecutor } from '../services/TaskExecutor.js';
 
 /**
  * Example of how to use the User Evaluation Flow

@@ -1,5 +1,5 @@
 import express from 'express';
-import { GlobalDataService } from '../services/GlobalDataService';
+import { GlobalDataService } from '../services/GlobalDataService.js';
 
 const router = express.Router();
 

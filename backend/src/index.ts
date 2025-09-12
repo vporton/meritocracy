@@ -12,16 +12,16 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import userRoutes from './routes/users';
-import authRoutes from './routes/auth';
-import ethereumRoutes from './routes/ethereum';
-import evaluationRoutes from './routes/evaluation';
-import globalRoutes from './routes/global';
-import logsRoutes from './routes/logs';
+import userRoutes from './routes/users.js';
+import authRoutes from './routes/auth.js';
+import ethereumRoutes from './routes/ethereum.js';
+import evaluationRoutes from './routes/evaluation.js';
+import globalRoutes from './routes/global.js';
+import logsRoutes from './routes/logs.js';
 
 // Register TaskRunners
-import { registerAllRunners } from './runners/OpenAIRunners';
-import { GlobalDataService } from './services/GlobalDataService';
+import { registerAllRunners } from './runners/OpenAIRunners.js';
+import { GlobalDataService } from './services/GlobalDataService.js';
 
 // Register all TaskRunners on startup
 registerAllRunners();

@@ -1,9 +1,9 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { UserEvaluationFlow } from '../services/UserEvaluationFlow';
-import { TaskExecutor } from '../services/TaskExecutor';
-import { TaskManager } from '../services/TaskManager';
-import { registerAllRunners } from '../runners/OpenAIRunners';
+import { UserEvaluationFlow } from '../services/UserEvaluationFlow.js';
+import { TaskExecutor } from '../services/TaskExecutor.js';
+import { TaskManager } from '../services/TaskManager.js';
+import { registerAllRunners } from '../runners/OpenAIRunners.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();

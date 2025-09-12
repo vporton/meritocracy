@@ -20,7 +20,7 @@
     "noImplicitThis": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "Bundler",
+    "moduleResolution": "Node",
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]

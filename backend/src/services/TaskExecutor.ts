@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { TaskStatus, TaskRunnerData } from '../types/task';
+import { TaskStatus, TaskRunnerData } from '../types/task.js';
 
 export class TaskExecutor {
   private prisma: PrismaClient;

@@ -1,6 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { DBLogsService, LogsFilter } from '../services/DBLogsService';
+import { DBLogsService, LogsFilter } from '../services/DBLogsService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();

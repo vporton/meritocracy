@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { TaskManager } from '../services/TaskManager';
-import { TaskStatus } from '../types/task';
+import { TaskManager } from '../services/TaskManager.js';
+import { TaskStatus } from '../types/task.js';
 
 /**
  * Example demonstrating the TaskManager functionality

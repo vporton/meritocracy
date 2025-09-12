@@ -13,7 +13,7 @@ export class TaskManager {
    * @param taskId - The ID of the task to run
    * @returns Promise<boolean> - True if the task was successfully run, false otherwise
    */
-  async runTaskWithDependencies(taskId: number): Promise<boolean> {
+  private async runTaskWithDependencies(taskId: number): Promise<boolean> {
     try {
       // Get the task with its dependencies
       const task = await this.prisma.task.findUnique({

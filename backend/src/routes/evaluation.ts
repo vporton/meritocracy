@@ -46,14 +46,18 @@ router.post('/start', async (req, res) => {
     if (openAIFlexMode === 'nonbatch' && rootTaskId) {
       console.log(`🚀 OPENAI_FLEX_MODE is non-batch, running task ${rootTaskId} with dependencies`);
       const taskManager = new TaskManager(prisma);
-      const success = await taskManager.runTaskWithDependencies(rootTaskId);
+      const success = await taskManager.runAllPendingTasks();
       
       if (success) {
         console.log(`✅ Task ${rootTaskId} executed successfully`);
       } else {
         console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
       }
-    } else {
+
+      // FIXME: Move to the TaskManager?
+      const store = await createAIBatchStore(storeId);
+      const outputter = await createAIOutputter(store);
+      } else {
       console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
     }
 

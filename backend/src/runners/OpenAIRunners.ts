@@ -211,7 +211,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     
     const requestBody = <ResponseCreateParamsNonStreaming>{
       instructions: prompt, // system/developer message.
-      // input: TODO, // user's message
+      input: "", // user's message - empty string as the prompt contains all necessary information
       model: options?.model ?? DEFAULT_MODEL,
       temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
       // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645

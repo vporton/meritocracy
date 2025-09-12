@@ -30,7 +30,7 @@ export class UserEvaluationFlow {
    * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second and Third Worth Assessment → Median
    * 3. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
    */
-  async createOnboardindFlow(evaluationData: UserEvaluationData) {
+  async createOnboardingFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating onboarding flow for user ${evaluationData.userId}`);
 
     // Step 1: Create the initial scientist check task

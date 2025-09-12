@@ -35,7 +35,7 @@ router.post('/start', async (req, res) => {
     const evaluationFlow = new UserEvaluationFlow(prisma);
     
     // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createOnboardindFlow({
+    const rootTaskId = await evaluationFlow.createOnboardingFlow({
       userId,
       userData
     });
@@ -54,9 +54,9 @@ router.post('/start', async (req, res) => {
         console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
       }
 
-      // FIXME: Move to the TaskManager?
-      const store = await createAIBatchStore(storeId);
-      const outputter = await createAIOutputter(store);
+      // FIXME: How this should Move to the TaskManager?
+      // const store = await createAIBatchStore(storeId);
+      // const outputter = await createAIOutputter(store);
       } else {
       console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
     }

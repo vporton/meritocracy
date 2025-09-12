@@ -30,18 +30,15 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
-    // Step 2: Create the main worth evaluation flow with bi-monthly input
-    const worthFlow = await this.createWorthEvaluationFlow(evaluationData, [scientistOnboardingTask.id]);
+    // Step 2: Create the three worth assessment tasks (as per diagram)
+    const worthTasks = await this.createWorthTasks(evaluationData, [scientistOnboardingTask.id]);
     
-    // Step 3: Create the three parallel worth assessment tasks
-    const parallelWorthTasks = await this.createParallelWorthTasks(evaluationData, [scientistOnboardingTask.id]);
+    // Step 3: Create prompt injection detection tasks connected to worth evaluations
+    const injectionTasks = await this.createPromptInjectionFlow(evaluationData, worthTasks);
     
-    // Step 4: Create prompt injection detection tasks connected to worth evaluations
-    const injectionTasks = await this.createPromptInjectionFlow(evaluationData, parallelWorthTasks);
-    
-    // Step 5: Create the final median calculation task that depends on all worth tasks
-    const allWorthTasks = [worthFlow.mainWorthTask.id, ...parallelWorthTasks.map(t => t.worthTask.id)];
-    const medianTask = await this.createMedianTask(evaluationData, allWorthTasks);
+    // Step 4: Create the final median calculation task that depends on all worth tasks
+    const allWorthTaskIds = worthTasks.map(t => t.worthTask.id);
+    const medianTask = await this.createMedianTask(evaluationData, allWorthTaskIds);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
     return scientistOnboardingTask.id;
@@ -94,26 +91,6 @@ export class UserEvaluationFlow {
     return task;
   }
 
-  /**
-   * Create the main worth evaluation flow with bi-monthly input
-   * This corresponds to the main path in the diagram
-   */
-  private async createWorthEvaluationFlow(
-    evaluationData: UserEvaluationData,
-    dependencies: number[]
-  ) {
-    // Create randomization task for worth prompt
-    // Bi-monthly input is just a flag that affects the randomization, not a separate task
-    const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, worthPrompt);
-    
-    // Create the main worth assessment task
-    const mainWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
-    
-    return {
-      randomizeTask,
-      mainWorthTask
-    };
-  }
 
 
   /**
@@ -148,16 +125,16 @@ export class UserEvaluationFlow {
 
 
   /**
-   * Create the three parallel worth assessment tasks
-   * These correspond to the parallel paths in the diagram that converge to median
+   * Create the three worth assessment tasks
+   * These correspond to the worth evaluation tasks in the diagram that converge to median
    */
-  private async createParallelWorthTasks(
+  private async createWorthTasks(
     evaluationData: UserEvaluationData,
     dependencies: number[]
   ) {
     const tasks = [];
     
-    // Create 3 parallel worth assessment tasks
+    // Create 3 worth assessment tasks
     for (let i = 0; i < 3; i++) {
       // Create randomization task for each worth assessment
       const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
@@ -181,7 +158,7 @@ export class UserEvaluationFlow {
    */
   private async createPromptInjectionFlow(
     evaluationData: UserEvaluationData,
-    parallelWorthTasks: Array<{randomizeTask: any, worthTask: any}>
+    worthTasks: Array<{randomizeTask: any, worthTask: any}>
   ) {
     const injectionTasks = [];
     
@@ -189,7 +166,7 @@ export class UserEvaluationFlow {
     for (let i = 0; i < 3; i++) {
       // Each injection check depends on a specific worth evaluation
       // The diagram shows connections from worth evaluations to injection checks
-      const worthTask = parallelWorthTasks[i]?.worthTask;
+      const worthTask = worthTasks[i]?.worthTask;
       const dependencies = worthTask ? [worthTask.id] : [];
       
       // Create randomization task for prompt injection check

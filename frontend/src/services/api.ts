@@ -78,6 +78,18 @@ interface DBLogEntry {
   taskId?: number;
   action: string;
   details: any;
+  // New structure for OpenAI logs
+  request?: {
+    data: any;
+    timestamp: string;
+    status: string;
+  };
+  response?: {
+    data: any;
+    timestamp?: string;
+    status: string;
+    error?: string;
+  };
   status?: string;
   error?: string;
 }

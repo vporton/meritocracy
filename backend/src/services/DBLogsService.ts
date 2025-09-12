@@ -136,10 +136,20 @@ export class DBLogsService {
         runnerClassName: log.runnerClassName,
         requestInitiated: log.requestInitiated,
         responseReceived: log.responseReceived,
-        requestData: log.requestData ? JSON.parse(log.requestData) : null,
-        responseData: log.responseData ? JSON.parse(log.responseData) : null,
         user: log.user,
         task: log.task
+      },
+      // Clearly separate request and response data
+      request: {
+        data: log.requestData ? JSON.parse(log.requestData) : null,
+        timestamp: log.requestInitiated,
+        status: 'sent'
+      },
+      response: {
+        data: log.responseData ? JSON.parse(log.responseData) : null,
+        timestamp: log.responseReceived,
+        status: log.responseReceived ? 'received' : 'pending',
+        error: log.errorMessage || null
       },
       status: log.responseReceived ? 'completed' : 'pending',
       error: log.errorMessage || undefined

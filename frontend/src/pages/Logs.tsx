@@ -107,15 +107,62 @@ const Logs: React.FC = () => {
   const renderLogDetails = (log: DBLogEntry) => {
     return (
       <div className="log-details">
-        <div className="log-details-section">
-          <h4>Details</h4>
-          <pre>{JSON.stringify(log.details, null, 2)}</pre>
-        </div>
-        {log.error && (
-          <div className="log-details-section error">
-            <h4>Error</h4>
-            <p>{log.error}</p>
-          </div>
+        {/* For OpenAI logs, show request and response sections clearly */}
+        {log.type === 'openai' && log.request && log.response ? (
+          <>
+            <div className="log-details-section request-section">
+              <h4>📤 Request to OpenAI</h4>
+              <div className="request-meta">
+                <span className="timestamp">Sent: {formatTimestamp(log.request.timestamp)}</span>
+                <span className="status" style={{ color: getStatusColor(log.request.status) }}>
+                  {log.request.status}
+                </span>
+              </div>
+              <pre>{JSON.stringify(log.request.data, null, 2)}</pre>
+            </div>
+            
+            <div className="log-details-section response-section">
+              <h4>📥 Response from OpenAI</h4>
+              <div className="response-meta">
+                {log.response.timestamp && (
+                  <span className="timestamp">Received: {formatTimestamp(log.response.timestamp)}</span>
+                )}
+                <span className="status" style={{ color: getStatusColor(log.response.status) }}>
+                  {log.response.status}
+                </span>
+              </div>
+              {log.response.data ? (
+                <pre>{JSON.stringify(log.response.data, null, 2)}</pre>
+              ) : (
+                <div className="no-response">
+                  <p>No response data available</p>
+                  {log.response.error && (
+                    <p className="error-text">Error: {log.response.error}</p>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Additional metadata */}
+            <div className="log-details-section">
+              <h4>Metadata</h4>
+              <pre>{JSON.stringify(log.details, null, 2)}</pre>
+            </div>
+          </>
+        ) : (
+          /* For non-OpenAI logs, show the original structure */
+          <>
+            <div className="log-details-section">
+              <h4>Details</h4>
+              <pre>{JSON.stringify(log.details, null, 2)}</pre>
+            </div>
+            {log.error && (
+              <div className="log-details-section error">
+                <h4>Error</h4>
+                <p>{log.error}</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     );

@@ -271,7 +271,12 @@ router.get('/types', async (req, res): Promise<void> => {
       openai: {
         name: 'OpenAI API Logs',
         description: 'API requests and responses to OpenAI services',
-        fields: ['customId', 'storeId', 'runnerClassName', 'requestData', 'responseData', 'errorMessage']
+        fields: ['customId', 'storeId', 'runnerClassName', 'request.data', 'response.data', 'errorMessage'],
+        structure: {
+          request: 'Contains the data sent to OpenAI API',
+          response: 'Contains the data received from OpenAI API',
+          details: 'Contains metadata like timestamps and user info'
+        }
       },
       task: {
         name: 'Task Execution Logs',

@@ -54,7 +54,7 @@ router.post('/start', async (req, res) => {
         console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
       }
 
-      // FIXME: How this should Move to the TaskManager?
+      // FIXME: How should this behave? Move to the TaskManager?
       // const store = await createAIBatchStore(storeId);
       // const outputter = await createAIOutputter(store);
       } else {

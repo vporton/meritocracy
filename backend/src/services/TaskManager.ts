@@ -79,6 +79,7 @@ export class TaskManager {
       // Run the task using TaskRunnerRegistry
       const success = await TaskRunnerRegistry.runByTaskId(this.prisma, taskId);
       // TODO
+      return success; // TODO: What does the return value of this function mean?
     } catch (error) {
       console.error(`❌ Error running task ${taskId}:`, error);
       

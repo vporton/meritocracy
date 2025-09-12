@@ -152,7 +152,7 @@ export abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Override the getOutput() method to store the status in the DB.
+   * Override the onOutput() method to store the status in the DB.
    */
   protected async onOutput(customId: string, output: any): Promise<void> {
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);

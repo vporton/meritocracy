@@ -58,7 +58,7 @@ model BatchMapping {
 }
 
 model NonBatches {
-  id               BigInt            @id
+  id               BigInt            @id @default(autoincrement())
   createdAt        DateTime          @default(now())
   nonbatchMappings NonBatchMapping[]
 

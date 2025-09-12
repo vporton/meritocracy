@@ -48,12 +48,12 @@ abstract class OurClearer implements FlexibleStore {
   async clear(): Promise<void> {
     // Delete both batch and non-batch data, as necessary if the server switches between batch and non-batch modes.
     try {
-      await this.prisma.batches.delete({where: {id: BigInt(this.getStoreId())}});
+      await this.prisma.batches.delete({where: {id: parseInt(this.getStoreId())}});
     } catch (error) {
       // Ignore if batch doesn't exist
     }
     try {
-      await this.prisma.nonBatches.delete({where: {id: BigInt(this.getStoreId())}});
+      await this.prisma.nonBatches.delete({where: {id: parseInt(this.getStoreId())}});
     } catch (error) {
       // Ignore if non-batch doesn't exist
     }
@@ -79,7 +79,7 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
     await this.prisma.batchMapping.create({
       data: {
         customId: props.customId,
-        batchId: BigInt(props.batchId),
+        batchId: parseInt(props.batchId),
       },
     });
   }
@@ -110,7 +110,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
       data: {
         customId: props.customId,
         response: JSON.stringify(props.response),
-        nonBatchId: BigInt(this.storeId!),
+        nonBatchId: parseInt(this.storeId!),
       },
     });
   }

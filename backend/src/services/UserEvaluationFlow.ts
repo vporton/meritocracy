@@ -23,6 +23,11 @@ export class UserEvaluationFlow {
   /**
    * Create the complete flow graph for user evaluation
    * Returns the root task ID that can be used to start the evaluation
+   * 
+   * Flow according to diagram:
+   * 1. Scientist Onboarding → First Worth Assessment → Median Calculation
+   * 2. Scientist Onboarding → Second Worth Assessment → Prompt Injection Check (if > 1e-11) → Median Calculation
+   * 3. Scientist Onboarding → Third Worth Assessment → Prompt Injection Check (if > 1e-11) → Median Calculation
    */
   async createEvaluationFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
@@ -33,7 +38,7 @@ export class UserEvaluationFlow {
     // Step 2: Create the three worth assessment tasks (as per diagram)
     const worthTasks = await this.createWorthTasks(evaluationData, [scientistOnboardingTask.id]);
     
-    // Step 3: Create prompt injection detection tasks connected to worth evaluations
+    // Step 3: Create prompt injection detection tasks connected to second and third worth evaluations
     const injectionTasks = await this.createPromptInjectionFlow(evaluationData, worthTasks);
     
     // Step 4: Create the final median calculation task that depends on all worth tasks
@@ -41,6 +46,7 @@ export class UserEvaluationFlow {
     const medianTask = await this.createMedianTask(evaluationData, allWorthTaskIds);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
+    console.log(`📊 Flow structure: 1 direct worth task + 2 worth tasks with injection checks → median`);
     return scientistOnboardingTask.id;
   }
 
@@ -127,6 +133,11 @@ export class UserEvaluationFlow {
   /**
    * Create the three worth assessment tasks
    * These correspond to the worth evaluation tasks in the diagram that converge to median
+   * 
+   * Flow according to diagram:
+   * 1. First worth task: Directly after onboarding → median calculation
+   * 2. Second worth task: After onboarding → prompt injection check (if > 1e-11) → median calculation  
+   * 3. Third worth task: After onboarding → prompt injection check (if > 1e-11) → median calculation
    */
   private async createWorthTasks(
     evaluationData: UserEvaluationData,
@@ -134,8 +145,18 @@ export class UserEvaluationFlow {
   ) {
     const tasks = [];
     
-    // Create 3 worth assessment tasks
-    for (let i = 0; i < 3; i++) {
+    // First worth task: Directly after onboarding, no prompt injection check
+    const firstRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
+    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstRandomizeTask.id]);
+    
+    tasks.push({
+      randomizeTask: firstRandomizeTask,
+      worthTask: firstWorthTask,
+      isFirstTask: true // Mark this as the first task that goes directly to median
+    });
+    
+    // Second and third worth tasks: After onboarding, with prompt injection checks
+    for (let i = 1; i < 3; i++) {
       // Create randomization task for each worth assessment
       const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
       
@@ -144,7 +165,8 @@ export class UserEvaluationFlow {
       
       tasks.push({
         randomizeTask,
-        worthTask
+        worthTask,
+        isFirstTask: false // These go through prompt injection checks
       });
     }
     
@@ -155,18 +177,29 @@ export class UserEvaluationFlow {
    * Create prompt injection detection flow connected to worth evaluations
    * This implements the right side of the diagram where worth evaluations > 1e-11
    * trigger prompt injection checks, and detection leads to 1-year ban
+   * 
+   * Note: Only creates injection tasks for the second and third worth tasks,
+   * as the first worth task goes directly to median calculation
    */
   private async createPromptInjectionFlow(
     evaluationData: UserEvaluationData,
-    worthTasks: Array<{randomizeTask: any, worthTask: any}>
+    worthTasks: Array<{randomizeTask: any, worthTask: any, isFirstTask: boolean}>
   ) {
     const injectionTasks = [];
     
-    // Create 3 prompt injection check tasks
-    for (let i = 0; i < 3; i++) {
+    // Create prompt injection check tasks only for the second and third worth tasks
+    // (skip the first task which goes directly to median)
+    for (let i = 0; i < worthTasks.length; i++) {
+      const worthTaskData = worthTasks[i];
+      
+      // Skip the first task - it goes directly to median calculation
+      if (worthTaskData.isFirstTask) {
+        continue;
+      }
+      
       // Each injection check depends on a specific worth evaluation
       // The diagram shows connections from worth evaluations to injection checks
-      const worthTask = worthTasks[i]?.worthTask;
+      const worthTask = worthTaskData.worthTask;
       const dependencies = worthTask ? [worthTask.id] : [];
       
       // Create randomization task for prompt injection check
@@ -181,7 +214,7 @@ export class UserEvaluationFlow {
           runnerData: JSON.stringify({
             userId: evaluationData.userId,
             userData: evaluationData.userData,
-            checkNumber: i + 1,
+            checkNumber: i, // Use the index for check number
             threshold: 1e-11, // Check if worth > 1e-11 before running injection check
             banDuration: '1y', // Ban for 1 year if injection detected
             banReason: 'Prompt injection detected'

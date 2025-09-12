@@ -11,7 +11,7 @@ import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
 const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
-const DEFAULT_TEMPERATURE = 0.2;
+const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
 const BAN_DURATION_YEARS = 1;
 
 /**

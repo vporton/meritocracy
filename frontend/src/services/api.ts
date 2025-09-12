@@ -69,6 +69,43 @@ interface AuthData {
   gitlabHandle?: string;
 }
 
+interface DBLogEntry {
+  id: string;
+  type: 'openai' | 'task' | 'user' | 'session';
+  timestamp: string;
+  userId?: number;
+  taskId?: number;
+  action: string;
+  details: any;
+  status?: string;
+  error?: string;
+}
+
+interface LogsFilter {
+  userId?: number;
+  taskId?: number;
+  type?: 'openai' | 'task' | 'user' | 'session';
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+}
+
+interface LogStats {
+  totalLogs: number;
+  logsByType: Record<string, number>;
+  logsByUser: Record<number, number>;
+  recentActivity: number;
+}
+
+interface LogTypes {
+  [key: string]: {
+    name: string;
+    description: string;
+    fields: string[];
+  };
+}
+
 // Users API
 export const usersApi = {
   getAll: (): Promise<AxiosResponse<User[]>> => api.get('/api/users'),
@@ -99,6 +136,20 @@ export const authApi = {
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
 }
 
+// Logs API
+export const logsApi = {
+  getAll: (filter?: LogsFilter): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; filter: LogsFilter }>> => 
+    api.get('/api/logs', { params: filter }),
+  getMy: (filter?: Omit<LogsFilter, 'userId'>): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; userId: number; filter: LogsFilter }>> => 
+    api.get('/api/logs/my', { params: filter }),
+  getUser: (userId: number, filter?: Omit<LogsFilter, 'userId'>): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; userId: number; filter: LogsFilter }>> => 
+    api.get(`/api/logs/user/${userId}`, { params: filter }),
+  getStats: (): Promise<AxiosResponse<{ success: boolean; stats: LogStats }>> => 
+    api.get('/api/logs/stats'),
+  getTypes: (): Promise<AxiosResponse<{ success: boolean; logTypes: LogTypes }>> => 
+    api.get('/api/logs/types'),
+}
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
@@ -109,4 +160,4 @@ api.interceptors.response.use(
 )
 
 export default api
-export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData }
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes }

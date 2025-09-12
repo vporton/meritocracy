@@ -10,6 +10,9 @@ if (!globalThis.fetch) {
   globalThis.fetch = fetch as any;
 }
 
+// Make sure fetch is available globally before importing other modules
+globalThis.fetch = globalThis.fetch || fetch as any;
+
 dotenv.config();
 
 import userRoutes from './routes/users';
@@ -17,6 +20,7 @@ import authRoutes from './routes/auth';
 import ethereumRoutes from './routes/ethereum';
 import evaluationRoutes from './routes/evaluation';
 import globalRoutes from './routes/global';
+import logsRoutes from './routes/logs';
 
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners';
@@ -52,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ethereum', ethereumRoutes);
 app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/global', globalRoutes);
+app.use('/api/logs', logsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

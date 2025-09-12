@@ -20,6 +20,12 @@ function Navigation() {
         >
           Home
         </Link>
+        <Link 
+          to="/logs" 
+          className={`nav-link ${isActive('/logs') ? 'active' : ''}`}
+        >
+          OpenAI Logs
+        </Link>
       </div>
       
       <div className="nav-right">

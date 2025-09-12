@@ -54,6 +54,7 @@ router.post('/start', async (req, res) => {
   }
 });
 
+// TODO: Shouldn't be a public endpoint.
 /**
  * POST /api/evaluation/execute
  * Execute ready tasks in the evaluation flow
@@ -78,6 +79,7 @@ router.post('/execute', async (req, res) => {
   }
 });
 
+// TODO: Don't depend on this endpoint: The data will be removed.
 /**
  * GET /api/evaluation/result/:userId
  * Get the evaluation result for a user
@@ -115,6 +117,7 @@ router.get('/result/:userId', async (req, res) => {
   }
 });
 
+// TODO: Don't depend on this endpoint: The data will be removed.
 /**
  * GET /api/evaluation/status/:userId
  * Get the status of evaluation tasks for a user
@@ -177,74 +180,6 @@ router.get('/status/:userId', async (req, res) => {
     console.error('Error getting evaluation status:', error);
     return res.status(500).json({
       error: 'Failed to get evaluation status',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * POST /api/evaluation/complete
- * Run a complete evaluation for a user (start + execute until completion)
- */
-router.post('/complete', async (req, res) => {
-  try {
-    const { userId, userData } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({
-        error: 'User ID is required'
-      });
-    }
-
-    if (!userData) {
-      return res.status(400).json({
-        error: 'User data is required'
-      });
-    }
-
-    // Create the evaluation flow service
-    const evaluationFlow = new UserEvaluationFlow(prisma);
-    const taskExecutor = new TaskExecutor(prisma);
-    
-    // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createOnboardindFlow({
-      userId,
-      userData
-    });
-
-    // Execute the flow until completion
-    let executedCount = 0;
-    let maxIterations = 50;
-    let iteration = 0;
-    
-    while (iteration < maxIterations) {
-      const count = await taskExecutor.executeReadyTasks();
-      executedCount += count;
-      
-      if (count === 0) {
-        break;
-      }
-      
-      iteration++;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    // Get the final result
-    const result = await evaluationFlow.getEvaluationResult(userId);
-
-    return res.json({
-      success: true,
-      message: 'Evaluation completed',
-      rootTaskId,
-      userId,
-      executedCount,
-      result
-    });
-
-  } catch (error) {
-    console.error('Error completing evaluation:', error);
-    return res.status(500).json({
-      error: 'Failed to complete evaluation',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }

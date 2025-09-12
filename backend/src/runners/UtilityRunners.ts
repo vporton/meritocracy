@@ -460,7 +460,7 @@ export abstract class BaseRunner implements TaskRunner {
     const outputter = await createAIOutputter(store);
     
     try {
-      const response = await outputter.getOutputOrThrow(customId);
+      const response = await outputter.getOutputOrThrow(customId); // FIXME: overriden getOutput() to store status in the DB.
       
       // Parse the response content
       const content = (response as any).choices[0]?.message?.content;

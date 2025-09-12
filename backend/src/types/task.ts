@@ -70,13 +70,13 @@ export interface TaskRunnerData {
 // Task runner registry for class instantiation (in-memory only)
 // Note: TaskRunner metadata (name, className, description) is stored in database via TaskRunnerService
 export class TaskRunnerRegistry {
-  private static runners: Map<string, new (data: TaskRunnerData) => TaskRunner> = new Map();
+  private static runners: Map<string, new (data: TaskRunnerData, taskId: number) => TaskRunner> = new Map();
 
-  static register(name: string, runnerClass: new (data: TaskRunnerData) => TaskRunner): void {
+  static register(name: string, runnerClass: new (data: TaskRunnerData, taskId: number) => TaskRunner): void {
     this.runners.set(name, runnerClass);
   }
 
-  private static get(name: string): (new (data: TaskRunnerData) => TaskRunner) {
+  private static get(name: string): (new (data: TaskRunnerData, taskId: number) => TaskRunner) {
     const result = this.runners.get(name);
     if (result === undefined) {
       throw new Error(`TaskRunner class '${name}' not found in registry`);
@@ -84,9 +84,9 @@ export class TaskRunnerRegistry {
     return result;
   }
 
-  private static createRunner(className: string, data: TaskRunnerData): TaskRunner | null {
+  private static createRunner(className: string, data: TaskRunnerData, taskId: number): TaskRunner | null {
     const RunnerClass = this.get(className);
-    return new RunnerClass(data);
+    return new RunnerClass(data, taskId);
   }
 
   // private static getAvailableRunners(): string[] {
@@ -124,7 +124,7 @@ export class TaskRunnerRegistry {
       }
 
       // Create and run the TaskRunner
-      const runnerInstance = this.createRunner(task.runnerClassName, runnerData);
+      const runnerInstance = this.createRunner(task.runnerClassName, runnerData, taskId);
       if (!runnerInstance) {
         console.error(`Failed to create runner instance for '${task.runnerClassName}'`);
         return false;

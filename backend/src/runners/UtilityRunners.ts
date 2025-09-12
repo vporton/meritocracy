@@ -121,9 +121,19 @@ export abstract class BaseRunner implements TaskRunner {
   protected readonly runnerName: string;
 
   /**
+   * The task ID for this runner instance.
+   * This is set when the runner is created and used throughout execution.
+   * 
+   * @readonly
+   * @protected
+   */
+  protected readonly taskId: number;
+
+  /**
    * Creates a new BaseRunner instance.
    * 
    * @param data - The runner data containing configuration and input parameters
+   * @param taskId - The unique identifier of the task this runner will execute
    * 
    * @example
    * ```typescript
@@ -131,13 +141,21 @@ export abstract class BaseRunner implements TaskRunner {
    *   userId: 123,
    *   userData: { name: 'John Doe' },
    *   threshold: 0.01
-   * });
+   * }, 456);
    * ```
    */
-  constructor(data: TaskRunnerData) {
+  constructor(data: TaskRunnerData, taskId: number) {
     this.data = data;
+    this.taskId = taskId;
     this.prisma = new PrismaClient();
     this.runnerName = this.constructor.name;
+  }
+
+  /**
+   * Override the getOutput() method to store the status in the DB.
+   */
+  protected async onOutput(customId: string, output: any): Promise<void> {
+    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
   }
 
   /**

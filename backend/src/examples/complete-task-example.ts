@@ -26,7 +26,7 @@ async function completeTaskExample() {
 
     // Now let's complete the task using our new function
     console.log('2. Completing the task using TaskRunnerRegistry.completeTask...');
-    const success = await TaskRunnerRegistry.completeTask(prisma, testTask.id);
+    const success = await TaskRunnerRegistry.completeTask(prisma, testTask.id, { test: true });
 
     if (success) {
       console.log('✅ Task completion was successful!\n');

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api, { usersApi } from '../services/api'
 import { ethers } from 'ethers'
 import Leaderboard from '../components/Leaderboard'
+import { useAuth } from '../contexts/AuthContext'
 
 interface ServerStatus {
   status?: string;
@@ -26,12 +28,15 @@ interface UserGdpShareData {
 }
 
 function Home() {
+  const { user, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
   const [ethereumStatus, setEthereumStatus] = useState<{network: string, balance: bigint, currency: string, address?: string} | undefined>()
   const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [loading, setLoading] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [onboardingLoading, setOnboardingLoading] = useState(false)
 
   useEffect(() => {
     const checkServerStatus = async () => {
@@ -124,6 +129,44 @@ function Home() {
     }
   }
 
+  const handleStartOnboarding = async () => {
+    if (!user || !isAuthenticated) {
+      alert('Please connect your accounts first before starting onboarding.')
+      return
+    }
+
+    setOnboardingLoading(true)
+    try {
+      // Start the onboarding flow
+      const response = await api.post('/api/evaluation/start', {
+        userId: user.id,
+        userData: {
+          orcidId: user.orcidId,
+          githubHandle: user.githubHandle,
+          bitbucketHandle: user.bitbucketHandle,
+          gitlabHandle: user.gitlabHandle,
+        }
+      })
+
+      if (response.data.success) {
+        // Redirect to logs page to see the progress
+        navigate('/logs')
+      } else {
+        alert('Failed to start onboarding. Please try again.')
+      }
+    } catch (error) {
+      console.error('Onboarding error:', error)
+      alert('Failed to start onboarding. Please try again.')
+    } finally {
+      setOnboardingLoading(false)
+    }
+  }
+
+  const hasConnectedAccounts = () => {
+    if (!user) return false
+    return !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle || user.ethereumAddress)
+  }
+
   if (loading) {
     return <div className="loading">Checking server status...</div>
   }
@@ -188,6 +231,62 @@ function Home() {
       )}
 
       <Leaderboard limit={100} showTop={10} />
+      
+      {/* Onboarding Section */}
+      {isAuthenticated && user && (
+        <div className="card">
+          <h3>🚀 Start Your Evaluation</h3>
+          {hasConnectedAccounts() ? (
+            <div>
+              <p>✅ You have connected accounts and are ready to start your evaluation!</p>
+              <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
+                Click the button below to begin the AI analysis of your contributions and receive your GDP share calculation.
+              </p>
+              <button
+                onClick={handleStartOnboarding}
+                disabled={onboardingLoading}
+                style={{
+                  background: onboardingLoading ? '#666' : '#4caf50',
+                  border: 'none',
+                  color: 'white',
+                  padding: '1rem 2rem',
+                  borderRadius: '8px',
+                  cursor: onboardingLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  transition: 'background-color 0.25s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  margin: '0 auto'
+                }}
+              >
+                {onboardingLoading ? (
+                  <>
+                    <div className="loading" style={{ margin: 0, fontSize: '0.9rem' }}>⏳</div>
+                    Starting Evaluation...
+                  </>
+                ) : (
+                  <>
+                    🚀 Start Evaluation
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p>⚠️ <strong>Please connect all your accounts first!</strong></p>
+              <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
+                You need to connect your accounts (GitHub, ORCID, BitBucket, GitLab, etc.) before starting the evaluation process. 
+                This allows our AI to analyze your contributions and calculate your fair share of the world economy.
+              </p>
+              <p style={{ fontSize: '0.9rem', color: '#888' }}>
+                Go to the <a href="/connect" style={{ color: '#646cff' }}>Connect</a> page to link your accounts.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       
       {ethereumStatus?.address && (
         <div className="card">

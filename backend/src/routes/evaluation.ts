@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { UserEvaluationFlow } from '../services/UserEvaluationFlow';
 import { TaskExecutor } from '../services/TaskExecutor';
+import { TaskManager } from '../services/TaskManager';
 import { registerAllRunners } from '../runners/OpenAIRunners';
 
 const router = express.Router();
@@ -34,15 +35,34 @@ router.post('/start', async (req, res) => {
     const evaluationFlow = new UserEvaluationFlow(prisma);
     
     // Create the evaluation flow
-    await evaluationFlow.createOnboardindFlow({
+    const rootTaskId = await evaluationFlow.createOnboardindFlow({
       userId,
       userData
     });
 
+    // Check OPENAI_FLEX_MODE and run tasks if non-batch
+    const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
+    
+    if (openAIFlexMode === 'nonbatch' && rootTaskId) {
+      console.log(`🚀 OPENAI_FLEX_MODE is non-batch, running task ${rootTaskId} with dependencies`);
+      const taskManager = new TaskManager(prisma);
+      const success = await taskManager.runTaskWithDependencies(rootTaskId);
+      
+      if (success) {
+        console.log(`✅ Task ${rootTaskId} executed successfully`);
+      } else {
+        console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
+      }
+    } else {
+      console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
+    }
+
     return res.json({
       success: true,
       message: 'Evaluation flow started',
-      userId
+      userId,
+      rootTaskId,
+      executed: openAIFlexMode === 'nonbatch'
     });
 
   } catch (error) {

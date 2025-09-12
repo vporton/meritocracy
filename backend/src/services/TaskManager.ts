@@ -187,51 +187,29 @@ export class TaskManager {
   /**
    * Delete all tasks that are dependencies only of COMPLETED or CANCELLED tasks
    * @returns Promise<number> - Number of tasks deleted
-   * // FIXME: Does it delete the final task, that it should not delete?
    */
   async deleteOrphanedDependencies(): Promise<number> {
     try {
-      // Find all tasks that are dependencies of other tasks
-      const dependencyTasks = await this.prisma.taskDependency.findMany({
-        include: {
-          dependency: true,
-          task: true,
+      // Find all tasks where all dependents are COMPLETED or CANCELLED
+      // This uses a single efficient Prisma query instead of multiple queries
+      const orphanedTasks = await this.prisma.task.findMany({
+        where: {
+          dependents: {
+            every: {
+              task: {
+                status: {
+                  in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
+                }
+              }
+            }
+          }
         },
+        select: {
+          id: true
+        }
       });
 
-      // Group dependencies by dependency ID
-      const dependencyMap = new Map<number, Array<{ taskId: number; status: string }>>();
-      
-      for (const dep of dependencyTasks) {
-        if (!dependencyMap.has(dep.dependencyId)) {
-          dependencyMap.set(dep.dependencyId, []);
-        }
-        dependencyMap.get(dep.dependencyId)!.push({
-          taskId: dep.taskId,
-          status: dep.task.status,
-        });
-      }
-
-      // Find tasks that are only dependencies of COMPLETED tasks
-      const orphanedTaskIds: number[] = [];
-      
-      for (const [dependencyId, dependents] of dependencyMap) {
-        // Check if all dependent tasks are COMPLETED or CANCELLED
-        const allDependentsCompleted = dependents.every(
-          (dependent) => dependent.status === TaskStatus.COMPLETED || dependent.status === TaskStatus.CANCELLED
-        );
-
-        if (allDependentsCompleted && dependents.length > 0) {
-          // Check if the dependency task itself is COMPLETED
-          const dependencyTask = await this.prisma.task.findUnique({
-            where: { id: dependencyId },
-          });
-
-          if (dependencyTask && dependencyTask.status === TaskStatus.COMPLETED) {
-            orphanedTaskIds.push(dependencyId);
-          }
-        }
-      }
+      const orphanedTaskIds = orphanedTasks.map(task => task.id);
 
       if (orphanedTaskIds.length === 0) {
         console.log('No orphaned dependency tasks found');

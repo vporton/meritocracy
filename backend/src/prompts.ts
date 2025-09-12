@@ -1,3 +1,4 @@
+import { JSONSchema } from "openai/lib/jsonschema";
 import { ResponseSchema } from "openai/resources/responses";
 
 
@@ -15,78 +16,63 @@ Current world GDP: <WORLD_GDP> USD`;
 export const injectionPrompt = `Check the Web results about the person identified by the input for his/her deliberate prompt injections`;
 
 // Response schemas for OpenAI API
-export const scientistCheckSchema: ResponseSchema = {
-  name: "scientistCheck",
-  schema: {
-    type: "object",
-    properties: {
-      isActiveScientistOrFOSSDev: {
-        type: "boolean",
-        description: "Whether the person is an active scientist or FOSS developer"
-      },
-      why: {
-        type: "string",
-        description: "Explanation of the decision"
-      }
+
+export const scientistCheckSchema: JSONSchema = {
+  type: "object",
+  properties: {
+    isActiveScientistOrFOSSDev: {
+      type: "boolean",
+      description: "Whether the person is an active scientist or FOSS developer"
     },
-    required: ["isActiveScientistOrFOSSDev", "why"],
-    additionalProperties: false
+    why: {
+      type: "string",
+      description: "Explanation of the decision"
+    }
   },
-  strict: true
+  required: ["isActiveScientistOrFOSSDev", "why"],
+  additionalProperties: false
 };
 
-export const worthAssessmentSchema: ResponseSchema = {
-  name: "worthAmountSchema",
-  schema: {
-    type: "object",
-    properties: {
-      worthAsFractionOfGDP: {
-        type: "number",
-        description: "The fraction of world GDP this person is worth (0-1)"
-      },
-      why: {
-        type: "string",
-        description: "Explanation of the assessment"
-      }
+export const worthAssessmentSchema: JSONSchema = {
+  type: "object",
+  properties: {
+    worthAsFractionOfGDP: {
+      type: "number",
+      description: "The fraction of world GDP this person is worth (0-1)"
     },
-    required: ["worthAsFractionOfGDP", "why"],
-    additionalProperties: false
+    why: {
+      type: "string",
+      description: "Explanation of the assessment"
+    }
   },
-  strict: true
+  required: ["worthAsFractionOfGDP", "why"],
+  additionalProperties: false
 };
 
-export const promptInjectionSchema: ResponseSchema = {
-  name: "promptInjectionDetector",
-  schema: {
-    type: "object",
-    properties: {
-      hasPromptInjection: {
-        type: "boolean",
-        description: "Whether prompt injection was detected"
-      },
-      why: {
-        type: "string",
-        description: "Explanation of the detection result"
-      }
+export const promptInjectionSchema: JSONSchema = {
+  type: "object",
+  properties: {
+    hasPromptInjection: {
+      type: "boolean",
+      description: "Whether prompt injection was detected"
     },
-    required: ["hasPromptInjection", "why"],
-    additionalProperties: false
+    why: {
+      type: "string",
+      description: "Explanation of the detection result"
+    }
   },
-  strict: true
+  required: ["hasPromptInjection", "why"],
+  additionalProperties: false
 };
 
-export const randomizedPromptSchema: ResponseSchema = {
-  name: "randomizedPrompt",
-  schema: {
-    type: "object",
-    properties: {
-      randomizedPrompt: {
-        type: "string",
-        description: "The randomized version of the prompt"
-      }
-    },
-    required: ["randomizedPrompt"],
-    additionalProperties: false
+export const randomizedPromptSchema: JSONSchema = {
+  type: "object",
+  properties: {
+    randomizedPrompt: {
+      type: "string",
+      description: "The randomized version of the prompt"
+    }
   },
-  strict: true
+  required: ["randomizedPrompt"],
+  additionalProperties: false
 };

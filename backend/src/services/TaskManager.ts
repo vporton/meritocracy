@@ -188,6 +188,7 @@ export class TaskManager {
    * Delete all tasks that are dependencies only of COMPLETED tasks
    * @returns Promise<number> - Number of tasks deleted
    * // FIXME: Does it delete the final task, that it should not delete?
+   * // FIXME: Also of CANCELLED tasks
    */
   async deleteOrphanedDependencies(): Promise<number> {
     try {

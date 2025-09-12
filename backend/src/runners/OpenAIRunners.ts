@@ -463,6 +463,15 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     
     await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
+
+  // TODO: Simplify this and similar functions.
+  protected async onOutput(customId: string, output: any): Promise<void> {
+    if (output.isActiveScientistOrFOSSDev) {
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+    } else {
+      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+    }
+  }
 }
 
 /**
@@ -603,6 +612,14 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     const userPrompt: string = generateUserPrompt(userData);
     
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
+  }
+
+  protected async onOutput(customId: string, output: any): Promise<void> {
+    if (output.hasPromptInjection) {
+      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+    } else {
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+    }
   }
 }
 

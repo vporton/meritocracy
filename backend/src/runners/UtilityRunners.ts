@@ -752,6 +752,14 @@ export class WorthThresholdCheckRunner extends BaseRunner {
 
     return worthValues;
   }
+
+  protected async onOutput(customId: string, output: any): Promise<void> {
+    if (output.exceedsThreshold) {
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+    } else {
+      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+    }
+  }
 }
 
 /**

@@ -11,6 +11,7 @@ export interface UserEvaluationData {
     gitlabHandle?: string;
     [key: string]: any;
   };
+  isBiMonthly?: boolean; // Flag to indicate if this is a bi-monthly evaluation
 }
 
 export class UserEvaluationFlow {
@@ -30,20 +31,21 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
-    // Step 2: Create a randomization task for the worth prompt
-    const randomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistOnboardingTask.id]);
+    // Step 2: Create the main worth evaluation flow with bi-monthly input
+    const worthFlow = await this.createWorthEvaluationFlow(evaluationData, [scientistOnboardingTask.id]);
     
-    // Step 3: Create the first worth assessment task using WorthAssessmentRunner (depends on randomization)
-    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+    // Step 3: Create the three parallel worth assessment tasks
+    const parallelWorthTasks = await this.createParallelWorthTasks(evaluationData, [scientistOnboardingTask.id]);
     
-    // Step 4: Create conditional tasks based on worth threshold
-    const conditionalTasks = await this.createConditionalTasks(evaluationData, firstWorthTask.id);
+    // Step 4: Create prompt injection detection tasks connected to worth evaluations
+    const injectionTasks = await this.createPromptInjectionFlow(evaluationData, parallelWorthTasks);
     
-    // Step 5: Create the final median calculation task
-    // FIXME: Seems not to receive `firstWorthTask`
-    const medianTask = await this.createMedianTask(evaluationData, conditionalTasks.worthTasks);
+    // Step 5: Create the final median calculation task that depends on all worth tasks
+    const allWorthTasks = [worthFlow.mainWorthTask.id, ...parallelWorthTasks.map(t => t.worthTask.id)];
+    const medianTask = await this.createMedianTask(evaluationData, allWorthTasks);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
+    return scientistOnboardingTask.id;
   }
 
   /**
@@ -94,6 +96,64 @@ export class UserEvaluationFlow {
   }
 
   /**
+   * Create the main worth evaluation flow with bi-monthly input
+   * This corresponds to the main path in the diagram
+   */
+  private async createWorthEvaluationFlow(
+    evaluationData: UserEvaluationData,
+    dependencies: number[]
+  ) {
+    // Create bi-monthly input task if this is a bi-monthly evaluation
+    let biMonthlyDependencies = dependencies;
+    if (evaluationData.isBiMonthly) {
+      const biMonthlyTask = await this.createBiMonthlyTask(evaluationData, dependencies);
+      biMonthlyDependencies = [...dependencies, biMonthlyTask.id];
+    }
+
+    // Create randomization task for worth prompt
+    const randomizeTask = await this.createRandomizePromptTask(evaluationData, biMonthlyDependencies);
+    
+    // Create the main worth assessment task
+    const mainWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+    
+    return {
+      randomizeTask,
+      mainWorthTask
+    };
+  }
+
+  /**
+   * Create bi-monthly input task
+   */
+  private async createBiMonthlyTask(
+    evaluationData: UserEvaluationData,
+    dependencies: number[]
+  ) {
+    const task = await this.prisma.task.create({
+      data: {
+        status: TaskStatus.PENDING,
+        runnerClassName: 'BiMonthlyInputRunner',
+        runnerData: JSON.stringify({
+          userId: evaluationData.userId,
+          userData: evaluationData.userData
+        })
+      }
+    });
+
+    // Create dependencies
+    for (const depId of dependencies) {
+      await this.prisma.taskDependency.create({
+        data: {
+          taskId: task.id,
+          dependencyId: depId
+        }
+      });
+    }
+
+    return task;
+  }
+
+  /**
    * Create a worth assessment task using randomized prompts
    */
   private async createWorthAssessmentTask(
@@ -125,82 +185,66 @@ export class UserEvaluationFlow {
 
 
   /**
-   * Create conditional tasks based on worth threshold
+   * Create the three parallel worth assessment tasks
+   * These correspond to the parallel paths in the diagram that converge to median
    */
-  private async createConditionalTasks(
-    evaluationData: UserEvaluationData, 
-    firstWorthTaskId: number
-  ) {
-    // Create a task to check if worth > 1e-11
-    const worthCheckTask = await this.createWorthThresholdCheckTask(evaluationData, [firstWorthTaskId]);
-    
-    // Create prompt injection tasks (3 of them)
-    const promptInjectionTasks = await this.createPromptInjectionTasks(evaluationData, [worthCheckTask.id]);
-    
-    // Create additional worth assessment tasks (2 more)
-    const additionalWorthTasks = await this.createAdditionalWorthTasks(evaluationData, [worthCheckTask.id]);
-    
-    return {
-      worthCheckTask,
-      promptInjectionTasks,
-      additionalWorthTasks,
-      worthTasks: [firstWorthTaskId, ...additionalWorthTasks.map(t => t.id)]
-    };
-  }
-
-  /**
-   * Create a task to check if worth exceeds threshold
-   */
-  private async createWorthThresholdCheckTask(
-    evaluationData: UserEvaluationData,
-    dependencies: number[]
-  ) {
-    const task = await this.prisma.task.create({
-      data: {
-        status: TaskStatus.PENDING,
-        runnerClassName: 'WorthThresholdCheckRunner',
-        runnerData: JSON.stringify({
-          threshold: 1e-11,
-          userData: evaluationData.userData
-        })
-      }
-    });
-
-    // Create dependencies
-    for (const depId of dependencies) {
-      await this.prisma.taskDependency.create({
-        data: {
-          taskId: task.id,
-          dependencyId: depId
-        }
-      });
-    }
-
-    return task;
-  }
-
-  /**
-   * Create 3 prompt injection check tasks using randomized prompts
-   */
-  private async createPromptInjectionTasks(
+  private async createParallelWorthTasks(
     evaluationData: UserEvaluationData,
     dependencies: number[]
   ) {
     const tasks = [];
     
+    // Create 3 parallel worth assessment tasks
     for (let i = 0; i < 3; i++) {
-      // Create a randomization task for each prompt injection check
+      // Create randomization task for each worth assessment
+      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
+      
+      // Create worth assessment task that depends on randomization
+      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
+      
+      tasks.push({
+        randomizeTask,
+        worthTask
+      });
+    }
+    
+    return tasks;
+  }
+
+  /**
+   * Create prompt injection detection flow connected to worth evaluations
+   * This implements the right side of the diagram where worth evaluations > 1e-11
+   * trigger prompt injection checks, and detection leads to 1-year ban
+   */
+  private async createPromptInjectionFlow(
+    evaluationData: UserEvaluationData,
+    parallelWorthTasks: Array<{randomizeTask: any, worthTask: any}>
+  ) {
+    const injectionTasks = [];
+    
+    // Create 3 prompt injection check tasks
+    for (let i = 0; i < 3; i++) {
+      // Each injection check depends on a specific worth evaluation
+      // The diagram shows connections from worth evaluations to injection checks
+      const worthTask = parallelWorthTasks[i]?.worthTask;
+      const dependencies = worthTask ? [worthTask.id] : [];
+      
+      // Create randomization task for prompt injection check
       const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, injectionPrompt);
       
-      // Create the prompt injection task that depends on the randomization
-      const task = await this.prisma.task.create({
+      // Create the prompt injection detection task
+      // This task handles both detection and ban (1 year) if injection is found
+      const injectionTask = await this.prisma.task.create({
         data: {
           status: TaskStatus.PENDING,
           runnerClassName: 'PromptInjectionRunner',
           runnerData: JSON.stringify({
             userId: evaluationData.userId,
             userData: evaluationData.userData,
-            checkNumber: i + 1
+            checkNumber: i + 1,
+            threshold: 1e-11, // Check if worth > 1e-11 before running injection check
+            banDuration: '1y', // Ban for 1 year if injection detected
+            banReason: 'Prompt injection detected'
           })
         }
       });
@@ -208,42 +252,26 @@ export class UserEvaluationFlow {
       // Create dependency on the randomization task
       await this.prisma.taskDependency.create({
         data: {
-          taskId: task.id,
+          taskId: injectionTask.id,
           dependencyId: randomizeTask.id
         }
       });
 
-      tasks.push(task);
+      injectionTasks.push({
+        randomizeTask,
+        injectionTask
+      });
     }
 
-    return tasks;
+    return injectionTasks;
   }
 
-  /**
-   * Create 2 additional worth assessment tasks using WorthAssessmentRunner
-   * These tasks depend on both randomization and the worth threshold check
-   */
-  private async createAdditionalWorthTasks(
-    evaluationData: UserEvaluationData,
-    dependencies: number[]
-  ) {
-    const tasks = [];
-    
-    for (let i = 0; i < 2; i++) {
-      // Create a randomization task for each worth assessment
-      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
-      // Create additional worth assessment tasks using WorthAssessmentRunner
-      // These depend on both randomization and the threshold check (dependencies includes threshold check)
-      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id, ...dependencies]);
-      tasks.push(worthTask);
-    }
-
-    return tasks;
-  }
 
 
   /**
    * Create median calculation task
+   * This corresponds to "Salary = the median" in the diagram
+   * It converges all worth evaluation results
    */
   private async createMedianTask(
     evaluationData: UserEvaluationData,
@@ -254,7 +282,8 @@ export class UserEvaluationFlow {
         status: TaskStatus.PENDING,
         runnerClassName: 'MedianRunner',
         runnerData: JSON.stringify({
-          userId: evaluationData.userId
+          userId: evaluationData.userId,
+          sourceTaskIds: worthTaskIds // Track which tasks contribute to the median
         })
       }
     });

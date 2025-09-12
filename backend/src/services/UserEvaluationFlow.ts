@@ -35,10 +35,10 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
-    // Step 2: Create the three worth assessment tasks (as per diagram)
+    // Step 2: Create the three worth assessment tasks with integrated injection checks (as per diagram)
     const worthTasks = await this.createWorthTasks(evaluationData, [scientistOnboardingTask.id]);
     
-    // Step 3: Create prompt injection detection tasks connected to second and third worth evaluations
+    // Step 3: Extract injection tasks for any additional processing (now simplified)
     const injectionTasks = await this.createPromptInjectionFlow(evaluationData, worthTasks);
     
     // Step 4: Create the final median calculation task that depends on all worth tasks
@@ -46,7 +46,7 @@ export class UserEvaluationFlow {
     const medianTask = await this.createMedianTask(evaluationData, allWorthTaskIds);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
-    console.log(`📊 Flow structure: 1 direct worth task + 2 worth tasks with injection checks → median`);
+    console.log(`📊 Flow structure: 1 direct worth task + 2 injection check → worth assessment → median`);
     return scientistOnboardingTask.id;
   }
 
@@ -155,58 +155,12 @@ export class UserEvaluationFlow {
       isFirstTask: true // Mark this as the first task that goes directly to median
     });
     
-    // Second and third worth tasks: After onboarding, with prompt injection checks
+    // Second and third worth tasks: After onboarding, with prompt injection checks FIRST
     for (let i = 1; i < 3; i++) {
-      // Create randomization task for each worth assessment
-      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
-      
-      // Create worth assessment task that depends on randomization
-      const worthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
-      
-      tasks.push({
-        randomizeTask,
-        worthTask,
-        isFirstTask: false // These go through prompt injection checks
-      });
-    }
-    
-    return tasks;
-  }
-
-  /**
-   * Create prompt injection detection flow connected to worth evaluations
-   * This implements the right side of the diagram where worth evaluations > 1e-11
-   * trigger prompt injection checks, and detection leads to 1-year ban
-   * 
-   * Note: Only creates injection tasks for the second and third worth tasks,
-   * as the first worth task goes directly to median calculation
-   */
-  private async createPromptInjectionFlow(
-    evaluationData: UserEvaluationData,
-    worthTasks: Array<{randomizeTask: any, worthTask: any, isFirstTask: boolean}>
-  ) {
-    const injectionTasks = [];
-    
-    // Create prompt injection check tasks only for the second and third worth tasks
-    // (skip the first task which goes directly to median)
-    for (let i = 0; i < worthTasks.length; i++) {
-      const worthTaskData = worthTasks[i];
-      
-      // Skip the first task - it goes directly to median calculation
-      if (worthTaskData.isFirstTask) {
-        continue;
-      }
-      
-      // Each injection check depends on a specific worth evaluation
-      // The diagram shows connections from worth evaluations to injection checks
-      const worthTask = worthTaskData.worthTask;
-      const dependencies = worthTask ? [worthTask.id] : [];
-      
-      // Create randomization task for prompt injection check
-      const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, injectionPrompt);
+      // Create prompt injection check task first (depends on onboarding)
+      const injectionRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, injectionPrompt);
       
       // Create the prompt injection detection task
-      // This task handles both detection and ban (1 year) if injection is found
       const injectionTask = await this.prisma.task.create({
         data: {
           status: TaskStatus.PENDING,
@@ -222,18 +176,55 @@ export class UserEvaluationFlow {
         }
       });
 
-      // Create dependency on the randomization task
+      // Create dependency on the injection randomization task
       await this.prisma.taskDependency.create({
         data: {
           taskId: injectionTask.id,
-          dependencyId: randomizeTask.id
+          dependencyId: injectionRandomizeTask.id
         }
       });
-
-      injectionTasks.push({
-        randomizeTask,
-        injectionTask
+      
+      // Create randomization task for worth assessment (depends on injection check passing)
+      const worthRandomizeTask = await this.createRandomizePromptTask(evaluationData, [injectionTask.id]);
+      
+      // Create worth assessment task that depends on worth randomization
+      const worthTask = await this.createWorthAssessmentTask(evaluationData, [worthRandomizeTask.id]);
+      
+      tasks.push({
+        injectionRandomizeTask,
+        injectionTask,
+        worthRandomizeTask,
+        worthTask,
+        isFirstTask: false // These go through prompt injection checks
       });
+    }
+    
+    return tasks;
+  }
+
+  /**
+   * Create prompt injection detection flow connected to worth evaluations
+   * This method is now simplified since injection tasks are created within createWorthTasks
+   * 
+   * Note: Injection tasks are now created as part of the worth task creation process,
+   * ensuring the correct flow: onboarding → injection check → worth assessment → median
+   */
+  private async createPromptInjectionFlow(
+    evaluationData: UserEvaluationData,
+    worthTasks: Array<{randomizeTask?: any, worthTask: any, isFirstTask: boolean, injectionRandomizeTask?: any, injectionTask?: any, worthRandomizeTask?: any}>
+  ) {
+    // Injection tasks are now created within createWorthTasks method
+    // This method is kept for compatibility but no longer creates separate injection tasks
+    const injectionTasks = [];
+    
+    // Extract injection tasks from worth tasks for any additional processing if needed
+    for (const worthTaskData of worthTasks) {
+      if (!worthTaskData.isFirstTask && worthTaskData.injectionTask) {
+        injectionTasks.push({
+          randomizeTask: worthTaskData.injectionRandomizeTask,
+          injectionTask: worthTaskData.injectionTask
+        });
+      }
     }
 
     return injectionTasks;

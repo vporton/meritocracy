@@ -418,10 +418,10 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
   protected abstract getResponseSchema(): any;
 
   /**
-   * Initiate the request using a randomized prompt from dependency
+   * Execute the task using a randomized prompt from dependency
    * @param task - The task containing user data and dependencies
    */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
     
     // Get randomized prompt from dependency (randomizePrompt task)
@@ -431,13 +431,6 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 
-  /**
-   * Initiate the scientist check request
-   * @param task - The task containing user data to analyze
-   */
-  protected async executeTask(task: TaskWithDependencies): Promise<void> { // TODO: two identical methods
-    await this.initiateRequest(task);
-  }
 }
 
 /**
@@ -512,18 +505,10 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
   }
 
   /**
-   * Execute the task with conditional logic based on worth threshold
-   * @param task - The task to execute
-   */
-  protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    await this.initiateRequest(task);
-  }
-
-  /**
-   * Initiate the prompt randomization request
+   * Execute the prompt randomization task
    * @param task - The task containing the original prompt to randomize
    */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const originalPrompt = this.data.originalPrompt;
     if (!originalPrompt) { // TODO: Should not happen.
       throw new TaskRunnerError('Original prompt is required for randomization', task.id, this.constructor.name);
@@ -557,14 +542,6 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    */
   protected getResponseSchema(): any {
     return promptInjectionSchema;
-  }
-
-  /**
-   * Execute the task with optimization: skip if parent PromptInjectionRunner already detected injection
-   * @param task - The task to execute
-   */
-  protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    await this.initiateRequest(task);
   }
 
   /**
@@ -615,10 +592,10 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   }
 
   /**
-   * Override the base method to handle injection detection after OpenAI request
+   * Execute the prompt injection detection task
    * @param task - The task to process
    */
-  protected async initiateRequest(task: TaskWithDependencies): Promise<void> {
+  protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
     
     // Get randomized prompt from dependency (randomizePrompt task)

@@ -78,25 +78,7 @@ export class TaskManager {
 
       // Run the task using TaskRunnerRegistry
       const success = await TaskRunnerRegistry.runByTaskId(this.prisma, taskId);
-      
-      if (success) {
-        // Mark task as completed
-        await TaskRunnerRegistry.completeTask(this.prisma, taskId);
-        console.log(`✅ Task ${taskId} completed successfully`);
-        return true;
-      } else {
-        // Mark task as cancelled if it failed
-        await this.prisma.task.update({
-          where: { id: taskId },
-          data: { 
-            status: TaskStatus.CANCELLED,
-            updatedAt: new Date()
-          },
-        });
-        console.error(`❌ Task ${taskId} failed to run`);
-        return false;
-      }
-
+      // TODO
     } catch (error) {
       console.error(`❌ Error running task ${taskId}:`, error);
       

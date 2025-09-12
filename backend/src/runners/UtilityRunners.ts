@@ -1,6 +1,7 @@
 import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
+import { TaskManager } from '@/services/TaskManager.js';
 
 // Constants
 const DEFAULT_THRESHOLD = 1e-11;
@@ -531,17 +532,10 @@ export class MedianRunner extends BaseRunner {
     }
     
     // Store the result
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        status: 'COMPLETED',
-        runnerData: JSON.stringify({
-          ...this.data,
-          medianWorth: median,
-          sourceValues: worthValues,
-          completedAt: new Date().toISOString()
-        })
-      }
+    await TaskRunnerRegistry.completeTask(this.prisma, task.id, {
+      medianWorth: median,
+      sourceValues: worthValues,
+      completedAt: new Date().toISOString()
     });
 
     this.log('info', `✅ Median TaskRunner completed`, { taskId: task.id, median, sourceValuesCount: worthValues.length });
@@ -684,19 +678,11 @@ export class WorthThresholdCheckRunner extends BaseRunner {
       return;
     }
     
-    // Store the result as COMPLETED
-    await this.prisma.task.update({
-      where: { id: task.id },
-      data: {
-        status: 'COMPLETED',
-        runnerData: JSON.stringify({
-          ...this.data,
-          worthValue,
-          threshold,
-          exceedsThreshold,
-          completedAt: new Date().toISOString()
-        })
-      }
+    // Store the result
+    await TaskRunnerRegistry.completeTask(this.prisma, task.id, {
+      worthValue, 
+      threshold, 
+      exceedsThreshold 
     });
 
     this.log('info', `✅ Worth Threshold Check completed - threshold exceeded`, { 

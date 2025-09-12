@@ -147,25 +147,22 @@ export class TaskRunnerRegistry {
    */
   static async completeTask(
     prisma: any,
-    taskId: number
+    taskId: number,
+    output: object
   ): Promise<boolean> {
-    try {
-      // Update the task status to COMPLETED and set completedAt timestamp
-      const updatedTask = await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          status: TaskStatus.COMPLETED,
-          completedAt: new Date(),
-          updatedAt: new Date()
-        }
-      });
+    // Update the task status to COMPLETED and set data
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        status: TaskStatus.COMPLETED,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+        ...output
+      }
+    });
 
-      console.log(`✅ Task ${taskId} marked as COMPLETED`);
-      return true;
-    } catch (error) {
-      console.error(`❌ Error completing task ${taskId}:`, error);
-      return false;
-    }
+    console.log(`✅ Task ${taskId} marked as COMPLETED`);
+    return true;
   }
 
   /**

@@ -19,6 +19,7 @@ model User {
   githubHandle   String?  @unique
   bitbucketHandle String? @unique
   gitlabHandle   String?  @unique
+  shareInGDP     Float?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   bannedTill     DateTime?

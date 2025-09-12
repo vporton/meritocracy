@@ -36,3 +36,5 @@
 - Add indexes to the DB.
 
 - Check that `customId`s and filenames for OpenAI are unique!
+
+- Delete DB migrations before the release.

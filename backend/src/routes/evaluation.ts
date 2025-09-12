@@ -16,7 +16,7 @@ registerAllRunners();
  */
 router.post('/start', async (req, res) => {
   try {
-    const { userId, userData } = req.body;
+    const { userId, userData } = req.body; // FIXME: insecure
 
     if (!userId) {
       return res.status(400).json({
@@ -34,7 +34,7 @@ router.post('/start', async (req, res) => {
     const evaluationFlow = new UserEvaluationFlow(prisma);
     
     // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createEvaluationFlow({
+    await evaluationFlow.createEvaluationFlow({
       userId,
       userData
     });
@@ -42,7 +42,6 @@ router.post('/start', async (req, res) => {
     return res.json({
       success: true,
       message: 'Evaluation flow started',
-      rootTaskId,
       userId
     });
 

@@ -24,7 +24,7 @@ export class UserEvaluationFlow {
    * Create the complete flow graph for user evaluation
    * Returns the root task ID that can be used to start the evaluation
    */
-  async createEvaluationFlow(evaluationData: UserEvaluationData): Promise<number> {
+  async createEvaluationFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
 
     // Step 1: Create the initial scientist check task
@@ -43,7 +43,6 @@ export class UserEvaluationFlow {
     const medianTask = await this.createMedianTask(evaluationData, conditionalTasks.worthTasks);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
-    return scientistOnboardingTask.id;
   }
 
   /**

@@ -502,6 +502,34 @@ export class MedianRunner extends BaseRunner {
     // Calculate median
     const median = worthValues.length === 0 ? 0 : this.calculateMedian(worthValues);
     
+    // Update User.shareInGDP with the calculated median
+    const userId = this.data.userId;
+    if (userId) {
+      try {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            shareInGDP: median
+          }
+        });
+        
+        this.log('info', `📊 Updated User.shareInGDP`, { 
+          userId, 
+          shareInGDP: median,
+          taskId: task.id 
+        });
+      } catch (error) {
+        this.log('error', `Failed to update User.shareInGDP`, { 
+          userId, 
+          error: error instanceof Error ? error.message : String(error),
+          taskId: task.id 
+        });
+        // Don't throw error - continue with task completion even if user update fails
+      }
+    } else if (!userId) {
+      this.log('warn', `No userId provided, skipping User.shareInGDP update`, { taskId: task.id });
+    }
+    
     // Store the result
     await this.prisma.task.update({
       where: { id: task.id },

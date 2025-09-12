@@ -18,6 +18,7 @@ interface User {
   githubHandle?: string;
   bitbucketHandle?: string;
   gitlabHandle?: string;
+  shareInGDP?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +107,14 @@ interface LogTypes {
   };
 }
 
+interface LeaderboardEntry {
+  rank: number;
+  userId: number;
+  name: string;
+  shareInGDP: number;
+  formatted: string;
+}
+
 // Users API
 export const usersApi = {
   getAll: (): Promise<AxiosResponse<User[]>> => api.get('/api/users'),
@@ -113,6 +122,10 @@ export const usersApi = {
   create: (userData: CreateUserData): Promise<AxiosResponse<User>> => api.post('/api/users', userData),
   update: (id: number, userData: UpdateUserData): Promise<AxiosResponse<User>> => api.put(`/api/users/${id}`, userData),
   delete: (id: number): Promise<AxiosResponse<void>> => api.delete(`/api/users/${id}`),
+  getMyGdpShare: (): Promise<AxiosResponse<{ success: boolean; data?: { userId: number; name?: string; email?: string; shareInGDP: number | null; formatted?: string }; message?: string }>> => 
+    api.get('/api/users/me/gdp-share'),
+  getLeaderboard: (limit?: number): Promise<AxiosResponse<{ success: boolean; data: { leaderboard: LeaderboardEntry[]; total: number; limit: number } }>> => 
+    api.get('/api/users/leaderboard', { params: limit ? { limit } : {} }),
 }
 
 // Posts API
@@ -160,4 +173,4 @@ api.interceptors.response.use(
 )
 
 export default api
-export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes }
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry }

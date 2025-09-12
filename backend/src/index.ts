@@ -1,17 +1,14 @@
+// Polyfill fetch for Node.js - must be first
+import fetch from 'node-fetch';
+if (!globalThis.fetch) {
+  globalThis.fetch = fetch as any;
+}
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import fetch from 'node-fetch';
-
-// Polyfill fetch for Node.js
-if (!globalThis.fetch) {
-  globalThis.fetch = fetch as any;
-}
-
-// Make sure fetch is available globally before importing other modules
-globalThis.fetch = globalThis.fetch || fetch as any;
 
 dotenv.config();
 

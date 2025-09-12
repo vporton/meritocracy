@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { assert } from 'console';
 import { FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
+import fetch from 'node-fetch';
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +14,7 @@ const prisma = new PrismaClient();
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  fetch: globalThis.fetch,
+  fetch: fetch as any,
 });
 
 /**

@@ -53,6 +53,56 @@ router.get('/', async (req, res): Promise<void> => {
   }
 });
 
+// GET /api/users/leaderboard - Get GDP share leaderboard
+router.get('/leaderboard', async (req, res): Promise<void> => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 100); // Max 100 users
+    
+    const users = await prisma.user.findMany({
+      where: {
+        shareInGDP: {
+          not: null
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        shareInGDP: true,
+        // Don't include email for privacy
+      },
+      orderBy: {
+        shareInGDP: 'desc'
+      },
+      take: limit
+    });
+
+    const leaderboard = users.map((user, index) => ({
+      rank: index + 1,
+      userId: user.id,
+      name: user.name || `User ${user.id}`,
+      shareInGDP: user.shareInGDP!,
+      formatted: user.shareInGDP!.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+    }));
+
+    res.json({ 
+      success: true, 
+      data: {
+        leaderboard,
+        total: leaderboard.length,
+        limit
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching GDP leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch GDP leaderboard' });
+  }
+});
+
 // GET /api/users/:id - Get user by ID
 router.get('/:id', async (req, res): Promise<void> => {
   try {
@@ -70,6 +120,61 @@ router.get('/:id', async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Error fetching user:', error);
     res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// GET /api/users/me/gdp-share - Get current user's GDP share
+router.get('/me/gdp-share', requireAuth, async (req, res): Promise<void> => {
+  try {
+    const userId = (req as any).userId;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        shareInGDP: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    if (user.shareInGDP === null) {
+      res.json({ 
+        success: true, 
+        message: 'No GDP share assigned yet',
+        data: {
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          shareInGDP: null
+        }
+      });
+      return;
+    }
+
+    res.json({ 
+      success: true, 
+      data: {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        shareInGDP: user.shareInGDP,
+        formatted: user.shareInGDP.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching user GDP share:', error);
+    res.status(500).json({ error: 'Failed to fetch user GDP share' });
   }
 });
 

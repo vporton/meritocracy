@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import api from '../services/api'
-import { ethers } from 'ethers';
+import api, { usersApi } from '../services/api'
+import { ethers } from 'ethers'
+import Leaderboard from '../components/Leaderboard'
 
 interface ServerStatus {
   status?: string;
@@ -16,10 +17,19 @@ interface WorldGdpData {
   lastUpdated: string;
 }
 
+interface UserGdpShareData {
+  userId: number;
+  name?: string;
+  email?: string;
+  shareInGDP: number | null;
+  formatted?: string;
+}
+
 function Home() {
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
   const [ethereumStatus, setEthereumStatus] = useState<{network: string, balance: bigint, currency: string, address?: string} | undefined>()
   const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
+  const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [loading, setLoading] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
 
@@ -72,6 +82,22 @@ function Home() {
     }
 
     fetchWorldGdp()
+  }, [])
+
+  useEffect(() => {
+    const fetchUserGdpShare = async () => {
+      try {
+        const response = await usersApi.getMyGdpShare()
+        if (response.data.success) {
+          setUserGdpShare(response.data.data || null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user GDP share:', error)
+        // Don't set error state for this as it's optional and might fail if user is not authenticated
+      }
+    }
+
+    fetchUserGdpShare()
   }, [])
 
   const copyToClipboard = async (text: string) => {
@@ -139,6 +165,29 @@ function Home() {
           <p>📊 <strong>World GDP:</strong> Data not available</p>
         )}
       </div>
+
+      {userGdpShare && (
+        <div className="card">
+          <h3>💼 Your Economic Share</h3>
+          {userGdpShare.shareInGDP !== null ? (
+            <div>
+              <p>🎯 <strong>Your GDP Share:</strong> {userGdpShare.formatted || `$${userGdpShare.shareInGDP.toLocaleString()}`}</p>
+              <p style={{ fontSize: '0.9rem', color: '#888' }}>
+                This represents your calculated portion of the world economy based on your contributions
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p>⏳ <strong>Your GDP Share:</strong> Not yet calculated</p>
+              <p style={{ fontSize: '0.9rem', color: '#888' }}>
+                Complete your profile and evaluation to receive your economic share calculation
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <Leaderboard limit={100} showTop={10} />
       
       {ethereumStatus?.address && (
         <div className="card">

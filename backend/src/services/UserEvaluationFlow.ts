@@ -35,14 +35,11 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
-    // Step 2: Create the three worth assessment tasks with integrated injection checks (as per diagram)
-    const worthTasks = await this.createWorthTasks(evaluationData, [scientistOnboardingTask.id]);
+    // Step 2: Create the three worth assessment paths
+    const worthPaths = await this.createWorthAssessmentPaths(evaluationData, [scientistOnboardingTask.id]);
     
-    // Step 3: Extract injection tasks for any additional processing (now simplified)
-    const injectionTasks = await this.createPromptInjectionFlow(evaluationData, worthTasks);
-    
-    // Step 4: Create the final median calculation task that depends on all worth tasks
-    const allWorthTaskIds = worthTasks.map(t => t.worthTask.id);
+    // Step 3: Create median task that depends on all worth assessment tasks
+    const allWorthTaskIds = worthPaths.map(path => path.worthTask.id);
     const medianTask = await this.createMedianTask(evaluationData, allWorthTaskIds);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
@@ -131,36 +128,75 @@ export class UserEvaluationFlow {
 
 
   /**
-   * Create the three worth assessment tasks
-   * These correspond to the worth evaluation tasks in the diagram that converge to median
-   * 
-   * Flow according to diagram:
-   * 1. First worth task: Directly after onboarding → median calculation
-   * 2. Second worth task: After onboarding → prompt injection check → worth assessment (if no injection) → median calculation  
-   * 3. Third worth task: After onboarding → prompt injection check → worth assessment (if no injection) → median calculation
+   * Create the three worth assessment paths as shown in the diagram
+   * 1. First path: Direct worth assessment → median
+   * 2. Second path: Worth assessment → prompt injection checks → worth assessment → median
+   * 3. Third path: Worth assessment → prompt injection checks → worth assessment → median
    */
-  private async createWorthTasks(
+  private async createWorthAssessmentPaths(
     evaluationData: UserEvaluationData,
     dependencies: number[]
   ) {
-    const tasks = [];
+    const paths = [];
     
-    // First worth task: Directly after onboarding, no prompt injection check
-    const firstRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies);
+    // First path: Direct worth assessment (no injection checks)
+    const firstRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, worthPrompt);
     const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstRandomizeTask.id]);
     
-    tasks.push({
+    paths.push({
       randomizeTask: firstRandomizeTask,
       worthTask: firstWorthTask,
-      isFirstTask: true // Mark this as the first task that goes directly to median
+      pathType: 'direct'
     });
     
-    // Second and third worth tasks: After onboarding, with prompt injection checks FIRST
-    for (let i = 1; i < 3; i++) {
-      // Create prompt injection check task first (depends on onboarding)
-      const injectionRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, injectionPrompt);
+    // Second and third paths: Worth assessment → prompt injection checks → worth assessment
+    for (let pathIndex = 1; pathIndex < 3; pathIndex++) {
+      // First worth assessment in this path
+      const firstWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, worthPrompt);
+      const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstWorthRandomizeTask.id]);
       
-      // Create the prompt injection detection task
+      // Create prompt injection check flow (6 sequential tasks)
+      const injectionFlow = await this.createPromptInjectionFlow(evaluationData, [firstWorthTask.id]);
+      
+      // Second worth assessment after injection checks
+      const secondWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPrompt);
+      const secondWorthTask = await this.createWorthAssessmentTask(evaluationData, [secondWorthRandomizeTask.id]);
+      
+      paths.push({
+        firstWorthRandomizeTask,
+        firstWorthTask,
+        injectionFlow,
+        secondWorthRandomizeTask,
+        worthTask: secondWorthTask, // This is the final worth task for this path
+        pathType: 'with_injection_checks' // TODO: superfluous
+      });
+    }
+    
+    return paths;
+  }
+
+  /**
+   * Create sequential prompt injection check flow (6 tasks total)
+   * According to diagram: 3 pairs of "Randomize prompt" → "Randomized" tasks
+   * Each pair can result in ban if injection detected, or continue to next pair
+   */
+  private async createPromptInjectionFlow(
+    evaluationData: UserEvaluationData,
+    dependencies: number[]
+  ) {
+    const injectionTasks = [];
+    let currentDependencies = dependencies;
+    
+    // Create 3 pairs of injection check tasks (6 tasks total)
+    for (let pairIndex = 0; pairIndex < 3; pairIndex++) {
+      // Create randomize prompt task for injection check
+      const randomizeTask = await this.createRandomizePromptTask(
+        evaluationData, 
+        currentDependencies, 
+        injectionPrompt
+      );
+      
+      // Create injection detection task
       const injectionTask = await this.prisma.task.create({
         data: {
           status: TaskStatus.PENDING,
@@ -168,66 +204,35 @@ export class UserEvaluationFlow {
           runnerData: JSON.stringify({
             userId: evaluationData.userId,
             userData: evaluationData.userData,
-            checkNumber: i, // Use the index for check number
-            threshold: 1e-11, // Check if worth > 1e-11 before running injection check
-            banDuration: '1y', // Ban for 1 year if injection detected
+            checkNumber: pairIndex + 1,
+            banDuration: '1y',
             banReason: 'Prompt injection detected'
           })
         }
       });
 
-      // Create dependency on the injection randomization task
+      // Create dependency on the randomization task
       await this.prisma.taskDependency.create({
         data: {
           taskId: injectionTask.id,
-          dependencyId: injectionRandomizeTask.id
+          dependencyId: randomizeTask.id
         }
       });
       
-      // Create randomization task for worth assessment (depends on injection check passing)
-      const worthRandomizeTask = await this.createRandomizePromptTask(evaluationData, [injectionTask.id]);
-      
-      // Create worth assessment task that depends on worth randomization
-      const worthTask = await this.createWorthAssessmentTask(evaluationData, [worthRandomizeTask.id]);
-      
-      tasks.push({
-        injectionRandomizeTask,
+      injectionTasks.push({
+        randomizeTask,
         injectionTask,
-        worthRandomizeTask,
-        worthTask,
-        isFirstTask: false // These go through prompt injection checks
+        pairIndex: pairIndex + 1
       });
-    }
-    
-    return tasks;
-  }
-
-  /**
-   * Create prompt injection detection flow connected to worth evaluations
-   * This method is now simplified since injection tasks are created within createWorthTasks
-   * 
-   * Note: Injection tasks are now created as part of the worth task creation process,
-   * ensuring the correct flow: onboarding → injection check → worth assessment → median
-   */
-  private async createPromptInjectionFlow(
-    evaluationData: UserEvaluationData,
-    worthTasks: Array<{randomizeTask?: any, worthTask: any, isFirstTask: boolean, injectionRandomizeTask?: any, injectionTask?: any, worthRandomizeTask?: any}>
-  ) {
-    // Injection tasks are now created within createWorthTasks method
-    // This method is kept for compatibility but no longer creates separate injection tasks
-    const injectionTasks = [];
-    
-    // Extract injection tasks from worth tasks for any additional processing if needed
-    for (const worthTaskData of worthTasks) {
-      if (!worthTaskData.isFirstTask && worthTaskData.injectionTask) {
-        injectionTasks.push({
-          randomizeTask: worthTaskData.injectionRandomizeTask,
-          injectionTask: worthTaskData.injectionTask
-        });
-      }
+      
+      // Next pair depends on current injection task
+      currentDependencies = [injectionTask.id];
     }
 
-    return injectionTasks;
+    return {
+      injectionTasks,
+      completionTasks: injectionTasks.map(t => t.injectionTask.id) // Tasks that must complete before median
+    };
   }
 
 
@@ -235,7 +240,7 @@ export class UserEvaluationFlow {
   /**
    * Create median calculation task
    * This corresponds to "Salary = the median" in the diagram
-   * It converges all worth evaluation results
+   * It depends on all three worth assessment tasks (one from each path)
    */
   private async createMedianTask(
     evaluationData: UserEvaluationData,

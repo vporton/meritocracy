@@ -411,9 +411,9 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
-    const prompt: string = userData; // FIXME
+    const userPrompt: string = userData; // FIXME
     
-    await this.initiateOpenAIRequest(task, onboardingPrompt, prompt, scientistCheckSchema, this.getModelOptions());
+    await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
 }
 

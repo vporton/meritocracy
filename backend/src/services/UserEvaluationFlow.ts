@@ -26,8 +26,8 @@ export class UserEvaluationFlow {
    * 
    * Flow according to diagram:
    * 1. Scientist Onboarding → First Worth Assessment → Median Calculation
-   * 2. Scientist Onboarding → Second Worth Assessment → Prompt Injection Check (if > 1e-11) → Median Calculation
-   * 3. Scientist Onboarding → Third Worth Assessment → Prompt Injection Check (if > 1e-11) → Median Calculation
+   * 2. Scientist Onboarding → Prompt Injection Check → Second Worth Assessment (if no injection) → Median Calculation
+   * 3. Scientist Onboarding → Prompt Injection Check → Third Worth Assessment (if no injection) → Median Calculation
    */
   async createEvaluationFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
@@ -136,8 +136,8 @@ export class UserEvaluationFlow {
    * 
    * Flow according to diagram:
    * 1. First worth task: Directly after onboarding → median calculation
-   * 2. Second worth task: After onboarding → prompt injection check (if > 1e-11) → median calculation  
-   * 3. Third worth task: After onboarding → prompt injection check (if > 1e-11) → median calculation
+   * 2. Second worth task: After onboarding → prompt injection check → worth assessment (if no injection) → median calculation  
+   * 3. Third worth task: After onboarding → prompt injection check → worth assessment (if no injection) → median calculation
    */
   private async createWorthTasks(
     evaluationData: UserEvaluationData,

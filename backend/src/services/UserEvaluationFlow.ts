@@ -28,7 +28,7 @@ export class UserEvaluationFlow {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
 
     // Step 1: Create the initial scientist check task
-    const scientistCheckTask = await this.createScientistCheckTask(evaluationData);
+    const scientistCheckTask = await this.createScientistOnboardingTask(evaluationData);
     
     // Step 2: Create a randomization task for the worth prompt
     const randomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistCheckTask.id]);
@@ -49,7 +49,7 @@ export class UserEvaluationFlow {
   /**
    * Create the initial scientist check task
    */
-  private async createScientistCheckTask(evaluationData: UserEvaluationData) {
+  private async createScientistOnboardingTask(evaluationData: UserEvaluationData) {
     return await this.prisma.task.create({
       data: {
         status: TaskStatus.PENDING,

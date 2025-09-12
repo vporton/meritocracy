@@ -14,6 +14,61 @@ const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
 const DEFAULT_TEMPERATURE = 0.2;
 const BAN_DURATION_YEARS = 1;
 
+/**
+ * Generate a user prompt string from user data for AI analysis
+ * Only includes connected accounts (non-null values) in the prompt
+ * @param userData - User data object containing account information
+ * @returns Formatted string with connected account information
+ */
+function generateUserPrompt(userData: any): string {
+  if (!userData || typeof userData !== 'object') {
+    return 'No user account information available.';
+  }
+
+  const accountInfo: string[] = [];
+  
+  // Add ORCID if connected
+  if (userData.orcidId) {
+    accountInfo.push(`ORCID: ${userData.orcidId}`);
+  }
+  
+  // Add GitHub if connected
+  if (userData.githubHandle) {
+    accountInfo.push(`GitHub: ${userData.githubHandle}`);
+  }
+  
+  // Add BitBucket if connected
+  if (userData.bitbucketHandle) {
+    accountInfo.push(`BitBucket: ${userData.bitbucketHandle}`);
+  }
+  
+  // Add GitLab if connected
+  if (userData.gitlabHandle) {
+    accountInfo.push(`GitLab: ${userData.gitlabHandle}`);
+  }
+  
+  // Add Ethereum address if connected
+  if (userData.ethereumAddress) {
+    accountInfo.push(`Ethereum: ${userData.ethereumAddress}`);
+  }
+  
+  // Add name if available
+  if (userData.name) {
+    accountInfo.push(`Name: ${userData.name}`);
+  }
+  
+  // Add email if available
+  if (userData.email) {
+    accountInfo.push(`Email: ${userData.email}`);
+  }
+
+  if (accountInfo.length === 0) {
+    return 'No connected accounts or profile information available.';
+  }
+
+  return `User account information:\n${accountInfo.join('\n')}`;
+}
+
 const USE_WEB_SEARCH_TOOL = {
   tools: <Tool[]>[
     {
@@ -371,7 +426,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
     
     // Get randomized prompt from dependency (randomizePrompt task)
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
-    const userPrompt: string = userData; // FIXME
+    const userPrompt: string = generateUserPrompt(userData);
     
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
@@ -411,7 +466,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
-    const userPrompt: string = userData; // FIXME
+    const userPrompt: string = generateUserPrompt(userData);
     
     await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
@@ -568,7 +623,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     
     // Get randomized prompt from dependency (randomizePrompt task)
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
-    const userPrompt: string = userData; // FIXME
+    const userPrompt: string = generateUserPrompt(userData);
     
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }

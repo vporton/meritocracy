@@ -25,9 +25,10 @@ export class UserEvaluationFlow {
    * Returns the root task ID that can be used to start the evaluation
    * 
    * Flow according to diagram:
-   * 1. Scientist Onboarding → First Worth Assessment → Median Calculation
-   * 2. Scientist Onboarding → Prompt Injection Check → Second Worth Assessment (if no injection) → Median Calculation
-   * 3. Scientist Onboarding → Prompt Injection Check → Third Worth Assessment (if no injection) → Median Calculation
+   * 1. Scientist Onboarding → First Worth Assessment → WorthThresholdCheckRunner
+   * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second Worth Assessment → Median
+   * 3. If worth > 1e-11 AND no injection: Prompt Injection Checks → Third Worth Assessment → Median
+   * 4. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
    */
   async createEvaluationFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
@@ -35,15 +36,31 @@ export class UserEvaluationFlow {
     // Step 1: Create the initial scientist check task
     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
-    // Step 2: Create the three worth assessment paths
-    const worthPaths = await this.createWorthAssessmentPaths(evaluationData, [scientistOnboardingTask.id]);
+    // Step 2: Create the first worth assessment task
+    const firstWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistOnboardingTask.id], worthPrompt);
+    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstWorthRandomizeTask.id]);
     
-    // Step 3: Create median task that depends on all worth assessment tasks
-    const allWorthTaskIds = worthPaths.map(path => path.worthTask.id);
-    const medianTask = await this.createMedianTask(evaluationData, allWorthTaskIds);
+    // Step 3: Create the worth threshold check task
+    const thresholdCheckTask = await this.createWorthThresholdCheckTask(evaluationData, [firstWorthTask.id]);
+    
+    // Step 4: Create the prompt injection check flow (only if threshold is exceeded)
+    const injectionFlow = await this.createPromptInjectionFlow(evaluationData, [thresholdCheckTask.id]);
+    
+    // Step 5: Create the second worth assessment task (after injection checks)
+    const secondWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPrompt);
+    const secondWorthTask = await this.createWorthAssessmentTask(evaluationData, [secondWorthRandomizeTask.id]);
+    
+    // Step 6: Create the third worth assessment task (only if injection checks pass)
+    const thirdWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPrompt);
+    const thirdWorthTask = await this.createWorthAssessmentTask(evaluationData, [thirdWorthRandomizeTask.id]);
+    
+    // Step 7: Create median task that depends on all worth assessment tasks
+    // Note: The median task will process available worth values even if some dependencies are cancelled
+    const medianTask = await this.createMedianTask(evaluationData, [firstWorthTask.id, secondWorthTask.id, thirdWorthTask.id]);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);
-    console.log(`📊 Flow structure: 1 direct worth task + 2 injection check → worth assessment → median`);
+    console.log(`📊 Flow structure: Scientist → Worth → Threshold Check → [Injection Checks] → Worth → Median`);
+    console.log(`📊 Both Second and Third Worth Assessments depend on injection checks passing`);
     return scientistOnboardingTask.id;
   }
 
@@ -127,52 +144,37 @@ export class UserEvaluationFlow {
   }
 
 
+
   /**
-   * Create the three worth assessment paths as shown in the diagram
-   * 1. First path: Direct worth assessment → median
-   * 2. Second path: Worth assessment → prompt injection checks → worth assessment → median
-   * 3. Third path: Worth assessment → prompt injection checks → worth assessment → median
+   * Create a worth threshold check task
+   * This corresponds to "Compare user worth (WorthThresholdCheckRunner) to 1e-11" in the diagram
    */
-  private async createWorthAssessmentPaths(
+  private async createWorthThresholdCheckTask(
     evaluationData: UserEvaluationData,
     dependencies: number[]
   ) {
-    const paths = [];
-    
-    // First path: Direct worth assessment (no injection checks)
-    const firstRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, worthPrompt);
-    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstRandomizeTask.id]);
-    
-    paths.push({
-      randomizeTask: firstRandomizeTask,
-      worthTask: firstWorthTask,
-      pathType: 'direct'
+    const task = await this.prisma.task.create({
+      data: {
+        status: TaskStatus.PENDING,
+        runnerClassName: 'WorthThresholdCheckRunner',
+        runnerData: JSON.stringify({
+          userId: evaluationData.userId,
+          threshold: 1e-11 // Default threshold from the diagram
+        })
+      }
     });
-    
-    // Second and third paths: Worth assessment → prompt injection checks → worth assessment
-    for (let pathIndex = 1; pathIndex < 3; pathIndex++) {
-      // First worth assessment in this path
-      const firstWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, worthPrompt);
-      const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstWorthRandomizeTask.id]);
-      
-      // Create prompt injection check flow (6 sequential tasks)
-      const injectionFlow = await this.createPromptInjectionFlow(evaluationData, [firstWorthTask.id]);
-      
-      // Second worth assessment after injection checks
-      const secondWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPrompt);
-      const secondWorthTask = await this.createWorthAssessmentTask(evaluationData, [secondWorthRandomizeTask.id]);
-      
-      paths.push({
-        firstWorthRandomizeTask,
-        firstWorthTask,
-        injectionFlow,
-        secondWorthRandomizeTask,
-        worthTask: secondWorthTask, // This is the final worth task for this path
-        pathType: 'with_injection_checks' // TODO: superfluous
+
+    // Create dependencies
+    for (const depId of dependencies) {
+      await this.prisma.taskDependency.create({
+        data: {
+          taskId: task.id,
+          dependencyId: depId
+        }
       });
     }
-    
-    return paths;
+
+    return task;
   }
 
   /**

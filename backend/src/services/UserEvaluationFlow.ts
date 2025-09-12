@@ -40,6 +40,7 @@ export class UserEvaluationFlow {
     const conditionalTasks = await this.createConditionalTasks(evaluationData, firstWorthTask.id);
     
     // Step 5: Create the final median calculation task
+    // FIXME: Seems not to receive `firstWorthTask`
     const medianTask = await this.createMedianTask(evaluationData, conditionalTasks.worthTasks);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask.id}`);

@@ -34,3 +34,5 @@
   If this is the case, we should rewrite this in ICP.
 
 - Add indexes to the DB.
+
+- Check that `customId`s and filenames for OpenAI are unique!

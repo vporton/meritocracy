@@ -185,7 +185,7 @@ export class TaskManager {
   }
 
   /**
-   * Delete all tasks that are dependencies only of COMPLETED or CANCELLED tasks
+   * Delete all COMPLETED or CANCELLED tasks that are dependencies only of COMPLETED or CANCELLED tasks
    * @returns Promise<number> - Number of tasks deleted
    */
   async deleteOrphanedDependencies(): Promise<number> {
@@ -194,6 +194,9 @@ export class TaskManager {
       // This uses a single efficient Prisma query instead of multiple queries
       const orphanedTasks = await this.prisma.task.findMany({
         where: {
+          status: {
+            in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
+          },
           dependents: {
             every: {
               task: {

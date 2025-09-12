@@ -123,54 +123,75 @@ export class TaskManager {
    */
   async runAllPendingTasks(): Promise<{ executed: number; failed: number; skipped: number }> {
     try {
-      // Get all pending tasks
-      const pendingTasks = await this.prisma.task.findMany({
-        where: { status: TaskStatus.PENDING },
-        include: {
-          dependencies: {
-            include: {
-              dependency: true,
-            },
-          },
-        },
-        orderBy: { id: 'asc' }, // Process in order of creation
-      });
-
-      console.log(`Found ${pendingTasks.length} pending tasks to process`);
-
       let executed = 0;
       let failed = 0;
       let skipped = 0;
 
-      // Process each pending task
-      for (const task of pendingTasks) {
-        console.log(`Processing task ${task.id}...`);
-        
-        const success = await this.runTaskWithDependencies(task.id);
-        
-        if (success) {
-          executed++;
-        } else {
-          // Check if it was skipped due to dependencies or failed
-          const currentTask = await this.prisma.task.findUnique({
-            where: { id: task.id },
-            include: {
-              dependencies: {
-                include: {
-                  dependency: true,
-                },
+      // Loop while there are tasks that can be run
+      while (true) {
+        // Build a list of tasks that depend only on COMPLETED or CANCELLED tasks
+        // TODO: Probably should not keep the entire list in memory.
+        const runnableTasks = await this.prisma.task.findMany({
+          where: { 
+            status: TaskStatus.PENDING,
+            dependencies: {
+              every: {
+                dependency: {
+                  status: {
+                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
+                  }
+                }
+              }
+            }
+          },
+          include: {
+            dependencies: {
+              include: {
+                dependency: true,
               },
             },
-          });
+          },
+          orderBy: { id: 'asc' }, // Process in order of creation
+        });
 
-          if (currentTask?.status === TaskStatus.PENDING) {
-            // Still pending means dependencies weren't met
-            skipped++;
-            console.log(`Task ${task.id} skipped - dependencies not met`);
+        // If no runnable tasks found, exit the loop
+        if (runnableTasks.length === 0) {
+          console.log('No more runnable tasks found');
+          break;
+        }
+
+        console.log(`Found ${runnableTasks.length} runnable tasks to process in this iteration`);
+
+        // Run all tasks in the current batch
+        for (const task of runnableTasks) {
+          console.log(`Processing task ${task.id}...`);
+          
+          const success = await this.runTaskWithDependencies(task.id);
+          
+          if (success) {
+            executed++;
           } else {
-            // Status changed to CANCELLED means it failed
-            failed++;
-            console.log(`Task ${task.id} failed to execute`);
+            // Check if it was skipped due to dependencies or failed
+            const currentTask = await this.prisma.task.findUnique({
+              where: { id: task.id },
+              include: {
+                dependencies: {
+                  include: {
+                    dependency: true,
+                  },
+                },
+              },
+            });
+
+            if (currentTask?.status === TaskStatus.PENDING) {
+              // Still pending means dependencies weren't met
+              skipped++;
+              console.log(`Task ${task.id} skipped - dependencies not met`);
+            } else {
+              // Status changed to CANCELLED means it failed
+              failed++;
+              console.log(`Task ${task.id} failed to execute`);
+            }
           }
         }
       }

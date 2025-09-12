@@ -478,7 +478,7 @@ export abstract class BaseRunner implements TaskRunner {
     const outputter = await createAIOutputter(store);
     
     try {
-      const response = await outputter.getOutputOrThrow(customId); // FIXME: override getOutput() to store status in the DB.
+      const response = await outputter.getOutput(customId);
       
       // Parse the response content
       const content = (response as any).choices[0]?.message?.content;
@@ -491,11 +491,13 @@ export abstract class BaseRunner implements TaskRunner {
       // Log the response to the database
       await this.logOpenAIResponse(customId, response, undefined);
       
+      this.onOutput(customId, response); // FIXME: `response` is more complex data.
+
       return parsedContent;
     } catch (error) {
       // Log the error to the database
       await this.logOpenAIResponse(customId, undefined, error instanceof Error ? error.message : String(error));
-      throw error;
+      return undefined;
     }
   }
 }

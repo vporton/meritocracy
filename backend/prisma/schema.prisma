@@ -26,6 +26,7 @@ model User {
 
   // Relationships
   sessions       Session[]
+  openaiLogs     OpenAILog[]
 
   @@map("users")
 }
@@ -98,6 +99,8 @@ model Task {
   dependencies TaskDependency[] @relation("TaskDependencies")
   // Tasks that depend on this task (dependents)
   dependents   TaskDependency[] @relation("TaskDependents")
+  // OpenAI logs for this task
+  openaiLogs   OpenAILog[]
 
   @@map("tasks")
 }
@@ -115,6 +118,28 @@ model TaskDependency {
   // Ensure no duplicate dependencies
   @@unique([taskId, dependencyId])
   @@map("task_dependencies")
+}
+
+model OpenAILog {
+  id                Int      @id @default(autoincrement())
+  userId            Int?     // User who initiated the request (optional for system requests)
+  taskId            Int?     // Task that initiated the request (optional for standalone requests)
+  customId          String   @unique // Unique identifier for the request
+  storeId           String   // Store ID for result retrieval
+  runnerClassName   String   // Name of the runner class that made the request
+  requestInitiated  DateTime @default(now()) // When the request was initiated
+  responseReceived  DateTime? // When the response was received from OpenAI
+  requestData       String   // JSON string containing the request data sent to OpenAI
+  responseData      String?  // JSON string containing the response data from OpenAI
+  errorMessage      String?  // Error message if the request failed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  task              Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@map("openai_logs")
 }
 
 

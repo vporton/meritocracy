@@ -117,52 +117,136 @@ abstract class BaseOpenAIRunner extends BaseRunner {
   }
 
   /**
+   * Log an OpenAI request to the database
+   * @param customId - Unique identifier for this request
+   * @param storeId - Store ID for result retrieval
+   * @param requestData - The request data sent to OpenAI
+   * @param taskId - Optional task ID that initiated the request
+   */
+  protected async logOpenAIRequest(
+    customId: string,
+    storeId: string,
+    requestData: any,
+    taskId?: number
+  ): Promise<void> {
+    try {
+      await this.prisma.openAILog.create({
+        data: {
+          customId,
+          storeId,
+          runnerClassName: this.runnerName,
+          requestData: JSON.stringify(requestData),
+          requestInitiated: new Date(),
+          userId: this.data.userId || null,
+          taskId: taskId || null
+        }
+      });
+      
+      this.log('info', `📝 Logged OpenAI request`, { 
+        customId, 
+        storeId, 
+        taskId,
+        userId: this.data.userId 
+      });
+    } catch (error) {
+      this.log('error', `Failed to log OpenAI request`, { 
+        customId, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }
+
+  /**
+   * Log an OpenAI response to the database
+   * @param customId - Unique identifier for this request
+   * @param responseData - The response data received from OpenAI
+   * @param errorMessage - Optional error message if the request failed
+   */
+  protected async logOpenAIResponse(
+    customId: string,
+    responseData?: any,
+    errorMessage?: string
+  ): Promise<void> {
+    try {
+      await this.prisma.openAILog.update({
+        where: { customId },
+        data: {
+          responseReceived: new Date(),
+          responseData: responseData ? JSON.stringify(responseData) : null,
+          errorMessage: errorMessage || null
+        }
+      });
+      
+      this.log('info', `📝 Logged OpenAI response`, { 
+        customId, 
+        hasResponse: !!responseData,
+        hasError: !!errorMessage
+      });
+    } catch (error) {
+      this.log('error', `Failed to log OpenAI response`, { 
+        customId, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }
+
+  /**
    * Make an OpenAI request using the `flexible-batches` API
    * @param prompt - The prompt to send to OpenAI
    * @param schema - The JSON schema for response format
    * @param customId - Unique identifier for this request
+   * @param options - Additional options for the request
+   * @param taskId - Optional task ID that initiated the request
    * @returns Promise resolving to store ID for result retrieval
    */
   protected async makeOpenAIRequest(
     prompt: string,
     schema: any,
     customId: string,
-    options: ResponseCreateParams = {}
+    options: ResponseCreateParams = {},
+    taskId?: number
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined);
     const runner = await createAIRunner(store);
+    
+    const requestBody = <ResponseCreateParamsNonStreaming>{
+      instructions: prompt, // system/developer message.
+      // input: TODO, // user's message
+      model: options?.model ?? DEFAULT_MODEL,
+      temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
+      // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
+      reasoning: options?.reasoning === null ? null : {
+        effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
+      },
+      ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
+      text: <ResponseTextConfig>{
+        format: {
+          type: "json_schema" as const,
+          name: "response",
+          schema: schema,
+          strict: true
+        },
+        verbosity: 'medium'
+      }
+    };
     
     // Add the request to the runner
     await runner.addItem({
       custom_id: customId,
       method: "POST",
-      body: <ResponseCreateParamsNonStreaming>{
-        instructions: prompt, // system/developer message.
-        // input: TODO, // user's message
-        model: options?.model ?? DEFAULT_MODEL,
-        temperature: options?.temperature ?? DEFAULT_TEMPERATURE,
-        // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
-        reasoning: options?.reasoning === null ? null : {
-          effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
-        },
-        ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
-        text: <ResponseTextConfig>{
-          format: {
-            type: "json_schema" as const,
-            name: "response",
-            schema: schema,
-            strict: true
-          },
-          verbosity: 'medium'
-        }
-      } 
+      body: requestBody
     });
     
     // Flush to execute the request
     await runner.flush();
     
+    const storeId = store.getStoreId();
+    
+    // Log the request to the database
+    await this.logOpenAIRequest(customId, storeId, requestBody, taskId);
+    
     // Return the store ID for later result retrieval
-    return { storeId: store.getStoreId() }; // TODO: `storeId` should be stored in the database before flushing?
+    return { storeId };
   }
 
   /**
@@ -208,7 +292,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
     // Then initiate the OpenAI request
-    await this.makeOpenAIRequest(prompt, schema, customId, options);
+    await this.makeOpenAIRequest(prompt, schema, customId, options, task.id);
   }
 
 

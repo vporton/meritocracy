@@ -180,6 +180,40 @@ export abstract class BaseRunner implements TaskRunner {
   }
 
   /**
+   * Log an OpenAI response to the database
+   * @param customId - Unique identifier for this request
+   * @param responseData - The response data received from OpenAI
+   * @param errorMessage - Optional error message if the request failed
+   */
+  protected async logOpenAIResponse(
+    customId: string,
+    responseData?: any,
+    errorMessage?: string
+  ): Promise<void> {
+    try {
+      await this.prisma.openAILog.update({
+        where: { customId },
+        data: {
+          responseReceived: new Date(),
+          responseData: responseData ? JSON.stringify(responseData) : null,
+          errorMessage: errorMessage || null
+        }
+      });
+      
+      this.log('info', `📝 Logged OpenAI response`, { 
+        customId, 
+        hasResponse: !!responseData,
+        hasError: !!errorMessage
+      });
+    } catch (error) {
+      this.log('error', `Failed to log OpenAI response`, { 
+        customId, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }
+
+  /**
    * Determines whether this runner should check for cancelled dependencies.
    * 
    * By default, runners check if any dependencies are cancelled and will cancel
@@ -424,15 +458,26 @@ export abstract class BaseRunner implements TaskRunner {
     const store = await createAIBatchStore(storeId);
     const outputter = await createAIOutputter(store);
     
-    const response = await outputter.getOutputOrThrow(customId);
-    
-    // Parse the response content
-    const content = (response as any).choices[0]?.message?.content;
-    if (!content) {
-      throw new OpenAIError('No response content received from OpenAI', customId);
+    try {
+      const response = await outputter.getOutputOrThrow(customId);
+      
+      // Parse the response content
+      const content = (response as any).choices[0]?.message?.content;
+      if (!content) {
+        throw new OpenAIError('No response content received from OpenAI', customId);
+      }
+      
+      const parsedContent = JSON.parse(content);
+      
+      // Log the response to the database
+      await this.logOpenAIResponse(customId, response, undefined);
+      
+      return parsedContent;
+    } catch (error) {
+      // Log the error to the database
+      await this.logOpenAIResponse(customId, undefined, error instanceof Error ? error.message : String(error));
+      throw error;
     }
-    
-    return JSON.parse(content);
   }
 }
 

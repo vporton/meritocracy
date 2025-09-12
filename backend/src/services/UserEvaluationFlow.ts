@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { TaskStatus } from '../types/task.js';
 import { worthPrompt, injectionPrompt } from '../prompts.js';
+import { GlobalDataService } from './GlobalDataService.js';
 
 export interface UserEvaluationData {
   userId: number;
@@ -36,7 +37,8 @@ export class UserEvaluationFlow {
     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
     // Step 2: Create the first worth assessment task
-    const firstWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistOnboardingTask.id], worthPrompt);
+    const worthPromptWithGdp = await this.getWorthPromptWithGdp();
+    const firstWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, [scientistOnboardingTask.id], worthPromptWithGdp);
     const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstWorthRandomizeTask.id]);
     
     // Step 3: Create the worth threshold check task
@@ -46,11 +48,11 @@ export class UserEvaluationFlow {
     const injectionFlow = await this.createPromptInjectionFlow(evaluationData, [thresholdCheckTask.id]);
     
     // Step 5: Create the second worth assessment task (after injection checks)
-    const secondWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPrompt);
+    const secondWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPromptWithGdp);
     const secondWorthTask = await this.createWorthAssessmentTask(evaluationData, [secondWorthRandomizeTask.id]);
     
     // Step 6: Create the third worth assessment task (only if injection checks pass)
-    const thirdWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPrompt);
+    const thirdWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPromptWithGdp);
     const thirdWorthTask = await this.createWorthAssessmentTask(evaluationData, [thirdWorthRandomizeTask.id]);
     
     // Step 7: Create median task that depends on all worth assessment tasks
@@ -76,6 +78,25 @@ export class UserEvaluationFlow {
         })
       }
     });
+  }
+
+  /**
+   * Get the worth prompt with current GDP data
+   */
+  private async getWorthPromptWithGdp(): Promise<string> {
+    try {
+      const worldGdp = await GlobalDataService.getWorldGdp();
+      if (worldGdp) {
+        return worthPrompt.replace('<WORLD_GDP>', worldGdp.toLocaleString());
+      } else {
+        // TODO: Should be always available
+        console.warn('World GDP data not available, using prompt without GDP');
+        return worthPrompt.replace('<WORLD_GDP>', 'Not available');
+      }
+    } catch (error) {
+      console.error('Error fetching world GDP for prompt:', error);
+      return worthPrompt.replace('<WORLD_GDP>', 'Not available');
+    }
   }
 
   /**

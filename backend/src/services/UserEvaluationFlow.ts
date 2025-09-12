@@ -11,7 +11,6 @@ export interface UserEvaluationData {
     gitlabHandle?: string;
     [key: string]: any;
   };
-  isBiMonthly?: boolean; // Flag to indicate if this is a bi-monthly evaluation
 }
 
 export class UserEvaluationFlow {
@@ -69,7 +68,7 @@ export class UserEvaluationFlow {
   private async createRandomizePromptTask(
     evaluationData: UserEvaluationData,
     dependencies: number[],
-    originalPrompt: string = worthPrompt
+    originalPrompt: string = worthPrompt,
   ) {
     const task = await this.prisma.task.create({
       data: {
@@ -77,7 +76,7 @@ export class UserEvaluationFlow {
         runnerClassName: 'RandomizePromptRunner',
         runnerData: JSON.stringify({
           originalPrompt,
-          userData: evaluationData.userData
+          userData: evaluationData.userData,
         })
       }
     });
@@ -103,15 +102,9 @@ export class UserEvaluationFlow {
     evaluationData: UserEvaluationData,
     dependencies: number[]
   ) {
-    // Create bi-monthly input task if this is a bi-monthly evaluation
-    let biMonthlyDependencies = dependencies;
-    if (evaluationData.isBiMonthly) {
-      const biMonthlyTask = await this.createBiMonthlyTask(evaluationData, dependencies);
-      biMonthlyDependencies = [...dependencies, biMonthlyTask.id];
-    }
-
     // Create randomization task for worth prompt
-    const randomizeTask = await this.createRandomizePromptTask(evaluationData, biMonthlyDependencies);
+    // Bi-monthly input is just a flag that affects the randomization, not a separate task
+    const randomizeTask = await this.createRandomizePromptTask(evaluationData, dependencies, worthPrompt);
     
     // Create the main worth assessment task
     const mainWorthTask = await this.createWorthAssessmentTask(evaluationData, [randomizeTask.id]);
@@ -122,36 +115,6 @@ export class UserEvaluationFlow {
     };
   }
 
-  /**
-   * Create bi-monthly input task
-   */
-  private async createBiMonthlyTask(
-    evaluationData: UserEvaluationData,
-    dependencies: number[]
-  ) {
-    const task = await this.prisma.task.create({
-      data: {
-        status: TaskStatus.PENDING,
-        runnerClassName: 'BiMonthlyInputRunner',
-        runnerData: JSON.stringify({
-          userId: evaluationData.userId,
-          userData: evaluationData.userData
-        })
-      }
-    });
-
-    // Create dependencies
-    for (const depId of dependencies) {
-      await this.prisma.taskDependency.create({
-        data: {
-          taskId: task.id,
-          dependencyId: depId
-        }
-      });
-    }
-
-    return task;
-  }
 
   /**
    * Create a worth assessment task using randomized prompts

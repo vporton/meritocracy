@@ -47,8 +47,16 @@ abstract class OurClearer implements FlexibleStore {
   abstract getStoreId(): string;
   async clear(): Promise<void> {
     // Delete both batch and non-batch data, as necessary if the server switches between batch and non-batch modes.
-    await this.prisma.batches.delete({where: {id: BigInt(this.getStoreId())}});
-    await this.prisma.nonBatches.delete({where: {id: BigInt(this.getStoreId())}});
+    try {
+      await this.prisma.batches.delete({where: {id: BigInt(this.getStoreId())}});
+    } catch (error) {
+      // Ignore if batch doesn't exist
+    }
+    try {
+      await this.prisma.nonBatches.delete({where: {id: BigInt(this.getStoreId())}});
+    } catch (error) {
+      // Ignore if non-batch doesn't exist
+    }
   }
 }
 
@@ -86,12 +94,11 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
 class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   constructor(prisma: PrismaClient, private storeId: string | undefined) {
     super(prisma);
-    this.storeId = uuidv4();
   }
   async init(): Promise<void> {
     assert(this.storeId === undefined, "cannot initialize storeId second time");
-    const batches = await this.prisma.batches.create({data: {}});
-    this.storeId = batches.id.toString();
+    const nonBatches = await this.prisma.nonBatches.create({data: {}});
+    this.storeId = nonBatches.id.toString();
   }
   getStoreId(): string {
     return this.storeId!;

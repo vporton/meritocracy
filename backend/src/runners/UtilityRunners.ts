@@ -464,7 +464,7 @@ export abstract class BaseRunner implements TaskRunner {
       // Parse the response content
       const content = (response as any).choices[0]?.message?.content;
       if (!content) {
-        throw new OpenAIError('No response content received from OpenAI', customId);
+        throw new OpenAIError('No response content received from OpenAI', customId); // FIXME: not handled error
       }
       
       const parsedContent = JSON.parse(content);

@@ -1,5 +1,4 @@
 import { JSONSchema } from "openai/lib/jsonschema";
-import { ResponseSchema } from "openai/resources/responses";
 
 
 // For gpt-5-nano, with t=0.

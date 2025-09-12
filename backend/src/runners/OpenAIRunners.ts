@@ -391,6 +391,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   protected getModelOptions(): ResponseCreateParams | undefined {
     return {
       model: 'gpt-5-nano-2025-08-07', // TODO: Update the model name.
+      // temperature: 0.0, // Cursor says, it's unsupported.
       prompt_cache_key: 'scientist-onboarding',
       reasoning: {
         effort: OVERRIDE_REASONING_EFFORT ?? 'low'

@@ -202,6 +202,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
    */
   protected async makeOpenAIRequest(
     prompt: string,
+    input: string,
     schema: any,
     customId: string,
     options: ResponseCreateParams = {},
@@ -212,7 +213,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     
     const requestBody = <ResponseCreateParamsNonStreaming>{
       instructions: prompt, // system/developer message.
-      input: prompt, // user's message - use the prompt as input
+      input: input, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
       ...(options?.temperature !== undefined && { temperature: options.temperature }),
       // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
@@ -285,6 +286,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
   protected async initiateOpenAIRequest(
     task: TaskWithDependencies,
     prompt: string,
+    input: string,
     schema: any,
     options: ResponseCreateParams = {},
     additionalData: Record<string, any> = {}
@@ -293,7 +295,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
     // Then initiate the OpenAI request
-    await this.makeOpenAIRequest(prompt, schema, customId, options, task.id);
+    await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
   }
 
 
@@ -369,9 +371,9 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
     
     // Get randomized prompt from dependency (randomizePrompt task)
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
-    const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
+    const userPrompt: string = userData; // FIXME
     
-    await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema(), this.getModelOptions());
+    await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 
   /**
@@ -409,9 +411,9 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
-    const prompt = onboardingPrompt.replace('<DATA>', JSON.stringify(userData));
+    const prompt: string = userData; // FIXME
     
-    await this.initiateOpenAIRequest(task, prompt, scientistCheckSchema, this.getModelOptions());
+    await this.initiateOpenAIRequest(task, onboardingPrompt, prompt, scientistCheckSchema, this.getModelOptions());
   }
 }
 
@@ -472,8 +474,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
       throw new TaskRunnerError('Original prompt is required for randomization', task.id, this.constructor.name);
     }
     
-    const randomizeRequest = randomizePrompt.replace('<PROMPT>', originalPrompt);
-    await this.initiateOpenAIRequest(task, randomizeRequest, randomizedPromptSchema, this.getModelOptions());
+    await this.initiateOpenAIRequest(task, randomizePrompt, originalPrompt, randomizedPromptSchema, this.getModelOptions());
   }
 }
 
@@ -567,9 +568,9 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     
     // Get randomized prompt from dependency (randomizePrompt task)
     const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
-    const finalPrompt = randomizedPrompt.replace('<DATA>', JSON.stringify(userData));
+    const userPrompt: string = userData; // FIXME
     
-    await this.initiateOpenAIRequest(task, finalPrompt, this.getResponseSchema(), this.getModelOptions());
+    await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 }
 

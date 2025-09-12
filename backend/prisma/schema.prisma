@@ -1,33 +1,28 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite" // Can be changed to "postgresql" or "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  email          String?   @unique
-  name           String?
-  ethereumAddress String? @unique
-  orcidId        String?  @unique
-  githubHandle   String?  @unique
-  bitbucketHandle String? @unique
-  gitlabHandle   String?  @unique
-  shareInGDP     Float?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  bannedTill     DateTime?
+  id                Int         @id @default(autoincrement())
+  email             String?     @unique
+  name              String?
+  ethereumAddress   String?     @unique
+  orcidId           String?     @unique
+  githubHandle      String?     @unique
+  bitbucketHandle   String?     @unique
+  gitlabHandle      String?     @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  bannedTill        DateTime?
   lastPaymentAmount Decimal?
-
-  // Relationships
-  sessions       Session[]
-  openaiLogs     OpenAILog[]
+  shareInGDP        Float?
+  openaiLogs        OpenAILog[]
+  sessions          Session[]
 
   @@map("users")
 }
@@ -35,21 +30,19 @@ model User {
 model Session {
   id        String   @id @default(cuid())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model Batches {
-  id             BigInt      @id @default(autoincrement())
-  createdAt      DateTime    @default(now())
-  
-  // Relationships
-  batchMappings  BatchMapping[]
+  id            BigInt         @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  batchMappings BatchMapping[]
 
   @@map("batches")
 }
@@ -58,98 +51,82 @@ model BatchMapping {
   id        Int      @id @default(autoincrement())
   customId  String   @unique
   batchId   BigInt
-  batch     Batches  @relation(fields: [batchId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  batch     Batches  @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@map("batch_mappings")
 }
 
 model NonBatches {
-  id             BigInt      @id @default(autoincrement())
-  createdAt      DateTime    @default(now())
-  
-  // Relationships
-  nonbatchMappings  NonBatchMapping[]
+  id               BigInt            @id
+  createdAt        DateTime          @default(now())
+  nonbatchMappings NonBatchMapping[]
 
   @@map("non_batches")
 }
 
 model NonBatchMapping {
-  id         Int      @id @default(autoincrement())
-  customId   String   @unique
+  id         Int        @id @default(autoincrement())
+  customId   String     @unique
   response   String
   nonBatchId BigInt
-  batch      NonBatches  @relation(fields: [nonBatchId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  createdAt  DateTime   @default(now())
+  batch      NonBatches @relation(fields: [nonBatchId], references: [id], onDelete: Cascade)
 
   @@map("non_batch_mappings")
 }
 
 model Task {
-  id             Int      @id @default(autoincrement())
-  status         String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
-  runnerClassName String  // Name of the class implementing TaskRunner interface
-  runnerData     String?  // JSON data to pass to the runner
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  completedAt    DateTime?
-  
-  // Self-referencing relationships for dependencies
-  // Tasks that this task depends on (prerequisites)
-  dependencies TaskDependency[] @relation("TaskDependencies")
-  // Tasks that depend on this task (dependents)
-  dependents   TaskDependency[] @relation("TaskDependents")
-  // OpenAI logs for this task
-  openaiLogs   OpenAILog[]
+  id              Int              @id @default(autoincrement())
+  status          String           @default("PENDING")
+  runnerClassName String
+  runnerData      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  completedAt     DateTime?
+  openaiLogs      OpenAILog[]
+  dependents      TaskDependency[] @relation("TaskDependents")
+  dependencies    TaskDependency[] @relation("TaskDependencies")
 
   @@map("tasks")
 }
 
 model TaskDependency {
-  id           Int @id @default(autoincrement())
+  id           Int  @id @default(autoincrement())
   taskId       Int
   dependencyId Int
-  
-  // The task that has the dependency
-  task         Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
-  // The task that is the dependency (prerequisite)
   dependency   Task @relation("TaskDependents", fields: [dependencyId], references: [id], onDelete: Cascade)
+  task         Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
 
-  // Ensure no duplicate dependencies
   @@unique([taskId, dependencyId])
   @@map("task_dependencies")
 }
 
 model OpenAILog {
-  id                Int      @id @default(autoincrement())
-  userId            Int?     // User who initiated the request (optional for system requests)
-  taskId            Int?     // Task that initiated the request (optional for standalone requests)
-  customId          String   @unique // Unique identifier for the request
-  storeId           String   // Store ID for result retrieval
-  runnerClassName   String   // Name of the runner class that made the request
-  requestInitiated  DateTime @default(now()) // When the request was initiated
-  responseReceived  DateTime? // When the response was received from OpenAI
-  requestData       String   // JSON string containing the request data sent to OpenAI
-  responseData      String?  // JSON string containing the response data from OpenAI
-  errorMessage      String?  // Error message if the request failed
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relationships
-  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  task              Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  id               Int       @id @default(autoincrement())
+  userId           Int?
+  taskId           Int?
+  customId         String    @unique
+  storeId          String
+  runnerClassName  String
+  requestInitiated DateTime  @default(now())
+  responseReceived DateTime?
+  requestData      String
+  responseData     String?
+  errorMessage     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  task             Task?     @relation(fields: [taskId], references: [id])
+  user             User?     @relation(fields: [userId], references: [id])
 
   @@map("openai_logs")
 }
 
 model Global {
   id        Int      @id @default(autoincrement())
-  worldGdp  Float?   // World GDP in current US dollars
+  worldGdp  Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("global")
 }
-
-

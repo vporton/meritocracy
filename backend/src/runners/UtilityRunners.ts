@@ -158,7 +158,10 @@ export abstract class BaseRunner implements TaskRunner {
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output); // FIXME: Some tasks need to be cancelled.
   }
 
-  abstract doGetOutput(customId: string): Promise<any>;
+  async doGetOutput(customId: string): Promise<any> {
+    this.getOpenAIResult({ customId, storeId: this.data.storeId }); // FIXME: Seems incorrect in this class.
+  }
+
 
   async getOutput(customId: string): Promise<any> {
     const output = await this.doGetOutput(customId);

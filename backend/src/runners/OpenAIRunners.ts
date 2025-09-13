@@ -165,6 +165,10 @@ interface TaskRunnerResult {
  * Extends BaseRunner with OpenAI request capabilities
  */
 abstract class BaseOpenAIRunner extends BaseRunner {
+  async doGetOutput(customId: string): Promise<any> {
+    this.getOpenAIResult({ customId, storeId: this.data.storeId });
+  }
+
   protected getModelOptions(): ResponseCreateParams | undefined {
     return undefined;
   }

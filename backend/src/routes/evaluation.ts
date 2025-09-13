@@ -4,8 +4,6 @@ import { UserEvaluationFlow } from '../services/UserEvaluationFlow.js';
 import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
-import { createAIBatchStore, createAIOutputter } from '@/services/openai.js';
-import { TaskStatus } from '../types/task.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -45,69 +43,20 @@ router.post('/start', async (req, res) => {
     // Check OPENAI_FLEX_MODE and run tasks if non-batch
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
     
-    if (openAIFlexMode === 'nonbatch' && rootTaskId) { // TODO: hack
+    if (openAIFlexMode === 'nonbatch' && rootTaskId) {
       console.log(`🚀 OPENAI_FLEX_MODE is non-batch, running task ${rootTaskId} with dependencies`);
       const taskManager = new TaskManager(prisma);
-      const results = await taskManager.runAllPendingTasks();
+      const success = await taskManager.runAllPendingTasks();
       
-      console.log(`✅ Task execution completed: ${results.executed} executed, ${results.failed} failed, ${results.skipped} skipped`);
-
-      // Get all completed tasks for this user to retrieve their outputs
-      const completedTasks = await prisma.task.findMany({
-        where: {
-          runnerData: {
-            contains: `"userId":${userId}`
-          },
-          status: TaskStatus.COMPLETED
-        },
-        orderBy: {
-          completedAt: 'desc'
-        }
-      });
-
-      console.log(`📊 Found ${completedTasks.length} completed tasks for user ${userId}`);
-      
-      // Call outputter multiple times to get results from each completed task
-      const taskResults = [];
-      for (const task of completedTasks) {
-        try {
-          if (task.runnerData) {
-            const taskData = JSON.parse(task.runnerData);
-            const customId = taskData.customId; // TODO: Store it in  a model field, instead.
-            
-            if (customId) {
-              // Get the storeId from the openAILog table
-              const openAILog = await prisma.openAILog.findFirst({
-                where: { customId },
-                select: { storeId: true }
-              });
-              
-              if (openAILog?.storeId) {
-                console.log(`🔍 Getting output for task ${task.id} with customId: ${customId}, storeId: ${openAILog.storeId}`);
-                
-                // Create the store and outputter with the correct storeId
-                const store = await createAIBatchStore(openAILog.storeId);
-                const outputter = await createAIOutputter(store);
-                
-                const output = await outputter.getOutput(customId);
-                taskResults.push({
-                  taskId: task.id,
-                  customId,
-                  storeId: openAILog.storeId,
-                  output,
-                  completedAt: task.completedAt
-                });
-              } else {
-                console.warn(`⚠️ No storeId found for task ${task.id} with customId: ${customId}`);
-              }
-            }
-          }
-        } catch (error) {
-          console.error(`❌ Error getting output for task ${task.id}:`, error);
-        }
+      if (success) {
+        console.log(`✅ Task ${rootTaskId} executed successfully`);
+      } else {
+        console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
       }
-      
-      console.log(`📈 Retrieved outputs for ${taskResults.length} tasks`);
+
+      // This is not necessary: After second call to getOutput the state may be set to COMPLETED or CANCELLED.
+      // const store = await createAIBatchStore(storeId);
+      // const outputter = await createAIOutputter(store);
     } else {
       console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
     }

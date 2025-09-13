@@ -37,13 +37,14 @@ router.post('/start', requireAuth, async (req, res) => {
       userData
     });
 
+    const taskManager = new TaskManager(prisma);
+    const success = await taskManager.runAllPendingTasks();
+
     // Check OPENAI_FLEX_MODE and run tasks if non-batch
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
     
     if (openAIFlexMode === 'nonbatch' && rootTaskId) {
       console.log(`🚀 OPENAI_FLEX_MODE is non-batch, running task ${rootTaskId} with dependencies`);
-      const taskManager = new TaskManager(prisma);
-      const success = await taskManager.runAllPendingTasks();
       
       if (success) {
         console.log(`✅ Task ${rootTaskId} executed successfully`);

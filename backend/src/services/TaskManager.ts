@@ -98,81 +98,49 @@ export class TaskManager {
       let executed = 0;
       let failed = 0;
       let skipped = 0;
-      
-      // Track which tasks have been processed in this execution to prevent duplicate processing
-      const processedTaskIds = new Set<number>();
 
-      // Loop while there are tasks that can be run
-      while (true) {
-        // Build a list of tasks that depend only on COMPLETED or CANCELLED tasks
-        // TODO: Probably should not keep the entire list in memory.
-        const runnableTasks = await this.prisma.task.findMany({
-          where: { 
-            status: TaskStatus.PENDING,
-            dependencies: {
-              every: {
-                dependency: {
-                  status: {
-                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
-                  }
+      // Get all tasks that can be run (PENDING with all dependencies COMPLETED or CANCELLED)
+      const runnableTasks = await this.prisma.task.findMany({
+        where: { 
+          status: TaskStatus.PENDING,
+          dependencies: {
+            every: {
+              dependency: {
+                status: {
+                  in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
                 }
               }
             }
-          },
-          include: {
-            dependencies: {
-              include: {
-                dependency: true,
-              },
-            },
-          },
-          orderBy: { id: 'asc' }, // Process in order of creation
-        });
+          }
+        },
+        orderBy: { id: 'asc' }, // Process in order of creation
+      });
 
-        // Filter out tasks that have already been processed in this execution
-        const newRunnableTasks = runnableTasks.filter(task => !processedTaskIds.has(task.id));
+      console.log(`Found ${runnableTasks.length} runnable tasks to process`);
 
-        // If no new runnable tasks found, exit the loop
-        if (newRunnableTasks.length === 0) {
-          console.log('No more new runnable tasks found');
-          break;
-        }
+      // Process each task once
+      for (const task of runnableTasks) {
+        console.log(`Processing task ${task.id}...`);
+        
+        const success = await TaskRunnerRegistry.runByTaskId(this.prisma, task.id);
+        
+        if (success) {
+          executed++;
+        } else {
+          // Check if it was skipped due to dependencies or failed
+          const currentTask = await this.prisma.task.findUnique({
+            where: { id: task.id },
+            select: { status: true }
+          });
 
-        console.log(`Found ${newRunnableTasks.length} new runnable tasks to process in this iteration`);
-
-        // Run all tasks in the current batch
-        for (const task of newRunnableTasks) {
-          console.log(`Processing task ${task.id}...`);
-          
-          // Mark this task as being processed to prevent duplicate execution
-          processedTaskIds.add(task.id);
-          
-          const success = await this.runTaskWithDependencies(task.id);
-          
-          if (success) {
-            executed++;
+          if (currentTask?.status === TaskStatus.PENDING) {
+            // Still pending means dependencies weren't met
+            skipped++;
+            console.log(`Task ${task.id} skipped - dependencies not met`);
           } else {
-            // Check if it was skipped due to dependencies or failed
-            const currentTask = await this.prisma.task.findUnique({
-              where: { id: task.id },
-              include: {
-                dependencies: {
-                  include: {
-                    dependency: true,
-                  },
-                },
-              },
-            });
-
-            if (currentTask?.status === TaskStatus.PENDING) {
-              // Still pending means dependencies weren't met
-              skipped++;
-              console.log(`Task ${task.id} skipped - dependencies not met`);
-            } else {
-              // Status changed to CANCELLED means it failed
-              failed++;
-              console.log(`Task ${task.id} failed to execute`);
-            }
+            // Status changed to CANCELLED means it failed
+            failed++;
+            console.log(`Task ${task.id} failed to execute`);
           }
         }
       }

@@ -11,6 +11,7 @@ export class TaskExecutor {
   /**
    * Execute a single task by creating and running its TaskRunner
    */
+  // FIXME: superfluous function?
   async executeTask(taskId: number): Promise<boolean> {
     try {
       // Get the task from database

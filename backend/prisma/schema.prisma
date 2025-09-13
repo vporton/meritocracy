@@ -92,7 +92,7 @@ model Task {
   openaiLogs      OpenAILog[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
-  storeId         String
+  storeId         String?          // TODO: Can we eliminate NULL?
   Batches         Batches[]
   NonBatches      NonBatches[]
 

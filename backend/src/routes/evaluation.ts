@@ -67,7 +67,7 @@ router.post('/start', async (req, res) => {
       })) {
         for (const nonBatch of task.NonBatches) {
           for (const mapping of nonBatch.nonbatchMappings) {
-            const store = await createAIBatchStore(task.storeId); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
+            const store = await createAIBatchStore(task.storeId!); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
             const outputter = await createAIOutputter(store);
             await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
           }

@@ -184,7 +184,7 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
     } = req.query;
 
     const filter: LogsFilter = {
-      userId,
+      userId: requestedUserId,
       type: type as any,
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
@@ -192,13 +192,13 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
       offset: offset ? parseInt(offset as string) : undefined
     };
 
-    const logs = await dbLogsService.getUserLogs(userId, filter);
+    const logs = await dbLogsService.getUserLogs(requestedUserId, filter);
 
     res.json({
       success: true,
       logs,
       count: logs.length,
-      userId,
+      userId: requestedUserId,
       filter
     });
 

@@ -94,6 +94,7 @@ export class TaskManager {
    * @returns Promise<{ executed: number, failed: number, skipped: number }> - Summary of execution results
    */
   async runAllPendingTasks(): Promise<{ executed: number; failed: number; skipped: number }> {
+    // FIXME: The below would run repeatedly for the same task, what is correct for non-batch and wrong for batch mode!
     try {
       let executed = 0;
       let failed = 0;

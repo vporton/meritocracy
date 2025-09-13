@@ -54,10 +54,10 @@ router.post('/start', async (req, res) => {
         console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
       }
 
-      // FIXME: How should this behave? Move to the TaskManager?
+      // This is not necessary: After second call to getOutput the state may be set to COMPLETED or CANCELLED.
       // const store = await createAIBatchStore(storeId);
       // const outputter = await createAIOutputter(store);
-      } else {
+    } else {
       console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
     }
 

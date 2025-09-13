@@ -69,7 +69,7 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
     const batches = await this.prisma.batches.create({
       data: {taskId: this.taskId}
     });
-    this.storeId = batches.id.toString(); // FIXME: Save `storeId` to DB here? (It seems it is already saved in later code.)
+    this.storeId = batches.id.toString();
   }
   getStoreId(): string {
     return this.storeId!;
@@ -102,7 +102,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
     const nonBatches = await this.prisma.nonBatches.create({
       data: {taskId: this.taskId}
     });
-    this.storeId = nonBatches.id.toString(); // FIXME: Save `storeId` to DB here? (It seems it is already saved in later code.)
+    this.storeId = nonBatches.id.toString();
   }
   getStoreId(): string {
     return this.storeId!;

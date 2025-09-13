@@ -159,9 +159,19 @@ export abstract class BaseRunner implements TaskRunner {
   }
 
   async doGetOutput(customId: string): Promise<any> {
-    this.getOpenAIResult({ customId, storeId: this.data.storeId }); // FIXME: Seems incorrect in this class.
-  }
+    // FIXME: Support both batch mode.
+    const task = await this.prisma.task.findFirstOrThrow({ // TODO: Is `OrThrow` appropriate here?
+      where: { id: this.taskId },
+      include: {
+        NonBatches: {
+          include: { nonbatchMappings: true },
+          where: { nonbatchMappings: { some: { customId } } }
+        }
+      }
+    });
 
+    return task.NonBatches[0]!.nonbatchMappings[0]!.response;
+  }
 
   async getOutput(customId: string): Promise<any> {
     const output = await this.doGetOutput(customId);

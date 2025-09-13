@@ -5,7 +5,7 @@ import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
 import { createAIBatchStore, createAIOutputter } from '@/services/openai.js';
-import { TaskRunnerRegistry, TaskStatus } from '../types/task.js';
+import { TaskStatus } from '../types/task.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -42,11 +42,6 @@ router.post('/start', async (req, res) => {
       userData
     });
 
-    const pendingTasks = await prisma.task.findMany({select: {id: true}, where: {status: TaskStatus.PENDING}}); // FIXME: What to do with IN_PROGRESS?
-    for (const task of pendingTasks) {
-      await TaskRunnerRegistry.runByTaskId(prisma, task.id);
-    }
-    
     // Check OPENAI_FLEX_MODE and run tasks if non-batch
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
     
@@ -87,7 +82,6 @@ router.post('/start', async (req, res) => {
                 select: { storeId: true }
               });
               
-              // FIXME: Wrong way to get `storeId`.
               if (openAILog?.storeId) {
                 console.log(`🔍 Getting output for task ${task.id} with customId: ${customId}, storeId: ${openAILog.storeId}`);
                 

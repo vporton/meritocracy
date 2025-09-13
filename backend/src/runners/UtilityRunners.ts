@@ -155,7 +155,7 @@ export abstract class BaseRunner implements TaskRunner {
    * Override the onOutput() method to store the status in the DB.
    */
   protected async onOutput(customId: string, output: any): Promise<void> {
-    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output); // FIXME: Some tasks need to be cancelled.
+    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
   }
 
   async doGetOutput(customId: string): Promise<any> {

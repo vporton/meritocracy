@@ -5,7 +5,7 @@ import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
 import { createAIBatchStore, createAIOutputter } from '@/services/openai.js';
-import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();

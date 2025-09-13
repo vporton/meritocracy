@@ -410,7 +410,6 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
    * @throws Error if dependency is not found or has invalid data
    */
   protected async getRandomizedPromptFromDependency(task: TaskWithDependencies): Promise<string> {
-    // FIXME: `getDependencyResult` returns more complex data (here and in other places).
     const response: RandomizedPromptResponse = await this.getDependencyResult(task, 'RandomizePromptRunner');
     return response.randomizedPrompt;
   }

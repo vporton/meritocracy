@@ -231,26 +231,4 @@ export class TaskManager {
       return 0;
     }
   }
-
-  /**
-   * Get a summary of task statuses
-   * @returns Promise<object> - Summary of task counts by status
-   */
-  async getTaskSummary(): Promise<{
-    pending: number;
-    inProgress: number;
-    completed: number;
-    cancelled: number;
-    total: number;
-  }> {
-    const [pending, inProgress, completed, cancelled, total] = await Promise.all([
-      this.prisma.task.count({ where: { status: TaskStatus.PENDING } }),
-      this.prisma.task.count({ where: { status: TaskStatus.IN_PROGRESS } }),
-      this.prisma.task.count({ where: { status: TaskStatus.COMPLETED } }),
-      this.prisma.task.count({ where: { status: TaskStatus.CANCELLED } }),
-      this.prisma.task.count(),
-    ]);
-
-    return { pending, inProgress, completed, cancelled, total };
-  }
 }

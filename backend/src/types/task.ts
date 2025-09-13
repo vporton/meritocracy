@@ -1,7 +1,7 @@
 // Task status enum for type safety
 export enum TaskStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS', // TODO: unused
+  PENDING = 'PENDING', // task create in the DB but not yet initiated.
+  IN_PROGRESS = 'IN_PROGRESS', // `initiateTask` has been called.
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
 }

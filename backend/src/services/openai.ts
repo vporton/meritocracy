@@ -61,21 +61,21 @@ abstract class OurClearer implements FlexibleStore {
 }
 
 class OurBatchStore extends OurClearer implements FlexibleBatchStore {
-  constructor(prisma: PrismaClient, private batchesId: string | undefined) {
+  constructor(prisma: PrismaClient, private storeId: string | undefined) {
     super(prisma);
   }
   async init(): Promise<void> {
-    assert(this.batchesId === undefined, "cannot initialize batchesId second time");
+    assert(this.storeId === undefined, "cannot initialize storeId second time");
     const batches = await this.prisma.batches.create({
       data: {taskId: 0} // FIXME: Replace with actual taskId
     });
-    this.batchesId = batches.id.toString();
+    this.storeId = batches.id.toString();
   }
   getStoreId(): string {
-    return this.batchesId!;
+    return this.storeId!;
   }
   async getClearingId(): Promise<string> {
-    return this.batchesId!;
+    return this.storeId!;
   }
   async storeBatchIdByCustomId(props: { customId: string; batchId: string; }): Promise<void> {
     await this.prisma.batchMapping.create({

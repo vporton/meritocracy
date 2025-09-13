@@ -270,7 +270,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined, taskId!); // FIXME: `!`?
     const storeId = store.getStoreId();
-    this.prisma.task.update({
+    this.prisma.task.update({ // TODO: Replace this by one `.insert`.
       where: { id: taskId },
       data: { storeId }
     });

@@ -498,9 +498,6 @@ export abstract class BaseRunner implements TaskRunner {
       
       // Log the response to the database
       await this.logOpenAIResponse(customId, response, undefined);
-      
-      // FIXME: not called for non-OpenAI runners.
-      this.onOutput(customId, content);
 
       return content;
     } catch (error) {

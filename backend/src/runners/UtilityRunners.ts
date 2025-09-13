@@ -489,23 +489,20 @@ export abstract class BaseRunner implements TaskRunner {
     const outputter = await createAIOutputter(store);
     
     try {
-      const response = await outputter.getOutput(customId);
+      const response = (await outputter.getOutput(customId))!;
       
-      // Parse the response content
-      const content = (response as any).choices[0]?.message?.content;
+      const content = (response.output[0]! as any).content.json;
       if (!content) {
-        throw new OpenAIError('No response content received from OpenAI', customId); // FIXME: not handled error
+        throw new OpenAIError('No response content received from OpenAI', customId); // TODO: not handled error
       }
-      
-      const parsedContent = JSON.parse(content);
       
       // Log the response to the database
       await this.logOpenAIResponse(customId, response, undefined);
       
       // FIXME: not called for non-OpenAI runners.
-      this.onOutput(customId, response); // FIXME: `response` is more complex data.
+      this.onOutput(customId, content);
 
-      return parsedContent;
+      return content;
     } catch (error) {
       // Log the error to the database
       await this.logOpenAIResponse(customId, undefined, error instanceof Error ? error.message : String(error));

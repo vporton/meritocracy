@@ -265,6 +265,11 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     taskId?: number
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined);
+    const storeId = store.getStoreId();
+    this.prisma.task.update({
+      where: { id: taskId },
+      data: { storeId }
+    });
     const runner = await createAIRunner(store);
     
     const requestBody = <ResponseCreateParamsNonStreaming>{
@@ -298,7 +303,6 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     // Flush to execute the request
     await runner.flush();
     
-    const storeId = store.getStoreId();
     
     // Log the request to the database
     await this.logOpenAIRequest(customId, storeId, requestBody, taskId);

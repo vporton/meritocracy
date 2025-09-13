@@ -42,7 +42,9 @@ model Session {
 model Batches {
   id            Int            @id @default(autoincrement())
   createdAt     DateTime       @default(now())
+  taskId        Int
   batchMappings BatchMapping[]
+  task          Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@map("batches")
 }
@@ -57,10 +59,13 @@ model BatchMapping {
   @@map("batch_mappings")
 }
 
+// FIXME: Store `storeId` here, instead?
 model NonBatches {
   id               Int               @id @default(autoincrement())
   createdAt        DateTime          @default(now())
+  taskId           Int
   nonbatchMappings NonBatchMapping[]
+  task             Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@map("non_batches")
 }
@@ -87,6 +92,9 @@ model Task {
   openaiLogs      OpenAILog[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
+  storeId         String
+  Batches         Batches[]
+  NonBatches      NonBatches[]
 
   @@map("tasks")
 }

@@ -4,6 +4,7 @@ import { UserEvaluationFlow } from '../services/UserEvaluationFlow.js';
 import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
+import { createAIBatchStore, createAIOutputter } from '@/services/openai.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -54,9 +55,24 @@ router.post('/start', async (req, res) => {
         console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
       }
 
-      // This is not necessary: After second call to getOutput the state may be set to COMPLETED or CANCELLED.
-      // const store = await createAIBatchStore(storeId);
-      // const outputter = await createAIOutputter(store);
+      for (const task of await prisma.task.findMany({
+        include: {
+          NonBatches: {
+            include: { nonbatchMappings: true }
+          }
+        },
+        where: {
+          status: { notIn: ['COMPLETED', 'CANCELLED'] }
+        }
+      })) {
+        for (const nonBatch of task.NonBatches) {
+          for (const mapping of nonBatch.nonbatchMappings) {
+            const store = await createAIBatchStore(task.storeId); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
+            const outputter = await createAIOutputter(store);
+            await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
+          }
+        }
+      }
     } else {
       console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
     }

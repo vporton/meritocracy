@@ -1,48 +1,13 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { DBLogsService, LogsFilter } from '../services/DBLogsService.js';
+import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 const dbLogsService = new DBLogsService(prisma);
 
-// Middleware to extract user ID from authorization token
-async function getCurrentUserFromToken(req: express.Request): Promise<number | null> {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    
-    // Find session
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: { user: true }
-    });
-    
-    if (!session || session.expiresAt < new Date()) {
-      return null;
-    }
-    
-    return session.user.id;
-  } catch (error) {
-    console.error('Error extracting user from token:', error);
-    return null;
-  }
-}
-
-// Middleware to require authentication
-async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  const userId = await getCurrentUserFromToken(req);
-  if (!userId) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  (req as any).userId = userId;
-  next();
-}
+// Remove duplicate auth middleware - now imported from shared module
 
 /**
  * GET /api/logs
@@ -192,14 +157,21 @@ router.get('/my', requireAuth, async (req, res): Promise<void> => {
 
 /**
  * GET /api/logs/user/:userId
- * Get logs for a specific user (accessible to everyone as per requirements)
+ * Get logs for a specific user (requires authentication)
  */
-router.get('/user/:userId', async (req, res): Promise<void> => {
+router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
   try {
-    const userId = parseInt(req.params.userId);
+    const requestedUserId = parseInt(req.params.userId);
+    const authenticatedUserId = (req as any).userId;
     
-    if (isNaN(userId)) {
+    if (isNaN(requestedUserId)) {
       res.status(400).json({ error: 'Invalid user ID' });
+      return;
+    }
+
+    // Users can only access their own logs
+    if (requestedUserId !== authenticatedUserId) {
+      res.status(403).json({ error: 'Forbidden: You can only access your own logs' });
       return;
     }
 

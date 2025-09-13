@@ -5,6 +5,7 @@ import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
 import { createAIBatchStore, createAIOutputter } from '@/services/openai.js';
+import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -16,15 +17,10 @@ registerAllRunners();
  * POST /api/evaluation/start
  * Start a user evaluation flow
  */
-router.post('/start', async (req, res) => {
+router.post('/start', requireAuth, async (req, res) => {
   try {
-    const { userId, userData } = req.body; // FIXME: insecure
-
-    if (!userId) {
-      return res.status(400).json({
-        error: 'User ID is required'
-      });
-    }
+    const { userData } = req.body;
+    const userId = (req as any).userId; // Get from authenticated session
 
     if (!userData) {
       return res.status(400).json({
@@ -121,18 +117,12 @@ router.post('/execute', async (req, res) => {
 
 // TODO: Don't depend on this endpoint: The data will be removed.
 /**
- * GET /api/evaluation/result/:userId
- * Get the evaluation result for a user
+ * GET /api/evaluation/result
+ * Get the evaluation result for the authenticated user
  */
-router.get('/result/:userId', async (req, res) => {
+router.get('/result', requireAuth, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        error: 'Invalid user ID'
-      });
-    }
+    const userId = (req as any).userId; // Get from authenticated session
 
     const evaluationFlow = new UserEvaluationFlow(prisma);
     const result = await evaluationFlow.getEvaluationResult(userId);
@@ -159,18 +149,12 @@ router.get('/result/:userId', async (req, res) => {
 
 // TODO: Don't depend on this endpoint: The data will be removed.
 /**
- * GET /api/evaluation/status/:userId
- * Get the status of evaluation tasks for a user
+ * GET /api/evaluation/status
+ * Get the status of evaluation tasks for the authenticated user
  */
-router.get('/status/:userId', async (req, res) => {
+router.get('/status', requireAuth, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        error: 'Invalid user ID'
-      });
-    }
+    const userId = (req as any).userId; // Get from authenticated session
 
     // Find all tasks related to this user
     const tasks = await prisma.task.findMany({

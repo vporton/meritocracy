@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { ethers } from 'ethers';
+import { getCurrentUserFromToken } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -12,30 +14,22 @@ const ongoingOAuthRequests = new Map<string, number>();
 // Cache successful OAuth results for a short time to handle duplicates
 const oauthResultCache = new Map<string, any>();
 
-// Middleware to extract user ID from authorization token
-async function getCurrentUserFromToken(req: express.Request): Promise<number | null> {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
+// Remove duplicate auth middleware - now imported from shared module
 
-    const token = authHeader.substring(7);
+// Helper function to verify Ethereum signature
+function verifyEthereumSignature(address: string, message: string, signature: string): boolean {
+  try {
+    // Recover the address from the signature
+    const recoveredAddress = ethers.verifyMessage(message, signature);
     
-    // Find session
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: { user: true }
-    });
+    // Normalize addresses to lowercase for comparison
+    const normalizedAddress = address.toLowerCase();
+    const normalizedRecovered = recoveredAddress.toLowerCase();
     
-    if (!session || session.expiresAt < new Date()) {
-      return null;
-    }
-    
-    return session.user.id;
+    return normalizedAddress === normalizedRecovered;
   } catch (error) {
-    console.error('Error extracting user from token:', error);
-    return null;
+    console.error('Error verifying Ethereum signature:', error);
+    return false;
   }
 }
 
@@ -175,8 +169,21 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
       return;
     }
 
-    // In a real implementation, you would verify the signature here
-    // For now, we'll just trust the provided address
+    if (!signature) {
+      res.status(400).json({ error: 'Signature is required' });
+      return;
+    }
+
+    if (!message) {
+      res.status(400).json({ error: 'Message is required' });
+      return;
+    }
+
+    // Verify the Ethereum signature
+    if (!verifyEthereumSignature(ethereumAddress, message, signature)) {
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
     
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);

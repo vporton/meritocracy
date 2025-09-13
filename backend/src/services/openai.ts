@@ -61,15 +61,15 @@ abstract class OurClearer implements FlexibleStore {
 }
 
 class OurBatchStore extends OurClearer implements FlexibleBatchStore {
-  constructor(prisma: PrismaClient, private storeId: string | undefined) {
+  constructor(prisma: PrismaClient, private storeId: string | undefined, private taskId: number) {
     super(prisma);
   }
   async init(): Promise<void> {
     assert(this.storeId === undefined, "cannot initialize storeId second time");
     const batches = await this.prisma.batches.create({
-      data: {taskId: 0} // FIXME: Replace with actual taskId
+      data: {taskId: this.taskId}
     });
-    this.storeId = batches.id.toString();
+    this.storeId = batches.id.toString(); // FIXME: Save `storeId` to DB here? (It seems it is already saved in later code.)
   }
   getStoreId(): string {
     return this.storeId!;
@@ -94,15 +94,15 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
 }
 
 class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
-  constructor(prisma: PrismaClient, private storeId: string | undefined) {
+  constructor(prisma: PrismaClient, private storeId: string | undefined, private taskId: number) {
     super(prisma);
   }
   async init(): Promise<void> {
     assert(this.storeId === undefined, "cannot initialize storeId second time");
     const nonBatches = await this.prisma.nonBatches.create({
-      data: {taskId: 0} // FIXME: Replace with actual taskId
+      data: {taskId: this.taskId}
     });
-    this.storeId = nonBatches.id.toString();
+    this.storeId = nonBatches.id.toString(); // FIXME: Save `storeId` to DB here? (It seems it is already saved in later code.)
   }
   getStoreId(): string {
     return this.storeId!;
@@ -129,10 +129,10 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
 const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
 
 /// Centralized code. Probably, should be refactored.
-export async function createAIBatchStore(storeId: string | undefined) {
+export async function createAIBatchStore(storeId: string | undefined, taskId: number) {
   const result = openAIFlexMode === 'batch' ?
-    new OurBatchStore(prisma, storeId) :
-    new OurNonBatchStore(prisma, storeId);
+    new OurBatchStore(prisma, storeId, taskId) :
+    new OurNonBatchStore(prisma, storeId, taskId);
   await result.init();
   return result;
 }

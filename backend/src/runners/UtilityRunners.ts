@@ -485,7 +485,7 @@ export abstract class BaseRunner implements TaskRunner {
    * ```
    */
   protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
-    const store = await createAIBatchStore(storeId);
+    const store = await createAIBatchStore(storeId, this.taskId);
     const outputter = await createAIOutputter(store);
     
     try {

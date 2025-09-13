@@ -159,18 +159,23 @@ export abstract class BaseRunner implements TaskRunner {
   }
 
   async doGetOutput(customId: string): Promise<any> {
-    // FIXME: Support both batch mode.
-    const task = await this.prisma.task.findFirstOrThrow({ // TODO: Is `OrThrow` appropriate here?
-      where: { id: this.taskId },
-      include: {
-        NonBatches: {
-          include: { nonbatchMappings: true },
-          where: { nonbatchMappings: { some: { customId } } }
+    // Check OPENAI_FLEX_MODE and run tasks if non-batch
+    const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
+    
+    if (openAIFlexMode === 'nonbatch') {
+      const task = await this.prisma.task.findFirstOrThrow({ // TODO: Is `OrThrow` appropriate here?
+        where: { id: this.taskId },
+        include: {
+          NonBatches: {
+            include: { nonbatchMappings: true },
+            where: { nonbatchMappings: { some: { customId } } }
+          }
         }
-      }
-    });
-
-    return task.NonBatches[0]!.nonbatchMappings[0]!.response;
+      });
+      return task.NonBatches[0]!.nonbatchMappings[0]!.response;
+    } else {
+      throw new Error('Batch mode is not supported for this runner'); // FIXME
+    }  
   }
 
   async getOutput(customId: string): Promise<any> {

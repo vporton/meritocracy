@@ -4,7 +4,6 @@ import { UserEvaluationFlow } from '../services/UserEvaluationFlow.js';
 import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
-import { createAIBatchStore, createAIOutputter } from '@/services/openai.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -40,46 +39,16 @@ router.post('/start', requireAuth, async (req, res) => {
     const taskManager = new TaskManager(prisma);
     const success = await taskManager.runAllPendingTasks();
 
-    // Check OPENAI_FLEX_MODE and run tasks if non-batch
-    const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
-    
-    if (openAIFlexMode === 'nonbatch' && rootTaskId) {
-      console.log(`🚀 OPENAI_FLEX_MODE is non-batch, running task ${rootTaskId} with dependencies`);
-      
-      if (success) {
-        console.log(`✅ Task ${rootTaskId} executed successfully`);
-      } else {
-        console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
-      }
-
-      for (const task of await prisma.task.findMany({
-        include: {
-          NonBatches: {
-            include: { nonbatchMappings: true }
-          }
-        },
-        where: {
-          status: { notIn: ['COMPLETED', 'CANCELLED'] }
-        }
-      })) {
-        for (const nonBatch of task.NonBatches) {
-          for (const mapping of nonBatch.nonbatchMappings) {
-            const store = await createAIBatchStore(task.storeId!, task.id); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
-            const outputter = await createAIOutputter(store);
-            await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
-          }
-        }
-      }
-    } else {
-      console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
-    }
+    // Execute non-batch mode tasks if applicable
+    const taskExecutor = new TaskExecutor(prisma);
+    const executed = await taskExecutor.executeNonBatchMode(rootTaskId);
 
     return res.json({
       success: true,
       message: 'Evaluation flow started',
       userId,
       rootTaskId,
-      executed: openAIFlexMode === 'nonbatch'
+      executed
     });
 
   } catch (error) {

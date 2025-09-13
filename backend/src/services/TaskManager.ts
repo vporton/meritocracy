@@ -83,18 +83,7 @@ export class TaskManager {
     } catch (error) {
       console.error(`❌ Error running task ${taskId}:`, error);
       
-      // Mark task as cancelled on error
-      try {
-        await this.prisma.task.update({
-          where: { id: taskId },
-          data: { 
-            status: TaskStatus.CANCELLED,
-            updatedAt: new Date()
-          },
-        });
-      } catch (updateError) {
-        console.error(`Failed to update task ${taskId} status after error:`, updateError);
-      }
+      TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
       
       return false;
     }

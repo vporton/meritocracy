@@ -9,6 +9,7 @@ import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
+const NO_REASONING = process.env.OPENAI_NO_REASONING ? true : false;
 const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
@@ -272,7 +273,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
       model: options?.model ?? DEFAULT_MODEL,
       ...(options?.temperature !== undefined && { temperature: options.temperature }),
       // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
-      reasoning: options?.reasoning === null ? null : {
+      reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
       ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),

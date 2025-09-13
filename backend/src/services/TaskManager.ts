@@ -94,11 +94,13 @@ export class TaskManager {
    * @returns Promise<{ executed: number, failed: number, skipped: number }> - Summary of execution results
    */
   async runAllPendingTasks(): Promise<{ executed: number; failed: number; skipped: number }> {
-    // FIXME: The below would run repeatedly for the same task, what is correct for non-batch and wrong for batch mode!
     try {
       let executed = 0;
       let failed = 0;
       let skipped = 0;
+      
+      // Track which tasks have been processed in this execution to prevent duplicate processing
+      const processedTaskIds = new Set<number>();
 
       // Loop while there are tasks that can be run
       while (true) {
@@ -127,17 +129,23 @@ export class TaskManager {
           orderBy: { id: 'asc' }, // Process in order of creation
         });
 
-        // If no runnable tasks found, exit the loop
-        if (runnableTasks.length === 0) {
-          console.log('No more runnable tasks found');
+        // Filter out tasks that have already been processed in this execution
+        const newRunnableTasks = runnableTasks.filter(task => !processedTaskIds.has(task.id));
+
+        // If no new runnable tasks found, exit the loop
+        if (newRunnableTasks.length === 0) {
+          console.log('No more new runnable tasks found');
           break;
         }
 
-        console.log(`Found ${runnableTasks.length} runnable tasks to process in this iteration`);
+        console.log(`Found ${newRunnableTasks.length} new runnable tasks to process in this iteration`);
 
         // Run all tasks in the current batch
-        for (const task of runnableTasks) {
+        for (const task of newRunnableTasks) {
           console.log(`Processing task ${task.id}...`);
+          
+          // Mark this task as being processed to prevent duplicate execution
+          processedTaskIds.add(task.id);
           
           const success = await this.runTaskWithDependencies(task.id);
           

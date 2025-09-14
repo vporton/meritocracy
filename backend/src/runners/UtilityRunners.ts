@@ -516,7 +516,7 @@ export abstract class BaseRunner implements TaskRunner {
 
     try {
       const response = (await outputter.getOutput(customId))!;
-      
+
       const content = (response.output[0]! as any).content.json;
       if (!content) {
         throw new OpenAIError('No response content received from OpenAI', customId); // TODO: not handled error

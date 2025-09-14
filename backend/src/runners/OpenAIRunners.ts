@@ -79,18 +79,8 @@ function generateUserPrompt(userData: any): string {
 const USE_WEB_SEARCH_TOOL = {
   tools: <Tool[]>[
     {
-      name: "web_search",
-      type: "function",
-      strict: true,
-      description: "Search the web for information",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "The search query" }
-        },
-        required: ["query"],
-        additionalProperties: false
-      }
+      // "name": "web",
+      "type": "web_search"
     }
   ],
   tool_choice: <ToolChoiceOptions>'required',
@@ -304,6 +294,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
+      max_tool_calls: 10,
       ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
       text: <ResponseTextConfig>{
         format: {
@@ -589,14 +580,15 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
  * Uses OpenAI to analyze user data and determine if they are an active scientist or FOSS developer
  */
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): ResponseCreateParams | undefined {
+  protected getModelOptions(): any/*ResponseCreateParams*/ | undefined { // TODO: https://github.com/openai/openai-node/issues/1572
     return {
-      model: 'gpt-5-nano-2025-08-07', // TODO: Update the model name.
+      model: 'gpt-5-mini', // Don't use gpt-5-nano: it tends to enter infinite loop with Web search.
       // temperature: 0.0, // Cursor says, it's unsupported.
       prompt_cache_key: 'scientist-onboarding',
       reasoning: {
         effort: OVERRIDE_REASONING_EFFORT ?? 'low'
-      }
+      },
+      max_tool_calls: 3
     };
   }
 
@@ -658,7 +650,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
  * Can be conditionally cancelled based on worth threshold dependencies
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): ResponseCreateParams | undefined {
+  protected getModelOptions(): any/*ResponseCreateParams*/ | undefined { // TODO: https://github.com/openai/openai-node/issues/1572
     return {
       temperature: 1.0, // We want randomized responses.
     };

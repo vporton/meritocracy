@@ -7,14 +7,18 @@ import { ResponseCreateParams, ResponseCreateParamsNonStreaming, ResponseTextCon
 import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 
+function isConfigValueTrue(value: string | undefined): boolean {
+  return value !== undefined && value !== null && value.toLowerCase() !== 'false' && value !== '0' && value.toLowerCase() !== 'no' && value !== '0';
+}
+
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
-const NO_REASONING = process.env.OPENAI_NO_REASONING ? true : false;
+const NO_REASONING = isConfigValueTrue(process.env.OPENAI_NO_REASONING);
 const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
 const BAN_DURATION_YEARS = 1;
-const OPEN_AI_FAKE = process.env.OPEN_AI_FAKE === 'true'; // TODO: format?
+const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE);
 
 /**
  * Generate a user prompt string from user data for AI analysis

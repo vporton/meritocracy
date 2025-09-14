@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Task } from '@prisma/client';
 import { TaskStatus, TaskRunnerData } from '../types/task.js';
 import { createAIBatchStore, createAIOutputter } from './openai.js';
 
@@ -162,49 +162,30 @@ export class TaskExecutor {
   }
 
   /**
-   * Execute non-batch mode tasks and process their outputs
+   * Execute non-batch mode task and process its outputs
    * This function handles the execution of tasks when OPENAI_FLEX_MODE is set to 'nonbatch'
+   * @return true if we executed at least one task.
    */
-  async executeNonBatchMode(rootTaskId: number | null): Promise<boolean> {
+  async executeNonBatchMode(task: Task): Promise<boolean> {
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
     
     if (openAIFlexMode !== 'nonbatch' || !rootTaskId) {
-      console.log(`📋 OPENAI_FLEX_MODE is batch, task ${rootTaskId} queued for batch processing`);
+      console.log(`📋 OPENAI_FLEX_MODE is batch, tasks queued for batch processing`);
       return false;
     }
 
-    console.log(`🚀 OPENAI_FLEX_MODE is non-batch, running task ${rootTaskId} with dependencies`);
-    
-    const success = await this.executeReadyTasks();
-    
-    if (success) {
-      console.log(`✅ Task ${rootTaskId} executed successfully`);
-    } else {
-      console.log(`⚠️ Task ${rootTaskId} execution failed or was skipped`);
-    }
-
-    // Process all non-batch tasks and their outputs
-    const tasks = await this.prisma.task.findMany({
-      include: {
-        NonBatches: {
-          include: { nonbatchMappings: true }
-        }
-      },
-      where: {
-        status: { notIn: ['COMPLETED', 'CANCELLED'] }
-      }
-    });
-
-    for (const task of tasks) {
-      for (const nonBatch of task.NonBatches) {
-        for (const mapping of nonBatch.nonbatchMappings) {
-          const store = await createAIBatchStore(task.storeId!, task.id); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
-          const outputter = await createAIOutputter(store);
-          await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
+    let executed = false;
+    for (const nonBatch of task.NonBatches) {
+      for (const mapping of nonBatch.nonbatchMappings) {
+        const store = await createAIBatchStore(task.storeId!, task.id); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
+        const outputter = await createAIOutputter(store);
+        const res = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
+        if (res !== undefined) {
+          executed = true;
         }
       }
     }
 
-    return true;
+    return executed;
   }
 }

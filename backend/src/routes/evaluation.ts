@@ -39,10 +39,6 @@ router.post('/start', requireAuth, async (req, res) => {
     const taskManager = new TaskManager(prisma);
     const success = await taskManager.runAllPendingTasks();
 
-    // Execute non-batch mode tasks if applicable
-    const taskExecutor = new TaskExecutor(prisma);
-    const executed = await taskExecutor.executeNonBatchMode(rootTaskId); // FIXME
-
     return res.json({
       success: true,
       message: 'Evaluation flow started',

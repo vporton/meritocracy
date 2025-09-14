@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { TaskStatus, TaskRunnerRegistry } from '../types/task.js';
+import { TaskExecutor } from './TaskExecutor.js';
 
 export class TaskManager {
   private prisma: PrismaClient;
@@ -176,11 +177,16 @@ export class TaskManager {
             }
           } else if (task.status === TaskStatus.INITIATED) {
             // If the status is INITIATED, check task output
-            const outputChecked = await this.checkTaskOutput(task.id);
-            taskStatusChanged = outputChecked;
+            // const outputChecked = await this.checkTaskOutput(task.id);
+            // taskStatusChanged = outputChecked;
             
-            if (outputChecked) {
-              executed++;
+            // Execute non-batch mode tasks if applicable
+            const taskExecutor = new TaskExecutor(this.prisma);
+            const executedNonBatch = await taskExecutor.executeNonBatchMode(task);
+            taskStatusChanged ||= executedNonBatch;
+
+            if (executedNonBatch) {
+              executed++; // TODO: Seems to calculate wrongly.
               console.log(`Task ${task.id} output checked and completed`);
             } else {
               // Check if task was cancelled or failed during output checking

@@ -377,13 +377,14 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
     
-    // Then initiate the OpenAI request
-    await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
-    
+   
     // Check if fake mode is enabled
     if (OPEN_AI_FAKE) {
       await this.handleFakeModeResponse(task, customId, additionalData);
       return;
+    } else {
+    // Then initiate the OpenAI request
+      await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
     }
   }
 
@@ -510,6 +511,15 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
    */
   protected async getRandomizedPromptFromDependency(task: TaskWithDependencies): Promise<string> {
     const response: RandomizedPromptResponse = await this.getDependencyResult(task, 'RandomizePromptRunner');
+    
+    if (!response) {
+      throw new DependencyError('RandomizePromptRunner dependency returned no response', undefined, task.id, this.constructor.name);
+    }
+    
+    if (!response.randomizedPrompt) {
+      throw new DependencyError('RandomizePromptRunner dependency response missing randomizedPrompt field', undefined, task.id, this.constructor.name);
+    }
+    
     return response.randomizedPrompt;
   }
 
@@ -639,6 +649,11 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     }
     
     await this.initiateOpenAIRequest(task, randomizePrompt, originalPrompt, randomizedPromptSchema, this.getModelOptions());
+  }
+
+  protected async onOutput(customId: string, output: any): Promise<void> {
+    // TODO: duplicate, unneeded here code
+    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
   }
 }
 

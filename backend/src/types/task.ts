@@ -159,10 +159,10 @@ export class TaskRunnerRegistry {
     taskId: number,
     output: object
   ): Promise<boolean> {
-    // Get the current task to preserve existing runnerData
+    // Get the current task to preserve existing runnerData and storeId
     const currentTask = await prisma.task.findUnique({
       where: { id: taskId },
-      select: { runnerData: true }
+      select: { runnerData: true, storeId: true }
     });
 
     // Parse existing runnerData or start with empty object
@@ -175,10 +175,11 @@ export class TaskRunnerRegistry {
       }
     }
 
-    // Merge existing data with new output
+    // Merge existing data with new output, including storeId if available
     const mergedData = {
       ...existingData,
       ...output,
+      ...(currentTask?.storeId && { storeId: currentTask.storeId }),
       completedAt: new Date().toISOString()
     };
 

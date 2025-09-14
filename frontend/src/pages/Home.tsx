@@ -215,8 +215,8 @@ function Home() {
           {userGdpShare.shareInGDP !== null ? (
             <div>
               <p>🎯 <strong>Your GDP Share:</strong>{" "}
-              {userGdpShare.shareInGDP.toLocaleString()}{" = "}
-              $${(userGdpShare.shareInGDP * worldGdp!.worldGdp).toLocaleString()}</p>
+              {userGdpShare.shareInGDP.toString()}{" = "}
+              ${(userGdpShare.shareInGDP * worldGdp!.worldGdp).toLocaleString()}</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
                 This represents your calculated portion of the world economy based on your contributions
               </p>

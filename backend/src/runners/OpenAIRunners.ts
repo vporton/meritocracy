@@ -14,6 +14,7 @@ const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
 const BAN_DURATION_YEARS = 1;
+const OPEN_AI_FAKE = process.env.OPEN_AI_FAKE === 'true'; // TODO: format?
 
 /**
  * Generate a user prompt string from user data for AI analysis
@@ -358,8 +359,84 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     const customId = uuidv4();
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
+    
+    // Check if fake mode is enabled
+    if (OPEN_AI_FAKE) {
+      await this.handleFakeModeResponse(task, customId, additionalData);
+      return;
+    }
+    
     // Then initiate the OpenAI request
     await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
+  }
+
+  /**
+   * Handle fake mode responses based on runner type
+   * @param task - The task to process
+   * @param customId - Unique identifier for this request
+   * @param additionalData - Additional data to include in runner data
+   */
+  protected async handleFakeModeResponse(
+    task: TaskWithDependencies,
+    customId: string,
+    additionalData: Record<string, any> = {}
+  ): Promise<void> {
+    const runnerName = this.constructor.name;
+    let fakeResponse: any = {};
+
+    switch (runnerName) {
+      case 'ScientistOnboardingRunner':
+        fakeResponse = {
+          isActiveScientistOrFOSSDev: true,
+          why: 'Fake mode: Always return true for onboarding'
+        };
+        break;
+      case 'WorthAssessmentRunner':
+        fakeResponse = {
+          worthAsFractionOfGDP: 0.001, // 0.1% of GDP
+          why: 'Fake mode: Always return 0.1% of GDP'
+        };
+        break;
+      case 'PromptInjectionRunner':
+        fakeResponse = {
+          hasPromptInjection: false,
+          why: 'Fake mode: Always return no injection'
+        };
+        break;
+      case 'RandomizePromptRunner':
+        fakeResponse = {
+          randomizedPrompt: this.data.originalPrompt || 'Original prompt not available'
+        };
+        break;
+      default:
+        fakeResponse = {
+          error: 'Unknown runner type in fake mode',
+          why: 'Fake mode: Unknown runner type'
+        };
+    }
+
+    // Log the fake response
+    await this.logOpenAIRequest(customId, 'fake-mode', { fakeResponse }, task.id);
+    await this.logOpenAIResponse(customId, fakeResponse);
+
+    // Update task with fake response
+    await this.prisma.task.update({
+      where: { id: task.id },
+      data: {
+        runnerData: JSON.stringify({
+          ...this.data,
+          ...additionalData,
+          customId,
+          requestInitiated: true,
+          initiatedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          ...fakeResponse
+        })
+      }
+    });
+
+    // Trigger the onOutput method to complete the task
+    await this.onOutput(customId, fakeResponse);
   }
 
 
@@ -433,11 +510,18 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
     
-    // Get randomized prompt from dependency (randomizePrompt task)
-    const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
+    // In fake mode, use the original prompt directly instead of getting randomized prompt
+    let promptToUse: string;
+    if (OPEN_AI_FAKE) {
+      promptToUse = this.getOriginalPrompt();
+    } else {
+      // Get randomized prompt from dependency (randomizePrompt task)
+      promptToUse = await this.getRandomizedPromptFromDependency(task);
+    }
+    
     const userPrompt: string = generateUserPrompt(userData);
     
-    await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
+    await this.initiateOpenAIRequest(task, promptToUse, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 
 }

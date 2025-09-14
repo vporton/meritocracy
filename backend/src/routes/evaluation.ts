@@ -44,7 +44,7 @@ router.post('/start', requireAuth, async (req, res) => {
       message: 'Evaluation flow started',
       userId,
       rootTaskId,
-      executed
+      executed: success
     });
 
   } catch (error) {

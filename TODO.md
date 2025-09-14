@@ -40,3 +40,6 @@
 - Delete DB migrations before the release.
 
 - Always run prompt randomization as non-batch, because its cost is low.
+
+- Leaderboard shows wrong values.
+

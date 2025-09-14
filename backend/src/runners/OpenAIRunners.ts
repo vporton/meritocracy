@@ -447,19 +447,19 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     await this.logOpenAIResponse(customId, fakeResponse);
 
     // Store the fake response in nonBatchMapping table for getResponseByCustomId to find
-    const fakeOpenAIResponse = {
-      choices: [{
-        message: {
-          content: fakeResponse
-        }
-      }]
-    };
+    // const fakeOpenAIResponse = {
+    //   choices: [{
+    //     message: {
+    //       content: fakeResponse
+    //     }
+    //   }]
+    // };
     
     // Only store if we have a non-batch store (which has storeResponseByCustomId method)
     if ('storeResponseByCustomId' in store) {
       await (store as any).storeResponseByCustomId({
         customId,
-        response: fakeOpenAIResponse as any
+        response: fakeResponse/*fakeOpenAIResponse*/ as any
       });
     }
 

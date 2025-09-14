@@ -329,8 +329,8 @@ export abstract class BaseRunner implements TaskRunner {
 
       // Check if all dependencies are completed
       if (!this.areDependenciesCompleted(task)) {
-        this.log('info', `⏳ Task has incomplete dependencies, remaining PENDING`, { taskId, dependenciesCount: task.dependencies.length });
-        return; // Task remains in PENDING state
+        this.log('info', `⏳ Task has incomplete dependencies, remaining NOT_STARTED`, { taskId, dependenciesCount: task.dependencies.length });
+        return; // Task remains in NOT_STARTED state
       }
 
       // Execute the specific logic
@@ -387,7 +387,7 @@ export abstract class BaseRunner implements TaskRunner {
    * 
    * Iterates through all task dependencies and verifies that each one has
    * a status of 'COMPLETED'. This is used to determine if a task is ready
-   * to be executed or should remain in PENDING state.
+   * to be executed or should remain in NOT_STARTED state.
    * 
    * @param task - The task object with dependencies to check
    * @returns `true` if all dependencies are completed, `false` if any are not completed
@@ -399,7 +399,7 @@ export abstract class BaseRunner implements TaskRunner {
    *   // All dependencies are done, can proceed with execution
    *   await this.executeTask(task);
    * } else {
-   *   // Some dependencies still pending, task remains PENDING
+   *   // Some dependencies still pending, task remains NOT_STARTED
    *   return;
    * }
    * ```

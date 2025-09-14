@@ -243,7 +243,7 @@ The system uses structured JSON responses from OpenAI:
 Results are stored in the `tasks` table with the following structure:
 
 - **`runnerData`**: JSON containing AI results and metadata
-- **`status`**: Task status (PENDING, IN_PROGRESS, COMPLETED, CANCELLED)
+- **`status`**: Task status (NOT_STARTED, INITIATED, COMPLETED, CANCELLED)
 - **`dependencies`**: Task dependencies via `TaskDependency` table
 
 ## Task Status: CANCELLED

@@ -19,7 +19,7 @@ PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_tasks" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "status" TEXT NOT NULL DEFAULT 'NOT_STARTED',
     "runnerId" INTEGER,
     "runnerDataId" INTEGER,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

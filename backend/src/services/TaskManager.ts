@@ -38,7 +38,7 @@ export class TaskManager {
         return true;
       }
 
-      if (task.status === TaskStatus.IN_PROGRESS) {
+      if (task.status === TaskStatus.INITIATED) {
         console.log(`Task ${taskId} is already in progress`);
         return false;
       }
@@ -65,11 +65,11 @@ export class TaskManager {
         return false;
       }
 
-      // Update task status to IN_PROGRESS
+      // Update task status to INITIATED
       await this.prisma.task.update({
         where: { id: taskId },
         data: { 
-          status: TaskStatus.IN_PROGRESS,
+          status: TaskStatus.INITIATED,
           updatedAt: new Date()
         },
       });
@@ -90,7 +90,7 @@ export class TaskManager {
   }
 
   /**
-   * Try to run all PENDING tasks using the runTaskWithDependencies function
+   * Try to run all NOT_STARTED tasks using the runTaskWithDependencies function
    * @returns Promise<{ executed: number, failed: number, skipped: number }> - Summary of execution results
    */
   async runAllPendingTasks(): Promise<{ executed: number; failed: number; skipped: number }> {
@@ -106,12 +106,12 @@ export class TaskManager {
         // TODO: Probably should not keep the entire list in memory.
         const runnableTasks = await this.prisma.task.findMany({
           where: { 
-            status: TaskStatus.PENDING,
+            status: TaskStatus.NOT_STARTED,
             dependencies: {
               every: {
                 dependency: {
                   status: {
-                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.IN_PROGRESS]
+                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.INITIATED]
                   }
                 }
               }
@@ -156,7 +156,7 @@ export class TaskManager {
               },
             });
 
-            if (currentTask?.status === TaskStatus.PENDING) {
+            if (currentTask?.status === TaskStatus.NOT_STARTED) {
               // Still pending means dependencies weren't met
               skipped++;
               console.log(`Task ${task.id} skipped - dependencies not met`);

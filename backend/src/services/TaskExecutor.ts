@@ -43,10 +43,10 @@ export class TaskExecutor {
         return false;
       }
 
-      // Update task status to IN_PROGRESS
+      // Update task status to INITIATED
       await this.prisma.task.update({
         where: { id: taskId },
-        data: { status: TaskStatus.IN_PROGRESS },
+        data: { status: TaskStatus.INITIATED },
       });
 
       console.log(`🚀 Starting execution of task ${taskId} with runner: ${task.runnerClassName || 'Unknown'}`);
@@ -119,7 +119,7 @@ export class TaskExecutor {
   private async getReadyTasks() {
     return await this.prisma.task.findMany({
       where: {
-        status: TaskStatus.PENDING,
+        status: TaskStatus.NOT_STARTED,
         dependencies: {
           every: {
             dependency: {
@@ -142,12 +142,12 @@ export class TaskExecutor {
    * Check if a task is ready to run
    */
   private isTaskReady(task: any): boolean {
-    if (task.status !== TaskStatus.PENDING) {
+    if (task.status !== TaskStatus.NOT_STARTED) {
       return false;
     }
 
     return task.dependencies.every((dep: any) => 
-      dep.dependency.status !== TaskStatus.PENDING
+      dep.dependency.status !== TaskStatus.NOT_STARTED
     );
   }
 

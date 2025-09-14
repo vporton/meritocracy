@@ -83,7 +83,7 @@ model NonBatchMapping {
 
 model Task {
   id              Int              @id @default(autoincrement())
-  status          String           @default("PENDING")
+  status          String           @default("NOT_STARTED")
   runnerClassName String
   runnerData      String?
   createdAt       DateTime         @default(now())

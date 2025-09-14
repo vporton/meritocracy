@@ -7,11 +7,11 @@ The `TaskManager` service provides comprehensive task management functionality w
 ### 1. Dependency-Aware Task Execution
 - **`runTaskWithDependencies(taskId: number)`**: Runs a task only if all its dependencies are COMPLETED
 - Validates task status and dependencies before execution
-- Automatically updates task status to IN_PROGRESS during execution
+- Automatically updates task status to INITIATED during execution
 - Marks tasks as COMPLETED or CANCELLED based on execution results
 
 ### 2. Batch Task Processing
-- **`runAllPendingTasks()`**: Attempts to run all PENDING tasks in the system
+- **`runAllPendingTasks()`**: Attempts to run all NOT_STARTED tasks in the system
 - Returns detailed execution summary (executed, failed, skipped counts)
 - Processes tasks in creation order for predictable execution
 
@@ -53,7 +53,7 @@ console.log(`Deleted ${deletedCount} orphaned tasks`);
 // Create tasks with dependencies
 const task1 = await prisma.task.create({
   data: {
-    status: 'PENDING',
+    status: 'NOT_STARTED',
     runnerClassName: 'ExampleRunner',
     runnerData: JSON.stringify({ message: 'First task' }),
   },
@@ -61,7 +61,7 @@ const task1 = await prisma.task.create({
 
 const task2 = await prisma.task.create({
   data: {
-    status: 'PENDING',
+    status: 'NOT_STARTED',
     runnerClassName: 'ExampleRunner',
     runnerData: JSON.stringify({ message: 'Second task' }),
   },
@@ -81,8 +81,8 @@ await taskManager.runAllPendingTasks();
 
 ## Task Status Flow
 
-1. **PENDING**: Task is waiting to be executed
-2. **IN_PROGRESS**: Task is currently being executed
+1. **NOT_STARTED**: Task is waiting to be executed
+2. **INITIATED**: Task is currently being executed
 3. **COMPLETED**: Task has finished successfully
 4. **CANCELLED**: Task failed or was cancelled
 

@@ -90,7 +90,7 @@ export class UserEvaluationFlow {
   private async createScientistOnboardingTask(evaluationData: UserEvaluationData) {
     return await this.prisma.task.create({
       data: {
-        status: TaskStatus.PENDING,
+        status: TaskStatus.NOT_STARTED,
         runnerClassName: 'ScientistOnboardingRunner',
         runnerData: JSON.stringify({
           userData: evaluationData.userData
@@ -128,7 +128,7 @@ export class UserEvaluationFlow {
   ) {
     const task = await this.prisma.task.create({
       data: {
-        status: TaskStatus.PENDING,
+        status: TaskStatus.NOT_STARTED,
         runnerClassName: 'RandomizePromptRunner',
         runnerData: JSON.stringify({
           originalPrompt,
@@ -161,7 +161,7 @@ export class UserEvaluationFlow {
   ) {
     const task = await this.prisma.task.create({
       data: {
-        status: TaskStatus.PENDING,
+        status: TaskStatus.NOT_STARTED,
         runnerClassName: 'WorthAssessmentRunner',
         runnerData: JSON.stringify({
           userData: evaluationData.userData
@@ -194,7 +194,7 @@ export class UserEvaluationFlow {
   ) {
     const task = await this.prisma.task.create({
       data: {
-        status: TaskStatus.PENDING,
+        status: TaskStatus.NOT_STARTED,
         runnerClassName: 'WorthThresholdCheckRunner',
         runnerData: JSON.stringify({
           userId: evaluationData.userId,
@@ -240,7 +240,7 @@ export class UserEvaluationFlow {
       // Create injection detection task
       const injectionTask = await this.prisma.task.create({
         data: {
-          status: TaskStatus.PENDING,
+          status: TaskStatus.NOT_STARTED,
           runnerClassName: 'PromptInjectionRunner',
           runnerData: JSON.stringify({
             userId: evaluationData.userId,
@@ -289,7 +289,7 @@ export class UserEvaluationFlow {
   ) {
     const task = await this.prisma.task.create({
       data: {
-        status: TaskStatus.PENDING,
+        status: TaskStatus.NOT_STARTED,
         runnerClassName: 'MedianRunner',
         runnerData: JSON.stringify({
           userId: evaluationData.userId,

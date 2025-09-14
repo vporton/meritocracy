@@ -1,4 +1,4 @@
-import { PrismaClient, Task } from '@prisma/client';
+import { PrismaClient, Task, } from '@prisma/client';
 import { TaskStatus, TaskRunnerData } from '../types/task.js';
 import { createAIBatchStore, createAIOutputter } from './openai.js';
 
@@ -169,13 +169,13 @@ export class TaskExecutor {
   async executeNonBatchMode(task: Task): Promise<boolean> {
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
     
-    if (openAIFlexMode !== 'nonbatch' || !rootTaskId) {
+    if (openAIFlexMode !== 'nonbatch') {
       console.log(`📋 OPENAI_FLEX_MODE is batch, tasks queued for batch processing`);
       return false;
     }
 
     let executed = false;
-    for (const nonBatch of task.NonBatches) {
+    for (const nonBatch of (task as any).NonBatches) { // TODO: `any` is a hack.
       for (const mapping of nonBatch.nonbatchMappings) {
         const store = await createAIBatchStore(task.storeId!, task.id); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
         const outputter = await createAIOutputter(store);

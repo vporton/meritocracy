@@ -147,7 +147,7 @@ export class TaskExecutor {
     }
 
     return task.dependencies.every((dep: any) => 
-      dep.dependency.status === TaskStatus.COMPLETED
+      dep.dependency.status !== TaskStatus.PENDING
     );
   }
 

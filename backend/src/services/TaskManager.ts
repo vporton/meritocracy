@@ -111,7 +111,7 @@ export class TaskManager {
               every: {
                 dependency: {
                   status: {
-                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
+                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.IN_PROGRESS]
                   }
                 }
               }

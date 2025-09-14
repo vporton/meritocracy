@@ -162,10 +162,6 @@ interface TaskRunnerResult {
  * Extends BaseRunner with OpenAI request capabilities
  */
 export abstract class BaseOpenAIRunner extends BaseRunner {
-  async doGetOutput(customId: string): Promise<any> {
-    this.getOpenAIResult({ customId, storeId: this.data.storeId });
-  }
-
   protected getModelOptions(): ResponseCreateParams | undefined {
     return undefined;
   }
@@ -528,7 +524,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
    */
   protected async getRandomizedPromptFromDependency(task: TaskWithDependencies): Promise<string> {
     const response: RandomizedPromptResponse = await this.getDependencyResult(task, 'RandomizePromptRunner');
-    
+
     if (!response) {
       throw new DependencyError('RandomizePromptRunner dependency returned no response', undefined, task.id, this.constructor.name);
     }

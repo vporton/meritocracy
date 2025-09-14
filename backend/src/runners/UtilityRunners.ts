@@ -160,47 +160,6 @@ export abstract class BaseRunner implements TaskRunner {
   }
 
   /**
-   * Override the onOutput() method to store the status in the DB.
-   * TODO: Rename. TODO: Should be a protected method.
-   */
-  public async extractOutput(output: any): Promise<any> {
-    const response = JSON.parse(output) as OpenAI.Responses.Response;
-    const text = (response.output[response.output.length - 1]! as any).content.text;
-    if (!text) {
-      throw new OpenAIError('No response content received from OpenAI'); // TODO: not handled error
-    }
-    const output2 = JSON.parse(text);
-    // await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2); // It may need to be cancelled instead, so do in subclass.
-    return output2;
-  }
-
-  // FIXME
-  async doGetOutput(customId: string): Promise<any> {
-    // Check OPENAI_FLEX_MODE and run tasks if non-batch
-    const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
-    
-    if (openAIFlexMode === 'nonbatch') {
-      const task = await this.prisma.task.findFirstOrThrow({ // TODO: Is `OrThrow` appropriate here?
-        where: { id: this.taskId },
-        include: {
-          NonBatches: {
-            include: { nonbatchMappings: true },
-            where: { nonbatchMappings: { some: { customId } } }
-          }
-        }
-      });
-      return JSON.parse(task.NonBatches[0]!.nonbatchMappings[0]!.response);
-    } else {
-      throw new Error('Batch mode is not supported for this runner'); // FIXME
-    }  
-  }
-
-  async getOutput(customId: string): Promise<any> {
-    const output = await this.doGetOutput(customId);
-    return output; // this.onOutput(customId, output); // TODO
-  }
-
-  /**
    * Structured logging utility for consistent log formatting across all runners.
    * 
    * Provides standardized logging with timestamps, runner identification, and

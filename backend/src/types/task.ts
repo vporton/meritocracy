@@ -150,6 +150,7 @@ export class TaskRunnerRegistry {
     }
   }
 
+  // FIXME: It stores response in a wrong place!
   /**
    * Mark a task as completed by task ID
    * This method updates the task status to COMPLETED and sets the completedAt timestamp
@@ -178,7 +179,7 @@ export class TaskRunnerRegistry {
     // Merge existing data with new output, including storeId if available
     const mergedData = {
       ...existingData,
-      ...output,
+      ...output, // FIXME: Don't merge with this.
       ...(currentTask?.storeId && { storeId: currentTask.storeId }),
       completedAt: new Date().toISOString()
     };

@@ -1,7 +1,7 @@
 import { PrismaClient, Task, } from '@prisma/client';
 import { TaskStatus, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { createAIBatchStore, createAIOutputter, createAIRunner } from './openai.js';
-import { BaseRunner } from '@/runners/UtilityRunners.js';
+import { BaseOpenAIRunner } from '@/runners/OpenAIRunners.js';
 
 export class TaskExecutor {
   private prisma: PrismaClient;
@@ -191,12 +191,12 @@ export class TaskExecutor {
       for (const mapping of nonBatch.nonbatchMappings) {
         const store = await createAIBatchStore(task.storeId!, taskId); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
         const outputter = await createAIOutputter(store);
-        const runner = (await createAIRunner(store)) as unknown as BaseRunner; // FIXME: This object here is inappropriate.
+        const runner = (await createAIRunner(store)) as unknown as BaseOpenAIRunner; // FIXME: This object here is inappropriate.
         const output = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
         if (output === undefined) {
           await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
         } else {
-          const output2 = await runner.extractOutput(output);
+          const output2 = runner.extractOutput ? await runner.extractOutput(output) : output; // FIXME: This is a hack.
           await TaskRunnerRegistry.completeTask(this.prisma, taskId, output2);
           executed = true;
         }

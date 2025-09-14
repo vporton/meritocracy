@@ -166,7 +166,7 @@ export class TaskExecutor {
    * This function handles the execution of tasks when OPENAI_FLEX_MODE is set to 'nonbatch'
    * @return true if we executed at least one task.
    */
-  async executeNonBatchMode(task: Task): Promise<boolean> {
+  async executeNonBatchMode(taskId: number): Promise<boolean> {
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
     
     if (openAIFlexMode !== 'nonbatch') {
@@ -175,9 +175,20 @@ export class TaskExecutor {
     }
 
     let executed = false;
-    for (const nonBatch of (task as any).NonBatches) { // TODO: `any` is a hack.
+    const task = await this.prisma.task.findUniqueOrThrow({ // TODO: Avoid repeated database queries.
+      where: { id: taskId },
+      select: {
+        storeId: true,
+        NonBatches: {
+          include: {
+            nonbatchMappings: true,
+          },
+        },
+      },
+    });
+    for (const nonBatch of task.NonBatches) { // TODO: `any` is a hack.
       for (const mapping of nonBatch.nonbatchMappings) {
-        const store = await createAIBatchStore(task.storeId!, task.id); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
+        const store = await createAIBatchStore(task.storeId!, taskId); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
         const outputter = await createAIOutputter(store);
         const res = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
         if (res !== undefined) {

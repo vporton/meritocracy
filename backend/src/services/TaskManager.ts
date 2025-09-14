@@ -182,7 +182,7 @@ export class TaskManager {
             
             // Execute non-batch mode tasks if applicable
             const taskExecutor = new TaskExecutor(this.prisma);
-            const executedNonBatch = await taskExecutor.executeNonBatchMode(task);
+            const executedNonBatch = await taskExecutor.executeNonBatchMode(task.id);
             taskStatusChanged ||= executedNonBatch;
 
             if (executedNonBatch) {

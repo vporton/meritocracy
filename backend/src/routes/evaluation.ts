@@ -41,7 +41,7 @@ router.post('/start', requireAuth, async (req, res) => {
 
     // Execute non-batch mode tasks if applicable
     const taskExecutor = new TaskExecutor(prisma);
-    const executed = await taskExecutor.executeNonBatchMode(rootTaskId);
+    const executed = await taskExecutor.executeNonBatchMode(rootTaskId); // FIXME
 
     return res.json({
       success: true,

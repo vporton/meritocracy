@@ -1,6 +1,7 @@
 import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
+import OpenAI from 'openai';
 
 // TODO: duplicate code
 function isConfigValueTrue(value: string | undefined): boolean {
@@ -179,7 +180,12 @@ export abstract class BaseRunner implements TaskRunner {
           }
         }
       });
-      return task.NonBatches[0]!.nonbatchMappings[0]!.response;
+      const response = JSON.parse(task.NonBatches[0]!.nonbatchMappings[0]!.response) as OpenAI.Responses.Response;
+      const text = (response.output[response.output.length - 1]! as any).content.text;
+      if (!text) {
+        throw new OpenAIError('No response content received from OpenAI', customId); // TODO: not handled error
+      }
+      return JSON.parse(text);
     } else {
       throw new Error('Batch mode is not supported for this runner'); // FIXME
     }  

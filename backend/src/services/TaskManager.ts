@@ -90,28 +90,35 @@ export class TaskManager {
   }
 
   /**
-   * Try to run all NOT_STARTED tasks using the runTaskWithDependencies function
+   * Run all pending tasks following the algorithm:
+   * - In a loop, while no more tasks status changed:
+   *   - for each task, only if the status of its dependencies is COMPLETE or CANCELLED
+   *     - If the task is PENDING (NOT_STARTED), initiate it
+   *     - If the status is INITIATED, check task output
    * @returns Promise<{ executed: number, failed: number, skipped: number }> - Summary of execution results
    */
   async runAllPendingTasks(): Promise<{ executed: number; failed: number; skipped: number }> {
-    // FIXME: The below would run repeatedly for the same task, what is correct for non-batch and wrong for batch mode!
     try {
       let executed = 0;
       let failed = 0;
       let skipped = 0;
 
-      // Loop while there are tasks that can be run
-      while (true) {
+      // Loop while task status changes occur
+      let statusChanged = true;
+      while (statusChanged) {
+        statusChanged = false;
+
         // Build a list of tasks that depend only on COMPLETED or CANCELLED tasks
-        // TODO: Probably should not keep the entire list in memory.
         const runnableTasks = await this.prisma.task.findMany({
           where: { 
-            status: TaskStatus.NOT_STARTED,
+            status: {
+              in: [TaskStatus.NOT_STARTED, TaskStatus.INITIATED]
+            },
             dependencies: {
               every: {
                 dependency: {
                   status: {
-                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.INITIATED]
+                    in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
                   }
                 }
               }
@@ -135,36 +142,64 @@ export class TaskManager {
 
         console.log(`Found ${runnableTasks.length} runnable tasks to process in this iteration`);
 
-        // Run all tasks in the current batch
+        // Process all tasks in the current batch
         for (const task of runnableTasks) {
-          console.log(`Processing task ${task.id}...`);
+          console.log(`Processing task ${task.id} (status: ${task.status})...`);
           
-          const success = await this.runTaskWithDependencies(task.id);
+          let taskStatusChanged = false;
           
-          if (success) {
-            executed++;
-          } else {
-            // Check if it was skipped due to dependencies or failed
-            const currentTask = await this.prisma.task.findUnique({
-              where: { id: task.id },
-              include: {
-                dependencies: {
-                  include: {
-                    dependency: true,
-                  },
-                },
-              },
-            });
-
-            if (currentTask?.status === TaskStatus.NOT_STARTED) {
-              // Still pending means dependencies weren't met
-              skipped++;
-              console.log(`Task ${task.id} skipped - dependencies not met`);
+          if (task.status === TaskStatus.NOT_STARTED) {
+            // If the task is PENDING (NOT_STARTED), initiate it
+            const success = await this.runTaskWithDependencies(task.id);
+            taskStatusChanged = success;
+            
+            if (success) {
+              executed++;
+              console.log(`Task ${task.id} initiated successfully`);
             } else {
-              // Status changed to CANCELLED means it failed
-              failed++;
-              console.log(`Task ${task.id} failed to execute`);
+              // Check if it was skipped due to dependencies or failed
+              const currentTask = await this.prisma.task.findUnique({
+                where: { id: task.id },
+                select: { status: true }
+              });
+
+              if (currentTask?.status === TaskStatus.NOT_STARTED) {
+                // Still pending means dependencies weren't met
+                skipped++;
+                console.log(`Task ${task.id} skipped - dependencies not met`);
+              } else {
+                // Status changed to CANCELLED means it failed
+                failed++;
+                console.log(`Task ${task.id} failed to execute`);
+                taskStatusChanged = true;
+              }
             }
+          } else if (task.status === TaskStatus.INITIATED) {
+            // If the status is INITIATED, check task output
+            const outputChecked = await this.checkTaskOutput(task.id);
+            taskStatusChanged = outputChecked;
+            
+            if (outputChecked) {
+              executed++;
+              console.log(`Task ${task.id} output checked and completed`);
+            } else {
+              // Check if task was cancelled or failed during output checking
+              const currentTask = await this.prisma.task.findUnique({
+                where: { id: task.id },
+                select: { status: true }
+              });
+
+              if (currentTask?.status === TaskStatus.CANCELLED) {
+                failed++;
+                console.log(`Task ${task.id} failed during output check`);
+                taskStatusChanged = true;
+              }
+            }
+          }
+          
+          // Track if any task status changed in this iteration
+          if (taskStatusChanged) {
+            statusChanged = true;
           }
         }
       }
@@ -175,6 +210,133 @@ export class TaskManager {
     } catch (error) {
       console.error('❌ Error running all pending tasks:', error);
       return { executed: 0, failed: 0, skipped: 0 };
+    }
+  }
+
+  /**
+   * Check the output of an INITIATED task and update its status accordingly
+   * @param taskId - The ID of the task to check
+   * @returns Promise<boolean> - True if the task status was changed, false otherwise
+   */
+  private async checkTaskOutput(taskId: number): Promise<boolean> {
+    try {
+      // Get the task with its current data
+      const task = await this.prisma.task.findUnique({
+        where: { id: taskId },
+      });
+
+      if (!task) {
+        console.error(`Task with ID ${taskId} not found during output check`);
+        return false;
+      }
+
+      if (task.status !== TaskStatus.INITIATED) {
+        console.log(`Task ${taskId} is not in INITIATED status (current: ${task.status})`);
+        return false;
+      }
+
+      // Check if task has a runner specified
+      if (!task.runnerClassName) {
+        console.error(`Task ${taskId} has no runner class specified during output check`);
+        await this.prisma.task.update({
+          where: { id: taskId },
+          data: { 
+            status: TaskStatus.CANCELLED,
+            updatedAt: new Date()
+          },
+        });
+        return true;
+      }
+
+      // Check if task has runner data with output information
+      if (!task.runnerData) {
+        console.log(`Task ${taskId} has no runner data yet, skipping output check`);
+        return false;
+      }
+
+      let runnerData;
+      try {
+        runnerData = JSON.parse(task.runnerData);
+      } catch (error) {
+        console.error(`Failed to parse runner data for task ${taskId}:`, error);
+        await this.prisma.task.update({
+          where: { id: taskId },
+          data: { 
+            status: TaskStatus.CANCELLED,
+            updatedAt: new Date()
+          },
+        });
+        return true;
+      }
+
+      // Check if the task has a customId and storeId (indicating it made an OpenAI request)
+      if (runnerData.customId && runnerData.storeId) {
+        console.log(`Checking output for task ${taskId} with customId: ${runnerData.customId}`);
+        
+        // Create a temporary runner instance to check the output
+        const { TaskRunnerRegistry } = await import('../types/task.js');
+        
+        // Get the runner class and create an instance
+        const RunnerClass = TaskRunnerRegistry.getRunnerClass(task.runnerClassName);
+        const runnerInstance = new RunnerClass(runnerData, taskId);
+        
+        try {
+          // Check if the output is available and process it
+          const output = await (runnerInstance as any).getOutput(runnerData.customId);
+          
+          if (output !== undefined) {
+            console.log(`✅ Task ${taskId} output retrieved and processed successfully`);
+            return true; // Status was changed by the runner's onOutput method
+          } else {
+            console.log(`Task ${taskId} output not yet available`);
+            return false;
+          }
+        } catch (error) {
+          console.error(`Error checking output for task ${taskId}:`, error);
+          // The runner's error handling should have already updated the task status
+          return true; // Assume status was changed due to error
+        }
+      } else {
+        // Task doesn't have OpenAI request data, check if it's a utility runner that should be completed
+        console.log(`Task ${taskId} appears to be a utility runner without OpenAI request data`);
+        
+        // For utility runners, if they're in INITIATED state and have runner data,
+        // they should have been completed by their executeTask method
+        // Check if they have completion data
+        if (runnerData.completedAt || runnerData.status === 'COMPLETED') {
+          console.log(`Task ${taskId} already has completion data, updating status`);
+          await this.prisma.task.update({
+            where: { id: taskId },
+            data: { 
+              status: TaskStatus.COMPLETED,
+              completedAt: new Date(),
+              updatedAt: new Date()
+            },
+          });
+          return true;
+        }
+        
+        console.log(`Task ${taskId} is still processing, no output check needed yet`);
+        return false;
+      }
+
+    } catch (error) {
+      console.error(`❌ Error checking task output for task ${taskId}:`, error);
+      
+      // Mark task as cancelled due to error
+      try {
+        await this.prisma.task.update({
+          where: { id: taskId },
+          data: { 
+            status: TaskStatus.CANCELLED,
+            updatedAt: new Date()
+          },
+        });
+        return true;
+      } catch (updateError) {
+        console.error(`Failed to update task ${taskId} status after error:`, updateError);
+        return false;
+      }
     }
   }
 

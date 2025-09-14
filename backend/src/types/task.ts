@@ -84,6 +84,15 @@ export class TaskRunnerRegistry {
     return result;
   }
 
+  /**
+   * Get a TaskRunner class by name (public method)
+   * @param name - The name of the TaskRunner class
+   * @returns The TaskRunner class constructor
+   */
+  static getRunnerClass(name: string): (new (data: TaskRunnerData, taskId: number) => TaskRunner) {
+    return this.get(name);
+  }
+
   private static createRunner(className: string, data: TaskRunnerData, taskId: number): TaskRunner | null {
     const RunnerClass = this.get(className);
     return new RunnerClass(data, taskId);

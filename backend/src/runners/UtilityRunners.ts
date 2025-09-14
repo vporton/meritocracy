@@ -744,26 +744,68 @@ export class WorthThresholdCheckRunner extends BaseRunner {
     
     for (const dep of task.dependencies) {
       try {
-        // Get the dependency task data
-        if (!dep.dependency.runnerData) {
-          this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
-          continue;
-        }
+        // TODO: Simplify this.
+        // For WorthAssessmentRunner dependencies, the result is stored in runnerData
+        // via TaskRunnerRegistry.completeTask
+        if (dep.dependency.runnerClassName === 'WorthAssessmentRunner') {
+          if (!dep.dependency.runnerData) {
+            this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
+            continue;
+          }
 
-        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
-        if (!depData.customId || !depData.storeId) {
-          this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
-          continue;
-        }
+          try {
+            const depData = JSON.parse(dep.dependency.runnerData);
+            
+            // Check if this is a WorthAssessmentRunner that returned undefined directly
+            if (depData.worthAsFractionOfGDP === undefined) {
+              // This runner returned undefined (threshold not met or injection detected), skip it
+              this.log('info', `Skipping WorthAssessmentRunner with undefined result`, { 
+                dependencyId: dep.dependency.id,
+                worthAsFractionOfGDP: depData.worthAsFractionOfGDP
+              });
+              continue;
+            }
+            
+            if (typeof depData.worthAsFractionOfGDP === 'number') {
+              worthValues.push(depData.worthAsFractionOfGDP);
+              this.log('info', `Found worth value from dependency`, { 
+                dependencyId: dep.dependency.id, 
+                worthAsFractionOfGDP: depData.worthAsFractionOfGDP 
+              });
+            } else {
+              this.log('warn', `Dependency has invalid worthAsFractionOfGDP value`, { 
+                dependencyId: dep.dependency.id,
+                worthAsFractionOfGDP: depData.worthAsFractionOfGDP
+              });
+            }
+          } catch (parseError) {
+            this.log('warn', `Failed to parse dependency runner data`, { 
+              dependencyId: dep.dependency.id, 
+              error: parseError instanceof Error ? parseError.message : String(parseError) 
+            });
+          }
+        } else {
+          // For other types of dependencies, use the original logic
+          if (!dep.dependency.runnerData) {
+            this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
+            continue;
+          }
 
-        // Get the result from the dependency
-        const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
-          customId: depData.customId, 
-          storeId: depData.storeId 
-        });
+          const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
+          if (!depData.customId || !depData.storeId) {
+            this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
+            continue;
+          }
 
-        if (typeof response.worthAsFractionOfGDP === 'number') {
-          worthValues.push(response.worthAsFractionOfGDP);
+          // Get the result from the dependency
+          const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
+            customId: depData.customId, 
+            storeId: depData.storeId 
+          });
+
+          if (typeof response.worthAsFractionOfGDP === 'number') {
+            worthValues.push(response.worthAsFractionOfGDP);
+          }
         }
       } catch (error) {
         this.log('warn', `Failed to retrieve dependency result`, { 
@@ -772,7 +814,7 @@ export class WorthThresholdCheckRunner extends BaseRunner {
         });
       }
     }
-
+    
     return worthValues;
   }
 

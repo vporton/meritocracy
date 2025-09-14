@@ -159,6 +159,29 @@ export class TaskRunnerRegistry {
     taskId: number,
     output: object
   ): Promise<boolean> {
+    // Get the current task to preserve existing runnerData
+    const currentTask = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { runnerData: true }
+    });
+
+    // Parse existing runnerData or start with empty object
+    let existingData = {};
+    if (currentTask?.runnerData) {
+      try {
+        existingData = JSON.parse(currentTask.runnerData);
+      } catch (error) {
+        console.warn(`Failed to parse existing runnerData for task ${taskId}:`, error);
+      }
+    }
+
+    // Merge existing data with new output
+    const mergedData = {
+      ...existingData,
+      ...output,
+      completedAt: new Date().toISOString()
+    };
+
     // Update the task status to COMPLETED and set data
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
@@ -166,7 +189,7 @@ export class TaskRunnerRegistry {
         status: TaskStatus.COMPLETED,
         completedAt: new Date(),
         updatedAt: new Date(),
-        ...output
+        runnerData: JSON.stringify(mergedData)
       }
     });
 

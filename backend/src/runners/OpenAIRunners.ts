@@ -83,7 +83,7 @@ const USE_WEB_SEARCH_TOOL = {
       "type": "web_search"
     }
   ],
-  tool_choice: <ToolChoiceOptions>'required',
+  // tool_choice: <ToolChoiceOptions>'required', // commented out to eliminate infinite loop with Web search.
 };
 
 // Custom error classes for better error handling

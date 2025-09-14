@@ -364,14 +364,14 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
     
+    // Then initiate the OpenAI request
+    await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
+    
     // Check if fake mode is enabled
     if (OPEN_AI_FAKE) {
       await this.handleFakeModeResponse(task, customId, additionalData);
       return;
     }
-    
-    // Then initiate the OpenAI request
-    await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
   }
 
   /**

@@ -605,9 +605,8 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
 
   // TODO: Simplify this and similar functions.
   protected async onOutput(customId: string, output: any): Promise<void> {
-    const output2 = await this.extractOutput(output);
-    if (output2.isActiveScientistOrFOSSDev) {
-      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2);
+    if (output.isActiveScientistOrFOSSDev) {
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
     } else {
       await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
     }
@@ -667,8 +666,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
-    const output2 = await this.extractOutput(output);
-    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2);
+    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
   }
 }
 
@@ -760,11 +758,10 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
-    const output2 = await this.extractOutput(output);
-    if (output2.hasPromptInjection) {
+    if (output.hasPromptInjection) {
       await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
     } else {
-      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2);
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
     }
   }
 }

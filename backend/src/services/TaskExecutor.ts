@@ -196,8 +196,7 @@ export class TaskExecutor {
         if (output === undefined) {
           await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
         } else {
-          const output2 = runner.extractOutput ? await runner.extractOutput(output) : output; // FIXME: This is a hack.
-          await TaskRunnerRegistry.completeTask(this.prisma, taskId, output2);
+          await TaskRunnerRegistry.completeTask(this.prisma, taskId, output); // FIXME: needed here?
           executed = true;
         }
       }

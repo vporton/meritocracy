@@ -294,7 +294,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
-      max_tool_calls: 10,
+      max_tool_calls: 10, // TODO
       ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
       text: <ResponseTextConfig>{
         format: {

@@ -161,11 +161,20 @@ export abstract class BaseRunner implements TaskRunner {
 
   /**
    * Override the onOutput() method to store the status in the DB.
+   * TODO: Rename. TODO: Should be a protected method.
    */
-  protected async onOutput(customId: string, output: any): Promise<void> {
-    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+  public async extractOutput(output: any): Promise<any> {
+    const response = JSON.parse(output) as OpenAI.Responses.Response;
+    const text = (response.output[response.output.length - 1]! as any).content.text;
+    if (!text) {
+      throw new OpenAIError('No response content received from OpenAI'); // TODO: not handled error
+    }
+    const output2 = JSON.parse(text);
+    // await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2); // It may need to be cancelled instead, so do in subclass.
+    return output2;
   }
 
+  // FIXME
   async doGetOutput(customId: string): Promise<any> {
     // Check OPENAI_FLEX_MODE and run tasks if non-batch
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
@@ -180,12 +189,7 @@ export abstract class BaseRunner implements TaskRunner {
           }
         }
       });
-      const response = JSON.parse(task.NonBatches[0]!.nonbatchMappings[0]!.response) as OpenAI.Responses.Response;
-      const text = (response.output[response.output.length - 1]! as any).content.text;
-      if (!text) {
-        throw new OpenAIError('No response content received from OpenAI', customId); // TODO: not handled error
-      }
-      return JSON.parse(text);
+      return JSON.parse(task.NonBatches[0]!.nonbatchMappings[0]!.response);
     } else {
       throw new Error('Batch mode is not supported for this runner'); // FIXME
     }  
@@ -193,8 +197,7 @@ export abstract class BaseRunner implements TaskRunner {
 
   async getOutput(customId: string): Promise<any> {
     const output = await this.doGetOutput(customId);
-    this.onOutput(customId, output);
-    return output;
+    return output; // this.onOutput(customId, output); // TODO
   }
 
   /**

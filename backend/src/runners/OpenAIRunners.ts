@@ -471,7 +471,7 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     });
 
     // Trigger the onOutput method to complete the task
-    await this.onOutput(customId, fakeResponse);
+    // await this.onOutput(customId, fakeResponse); //  TODO
   }
 
 
@@ -609,8 +609,9 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
 
   // TODO: Simplify this and similar functions.
   protected async onOutput(customId: string, output: any): Promise<void> {
-    if (output.isActiveScientistOrFOSSDev) {
-      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+    const output2 = await this.extractOutput(output);
+    if (output2.isActiveScientistOrFOSSDev) {
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2);
     } else {
       await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
     }
@@ -670,8 +671,8 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
-    // TODO: duplicate, unneeded here code
-    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+    const output2 = await this.extractOutput(output);
+    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2);
   }
 }
 
@@ -763,10 +764,11 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
-    if (output.hasPromptInjection) {
+    const output2 = await this.extractOutput(output);
+    if (output2.hasPromptInjection) {
       await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
     } else {
-      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output2);
     }
   }
 }

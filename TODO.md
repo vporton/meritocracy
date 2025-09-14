@@ -38,3 +38,5 @@
 - Check that `customId`s and filenames for OpenAI are unique!
 
 - Delete DB migrations before the release.
+
+- Always run prompt randomization as non-batch, because its cost is low.

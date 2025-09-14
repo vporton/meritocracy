@@ -39,6 +39,7 @@ interface TaskWithDependencies {
       status: string;
       runnerClassName: string;
       runnerData: string | null;
+      storeId: string | null;
     };
   }>;
 }

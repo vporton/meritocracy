@@ -128,6 +128,7 @@ interface TaskWithDependencies {
       status: string;
       runnerClassName: string;
       runnerData: string | null;
+      storeId: string | null;
     };
   }>;
 }
@@ -480,13 +481,18 @@ abstract class BaseOpenAIRunner extends BaseRunner {
     }
 
     const depData: TaskRunnerResult = JSON.parse(depTask.runnerData);
-    if (!depData.customId || !depData.storeId) {
-      throw new DependencyError(`${runnerClassName} dependency missing customId or storeId`, depTask.id, task.id, this.constructor.name);
+    if (!depData.customId) {
+      throw new DependencyError(`${runnerClassName} dependency missing customId`, depTask.id, task.id, this.constructor.name);
+    }
+
+    // Get storeId from the task table, not from runnerData
+    if (!depTask.storeId) {
+      throw new DependencyError(`${runnerClassName} dependency missing storeId`, depTask.id, task.id, this.constructor.name);
     }
 
     return await this.getOpenAIResult({ 
       customId: depData.customId, 
-      storeId: depData.storeId 
+      storeId: depTask.storeId 
     });
   }
 }

@@ -17,7 +17,9 @@ const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
 const NO_REASONING = isConfigValueTrue(process.env.OPENAI_NO_REASONING);
 const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
-const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
+const OVERRIDE_MAX_TOOL_CALLS = process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS ?
+  parseInt(process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS) : undefined;
+  const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
 const BAN_DURATION_YEARS = 1;
 const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
 
@@ -290,7 +292,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
-      max_tool_calls: 10, // TODO
+      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? 10, // TODO
       ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
       text: <ResponseTextConfig>{
         format: {

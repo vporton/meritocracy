@@ -484,13 +484,13 @@ export abstract class BaseRunner implements TaskRunner {
 
     try {
       const response = (await outputter.getOutput(customId))!;
-      console.log('YYY', response);
+      // console.log('YYY', response);
 
       const text = (response.output[response.output.length - 1]! as any).content[0].text;
       if (!text) {
         throw new OpenAIError('No response content received from OpenAI', customId); // TODO: not handled error
       }
-      console.log('XXX text', text);
+      // console.log('XXX text', text);
       const content = JSON.parse(text);
       
       // Log the response to the database
@@ -604,17 +604,6 @@ export class MedianRunner extends BaseRunner {
 
         const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
         
-        // Check if this is a WorthAssessmentRunner that returned undefined directly
-        if (dep.dependency.runnerClassName === 'WorthAssessmentRunner' && 
-            depData.worthAsFractionOfGDP === undefined) {
-          // This runner returned undefined (threshold not met or injection detected), skip it
-          this.log('info', `Skipping WorthAssessmentRunner with undefined result`, { 
-            dependencyId: dep.dependency.id,
-            reason: depData.why || 'Unknown reason'
-          });
-          continue;
-        }
-        
         if (!depData.customId || !depData.storeId) {
           this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
           continue;
@@ -723,77 +712,14 @@ export class WorthThresholdCheckRunner extends BaseRunner {
    */
   private async processWorthDependencyResults(task: TaskWithDependencies): Promise<number[]> {
     const worthValues: number[] = [];
-    
     for (const dep of task.dependencies) {
-      try {
-        // TODO: Simplify this.
-        // For WorthAssessmentRunner dependencies, the result is stored in runnerData
-        // via TaskRunnerRegistry.completeTask
-        if (dep.dependency.runnerClassName === 'WorthAssessmentRunner') {
-          if (!dep.dependency.runnerData) {
-            this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
-            continue;
-          }
-
-          try {
-            const depData = JSON.parse(dep.dependency.runnerData);
-            
-            // Check if this is a WorthAssessmentRunner that returned undefined directly
-            if (depData.worthAsFractionOfGDP === undefined) {
-              // This runner returned undefined (threshold not met or injection detected), skip it
-              this.log('info', `Skipping WorthAssessmentRunner with undefined result`, { 
-                dependencyId: dep.dependency.id,
-                worthAsFractionOfGDP: depData.worthAsFractionOfGDP
-              });
-              continue;
-            }
-            
-            if (typeof depData.worthAsFractionOfGDP === 'number') {
-              worthValues.push(depData.worthAsFractionOfGDP);
-              this.log('info', `Found worth value from dependency`, { 
-                dependencyId: dep.dependency.id, 
-                worthAsFractionOfGDP: depData.worthAsFractionOfGDP 
-              });
-            } else {
-              this.log('warn', `Dependency has invalid worthAsFractionOfGDP value`, { 
-                dependencyId: dep.dependency.id,
-                worthAsFractionOfGDP: depData.worthAsFractionOfGDP
-              });
-            }
-          } catch (parseError) {
-            this.log('warn', `Failed to parse dependency runner data`, { 
-              dependencyId: dep.dependency.id, 
-              error: parseError instanceof Error ? parseError.message : String(parseError) 
-            });
-          }
-        } else {
-          // For other types of dependencies, use the original logic
-          if (!dep.dependency.runnerData) {
-            this.log('warn', `Dependency has no runner data`, { dependencyId: dep.dependency.id });
-            continue;
-          }
-
-          const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
-          if (!depData.customId || !depData.storeId) {
-            this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
-            continue;
-          }
-
-          // Get the result from the dependency
-          const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
-            customId: depData.customId, 
-            storeId: depData.storeId 
-          });
-
-          if (typeof response.worthAsFractionOfGDP === 'number') {
-            worthValues.push(response.worthAsFractionOfGDP);
-          }
-        }
-      } catch (error) {
-        this.log('warn', `Failed to retrieve dependency result`, { 
-          dependencyId: dep.dependency.id, 
-          error: error instanceof Error ? error.message : String(error) 
+      if (dep.dependency.runnerClassName === 'WorthAssessmentRunner') {
+        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData!); // TODO: hack
+        const response: WorthAssessmentResponse = await this.getOpenAIResult({
+          customId: depData.customId, 
+          storeId: dep.dependency.storeId! // TODO: `!`
         });
+        worthValues.push(response.worthAsFractionOfGDP);
       }
     }
     

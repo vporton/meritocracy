@@ -65,7 +65,7 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
     super(prisma);
   }
   async init(): Promise<void> {
-    assert(this.storeId === undefined, "cannot initialize storeId second time");
+    if (this.storeId !== undefined) throw "cannot initialize storeId second time";
     const batches = await this.prisma.batches.create({
       data: {taskId: this.taskId}
     });
@@ -98,7 +98,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
     super(prisma);
   }
   async init(): Promise<void> {
-    assert(this.storeId === undefined, "cannot initialize storeId second time");
+    if (this.storeId !== undefined) throw "cannot initialize storeId second time";
     const nonBatches = await this.prisma.nonBatches.create({
       data: {taskId: this.taskId}
     });
@@ -133,7 +133,9 @@ export async function createAIBatchStore(storeId: string | undefined, taskId: nu
   const result = openAIFlexMode === 'batch' ?
     new OurBatchStore(prisma, storeId, taskId) :
     new OurNonBatchStore(prisma, storeId, taskId);
-  await result.init();
+  if (storeId === undefined) {
+    await result.init();
+  }
   return result;
 }
 
@@ -149,7 +151,7 @@ export async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonB
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatchOutput(openai, store as FlexibleBatchStore) :
     new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);
-  await result.init();
+  // await result.init();
   return result;
 }
 

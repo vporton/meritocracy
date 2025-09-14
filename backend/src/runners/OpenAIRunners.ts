@@ -7,6 +7,7 @@ import { ResponseCreateParams, ResponseCreateParamsNonStreaming, ResponseTextCon
 import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 
+// TODO: duplicate code
 function isConfigValueTrue(value: string | undefined): boolean {
   return value !== undefined && value !== null && value.toLowerCase() !== 'false' && value !== '0' && value.toLowerCase() !== 'no' && value !== '0';
 }
@@ -18,7 +19,7 @@ const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
 const BAN_DURATION_YEARS = 1;
-const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE);
+const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
 
 /**
  * Generate a user prompt string from user data for AI analysis
@@ -401,6 +402,14 @@ abstract class BaseOpenAIRunner extends BaseRunner {
   ): Promise<void> {
     const runnerName = this.constructor.name;
     let fakeResponse: any = {};
+
+    // TODO: Seems out-of-place here.
+    const store = await createAIBatchStore(undefined, task.id);
+    const storeId = store.getStoreId();
+    await this.prisma.task.update({ // TODO: Replace this by one `.insert`.
+      where: { id: task.id },
+      data: { storeId }
+    });
 
     switch (runnerName) {
       case 'ScientistOnboardingRunner':

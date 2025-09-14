@@ -1,10 +1,16 @@
 import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
-import { TaskManager } from '@/services/TaskManager.js';
+
+// TODO: duplicate code
+function isConfigValueTrue(value: string | undefined): boolean {
+  return value !== undefined && value !== null && value.toLowerCase() !== 'false' && value !== '0' && value.toLowerCase() !== 'no' && value !== '0';
+}
 
 // Constants
 const DEFAULT_THRESHOLD = 1e-11;
+const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
+
 
 // Custom error classes for better error handling
 class TaskRunnerError extends Error {
@@ -503,7 +509,11 @@ export abstract class BaseRunner implements TaskRunner {
   protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId, this.taskId);
     const outputter = await createAIOutputter(store);
-    
+    if (OPEN_AI_FAKE) { // TODO: hack
+      // TODO: Log.
+      return await (store as any).getResponseByCustomId(customId);
+    }
+
     try {
       const response = (await outputter.getOutput(customId))!;
       

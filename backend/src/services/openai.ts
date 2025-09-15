@@ -122,7 +122,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
     const response = await this.prisma.nonBatchMapping.findUnique({
       where: { customId },
     });
-    return response?.response ? JSON.parse(response.response) : undefined; // TODO: Make it throw instead of returning undefined?
+    return response?.response ? JSON.parse(response.response) : undefined;
   }
 }
 

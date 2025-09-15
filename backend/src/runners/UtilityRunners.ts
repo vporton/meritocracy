@@ -710,10 +710,10 @@ export class WorthThresholdCheckRunner extends BaseRunner {
     const worthValues: number[] = [];
     for (const dep of task.dependencies) {
       if (dep.dependency.runnerClassName === 'WorthAssessmentRunner') {
-        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData!); // TODO: hack
+        const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData!); // hack
         const response: WorthAssessmentResponse = await this.getOpenAIResult({
           customId: depData.customId, 
-          storeId: dep.dependency.storeId! // TODO: `!`
+          storeId: dep.dependency.storeId!
         });
         worthValues.push(response.worthAsFractionOfGDP);
       }

@@ -59,7 +59,6 @@ model BatchMapping {
   @@map("batch_mappings")
 }
 
-// FIXME: Store `storeId` here, instead?
 model NonBatches {
   id               Int               @id @default(autoincrement())
   createdAt        DateTime          @default(now())

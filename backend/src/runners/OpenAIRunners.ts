@@ -19,7 +19,7 @@ const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const OVERRIDE_MAX_TOOL_CALLS = process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS ?
   parseInt(process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS) : undefined;
-  const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
+const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
 const BAN_DURATION_YEARS = 1;
 const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
 

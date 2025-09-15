@@ -19,7 +19,7 @@ const OVERRIDE_REASONING_EFFORT = process.env.OPENAI_OVERRIDE_REASONING_EFFORT ?
   process.env.OPENAI_OVERRIDE_REASONING_EFFORT as ReasoningEffort : undefined;
 const OVERRIDE_MAX_TOOL_CALLS = process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS ?
   parseInt(process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS) : undefined;
-const DEFAULT_TEMPERATURE = 0.2; // FIXME: Use it.
+const DEFAULT_TEMPERATURE = 0.2;
 const BAN_DURATION_YEARS = 1;
 const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
 
@@ -287,13 +287,13 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       instructions: prompt, // system/developer message.
       input: input, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
+      temperature: DEFAULT_TEMPERATURE,
       ...(options?.temperature !== undefined && { temperature: options.temperature }),
       // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
       max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? 10, // TODO
-      ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
       text: <ResponseTextConfig>{
         format: {
           type: "json_schema" as const,

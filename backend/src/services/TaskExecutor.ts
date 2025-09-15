@@ -176,7 +176,7 @@ export class TaskExecutor {
     }
 
     let executed = false;
-    const task = await this.prisma.task.findUniqueOrThrow({ // TODO: Avoid repeated database queries.
+    const task = await this.prisma.task.findUniqueOrThrow({ // TODO@P3: Avoid repeated database queries.
       where: { id: taskId },
       select: {
         storeId: true,
@@ -187,9 +187,9 @@ export class TaskExecutor {
         },
       },
     });
-    for (const nonBatch of task.NonBatches) { // TODO: `any` is a hack.
+    for (const nonBatch of task.NonBatches) {
       for (const mapping of nonBatch.nonbatchMappings) {
-        const store = await createAIBatchStore(task.storeId!, taskId); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
+        const store = await createAIBatchStore(task.storeId!, taskId); // TODO@P2: Fix race conditions in cron runs, may have undefined `storeId`?
         const outputter = await createAIOutputter(store);
         const output = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
         if (output === undefined) {

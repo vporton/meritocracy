@@ -383,10 +383,10 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     const runnerName = this.constructor.name;
     let fakeResponse: any = {};
 
-    // TODO: Seems out-of-place here.
+    // TODO@P3: Seems out-of-place here.
     const store = await createAIBatchStore(undefined, task.id);
     const storeId = store.getStoreId();
-    await this.prisma.task.update({ // TODO: Replace this by one `.insert`.
+    await this.prisma.task.update({ // Replace this by one `.insert`.
       where: { id: task.id },
       data: { storeId }
     });
@@ -458,9 +458,6 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         })
       }
     });
-
-    // Trigger the onOutput method to complete the task
-    // await this.onOutput(customId, fakeResponse); //  TODO
   }
 
 
@@ -470,7 +467,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
    * @param runnerClassName - The class name of the runner to look for
    * @returns The dependency result or null if not found
    */
-  protected async getDependencyResult( // TODO: This function is suspected, because we may need to get data from several dependencies.
+  protected async getDependencyResult( // TODO@P3: This function is suspected, because we may need to get data from several dependencies.
     task: TaskWithDependencies, 
     runnerClassName: string
   ): Promise<any> {
@@ -569,7 +566,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
  * Uses OpenAI to analyze user data and determine if they are an active scientist or FOSS developer
  */
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): any/*ResponseCreateParams*/ | undefined { // TODO: https://github.com/openai/openai-node/issues/1572
+  protected getModelOptions(): ResponseCreateParams | {max_tool_calls: number} | undefined { // https://github.com/openai/openai-node/issues/1572
     return {
       model: 'gpt-5-mini', // Don't use gpt-5-nano: it tends to enter infinite loop with Web search.
       // temperature: 0.0, // Cursor says, it's unsupported.
@@ -596,7 +593,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
 
-  // TODO: Simplify this and similar functions.
+  // Simplify this and similar functions.
   protected async onOutput(customId: string, output: any): Promise<void> {
     if (output.isActiveScientistOrFOSSDev) {
       await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
@@ -615,7 +612,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
    * Get the original prompt that should be randomized
    * @returns The original worth prompt
    */
-  protected getOriginalPrompt(): string { // TODO: This method (in parent class, too) seems to be useless.
+  protected getOriginalPrompt(): string { // This method (in parent class, too) seems to be useless.
     return worthPrompt;
   }
 
@@ -639,7 +636,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
  * Can be conditionally cancelled based on worth threshold dependencies
  */
 export class RandomizePromptRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): any/*ResponseCreateParams*/ | undefined { // TODO: https://github.com/openai/openai-node/issues/1572
+  protected getModelOptions(): ResponseCreateParams | undefined {
     return {
       temperature: 1.0, // We want randomized responses.
     };
@@ -651,7 +648,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const originalPrompt = this.data.originalPrompt;
-    if (!originalPrompt) { // TODO: Should not happen.
+    if (!originalPrompt) { // Should not happen.
       throw new TaskRunnerError('Original prompt is required for randomization', task.id, this.constructor.name);
     }
     
@@ -713,7 +710,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     });
 
     // Mark task as CANCELLED (not COMPLETED) since injection was detected
-    await this.prisma.task.update({ // TODO: seems to have superfluous parameters.
+    await this.prisma.task.update({ // seems to have superfluous parameters.
       where: { id: task.id },
       data: {
         status: 'CANCELLED',

@@ -175,7 +175,7 @@ export class TaskRunnerRegistry {
       }
     }
 
-    // TODO: `storeId` should be set differently.
+    // TODO@P2: `storeId` should be set differently.
     // Merge existing data with new output, including storeId if available
     const mergedData = {
       ...existingData,

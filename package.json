@@ -7,7 +7,7 @@
   "version": "1.0.0",
   "description": "Full-stack Node.js + React application with Prisma ORM",
   "scripts": {
-    "install-all": "npm run install --workspaces",
+    "install": "npm run install --workspaces",
     "install-backend": "cd backend && npm install",
     "install-frontend": "cd frontend && npm install",
     "dev": "concurrently --kill-others-on-fail --kill-others \"npm run dev-backend\" \"npm run dev-frontend\"",

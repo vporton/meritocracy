@@ -18,10 +18,13 @@ import ethereumRoutes from './routes/ethereum.js';
 import evaluationRoutes from './routes/evaluation.js';
 import globalRoutes from './routes/global.js';
 import logsRoutes from './routes/logs.js';
+import cronRoutes from './routes/cron.js';
 
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
 import { GlobalDataService } from './services/GlobalDataService.js';
+import { CronService } from './services/CronService.js';
+import { PrismaClient } from '@prisma/client';
 
 // Register all TaskRunners on startup
 registerAllRunners();
@@ -54,6 +57,7 @@ app.use('/api/ethereum', ethereumRoutes);
 app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/global', globalRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/cron', cronRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -72,7 +76,7 @@ app.use('*', (req, res) => {
   });
 });
 
-// Initialize global data on startup
+// Initialize global data and cron services on startup
 async function initializeApp() {
   try {
     console.log('🔄 Initializing global data...');
@@ -92,8 +96,34 @@ async function initializeApp() {
     }, 24 * 60 * 60 * 1000); // Check daily (24 hours)
     
     console.log('✅ Global data initialization complete');
+    
+    // Initialize cron service
+    console.log('🔄 Initializing cron service...');
+    const prisma = new PrismaClient();
+    const cronService = new CronService(prisma);
+    
+    // Start the bi-monthly evaluation cron job
+    cronService.startBiMonthlyEvaluationCron();
+    
+    console.log('✅ Cron service initialization complete');
+    
+    // Graceful shutdown handling
+    process.on('SIGINT', () => {
+      console.log('🛑 Shutting down gracefully...');
+      cronService.destroy();
+      prisma.$disconnect();
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      console.log('🛑 Shutting down gracefully...');
+      cronService.destroy();
+      prisma.$disconnect();
+      process.exit(0);
+    });
+    
   } catch (error) {
-    console.error('❌ Error initializing global data:', error);
+    console.error('❌ Error initializing app:', error);
   }
 }
 

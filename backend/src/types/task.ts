@@ -1,7 +1,7 @@
 // Task status enum for type safety
 export enum TaskStatus {
   NOT_STARTED = 'NOT_STARTED', // task create in the DB but not yet initiated.
-  INITIATED = 'INITIATED', // `initiateTask` has been called. // FIXME: Check that I set into this state.
+  INITIATED = 'INITIATED', // `initiateTask` has been called.
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
 }

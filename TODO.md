@@ -14,9 +14,6 @@
 
 - Protect against prompt injections by inserting random strings before and after answers.
 
-- If I close MetaMask window immediately after clicking "Connect with Ethereum",
-  the button stucks in unclickable state "Connecting..."
-
 - Inefficient checking for whether all dependencies are COMPLETE.
 
 - Remove tasks after finishing.

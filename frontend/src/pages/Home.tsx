@@ -67,7 +67,7 @@ function Home() {
       } catch (error) {
         // setEthereumStatus({ error: 'Failed to connect to server' })
       } finally {
-        // setLoading(false) // TODO
+        setLoading(false)
       }
     }
 

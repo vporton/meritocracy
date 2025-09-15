@@ -314,7 +314,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
    * @param customId - Unique identifier for the request
    * @param additionalData - Additional data to include in runner data
    */
-  protected async updateTaskWithRequestData( // TODO: Is this needed?
+  protected async updateTaskWithRequestData(
     task: TaskWithDependencies, 
     customId: string, 
     additionalData: Record<string, any> = {}

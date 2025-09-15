@@ -34,7 +34,8 @@ function generateUserPrompt(userData: any): string {
   
   // I provide full URLs for all accounts, not just account names, because
   /// gpt-5-mini once said:
-  // "Only a GitHub username (vporton) was provided. Without reviewing the user's profile, repositories, contributions, or any publication/affiliation information I cannot verify that they are an active scientist or FOSS developer. Please provide a profile link or additional details (repo list, affiliation, publications) so I can re-check.".
+  // "Only a GitHub username (vporton) was provided. Without reviewing the user's profile, repositories, contributions, or any publication/affiliation information I cannot verify that they are an active scientist or FOSS developer. Please provide a profile link or additional details (repo list, affiliation, publications) so I can re-check."
+  // Really need full URLs? (It seems that that response was in Playground without search tool.)
 
   // Add ORCID if connected
   if (userData.orcidId) {

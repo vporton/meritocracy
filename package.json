@@ -32,5 +32,8 @@
     "template"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.9.2"
+  }
 }

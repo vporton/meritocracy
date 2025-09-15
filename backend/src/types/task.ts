@@ -176,12 +176,12 @@ export class TaskRunnerRegistry {
       }
     }
 
+    // FIXME: I do something wrong here.
     // Merge existing data with new output, including storeId if available
     const mergedData = {
       ...existingData,
-      ...output, // FIXME: Don't merge with this.
+      ...output,
       ...(currentTask?.storeId && { storeId: currentTask.storeId }),
-      completedAt: new Date().toISOString()
     };
 
     // Update the task status to COMPLETED and set data

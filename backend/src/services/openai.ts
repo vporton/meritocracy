@@ -163,7 +163,6 @@ export function isOpenAIConfigured(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
 
-// TODO
 /**
  * Health check function to test OpenAI connection
  * @returns Promise with test result

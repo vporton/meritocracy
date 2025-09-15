@@ -473,9 +473,11 @@ export abstract class BaseRunner implements TaskRunner {
   protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
     const store = await createAIBatchStore(storeId, this.taskId);
     const outputter = await createAIOutputter(store);
-    if (OPEN_AI_FAKE) { // TODO: hack
-      // TODO: Log.
-      return await (store as any).getResponseByCustomId(customId);
+    if (OPEN_AI_FAKE) {
+      this.log('info', `Using fake OpenAI response for testing`, { customId, storeId });
+      const fakeResponse = await (store as any).getResponseByCustomId(customId);
+      this.log('info', `Retrieved fake OpenAI response`, { customId, hasResponse: !!fakeResponse });
+      return fakeResponse;
     }
 
     try {

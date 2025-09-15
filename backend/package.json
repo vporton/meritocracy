@@ -29,7 +29,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "node-fetch": "^2.7.0",
-    "openai": "^5.19.1",
+    "openai": "^5.20.2",
     "passport": "^0.7.0",
     "passport-bitbucket-oauth2": "^0.1.2",
     "passport-github2": "^0.1.12",

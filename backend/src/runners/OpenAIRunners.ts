@@ -261,7 +261,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     input: string,
     schema: any,
     customId: string,
-    options: ResponseCreateParams = {},
+    options: ResponseCreateParams | undefined = {},
     taskId: number
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined, taskId);
@@ -351,7 +351,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     prompt: string,
     input: string,
     schema: any,
-    options: ResponseCreateParams = {},
+    options: ResponseCreateParams | undefined = {},
     additionalData: Record<string, any> = {}
   ): Promise<void> {
     const customId = uuidv4();
@@ -566,7 +566,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
  * Uses OpenAI to analyze user data and determine if they are an active scientist or FOSS developer
  */
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
-  protected getModelOptions(): ResponseCreateParams | {max_tool_calls: number} | undefined { // https://github.com/openai/openai-node/issues/1572
+  protected getModelOptions(): ResponseCreateParams | undefined { // https://github.com/openai/openai-node/issues/1572
     return {
       model: 'gpt-5-mini', // Don't use gpt-5-nano: it tends to enter infinite loop with Web search.
       // temperature: 0.0, // Cursor says, it's unsupported.
@@ -575,7 +575,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
         effort: OVERRIDE_REASONING_EFFORT ?? 'low'
       },
       max_tool_calls: 3
-    };
+    } as any;
   }
 
   protected useWebSearchTool(): boolean {

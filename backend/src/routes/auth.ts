@@ -45,7 +45,7 @@ interface UserData {
 
 // Helper function to find or create user based on provided data.
 //
-// TODO: Document in more details.
+// TODO@P3: Document in more details.
 // Consider we have two users:
 // A0 A1
 // B0 B1
@@ -103,7 +103,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       });
     }
   } else {
-    // TODO: DB transaction
+    // TODO@P2: DB transaction
     // One user found, update with new information
     if (currentUserId !== null && currentUserId !== existingUser.id) {
       // If there's a current user that's different from the existing user,
@@ -112,7 +112,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       return await prisma.user.update({
         where: { id: currentUserId },
         data: {
-          email: existingUser.email ?? undefined,// TODO: `email` isn't NULLable.
+          email: existingUser.email ?? undefined,
           name: existingUser.name ?? undefined,
           ethereumAddress: existingUser.ethereumAddress ?? undefined,
           orcidId: existingUser.orcidId ?? undefined,

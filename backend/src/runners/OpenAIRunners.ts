@@ -261,23 +261,24 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
   ): Promise<OpenAIRequestResult> {
     const store = await createAIBatchStore(undefined, taskId);
     const storeId = store.getStoreId();
-    await this.prisma.task.update({ // TODO: Replace this by one `.insert`.
+    await this.prisma.task.update({
       where: { id: taskId },
       data: { storeId }
     });
     const runner = await createAIRunner(store);
     
-    const requestBody = <ResponseCreateParamsNonStreaming>{
+    const requestBody = <ResponseCreateParamsNonStreaming | {max_tool_calls: number}>{
       instructions: prompt, // system/developer message.
       input: input, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
-      temperature: DEFAULT_TEMPERATURE,
-      ...(options?.temperature !== undefined && { temperature: options.temperature }),
-      // include: ['web_search_call.action.sources'], // TODO: doesn't work due to https://github.com/openai/openai-node/issues/1645
+      ...(/gpt-5-mini/.test(options?.model ?? DEFAULT_MODEL)
+        ? {/* temperature not supported */} : options?.temperature === undefined
+        ? { temperature: options.temperature } : {temperature: DEFAULT_TEMPERATURE}),
+      // include: ['web_search_call.action.sources'], // TODO@P3: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
-      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? 10, // TODO
+      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? 10, // TODO@P3
       text: <ResponseTextConfig>{
         format: {
           type: "json_schema" as const,
@@ -318,6 +319,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     customId: string, 
     additionalData: Record<string, any> = {}
   ): Promise<void> {
+    // Need set something except `customId`?
     await this.prisma.task.update({
       where: { id: task.id },
       data: {

@@ -91,7 +91,7 @@ model Task {
   openaiLogs      OpenAILog[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
-  storeId         String?          // TODO: Can we eliminate NULL?
+  storeId         String?          // TODO@P3: Can we eliminate NULL?
   Batches         Batches[]
   NonBatches      NonBatches[]
 

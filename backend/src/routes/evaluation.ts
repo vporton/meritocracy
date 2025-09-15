@@ -56,7 +56,7 @@ router.post('/start', requireAuth, async (req, res) => {
   }
 });
 
-// TODO: Shouldn't be a public endpoint.
+// TODO@P2: Shouldn't be a public endpoint.
 /**
  * POST /api/evaluation/execute
  * Execute ready tasks in the evaluation flow
@@ -81,7 +81,7 @@ router.post('/execute', async (req, res) => {
   }
 });
 
-// TODO: Don't depend on this endpoint: The data will be removed.
+// TODO@P1: Don't depend on this endpoint: The data will be removed.
 /**
  * GET /api/evaluation/result
  * Get the evaluation result for the authenticated user
@@ -113,7 +113,7 @@ router.get('/result', requireAuth, async (req, res) => {
   }
 });
 
-// TODO: Don't depend on this endpoint: The data will be removed.
+// TODO@P1: Don't depend on this endpoint: The data will be removed.
 /**
  * GET /api/evaluation/status
  * Get the status of evaluation tasks for the authenticated user

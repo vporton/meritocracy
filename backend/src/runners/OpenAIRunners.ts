@@ -186,20 +186,8 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     taskId?: number
   ): Promise<void> {
     try {
-      await this.prisma.openAILog.upsert({ // FIXME: This is not correct.
-        where: { customId },
-        update: {
-          // Update existing record if it exists
-          storeId,
-          runnerClassName: this.runnerName,
-          requestData: JSON.stringify(requestData),
-          requestInitiated: new Date(),
-          userId: this.data.userId || null,
-          taskId: taskId || null,
-          updatedAt: new Date()
-        },
-        create: {
-          // Create new record if it doesn't exist
+      await this.prisma.openAILog.create({
+        data: {
           customId,
           storeId,
           runnerClassName: this.runnerName,

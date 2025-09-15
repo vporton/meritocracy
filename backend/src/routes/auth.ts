@@ -54,7 +54,7 @@ interface UserData {
 async function findOrCreateUser(userData: UserData, currentUserId: number | null = null) {
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
   // First, check for exact matches using unique fields
-  const searchConditions = [];
+  const searchConditions: UserData[] = [];
   // if (email) searchConditions.push({ email });
   if (ethereumAddress) searchConditions.push({ ethereumAddress });
   if (orcidId) searchConditions.push({ orcidId });

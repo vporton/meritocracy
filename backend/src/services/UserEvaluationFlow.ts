@@ -104,13 +104,21 @@ export class UserEvaluationFlow {
    */
   private async getWorthPromptWithGdp(): Promise<string> {
     try {
-      const worldGdp = await GlobalDataService.getWorldGdp();
+      let worldGdp = await GlobalDataService.getWorldGdp();
+      
+      // If GDP data is not available, attempt to fetch and update it
+      if (!worldGdp) {
+        console.log('World GDP data not available, attempting to fetch...');
+        const fetchSuccess = await GlobalDataService.fetchAndUpdateWorldGdp();
+        if (fetchSuccess) {
+          worldGdp = await GlobalDataService.getWorldGdp();
+        }
+      }
+      
       if (worldGdp) {
         return worthPrompt.replace('<WORLD_GDP>', worldGdp.toLocaleString());
       } else {
-        // TODO: Should be always available
-        console.warn('World GDP data not available, using prompt without GDP');
-        return worthPrompt.replace('<WORLD_GDP>', 'Not available');
+        throw Error('World GDP not available');
       }
     } catch (error) {
       console.error('Error fetching world GDP for prompt:', error);

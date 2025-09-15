@@ -37,6 +37,7 @@ function Home() {
   const [loading, setLoading] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
   const [onboardingLoading, setOnboardingLoading] = useState(false)
+  const [showOnboardingConfirm, setShowOnboardingConfirm] = useState(false)
 
   useEffect(() => {
     const checkServerStatus = async () => {
@@ -135,6 +136,16 @@ function Home() {
       return
     }
 
+    // Show confirmation dialog
+    setShowOnboardingConfirm(true)
+  }
+
+  const confirmOnboarding = async () => {
+    if (!user || !isAuthenticated) {
+      return
+    }
+
+    setShowOnboardingConfirm(false)
     setOnboardingLoading(true)
     try {
       // Start the onboarding flow
@@ -160,6 +171,10 @@ function Home() {
     } finally {
       setOnboardingLoading(false)
     }
+  }
+
+  const cancelOnboarding = () => {
+    setShowOnboardingConfirm(false)
   }
 
   const hasConnectedAccounts = () => {
@@ -238,8 +253,43 @@ function Home() {
       {isAuthenticated && user && (
         <div className="card">
           <h3>🚀 Start Your Evaluation</h3>
-          {hasConnectedAccounts() ? (
+          {user.onboarded ? (
+            <div style={{
+              padding: '1rem',
+              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+              borderRadius: '8px',
+              borderLeft: '4px solid #f59e0b',
+              marginBottom: '1rem'
+            }}>
+              <p style={{ margin: 0, color: '#92400e', fontWeight: '600' }}>
+                🎉 <strong>You have already been onboarded!</strong>
+              </p>
+              <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
+                Your evaluation process has been completed. You can view your progress and results in the <a href="/logs" style={{ color: '#b45309', textDecoration: 'underline' }}>Logs</a> page.
+              </p>
+            </div>
+          ) : hasConnectedAccounts() ? (
             <div>
+              {/* Prominent warning about connecting accounts */}
+              <div style={{
+                padding: '1rem',
+                background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                borderRadius: '8px',
+                borderLeft: '4px solid #ef4444',
+                marginBottom: '1.5rem'
+              }}>
+                <p style={{ margin: 0, color: '#dc2626', fontWeight: '600', fontSize: '1rem' }}>
+                  ⚠️ <strong>IMPORTANT: Connect ALL Your Accounts First!</strong>
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
+                  If you start onboarding without connecting all your accounts (GitHub, ORCID, BitBucket, GitLab, etc.), 
+                  your salary calculation may be delayed by up to <strong>two months</strong>!
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
+                  Make sure to connect all your accounts on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
+                </p>
+              </div>
+
               <p>✅ You have connected accounts and are ready to start your evaluation!</p>
               <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
                 Click the button below to begin the AI analysis of your contributions and receive your GDP share calculation.
@@ -331,6 +381,91 @@ function Home() {
           <p style={{ fontSize: '0.9rem', color: '#888' }}>
             This address accepts ETH and all ERC-20 tokens on {ethereumStatus.network}
           </p>
+        </div>
+      )}
+
+      {/* Onboarding Confirmation Dialog */}
+      {showOnboardingConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '12px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+          }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>
+              ⚠️ Confirm Onboarding Start
+            </h3>
+            <div style={{
+              padding: '1rem',
+              background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+              borderRadius: '8px',
+              borderLeft: '4px solid #ef4444',
+              marginBottom: '1.5rem'
+            }}>
+              <p style={{ margin: 0, color: '#dc2626', fontWeight: '600' }}>
+                <strong>IMPORTANT REMINDER:</strong>
+              </p>
+              <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
+                Have you connected ALL your accounts (GitHub, ORCID, BitBucket, GitLab, etc.)? 
+                If not, your salary calculation may be delayed by up to <strong>two months</strong>!
+              </p>
+            </div>
+            <p style={{ margin: '0 0 1.5rem 0', color: '#666' }}>
+              Are you sure you want to start the evaluation process now? 
+              You can still connect additional accounts later, but it may delay your salary calculation.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={cancelOnboarding}
+                style={{
+                  background: '#6b7280',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmOnboarding}
+                disabled={onboardingLoading}
+                style={{
+                  background: onboardingLoading ? '#666' : '#ef4444',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  cursor: onboardingLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                {onboardingLoading ? 'Starting...' : 'Yes, Start Evaluation'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -141,6 +141,18 @@
   transform: translateY(-1px);
 }
 
+/* Disabled state for onboarded users */
+.connect-button.disabled {
+  background: linear-gradient(135deg, #9ca3af, #6b7280) !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.connect-button.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .error-message {
   margin-top: 1rem;
   padding: 0.75rem;
@@ -224,6 +236,26 @@
   color: #047857;
   font-size: 0.85rem;
   text-align: left;
+}
+
+/* Onboarded notice styles */
+.onboarded-notice {
+  padding: 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.onboarded-notice p {
+  margin: 0;
+  color: #92400e;
+  text-align: left;
+}
+
+.onboarded-notice p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
 /* Responsive design */

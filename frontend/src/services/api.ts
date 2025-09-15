@@ -27,6 +27,7 @@ interface User {
   githubHandle?: string;
   bitbucketHandle?: string;
   gitlabHandle?: string;
+  onboarded: boolean;
   shareInGDP?: number;
   createdAt: string;
   updatedAt: string;

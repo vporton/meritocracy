@@ -26,14 +26,24 @@ router.post('/start', requireAuth, async (req, res) => {
         error: 'User data is required'
       });
     }
+    if (userData.onboarded) {
+      return res.status(400).json({
+        error: 'User is already onboarded'
+      });
+    }
 
     // Create the evaluation flow service
     const evaluationFlow = new UserEvaluationFlow(prisma);
     
     // Create the evaluation flow
-    const rootTaskId = await evaluationFlow.createOnboardingFlow({
+    const _rootTaskId = await evaluationFlow.createOnboardingFlow({
       userId,
       userData
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { onboarded: true }
     });
 
     const taskManager = new TaskManager(prisma);
@@ -43,7 +53,6 @@ router.post('/start', requireAuth, async (req, res) => {
       success: true,
       message: 'Evaluation flow started',
       userId,
-      rootTaskId,
       executed: success
     });
 

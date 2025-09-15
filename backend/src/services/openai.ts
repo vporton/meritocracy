@@ -32,7 +32,7 @@ export interface OpenAIConfig {
 /**
  * Default configuration for OpenAI API calls
  */
-const DEFAULT_CONFIG: OpenAIConfig = { // TODO
+const DEFAULT_CONFIG: OpenAIConfig = {
   model: process.env.OPENAI_MODEL!,
   maxTokens: 2000,
   temperature: 0.7,

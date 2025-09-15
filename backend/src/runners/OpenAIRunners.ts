@@ -6,11 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ResponseCreateParams, ResponseCreateParamsNonStreaming, ResponseTextConfig, Tool, ToolChoiceOptions } from 'openai/resources/responses/responses';
 import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
-
-// TODO: duplicate code
-function isConfigValueTrue(value: string | undefined): boolean {
-  return value !== undefined && value !== null && value.toLowerCase() !== 'false' && value !== '0' && value.toLowerCase() !== 'no' && value !== '0';
-}
+import { isConfigValueTrue } from '../services/utils.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -21,7 +17,7 @@ const OVERRIDE_MAX_TOOL_CALLS = process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS ?
   parseInt(process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS) : undefined;
 const DEFAULT_TEMPERATURE = 0.2;
 const BAN_DURATION_YEARS = 1;
-const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
+const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE);
 
 /**
  * Generate a user prompt string from user data for AI analysis

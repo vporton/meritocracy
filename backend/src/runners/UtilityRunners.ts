@@ -2,15 +2,11 @@ import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js
 import { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
 import OpenAI from 'openai';
-
-// TODO: duplicate code
-function isConfigValueTrue(value: string | undefined): boolean {
-  return value !== undefined && value !== null && value.toLowerCase() !== 'false' && value !== '0' && value.toLowerCase() !== 'no' && value !== '0';
-}
+import { isConfigValueTrue } from '../services/utils.js';
 
 // Constants
 const DEFAULT_THRESHOLD = 1e-11;
-const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE); // TODO: duplicate code
+const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE);
 
 
 // Custom error classes for better error handling

@@ -191,7 +191,6 @@ export class TaskExecutor {
       for (const mapping of nonBatch.nonbatchMappings) {
         const store = await createAIBatchStore(task.storeId!, taskId); // TODO: Fix race conditions in cron runs, may have undefined `storeId`?
         const outputter = await createAIOutputter(store);
-        const runner = (await createAIRunner(store)) as unknown as BaseOpenAIRunner; // FIXME: This object here is inappropriate.
         const output = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
         if (output === undefined) {
           await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);

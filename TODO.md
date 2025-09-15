@@ -42,3 +42,5 @@
 - Rewrite Ethereum connection in backend using Viem.
 
 - Don't allow to evaluate a user more than once.
+
+- web3modal (not only MetaMask)

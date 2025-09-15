@@ -2,37 +2,22 @@ import { ethers } from 'ethers';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// TODO@P3: duplicate code
+dotenv.config();
+dotenv.config({ path: 'ethereum-keys.secret' });
 
 // Get __dirname equivalent for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // Load Ethereum configuration from secret file
-function loadEthereumConfig(): { privateKey: string; mnemonic?: string; network: string; rpcUrl?: string } {
-    const configPath = path.join(__dirname, '../../ethereum-keys.secret');
-    
-    if (!fs.existsSync(configPath)) {
-        throw new Error('Ethereum configuration file not found. Please create ethereum-keys.secret file.');
-    }
-    
-    const configContent = fs.readFileSync(configPath, 'utf8');
-    const config: any = {};
-    
-    // Parse the config file
-    const lines = configContent.split('\n');
-    for (const line of lines) {
-        if (line.trim() && !line.trim().startsWith('#')) {
-            const [key, value] = line.split('=');
-            if (key && value) {
-                config[key.trim()] = value.trim();
-            }
-        }
-    }
-    
+function loadEthereumConfig(): { privateKey?: string; mnemonic?: string; network: string; rpcUrl?: string } {
     return {
-        privateKey: config.ETHEREUM_PRIVATE_KEY,
-        mnemonic: config.ETHEREUM_MNEMONIC,
-        network: config.ETHEREUM_NETWORK || 'mainnet',
+        privateKey: process.env.ETHEREUM_PRIVATE_KEY,
+        mnemonic: process.env.ETHEREUM_MNEMONIC,
+        network: process.env.ETHEREUM_NETWORK || 'mainnet',
         rpcUrl: process.env.ETHEREUM_RPC_URL
     };
 }

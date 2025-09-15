@@ -10,7 +10,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 
+// TODO@P3: duplicate code
 dotenv.config();
+dotenv.config({ path: 'ethereum-keys.secret' });
 
 import userRoutes from './routes/users.js';
 import authRoutes from './routes/auth.js';

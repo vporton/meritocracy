@@ -122,13 +122,6 @@ const ConnectForm = () => {
   const renderConnectedStatus = () => {
     if (isAuthenticated && user) {
       const connectedProviders = [];
-      const providerDisplayNames: Record<string, string> = {
-        ethereum: 'Ethereum',
-        orcid: 'ORCID',
-        github: 'GitHub',
-        bitbucket: 'BitBucket',
-        gitlab: 'GitLab'
-      };
       
       // Check which providers are connected
       if (user.ethereumAddress) connectedProviders.push({ name: 'Ethereum', value: user.ethereumAddress });
@@ -143,7 +136,7 @@ const ConnectForm = () => {
           {user.onboarded ? (
             <div className="onboarded-notice">
               <p><strong>🎉 Onboarding Complete!</strong></p>
-              <p>You have successfully completed the onboarding process. You cannot connect additional accounts at this time.</p>
+              <p>You have successfully completed the onboarding process. You can still connect additional accounts below.</p>
             </div>
           ) : (
             <p>You are successfully authenticated. You can connect additional accounts below.</p>
@@ -389,10 +382,6 @@ const ConnectForm = () => {
       console.log('getButtonText for ethereum - status:', status, 'isConnected:', isConnected, 'full connectStatus:', connectStatus);
     }
     
-    // If user is onboarded and not connected to this provider, show disabled state
-    if (user?.onboarded && !isConnected) {
-      return `Onboarding Complete`;
-    }
     
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {
@@ -432,7 +421,6 @@ const ConnectForm = () => {
     if (status === 'success') className += ' success';
     if (status === 'error') className += ' error';
     if (isConnected && !status) className += ' connected';
-    if (user?.onboarded && !isConnected) className += ' disabled';
     
     return className;
   };
@@ -452,7 +440,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('ethereum')}
           onClick={handleEthereumConnect}
-          disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting' || (user?.onboarded && !isProviderConnected('ethereum'))}
+          disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting'}
         >
           <span className="connect-icon">⟠</span>
           {getButtonText('ethereum')}
@@ -462,7 +450,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('orcid')}
           onClick={() => handleOAuthConnect('orcid')}
-          disabled={isLoading || connectStatus.orcid === 'processing' || connectStatus.orcid === 'disconnecting' || (user?.onboarded && !isProviderConnected('orcid'))}
+          disabled={isLoading || connectStatus.orcid === 'processing' || connectStatus.orcid === 'disconnecting'}
         >
           <span className="connect-icon">🎓</span>
           {getButtonText('orcid')}
@@ -472,7 +460,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('github')}
           onClick={() => handleOAuthConnect('github')}
-          disabled={isLoading || connectStatus.github === 'processing' || connectStatus.github === 'disconnecting' || (user?.onboarded && !isProviderConnected('github'))}
+          disabled={isLoading || connectStatus.github === 'processing' || connectStatus.github === 'disconnecting'}
         >
           <span className="connect-icon">👨‍💻</span>
           {getButtonText('github')}
@@ -482,7 +470,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('bitbucket')}
           onClick={() => handleOAuthConnect('bitbucket')}
-          disabled={isLoading || connectStatus.bitbucket === 'processing' || connectStatus.bitbucket === 'disconnecting' || (user?.onboarded && !isProviderConnected('bitbucket'))}
+          disabled={isLoading || connectStatus.bitbucket === 'processing' || connectStatus.bitbucket === 'disconnecting'}
         >
           <span className="connect-icon">🪣</span>
           {getButtonText('bitbucket')}
@@ -492,7 +480,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('gitlab')}
           onClick={() => handleOAuthConnect('gitlab')}
-          disabled={isLoading || connectStatus.gitlab === 'processing' || connectStatus.gitlab === 'disconnecting' || (user?.onboarded && !isProviderConnected('gitlab'))}
+          disabled={isLoading || connectStatus.gitlab === 'processing' || connectStatus.gitlab === 'disconnecting'}
         >
           <span className="connect-icon">🦊</span>
           {getButtonText('gitlab')}

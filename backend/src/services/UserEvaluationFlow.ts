@@ -233,7 +233,7 @@ export class UserEvaluationFlow {
     evaluationData: UserEvaluationData,
     dependencies: number[]
   ) {
-    const injectionTasks = [];
+    const injectionTasks: any = []; // TODO@P3: type
     let currentDependencies = dependencies;
     
     // Create 3 pairs of injection check tasks (6 tasks total)

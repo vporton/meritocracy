@@ -32,24 +32,28 @@ function generateUserPrompt(userData: any): string {
 
   const accountInfo: string[] = [];
   
+  // I provide full URLs for all accounts, not just account names, because
+  /// gpt-5-mini once said:
+  // "Only a GitHub username (vporton) was provided. Without reviewing the user's profile, repositories, contributions, or any publication/affiliation information I cannot verify that they are an active scientist or FOSS developer. Please provide a profile link or additional details (repo list, affiliation, publications) so I can re-check.".
+
   // Add ORCID if connected
   if (userData.orcidId) {
-    accountInfo.push(`ORCID: ${userData.orcidId}`);
+    accountInfo.push(`ORCID: https://orcid.org/${userData.orcidId}`);
   }
   
   // Add GitHub if connected
   if (userData.githubHandle) {
-    accountInfo.push(`GitHub: ${userData.githubHandle}`);
+    accountInfo.push(`GitHub: https://github.com/${userData.githubHandle}`);
   }
   
   // Add BitBucket if connected
   if (userData.bitbucketHandle) {
-    accountInfo.push(`BitBucket: ${userData.bitbucketHandle}`);
+    accountInfo.push(`BitBucket: https://bitbucket.org/${userData.bitbucketHandle}`);
   }
   
   // Add GitLab if connected
   if (userData.gitlabHandle) {
-    accountInfo.push(`GitLab: ${userData.gitlabHandle}`);
+    accountInfo.push(`GitLab: https://gitlab.com/${userData.gitlabHandle}`);
   }
   
   // Add Ethereum address if connected

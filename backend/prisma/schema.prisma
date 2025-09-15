@@ -24,6 +24,7 @@ model User {
   shareInGDP        Float?
   openaiLogs        OpenAILog[]
   sessions          Session[]
+  gasTokenDistributions GasTokenDistribution[]
 
   @@map("users")
 }
@@ -137,4 +138,30 @@ model Global {
   updatedAt DateTime @updatedAt
 
   @@map("global")
+}
+
+model GasTokenDistribution {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  amount            Decimal  // Amount in ETH (gas token)
+  amountUsd         Decimal  // USD value at time of distribution
+  distributionDate  DateTime @default(now())
+  status            String   @default("PENDING") // PENDING, SENT, FAILED, DEFERRED
+  transactionHash   String?  // Ethereum transaction hash if sent
+  errorMessage      String?  // Error message if failed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gas_token_distributions")
+}
+
+model GasTokenReserve {
+  id                Int      @id @default(autoincrement())
+  totalReserve      Decimal  @default(0) // Total accumulated reserve in ETH
+  lastDistribution  DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("gas_token_reserves")
 }

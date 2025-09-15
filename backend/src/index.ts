@@ -105,6 +105,9 @@ async function initializeApp() {
     // Start the bi-monthly evaluation cron job
     cronService.startBiMonthlyEvaluationCron();
     
+    // Start the weekly gas token distribution cron job
+    cronService.startWeeklyGasDistributionCron();
+    
     console.log('✅ Cron service initialization complete');
     
     // Graceful shutdown handling

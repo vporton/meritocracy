@@ -277,7 +277,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       model: options?.model ?? DEFAULT_MODEL,
       temperature: DEFAULT_TEMPERATURE,
       ...(options?.temperature !== undefined && { temperature: options.temperature }),
-      // include: ['web_search_call.action.sources'], // FIXME: doesn't work due to https://github.com/openai/openai-node/issues/1645
+      // include: ['web_search_call.action.sources'], // TODO: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },

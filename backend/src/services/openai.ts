@@ -20,7 +20,7 @@ const openai = new OpenAI({
 /**
  * OpenAI Service Configuration
  */
-export interface OpenAIConfig { // TODO: more options?
+export interface OpenAIConfig {
   model?: string;
   maxTokens?: number;
   temperature?: number;

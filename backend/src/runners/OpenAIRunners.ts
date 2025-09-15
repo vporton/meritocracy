@@ -75,7 +75,8 @@ function generateUserPrompt(userData: any): string {
     return 'No connected accounts or profile information available.';
   }
 
-  return `User account information:\n${accountInfo.join('\n')}`;
+  // return `User account information:\n${accountInfo.join('\n')}`;
+  return accountInfo.join('\n');
 }
 
 const USE_WEB_SEARCH_TOOL = {

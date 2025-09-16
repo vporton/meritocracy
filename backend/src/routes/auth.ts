@@ -400,8 +400,8 @@ router.get('/me', async (req, res): Promise<void> => {
 router.get('/:provider/callback', async (req, res): Promise<void> => {
   try {
     const { provider } = req.params;
-    const { code } = req.body;
-    
+    const { code } = req.query as unknown as {code: string};
+
     console.log(`=== OAuth Callback for ${provider} ===`);
     console.log('Request details:', {
       provider,

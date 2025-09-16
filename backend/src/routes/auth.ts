@@ -397,7 +397,7 @@ router.get('/me', async (req, res): Promise<void> => {
 });
 
 // OAuth callback endpoints for secure token exchange
-router.post('/auth/:provider/callback', async (req, res): Promise<void> => {
+router.post('/:provider/callback', async (req, res): Promise<void> => {
   try {
     const { provider } = req.params;
     const { code } = req.body;

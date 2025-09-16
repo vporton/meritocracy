@@ -77,16 +77,26 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
     // No existing user found
     if (currentUserId !== null) {
       // If there's a current user, update them with the new provider info instead of creating a new user
+      // First get the current user to preserve existing data
+      const currentUser = await prisma.user.findUnique({
+        where: { id: currentUserId }
+      });
+      
+      if (!currentUser) {
+        throw new Error('Current user not found');
+      }
+      
       return await prisma.user.update({
         where: { id: currentUserId },
         data: {
-          email: email || undefined, // Only update email if provided
-          name: name || undefined, // Only update name if provided  
-          ethereumAddress: ethereumAddress || undefined,
-          orcidId: orcidId || undefined,
-          githubHandle: githubHandle || undefined,
-          bitbucketHandle: bitbucketHandle || undefined,
-          gitlabHandle: gitlabHandle || undefined,
+          // Only update fields that are provided, preserve existing data
+          email: email || currentUser.email,
+          name: name || currentUser.name,
+          ethereumAddress: ethereumAddress || currentUser.ethereumAddress,
+          orcidId: orcidId || currentUser.orcidId,
+          githubHandle: githubHandle || currentUser.githubHandle,
+          bitbucketHandle: bitbucketHandle || currentUser.bitbucketHandle,
+          gitlabHandle: gitlabHandle || currentUser.gitlabHandle,
         }
       });
     } else {

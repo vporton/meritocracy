@@ -20,8 +20,8 @@
     "start-backend": "npm run setup && npm start --prefix backend",
     "start-frontend": "npm run preview --prefix frontend",
     "setup": "npm run db:setup",
-    "db:setup": "cd backend && npx prisma generate && npx prisma db push && npm run db:seed",
-    "db:reset": "cd backend && npx prisma db push --force-reset && npm run db:seed",
+    "db:setup": "cd backend && npx prisma generate && npx prisma db push",
+    "db:reset": "cd backend && npx prisma db push --force-reset",
     "db:seed": "true",
     "dev:stop": "pkill -f 'npm run dev' || true && pkill -f nodemon || true && pkill -f vite || true && pkill -f 'node src/index.js' || true"
   },

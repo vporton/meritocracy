@@ -529,9 +529,10 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       ongoingOAuthRequests.delete(requestKey);
     }
     
-    // Redirect to frontend with error message
-    const frontendUrl = `${process.env.FRONTEND_URL}/auth/${provider}/callback?code=${code}&error=${error.message}`;
-    res.redirect(frontendUrl);
+    res.status(500).json({ 
+      error: `Failed to authenticate with ${req.params.provider}`,
+      details: error.message 
+    });
   }
 });
 

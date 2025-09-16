@@ -11,4 +11,7 @@ RUN npm install --prefix backend --production
 RUN npm install --prefix frontend --production
 RUN npm run build
 
+# FIXME: Put DB into a volume.
+RUN npm run db:setup
+
 CMD ["npm", "start"]

@@ -309,6 +309,9 @@ const ConnectForm = () => {
     const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
+      if (/OAUTH_SUCCESS|OAUTH_ERROR/.test(JSON.stringify(event))) {
+        console.log(`XXX OAuth message received for ${provider}:`, JSON.stringify(event));
+
       // Only process OAuth-related messages, ignore other messages (like MetaMask)
       if (!event.data || typeof event.data !== 'object' || !event.data.type) return;
       
@@ -370,6 +373,7 @@ const ConnectForm = () => {
       }
     };
 
+    console.log(`XXX Adding message listener for ${provider}`); // FIXME@P1: Remove this after debugging.
     window.addEventListener('message', handleMessage as any);
   };
 

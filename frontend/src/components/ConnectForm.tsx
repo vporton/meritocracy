@@ -258,15 +258,11 @@ const ConnectForm = () => {
       gitlab: import.meta.env.VITE_GITLAB_CLIENT_ID,
     };
 
-    // Include current user's auth token in redirect URI for user merging
-    const authToken = localStorage.getItem('authToken');
-    const tokenParam = authToken ? `?token=${encodeURIComponent(authToken)}` : '';
-    
     const redirectUris: OAuthRedirectUris = {
-      github: `${import.meta.env.VITE_API_URL}/api/auth/github/callback${tokenParam}`,
-      orcid: `${import.meta.env.VITE_API_URL}/api/auth/orcid/callback${tokenParam}`,
-      bitbucket: `${import.meta.env.VITE_API_URL}/api/auth/bitbucket/callback${tokenParam}`,
-      gitlab: `${import.meta.env.VITE_API_URL}/api/auth/gitlab/callback${tokenParam}`,
+      github: `${import.meta.env.VITE_API_URL}/api/auth/github/callback`,
+      orcid: `${import.meta.env.VITE_API_URL}/api/auth/orcid/callback`,
+      bitbucket: `${import.meta.env.VITE_API_URL}/api/auth/bitbucket/callback`,
+      gitlab: `${import.meta.env.VITE_API_URL}/api/auth/gitlab/callback`,
     };
 
     const authUrls: OAuthAuthUrls = {

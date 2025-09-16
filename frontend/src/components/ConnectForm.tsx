@@ -402,21 +402,6 @@ const ConnectForm = () => {
     const field = providerFields[provider];
     const isConnected = field && user[field] != null && user[field] !== '';
     
-    // TODO@P3: Remove this after debugging.
-    // Debug logging for connection status
-    if (provider === 'github' || provider === 'gitlab') {
-      console.log(`isProviderConnected(${provider}):`, {
-        user: user ? {
-          id: user.id,
-          githubHandle: user.githubHandle,
-          gitlabHandle: user.gitlabHandle
-        } : null,
-        field,
-        fieldValue: field ? user[field] : 'no field',
-        isConnected
-      });
-    }
-    
     return isConnected;
   };
 
@@ -434,21 +419,6 @@ const ConnectForm = () => {
     };
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
-    
-    // TODO@P3: Remove this after debugging.
-    // Debug logging for button text decisions
-    if (provider === 'github' || provider === 'gitlab') {
-      console.log(`getButtonText(${provider}):`, {
-        status,
-        isConnected,
-        user: user ? {
-          id: user.id,
-          githubHandle: user.githubHandle,
-          gitlabHandle: user.gitlabHandle
-        } : null,
-        connectStatus
-      });
-    }
     
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {

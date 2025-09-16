@@ -311,6 +311,7 @@ const ConnectForm = () => {
       
       if (/OAUTH_SUCCESS|OAUTH_ERROR/.test(JSON.stringify(event))) {
         console.log(`XXX OAuth message received for ${provider}:`, JSON.stringify(event));
+      }
 
       // Only process OAuth-related messages, ignore other messages (like MetaMask)
       if (!event.data || typeof event.data !== 'object' || !event.data.type) return;

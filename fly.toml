@@ -43,7 +43,7 @@ primary_region = 'fra'
     handlers = ['tls', 'http']
 
 [[vm]]
-  memory = '1gb'
+  memory = '0.5gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 1024
+  memory_mb = 512

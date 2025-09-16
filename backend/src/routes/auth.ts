@@ -201,7 +201,6 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
     
     const user = await findOrCreateUser({
       ethereumAddress,
-      name
     }, currentUserId);
     
     const session = await createSession(user.id);
@@ -234,7 +233,6 @@ router.post('/login/orcid', async (req, res): Promise<void> => {
     
     const user = await findOrCreateUser({
       orcidId,
-      name
     }, currentUserId);
     
     const session = await createSession(user.id);
@@ -267,7 +265,6 @@ router.post('/login/github', async (req, res): Promise<void> => {
     
     const user = await findOrCreateUser({
       githubHandle,
-      name
     }, currentUserId);
     
     const session = await createSession(user.id);
@@ -300,7 +297,6 @@ router.post('/login/bitbucket', async (req, res): Promise<void> => {
     
     const user = await findOrCreateUser({
       bitbucketHandle,
-      name
     }, currentUserId);
     
     const session = await createSession(user.id);
@@ -333,7 +329,6 @@ router.post('/login/gitlab', async (req, res): Promise<void> => {
     
     const user = await findOrCreateUser({
       gitlabHandle,
-      name
     }, currentUserId);
     
     const session = await createSession(user.id);
@@ -494,7 +489,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
         ...userData,
         // Redact sensitive info in logs
         email: userData.email ? '***@***.***' : null,
-        name: userData.name || null
+        // name: userData.name || null
       }
     });
 
@@ -674,8 +669,8 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
   
   return {
     githubHandle: userData.login,
-    name: userData.name,
-    email: userData.email,
+    // name: userData.name,
+    // email: userData.email,
   };
 }
 
@@ -834,8 +829,8 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
   
   return {
     bitbucketHandle: userData.username,
-    name: userData.display_name,
-    email: userData.email,
+    // name: userData.display_name,
+    // email: userData.email,
   };
 }
 
@@ -942,8 +937,8 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
   
   return {
     gitlabHandle: userData.username,
-    name: userData.name,
-    email: userData.email,
+    // name: userData.name,
+    // email: userData.email,
   };
 }
 

@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
-RUN apt update
-RUN apt install -y openssl
+RUN apk update
+RUN apk add openssl
 
 WORKDIR /app
 

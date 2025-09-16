@@ -547,7 +547,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
     client_id: process.env.GITHUB_CLIENT_ID!,
     client_secret: process.env.GITHUB_CLIENT_SECRET!,
     code: code,
-    redirect_uri: `${process.env.FRONTEND_URL}/api/auth/github/callback`,
+    redirect_uri: `${process.env.API_URL}/api/auth/github/callback`,
   };
   
   console.log('GitHub token exchange request:', {
@@ -650,7 +650,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
       client_secret: process.env.ORCID_CLIENT_SECRET!,
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: `${process.env.FRONTEND_URL}/auth/orcid/callback`,
+      redirect_uri: `${process.env.API_URL}/api/auth/orcid/callback`,
     }),
   });
 
@@ -727,7 +727,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
       client_secret: process.env.GITLAB_CLIENT_SECRET!,
       code: code,
       grant_type: 'authorization_code',
-      redirect_uri: `${process.env.FRONTEND_URL}/auth/gitlab/callback`,
+      redirect_uri: `${process.env.API_URL}/api/auth/gitlab/callback`,
     }),
   });
 

@@ -403,7 +403,7 @@ router.get('/me', async (req, res): Promise<void> => {
 // GET route for OAuth provider redirects
 router.get('/:provider/callback', async (req, res): Promise<void> => {
   const { provider } = req.params;
-  const { code, token } = req.query as unknown as {code: string, token?: string};
+  const { code, state } = req.query as unknown as {code: string, state?: string};
 
   try {
     console.log(`=== OAuth Callback for ${provider} ===`);
@@ -412,6 +412,8 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       code: code ? `${code.substring(0, 10)}...` : 'null',
       codeLength: code ? code.length : 0,
       fullCode: code, // For debugging - remove in production
+      state: state ? `${state.substring(0, 10)}...` : 'null',
+      stateLength: state ? state.length : 0,
       bodyKeys: Object.keys(req.body),
       headers: {
         'content-type': req.headers['content-type'],
@@ -493,12 +495,12 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       }
     });
 
-    // Get current user ID from token (either from query param or authorization header)
+    // Get current user ID from state parameter (OAuth state) or authorization header
     let currentUserId: number | null = null;
-    if (token) {
-      // Token provided in query parameter (from OAuth redirect)
+    if (state) {
+      // Token provided in state parameter (from OAuth redirect)
       const session = await prisma.session.findUnique({
-        where: { token },
+        where: { token: state },
         include: { user: true }
       });
       if (session && session.expiresAt > new Date()) {
@@ -559,8 +561,8 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     });
     
     // Clean up request tracking on error
-    if (req.body.code) {
-      const requestKey = `${req.params.provider}:${req.body.code}`;
+    if (code) {
+      const requestKey = `${req.params.provider}:${code}`;
       ongoingOAuthRequests.delete(requestKey);
     }
     

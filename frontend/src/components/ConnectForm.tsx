@@ -258,6 +258,12 @@ const ConnectForm = () => {
       gitlab: import.meta.env.VITE_GITLAB_CLIENT_ID,
     };
 
+    // Get current user's token to include in OAuth state parameter for user linking
+    const currentToken = localStorage.getItem('authToken');
+    const stateParam = currentToken ? encodeURIComponent(currentToken) : '';
+    
+    console.log(`${provider} OAuth: currentToken ${currentToken ? 'present' : 'missing'}, stateParam: ${stateParam ? 'included' : 'not included'}`);
+
     const redirectUris: OAuthRedirectUris = {
       github: `${import.meta.env.VITE_API_URL}/api/auth/github/callback`,
       orcid: `${import.meta.env.VITE_API_URL}/api/auth/orcid/callback`,
@@ -266,10 +272,10 @@ const ConnectForm = () => {
     };
 
     const authUrls: OAuthAuthUrls = {
-      github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=`,
-      orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=/authenticate&redirect_uri=${encodeURIComponent(redirectUris.orcid)}`,
-      bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}`,
-      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=openid profile read_user`,
+      github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=&state=${stateParam}`,
+      orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=/authenticate&redirect_uri=${encodeURIComponent(redirectUris.orcid)}&state=${stateParam}`,
+      bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}&state=${stateParam}`,
+      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=openid profile read_user&state=${stateParam}`,
     };
 
     if (!clientIds[provider as keyof OAuthClientIds]) {

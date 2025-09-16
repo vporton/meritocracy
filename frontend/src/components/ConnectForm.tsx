@@ -326,11 +326,14 @@ const ConnectForm = () => {
           await updateAuthData(user, session.token);
           
           // Reset status after a short delay to allow connecting more accounts
-          setTimeout(() => setConnectStatus(prev => {
-            const { [provider]: _, ...rest } = prev;
-            return rest;
-          }), 2000);
+          setTimeout(() => {
+            setConnectStatus(prev => {
+              const { [provider]: _, ...rest } = prev;
+              return rest;
+            });
+          }, 2000);
         } catch (error: any) {
+          console.error(`Error in OAuth success handler for ${provider}:`, error);
           setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.message }));
         }
         
@@ -378,10 +381,22 @@ const ConnectForm = () => {
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
     
+    // Debug logging for ethereum only (remove this after testing)
     if (provider === 'ethereum') {
-      console.log('getButtonText for ethereum - status:', status, 'isConnected:', isConnected, 'full connectStatus:', connectStatus);
+      console.log(`getButtonText for ${provider}:`, {
+        status,
+        isConnected,
+        user: user ? {
+          id: user.id,
+          githubHandle: user.githubHandle,
+          orcidId: user.orcidId,
+          ethereumAddress: user.ethereumAddress,
+          bitbucketHandle: user.bitbucketHandle,
+          gitlabHandle: user.gitlabHandle
+        } : null,
+        connectStatus
+      });
     }
-    
     
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {

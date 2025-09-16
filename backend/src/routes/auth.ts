@@ -396,7 +396,9 @@ router.get('/me', async (req, res): Promise<void> => {
   }
 });
 
+// TODO@P3: Do we need both this .get handler and the .post handler?
 // OAuth callback endpoints for secure token exchange
+// GET route for OAuth provider redirects
 router.get('/:provider/callback', async (req, res): Promise<void> => {
   const { provider } = req.params;
   const { code } = req.query as unknown as {code: string};
@@ -517,6 +519,145 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     res.redirect(frontendUrl);
   } catch (error: any) {
     console.error(`=== ${req.params.provider} OAuth Error ===`);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    // Clean up request tracking on error
+    if (req.body.code) {
+      const requestKey = `${req.params.provider}:${req.body.code}`;
+      ongoingOAuthRequests.delete(requestKey);
+    }
+    
+    res.status(500).json({ 
+      error: `Failed to authenticate with ${req.params.provider}`,
+      details: error.message 
+    });
+  }
+});
+
+// TODO@P3: Do we need both this .post handler and the .get handler?
+// POST route for frontend callback to get user data
+router.post('/:provider/callback', async (req, res): Promise<void> => {
+  const { provider } = req.params;
+  const { code } = req.body;
+
+  try {
+    console.log(`=== Frontend OAuth Callback for ${provider} ===`);
+    console.log('Request details:', {
+      provider,
+      code: code ? `${code.substring(0, 10)}...` : 'null',
+      codeLength: code ? code.length : 0,
+      bodyKeys: Object.keys(req.body),
+      headers: {
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent'],
+        origin: req.headers.origin
+      }
+    });
+    
+    if (!code) {
+      console.error('No authorization code provided');
+      res.status(400).json({ error: 'Authorization code is required' });
+      return;
+    }
+
+    // Check for duplicate requests and cached results
+    const requestKey = `${provider}:${code}`;
+    
+    // First check if we have a cached result for this exact request
+    if (oauthResultCache.has(requestKey)) {
+      console.log('Returning cached OAuth result for duplicate request:', requestKey);
+      const cachedResult = oauthResultCache.get(requestKey);
+      res.json(cachedResult);
+      return;
+    }
+    
+    // Check if the same request is currently in progress
+    if (ongoingOAuthRequests.has(requestKey)) {
+      console.log('Duplicate OAuth request detected, rejecting to avoid API errors:', requestKey);
+      res.status(429).json({ error: 'OAuth request already processing, please wait' });
+      return;
+    }
+    
+    // Mark request as ongoing
+    ongoingOAuthRequests.set(requestKey, Date.now());
+    
+    // Clean up the request tracking after completion (with timeout)
+    const cleanup = () => {
+      ongoingOAuthRequests.delete(requestKey);
+      // Also clean up cache after 5 minutes
+      setTimeout(() => {
+        oauthResultCache.delete(requestKey);
+      }, 5 * 60 * 1000);
+    };
+    setTimeout(cleanup, 30000); // Cleanup after 30 seconds regardless
+
+    let userData: UserData;
+    
+    switch (provider) {
+      case 'github':
+        console.log('Calling GitHub OAuth handler...');
+        userData = await handleGitHubOAuth(code);
+        break;
+      case 'orcid':
+        console.log('Calling ORCID OAuth handler...');
+        userData = await handleORCIDOAuth(code);
+        break;
+      case 'bitbucket':
+        console.log('Calling BitBucket OAuth handler...');
+        userData = await handleBitBucketOAuth(code);
+        break;
+      case 'gitlab':
+        console.log('Calling GitLab OAuth handler...');
+        userData = await handleGitLabOAuth(code);
+        break;
+      default:
+        console.error('Unsupported OAuth provider:', provider);
+        res.status(400).json({ error: 'Unsupported OAuth provider' });
+        return;
+    }
+
+    console.log('OAuth handler completed, user data:', {
+      provider,
+      userData: {
+        ...userData,
+        // Redact sensitive info in logs
+        email: userData.email ? '***@***.***' : null,
+        name: userData.name || null
+      }
+    });
+
+    // Get current user ID from token if present
+    const currentUserId = await getCurrentUserFromToken(req);
+    
+    // Use the existing login logic
+    const user = await findOrCreateUser(userData, currentUserId);
+    const session = await createSession(user.id);
+    
+    console.log('User created/found and session created successfully');
+    
+    // Prepare the response
+    const response = {
+      user,
+      session: {
+        token: session.token,
+        expiresAt: session.expiresAt
+      }
+    };
+    
+    // Cache the successful result
+    oauthResultCache.set(requestKey, response);
+    
+    // Clean up request tracking on success
+    cleanup();
+    
+    // Return JSON response for frontend
+    res.json(response);
+  } catch (error: any) {
+    console.error(`=== Frontend ${req.params.provider} OAuth Error ===`);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack,

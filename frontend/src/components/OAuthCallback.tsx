@@ -49,7 +49,7 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
             headers['Authorization'] = `Bearer ${authToken}`;
           }
           
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/oauth/${provider}/callback`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/auth/${provider}/callback`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ code }),

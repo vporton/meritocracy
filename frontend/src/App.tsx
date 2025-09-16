@@ -26,10 +26,10 @@ function App() {
                 <Route path="/connect" element={<ConnectForm />} />
                 {/* Redirect old login route to new connect route */}
                 <Route path="/login" element={<Navigate to="/connect" replace />} />
-                <Route path={`${import.meta.env.VITE_API_URL}/auth/github/callback`} element={<OAuthCallback provider="github" />} />
-                <Route path={`${import.meta.env.VITE_API_URL}/auth/orcid/callback`} element={<OAuthCallback provider="orcid" />} />
-                <Route path={`${import.meta.env.VITE_API_URL}/auth/bitbucket/callback`} element={<OAuthCallback provider="bitbucket" />} />
-                <Route path={`${import.meta.env.VITE_API_URL}/auth/gitlab/callback`} element={<OAuthCallback provider="gitlab" />} />
+                <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
+                <Route path="/auth/orcid/callback" element={<OAuthCallback provider="orcid" />} />
+                <Route path="/auth/bitbucket/callback" element={<OAuthCallback provider="bitbucket" />} />
+                <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
               </Routes>
             </main>
           </div>

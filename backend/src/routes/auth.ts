@@ -398,10 +398,10 @@ router.get('/me', async (req, res): Promise<void> => {
 
 // OAuth callback endpoints for secure token exchange
 router.get('/:provider/callback', async (req, res): Promise<void> => {
-  try {
-    const { provider } = req.params;
-    const { code } = req.query as unknown as {code: string};
+  const { provider } = req.params;
+  const { code } = req.query as unknown as {code: string};
 
+  try {
     console.log(`=== OAuth Callback for ${provider} ===`);
     console.log('Request details:', {
       provider,
@@ -513,7 +513,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     cleanup();
     
     // Redirect to frontend with success message
-    const frontendUrl = `${process.env.FRONTEND_URL}/oauth-callback.html?type=OAUTH_SUCCESS&provider=${provider}&data=${encodeURIComponent(JSON.stringify(response))}`;
+    const frontendUrl = `${process.env.FRONTEND_URL}/auth/${provider}/callback?code=${code}`;
     res.redirect(frontendUrl);
   } catch (error: any) {
     console.error(`=== ${req.params.provider} OAuth Error ===`);
@@ -530,7 +530,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     }
     
     // Redirect to frontend with error message
-    const frontendUrl = `${process.env.FRONTEND_URL}/oauth-callback.html?type=OAUTH_ERROR&provider=${req.params.provider}&error=${encodeURIComponent(error.message)}`;
+    const frontendUrl = `${process.env.FRONTEND_URL}/auth/${provider}/callback?code=${code}&error=${error.message}`;
     res.redirect(frontendUrl);
   }
 });

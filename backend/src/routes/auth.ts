@@ -512,7 +512,9 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     // Clean up request tracking on success
     cleanup();
     
-    res.json(response);
+    // Redirect to frontend with success message
+    const frontendUrl = `${process.env.FRONTEND_URL}/oauth-callback.html?type=OAUTH_SUCCESS&provider=${provider}&data=${encodeURIComponent(JSON.stringify(response))}`;
+    res.redirect(frontendUrl);
   } catch (error: any) {
     console.error(`=== ${req.params.provider} OAuth Error ===`);
     console.error('Error details:', {
@@ -527,10 +529,9 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       ongoingOAuthRequests.delete(requestKey);
     }
     
-    res.status(500).json({ 
-      error: `Failed to authenticate with ${req.params.provider}`,
-      details: error.message 
-    });
+    // Redirect to frontend with error message
+    const frontendUrl = `${process.env.FRONTEND_URL}/oauth-callback.html?type=OAUTH_ERROR&provider=${req.params.provider}&error=${encodeURIComponent(error.message)}`;
+    res.redirect(frontendUrl);
   }
 });
 

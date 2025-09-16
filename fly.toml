@@ -8,13 +8,39 @@ primary_region = 'fra'
 
 [build]
 
-[http_service]
+[[services]]
   internal_port = 4173
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+[[services]]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[services.ports]]
+    port = 444
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 445
+    handlers = ['tls', 'http']
 
 [[vm]]
   memory = '1gb'

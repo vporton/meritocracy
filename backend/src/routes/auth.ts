@@ -112,13 +112,14 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       return await prisma.user.update({
         where: { id: currentUserId },
         data: {
-          email: existingUser.email ?? undefined,
-          name: existingUser.name ?? undefined,
-          ethereumAddress: existingUser.ethereumAddress ?? undefined,
-          orcidId: existingUser.orcidId ?? undefined,
-          githubHandle: existingUser.githubHandle ?? undefined,
-          bitbucketHandle: existingUser.bitbucketHandle ?? undefined,
-          gitlabHandle: existingUser.gitlabHandle ?? undefined,
+          // Merge existing user data with new provider data
+          email: email || existingUser.email || undefined,
+          name: name || existingUser.name || undefined,
+          ethereumAddress: ethereumAddress || existingUser.ethereumAddress || undefined,
+          orcidId: orcidId || existingUser.orcidId || undefined,
+          githubHandle: githubHandle || existingUser.githubHandle || undefined,
+          bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle || undefined,
+          gitlabHandle: gitlabHandle || existingUser.gitlabHandle || undefined,
         }
       });
     } else {

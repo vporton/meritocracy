@@ -31,4 +31,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['buffer', 'crypto-browserify', 'stream-browserify'],
   },
+  preview: {
+    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'socialism.fly.dev'],
+  },
 })

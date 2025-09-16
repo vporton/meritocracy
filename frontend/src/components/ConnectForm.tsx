@@ -317,16 +317,32 @@ const ConnectForm = () => {
         popup.close();
         
         try {
+          console.log(`OAuth success for ${provider}:`, event.data);
           setConnectStatus(prev => ({ ...prev, [provider]: 'success' }));
           
           // The backend already handled authentication, just update the frontend state
           const { user, session } = event.data.authData!;
           
+          console.log(`Updating auth data for ${provider}:`, {
+            user: {
+              id: user.id,
+              githubHandle: user.githubHandle,
+              orcidId: user.orcidId,
+              ethereumAddress: user.ethereumAddress,
+              bitbucketHandle: user.bitbucketHandle,
+              gitlabHandle: user.gitlabHandle
+            },
+            sessionToken: session.token ? 'present' : 'missing'
+          });
+          
           // Update AuthContext with the new user and session
           await updateAuthData(user, session.token);
           
+          console.log(`Auth data updated for ${provider}, clearing status in 2 seconds`);
+          
           // Reset status after a short delay to allow connecting more accounts
           setTimeout(() => {
+            console.log(`Clearing status for ${provider}`);
             setConnectStatus(prev => {
               const { [provider]: _, ...rest } = prev;
               return rest;
@@ -381,22 +397,20 @@ const ConnectForm = () => {
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
     
-    // Debug logging for ethereum only (remove this after testing)
-    if (provider === 'ethereum') {
-      console.log(`getButtonText for ${provider}:`, {
-        status,
-        isConnected,
-        user: user ? {
-          id: user.id,
-          githubHandle: user.githubHandle,
-          orcidId: user.orcidId,
-          ethereumAddress: user.ethereumAddress,
-          bitbucketHandle: user.bitbucketHandle,
-          gitlabHandle: user.gitlabHandle
-        } : null,
-        connectStatus
-      });
-    }
+    // Debug logging for all providers to understand the issue
+    console.log(`getButtonText for ${provider}:`, {
+      status,
+      isConnected,
+      user: user ? {
+        id: user.id,
+        githubHandle: user.githubHandle,
+        orcidId: user.orcidId,
+        ethereumAddress: user.ethereumAddress,
+        bitbucketHandle: user.bitbucketHandle,
+        gitlabHandle: user.gitlabHandle
+      } : null,
+      connectStatus
+    });
     
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {

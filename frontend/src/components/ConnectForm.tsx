@@ -309,7 +309,13 @@ const ConnectForm = () => {
     const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
-      console.log(`OAuth message received for ${provider}:`, event.data);
+      // Only process OAuth-related messages, ignore other messages (like MetaMask)
+      if (!event.data || typeof event.data !== 'object' || !event.data.type) return;
+      
+      // Only log actual OAuth messages
+      if (event.data.type === 'OAUTH_SUCCESS' || event.data.type === 'OAUTH_ERROR') {
+        console.log(`OAuth message received for ${provider}:`, event.data);
+      }
       
       if (event.data.type === 'OAUTH_SUCCESS' && event.data.provider === provider) {
         hasReceivedResponse = true;

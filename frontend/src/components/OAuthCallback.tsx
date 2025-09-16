@@ -71,7 +71,7 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
             authData
           }, window.location.origin);
           
-          window.close();
+          // window.close(); // FIXME@P1: Uncomment.
         } catch (error: any) {
           console.error('OAuth callback error:', error);
           (window.opener as Window)?.postMessage({

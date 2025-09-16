@@ -871,7 +871,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
 
   // Get user data from GitLab API
   console.log('Fetching user data from GitLab API...');
-  const userResponse = await fetch('https://gitlab.com/api/v4/user', {
+  const userResponse = await fetch('https://gitlab.com/oauth/userinfo', {
     headers: {
       'Authorization': `Bearer ${tokenData.access_token}`,
     },
@@ -896,8 +896,8 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
 
   const userData: any = await userResponse.json();
   console.log('GitLab user data received:', {
-    id: userData.id,
-    username: userData.username,
+    id: userData.sub,
+    username: userData.nickname,
     name: userData.name,
     email: userData.email ? 'present' : 'not provided'
   });

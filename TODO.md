@@ -44,3 +44,5 @@
 - Don't allow to evaluate a user more than once.
 
 - web3modal (not only MetaMask)
+
+- `npm setup` in `"start"` is wrong.

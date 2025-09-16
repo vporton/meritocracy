@@ -17,7 +17,7 @@
     "build-backend": "cd backend && npm run build --prefix .",
     "build-frontend": "cd frontend && npm run build --prefix .",
     "start": "npx concurrently --kill-others-on-fail --kill-others \"npm run start-backend\" \"npm run start-frontend\"",
-    "start-backend": "npm start --prefix backend",
+    "start-backend": "npm setup && npm start --prefix backend",
     "start-frontend": "npm run preview --prefix frontend",
     "setup": "npm run db:setup",
     "db:setup": "cd backend && npx prisma generate && npx prisma db push && npm run db:seed",

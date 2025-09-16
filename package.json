@@ -16,16 +16,13 @@
     "build": "npm run build-backend && npm run build-frontend",
     "build-backend": "cd backend && npm run build --prefix .",
     "build-frontend": "cd frontend && npm run build --prefix .",
-    "start": "./node_modules/.bin/concurrently --kill-others-on-fail --kill-others \"npm run start-backend\" \"npm run start-frontend\"",
+    "start": "npx concurrently --kill-others-on-fail --kill-others \"npm run start-backend\" \"npm run start-frontend\"",
     "start-backend": "npm start --prefix backend",
     "start-frontend": "npm run preview --prefix frontend",
     "setup": "npm run db:setup",
     "db:setup": "cd backend && npx prisma generate && npx prisma db push && npm run db:seed",
     "db:reset": "cd backend && npx prisma db push --force-reset && npm run db:seed",
     "dev:stop": "pkill -f 'npm run dev' || true && pkill -f nodemon || true && pkill -f vite || true && pkill -f 'node src/index.js' || true"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
   },
   "keywords": [
     "nodejs",
@@ -40,6 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "^24.4.0",
+    "concurrently": "^9.2.1",
     "typescript": "^5.9.2"
   },
   "packageManager": "npm@10.7.0"

@@ -336,11 +336,12 @@ const ConnectForm = () => {
           });
           
           // Update AuthContext with the new user and session
-          await updateAuthData(user, session.token);
+          updateAuthData(user, session.token);
           
           console.log(`Auth data updated for ${provider}, clearing status in 2 seconds`);
           
           // Reset status after a short delay to allow connecting more accounts
+          // Use a longer delay to ensure React state has updated
           setTimeout(() => {
             console.log(`Clearing status for ${provider}`);
             setConnectStatus(prev => {
@@ -379,7 +380,24 @@ const ConnectForm = () => {
     };
     
     const field = providerFields[provider];
-    return field && user[field] != null;
+    const isConnected = field && user[field] != null && user[field] !== '';
+    
+    // TODO@P3: Remove this after debugging.
+    // Debug logging for connection status
+    if (provider === 'github' || provider === 'gitlab') {
+      console.log(`isProviderConnected(${provider}):`, {
+        user: user ? {
+          id: user.id,
+          githubHandle: user.githubHandle,
+          gitlabHandle: user.gitlabHandle
+        } : null,
+        field,
+        fieldValue: field ? user[field] : 'no field',
+        isConnected
+      });
+    }
+    
+    return isConnected;
   };
 
   const getButtonText = (provider: string): string => {
@@ -397,20 +415,20 @@ const ConnectForm = () => {
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
     
-    // Debug logging for all providers to understand the issue
-    console.log(`getButtonText for ${provider}:`, {
-      status,
-      isConnected,
-      user: user ? {
-        id: user.id,
-        githubHandle: user.githubHandle,
-        orcidId: user.orcidId,
-        ethereumAddress: user.ethereumAddress,
-        bitbucketHandle: user.bitbucketHandle,
-        gitlabHandle: user.gitlabHandle
-      } : null,
-      connectStatus
-    });
+    // TODO@P3: Remove this after debugging.
+    // Debug logging for button text decisions
+    if (provider === 'github' || provider === 'gitlab') {
+      console.log(`getButtonText(${provider}):`, {
+        status,
+        isConnected,
+        user: user ? {
+          id: user.id,
+          githubHandle: user.githubHandle,
+          gitlabHandle: user.gitlabHandle
+        } : null,
+        connectStatus
+      });
+    }
     
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {

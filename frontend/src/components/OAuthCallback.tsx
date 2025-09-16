@@ -26,12 +26,26 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
       console.log('OAuth callback processing:', { provider, code: code ? 'present' : 'missing', error });
 
       if (error) {
-        (window.opener as Window)?.postMessage({
+        const errorMessage = {
           type: 'OAUTH_ERROR',
           provider,
           error: error
-        }, window.location.origin);
-        window.close();
+        };
+        console.log('XXX Sending OAuth error message:', errorMessage);
+        (window.opener as Window)?.postMessage(errorMessage, window.location.origin);
+        setTimeout(() => {
+          console.log('XXX Closing popup window (error case)');
+          try {
+            window.close();
+            if (!window.closed) {
+              console.log('XXX window.close() failed in error case, trying alternative');
+              window.location.href = 'about:blank';
+              setTimeout(() => window.close(), 100);
+            }
+          } catch (error) {
+            console.error('XXX Error closing popup (error case):', error);
+          }
+        }, 100);
         return;
       }
 
@@ -65,21 +79,52 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
           console.log('OAuth success, sending message to parent');
           
           // Send the authentication result back to the parent window
-          (window.opener as Window)?.postMessage({
+          const message = {
             type: 'OAUTH_SUCCESS',
             provider,
             authData
-          }, window.location.origin);
+          };
           
-          // window.close(); // FIXME@P1: Uncomment.
+          console.log('XXX Sending OAuth success message:', message);
+          (window.opener as Window)?.postMessage(message, window.location.origin);
+          
+          // Add a small delay before closing to ensure message is received
+          setTimeout(() => {
+            console.log('XXX Closing popup window');
+            try {
+              window.close();
+              // If window.close() doesn't work, try alternative methods
+              if (!window.closed) {
+                console.log('XXX window.close() failed, trying alternative');
+                window.location.href = 'about:blank';
+                setTimeout(() => window.close(), 100);
+              }
+            } catch (error) {
+              console.error('XXX Error closing popup:', error);
+            }
+          }, 100);
         } catch (error: any) {
           console.error('OAuth callback error:', error);
-          (window.opener as Window)?.postMessage({
+          const errorMessage = {
             type: 'OAUTH_ERROR',
             provider,
             error: error.message
-          }, window.location.origin);
-          window.close();
+          };
+          console.log('XXX Sending OAuth error message (catch):', errorMessage);
+          (window.opener as Window)?.postMessage(errorMessage, window.location.origin);
+          setTimeout(() => {
+            console.log('XXX Closing popup window (catch error)');
+            try {
+              window.close();
+              if (!window.closed) {
+                console.log('XXX window.close() failed in catch error, trying alternative');
+                window.location.href = 'about:blank';
+                setTimeout(() => window.close(), 100);
+              }
+            } catch (error) {
+              console.error('XXX Error closing popup (catch error):', error);
+            }
+          }, 100);
         }
       }
     };

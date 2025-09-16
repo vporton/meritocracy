@@ -307,24 +307,33 @@ const ConnectForm = () => {
 
     // Handle the OAuth callback message
     const handleMessage = async (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      console.log(`XXX Message received for ${provider}:`, {
+        origin: event.origin,
+        expectedOrigin: window.location.origin,
+        data: event.data,
+        hasType: event.data?.type
+      });
       
-      if (/OAUTH_SUCCESS|OAUTH_ERROR/.test(JSON.stringify(event))) {
-        console.log(`XXX OAuth message received for ${provider}:`, JSON.stringify(event));
+      if (event.origin !== window.location.origin) {
+        console.log(`XXX Message origin mismatch for ${provider}, ignoring`);
+        return;
       }
 
       // Only process OAuth-related messages, ignore other messages (like MetaMask)
-      if (!event.data || typeof event.data !== 'object' || !event.data.type) return;
+      if (!event.data || typeof event.data !== 'object' || !event.data.type) {
+        console.log(`XXX Message has no type for ${provider}, ignoring`);
+        return;
+      }
       
       // Only log actual OAuth messages
       if (event.data.type === 'OAUTH_SUCCESS' || event.data.type === 'OAUTH_ERROR') {
-        console.log(`OAuth message received for ${provider}:`, event.data);
+        console.log(`XXX OAuth message received for ${provider}:`, event.data);
       }
       
       if (event.data.type === 'OAUTH_SUCCESS' && event.data.provider === provider) {
         hasReceivedResponse = true;
         clearInterval(checkClosed);
-        popup.close();
+        // Don't close popup here - let the popup close itself
         
         try {
           console.log(`OAuth success for ${provider}:`, event.data);
@@ -368,7 +377,7 @@ const ConnectForm = () => {
       } else if (event.data.type === 'OAUTH_ERROR' && event.data.provider === provider) {
         hasReceivedResponse = true;
         clearInterval(checkClosed);
-        popup.close();
+        // Don't close popup here - let the popup close itself
         setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: event.data.error }));
         window.removeEventListener('message', handleMessage as any);
       }

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.87.1",
+    "@vitejs/plugin-react": "^5.0.2",
     "axios": "^1.6.2",
     "ethers": "^6.15.0",
     "react": "^18.2.0",
@@ -25,7 +26,6 @@
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
-    "@vitejs/plugin-react": "^4.7.0",
     "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",

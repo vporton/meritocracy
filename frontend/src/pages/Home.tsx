@@ -45,6 +45,7 @@ function Home() {
         const response = await api.get('/')
         setServerStatus(response.data)
       } catch (error) {
+        console.log('Failed to connect to server:', error)
         setServerStatus({ error: 'Failed to connect to server' })
       } finally {
         setLoading(false)

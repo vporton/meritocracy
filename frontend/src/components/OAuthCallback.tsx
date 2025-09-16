@@ -32,7 +32,7 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
           error: error
         };
         console.log('XXX Sending OAuth error message:', errorMessage);
-        (window.opener as Window)?.postMessage(errorMessage, window.location.origin);
+        (window.opener as Window)!.postMessage(errorMessage, window.location.origin);
         setTimeout(() => {
           console.log('XXX Closing popup window (error case)');
           try {
@@ -86,7 +86,7 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
           };
           
           console.log('XXX Sending OAuth success message:', message);
-          (window.opener as Window)?.postMessage(message, window.location.origin);
+          (window.opener as Window)!.postMessage(message, window.location.origin);
           
           // Add a small delay before closing to ensure message is received
           setTimeout(() => {
@@ -111,7 +111,7 @@ const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
             error: error.message
           };
           console.log('XXX Sending OAuth error message (catch):', errorMessage);
-          (window.opener as Window)?.postMessage(errorMessage, window.location.origin);
+          (window.opener as Window)!.postMessage(errorMessage, window.location.origin);
           setTimeout(() => {
             console.log('XXX Closing popup window (catch error)');
             try {

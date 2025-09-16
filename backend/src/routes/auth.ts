@@ -781,35 +781,117 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
 }
 
 async function handleORCIDOAuth(code: string): Promise<UserData> {
+  console.log('=== ORCID OAuth Handler ===');
+  console.log('Code received:', {
+    code: code ? `${code.substring(0, 10)}...` : 'null',
+    codeLength: code ? code.length : 0,
+    fullCode: code // Log full code for debugging
+  });
+
+  // Use sandbox domain for development/testing
+  const orcidDomain = process.env.ORCID_DOMAIN || 'orcid.org';
+  const tokenUrl = `https://${orcidDomain}/oauth/token`;
+  
+  const requestBody = {
+    client_id: process.env.ORCID_CLIENT_ID!,
+    client_secret: process.env.ORCID_CLIENT_SECRET!,
+    grant_type: 'authorization_code',
+    code: code,
+    redirect_uri: `${process.env.API_URL}/api/auth/orcid/callback`,
+  };
+  
+  console.log('ORCID token exchange request:', {
+    url: tokenUrl,
+    client_id: requestBody.client_id,
+    redirect_uri: requestBody.redirect_uri,
+    code_preview: code ? `${code.substring(0, 10)}...` : 'null',
+    orcid_domain: orcidDomain
+  });
+
   // Exchange code for access token
-  const tokenResponse = await fetch(`https://orcid.org/oauth/token`, {
+  const tokenResponse = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams({
-      client_id: process.env.ORCID_CLIENT_ID!,
-      client_secret: process.env.ORCID_CLIENT_SECRET!,
-      grant_type: 'authorization_code',
-      code: code,
-      redirect_uri: `${process.env.API_URL}/api/auth/orcid/callback`,
-    }),
+    body: new URLSearchParams(requestBody),
+  });
+
+  const responseText = await tokenResponse.text();
+  console.log('ORCID token response:', {
+    status: tokenResponse.status,
+    statusText: tokenResponse.statusText,
+    headers: Object.fromEntries(tokenResponse.headers.entries()),
+    body: responseText
   });
 
   if (!tokenResponse.ok) {
-    throw new Error('Failed to exchange code for ORCID access token');
+    console.error('ORCID token exchange failed:', {
+      status: tokenResponse.status,
+      statusText: tokenResponse.statusText,
+      body: responseText
+    });
+    throw new Error(`Failed to exchange code for ORCID access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
   }
 
-  const tokenData: any = await tokenResponse.json();
+  let tokenData: any;
+  try {
+    tokenData = JSON.parse(responseText);
+  } catch (parseError) {
+    console.error('Failed to parse ORCID token response as JSON:', parseError);
+    throw new Error(`Invalid JSON response from ORCID: ${responseText}`);
+  }
   
   if (tokenData.error) {
+    console.error('ORCID OAuth token error:', tokenData);
     throw new Error(`ORCID OAuth error: ${tokenData.error_description || tokenData.error}`);
   }
+
+  console.log('ORCID token exchange successful:', {
+    access_token: tokenData.access_token ? 'present' : 'missing',
+    token_type: tokenData.token_type,
+    scope: tokenData.scope,
+    orcid: tokenData.orcid || 'not provided'
+  });
+
+  // Get user data from ORCID API
+  console.log('Fetching user data from ORCID API...');
+  const userResponse = await fetch(`https://${orcidDomain}/v3.0/${tokenData.orcid}/person`, {
+    headers: {
+      'Authorization': `Bearer ${tokenData.access_token}`,
+      'Accept': 'application/json',
+    },
+  });
+
+  console.log('ORCID user API response:', {
+    status: userResponse.status,
+    statusText: userResponse.statusText,
+    ok: userResponse.ok
+  });
+
+  if (!userResponse.ok) {
+    const errorText = await userResponse.text();
+    console.error('ORCID user API error response:', {
+      status: userResponse.status,
+      statusText: userResponse.statusText,
+      body: errorText,
+      headers: Object.fromEntries(userResponse.headers.entries())
+    });
+    throw new Error(`Failed to fetch ORCID user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
+  }
+
+  const userData: any = await userResponse.json();
+  console.log('ORCID user data received:', {
+    orcid: tokenData.orcid,
+    has_person: !!userData,
+    name_given: userData?.name?.['given-names']?.value || 'not provided',
+    name_family: userData?.name?.['family-name']?.value || 'not provided'
+  });
   
   return {
     orcidId: tokenData.orcid,
-    name: tokenData.name,
+    name: userData?.name ? `${userData.name['given-names']?.value || ''} ${userData.name['family-name']?.value || ''}`.trim() : undefined,
   };
 }
 
@@ -859,43 +941,105 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
 }
 
 async function handleGitLabOAuth(code: string): Promise<UserData> {
+  console.log('=== GitLab OAuth Handler ===');
+  console.log('Code received:', {
+    code: code ? `${code.substring(0, 10)}...` : 'null',
+    codeLength: code ? code.length : 0,
+    fullCode: code // Log full code for debugging
+  });
+  
+  const requestBody = {
+    client_id: process.env.GITLAB_CLIENT_ID!,
+    client_secret: process.env.GITLAB_CLIENT_SECRET!,
+    code: code,
+    grant_type: 'authorization_code',
+    redirect_uri: `${process.env.API_URL}/api/auth/gitlab/callback`,
+  };
+  
+  console.log('GitLab token exchange request:', {
+    url: 'https://gitlab.com/oauth/token',
+    client_id: requestBody.client_id,
+    redirect_uri: requestBody.redirect_uri,
+    code_preview: code ? `${code.substring(0, 10)}...` : 'null'
+  });
+
   // Exchange code for access token
   const tokenResponse = await fetch('https://gitlab.com/oauth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams({
-      client_id: process.env.GITLAB_CLIENT_ID!,
-      client_secret: process.env.GITLAB_CLIENT_SECRET!,
-      code: code,
-      grant_type: 'authorization_code',
-      redirect_uri: `${process.env.API_URL}/api/auth/gitlab/callback`,
-    }),
+    body: new URLSearchParams(requestBody),
+  });
+
+  const responseText = await tokenResponse.text();
+  console.log('GitLab token response:', {
+    status: tokenResponse.status,
+    statusText: tokenResponse.statusText,
+    headers: Object.fromEntries(tokenResponse.headers.entries()),
+    body: responseText
   });
 
   if (!tokenResponse.ok) {
-    throw new Error('Failed to exchange code for GitLab access token');
+    console.error('GitLab token exchange failed:', {
+      status: tokenResponse.status,
+      statusText: tokenResponse.statusText,
+      body: responseText
+    });
+    throw new Error(`Failed to exchange code for GitLab access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
   }
 
-  const tokenData: any = await tokenResponse.json();
+  let tokenData: any;
+  try {
+    tokenData = JSON.parse(responseText);
+  } catch (parseError) {
+    console.error('Failed to parse GitLab token response as JSON:', parseError);
+    throw new Error(`Invalid JSON response from GitLab: ${responseText}`);
+  }
   
   if (tokenData.error) {
+    console.error('GitLab OAuth token error:', tokenData);
     throw new Error(`GitLab OAuth error: ${tokenData.error_description || tokenData.error}`);
   }
 
+  console.log('GitLab token exchange successful:', {
+    access_token: tokenData.access_token ? 'present' : 'missing',
+    token_type: tokenData.token_type,
+    scope: tokenData.scope
+  });
+
   // Get user data from GitLab API
+  console.log('Fetching user data from GitLab API...');
   const userResponse = await fetch('https://gitlab.com/api/v4/user', {
     headers: {
       'Authorization': `Bearer ${tokenData.access_token}`,
     },
   });
 
+  console.log('GitLab user API response:', {
+    status: userResponse.status,
+    statusText: userResponse.statusText,
+    ok: userResponse.ok
+  });
+
   if (!userResponse.ok) {
-    throw new Error('Failed to fetch GitLab user data');
+    const errorText = await userResponse.text();
+    console.error('GitLab user API error response:', {
+      status: userResponse.status,
+      statusText: userResponse.statusText,
+      body: errorText,
+      headers: Object.fromEntries(userResponse.headers.entries())
+    });
+    throw new Error(`Failed to fetch GitLab user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
   }
 
   const userData: any = await userResponse.json();
+  console.log('GitLab user data received:', {
+    id: userData.id,
+    username: userData.username,
+    name: userData.name,
+    email: userData.email ? 'present' : 'not provided'
+  });
   
   return {
     gitlabHandle: userData.username,

@@ -501,6 +501,8 @@ const ConnectForm = () => {
       <p>You need to connect all accounts with your products (like GutHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas).</p>
 
       <p>The Ethereum address will also be used for payments to you.</p>
+
+      <p>ORCID, GitLab, and BitBucket are not supported yet.</p>
       
       <div className="connect-options">
         {/* Ethereum Connect */}

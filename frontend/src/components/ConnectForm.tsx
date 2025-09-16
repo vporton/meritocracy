@@ -472,7 +472,7 @@ const ConnectForm = () => {
 
       <p>The Ethereum address will also be used for payments to you.</p>
 
-      <p style={{ color: 'red' }}>GitLab, and BitBucket are not supported yet.</p>
+      <p style={{ color: 'red' }}>GitLab and BitBucket are not supported yet.</p>
       
       <div className="connect-options">
         {/* Ethereum Connect */}

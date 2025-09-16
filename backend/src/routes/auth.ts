@@ -547,7 +547,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
     client_id: process.env.GITHUB_CLIENT_ID!,
     client_secret: process.env.GITHUB_CLIENT_SECRET!,
     code: code,
-    redirect_uri: `${process.env.FRONTEND_URL}/auth/github/callback`,
+    redirect_uri: `${process.env.FRONTEND_URL}/api/auth/github/callback`,
   };
   
   console.log('GitHub token exchange request:', {

@@ -110,12 +110,6 @@ VITE_GITHUB_CLIENT_ID=your-github-client-id
 VITE_ORCID_CLIENT_ID=your-orcid-client-id
 VITE_BITBUCKET_CLIENT_ID=your-bitbucket-client-id
 VITE_GITLAB_CLIENT_ID=your-gitlab-client-id
-
-# OAuth Redirect URIs (should match what you configured in OAuth apps)
-VITE_GITHUB_REDIRECT_URI=http://localhost:5173/auth/github/callback
-VITE_ORCID_REDIRECT_URI=http://localhost:5173/auth/orcid/callback
-VITE_BITBUCKET_REDIRECT_URI=http://localhost:5173/auth/bitbucket/callback
-VITE_GITLAB_REDIRECT_URI=http://localhost:5173/auth/gitlab/callback
 ```
 
 ### 2. WalletConnect Setup (for Ethereum login)

@@ -5,6 +5,9 @@ RUN apk add openssl
 
 WORKDIR /app
 
+# Frontend URL
+ENV VITE_FRONTEND_URL=https://socialism.fly.dev
+
 # API Configuration
 ENV VITE_API_URL=https://socialism.fly.dev:445
 

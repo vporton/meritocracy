@@ -259,10 +259,10 @@ const ConnectForm = () => {
     };
 
     const redirectUris: OAuthRedirectUris = {
-      github: `${process.env.FRONTEND_URL}/api/auth/github/callback`,
-      orcid: `${process.env.FRONTEND_URL}/api/auth/orcid/callback`,
-      bitbucket: `${process.env.FRONTEND_URL}/api/auth/bitbucket/callback`,
-      gitlab: `${process.env.FRONTEND_URL}/api/auth/gitlab/callback`,
+      github: `${import.meta.env.VITE_FRONTEND_URL}/api/auth/github/callback`,
+      orcid: `${import.meta.env.VITE_FRONTEND_URL}/api/auth/orcid/callback`,
+      bitbucket: `${import.meta.env.VITE_FRONTEND_URL}/api/auth/bitbucket/callback`,
+      gitlab: `${import.meta.env.VITE_FRONTEND_URL}/api/auth/gitlab/callback`,
     };
 
     const authUrls: OAuthAuthUrls = {

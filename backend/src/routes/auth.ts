@@ -108,20 +108,20 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
     if (currentUserId !== null && currentUserId !== existingUser.id) {
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user
-      await prisma.user.delete({where: {id: existingUser.id}});
-      return await prisma.user.update({
-        where: { id: currentUserId },
-        data: {
-          // Merge existing user data with new provider data
-          email: email || existingUser.email || undefined,
-          name: name || existingUser.name || undefined,
-          ethereumAddress: ethereumAddress || existingUser.ethereumAddress || undefined,
-          orcidId: orcidId || existingUser.orcidId || undefined,
-          githubHandle: githubHandle || existingUser.githubHandle || undefined,
-          bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle || undefined,
-          gitlabHandle: gitlabHandle || existingUser.gitlabHandle || undefined,
-        }
-      });
+    await prisma.user.delete({where: {id: existingUser.id}});
+    return await prisma.user.update({
+      where: { id: currentUserId },
+      data: {
+        // Merge existing user data with new provider data
+        email: email || existingUser.email || undefined,
+        name: name || existingUser.name || undefined,
+        ethereumAddress: ethereumAddress || existingUser.ethereumAddress || undefined,
+        orcidId: orcidId || existingUser.orcidId || undefined,
+        githubHandle: githubHandle || existingUser.githubHandle || undefined,
+        bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle || undefined,
+        gitlabHandle: gitlabHandle || existingUser.gitlabHandle || undefined,
+      }
+    });
     } else {
       // Either no current user or current user is the same as existing user
       return await prisma.user.update({
@@ -415,7 +415,8 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       headers: {
         'content-type': req.headers['content-type'],
         'user-agent': req.headers['user-agent'],
-        origin: req.headers.origin
+        origin: req.headers.origin,
+        authorization: req.headers.authorization ? 'present' : 'missing'
       }
     });
     
@@ -493,10 +494,26 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
 
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);
-    
     // Use the existing login logic
     const user = await findOrCreateUser(userData, currentUserId);
-    const session = await createSession(user.id);
+    
+    // If user was already authenticated, don't create a new session
+    let session;
+    if (currentUserId !== null) {
+      // User was already authenticated, find their existing session
+      const existingSession = await prisma.session.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (existingSession && existingSession.expiresAt > new Date()) {
+        session = existingSession;
+      } else {
+        session = await createSession(user.id);
+      }
+    } else {
+      // New user, create a new session
+      session = await createSession(user.id);
+    }
     
     console.log('User created/found and session created successfully');
     

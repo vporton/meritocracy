@@ -8,11 +8,6 @@ primary_region = 'fra'
 
 [build]
 
-[[services.tcp_checks]]
-  grace_period = "10s"
-  interval = "2s"
-  timeout = "20s"
-
 [[services]]
   internal_port = 4173
   force_https = true
@@ -30,6 +25,11 @@ primary_region = 'fra'
     port = 443
     handlers = ['tls', 'http']
 
+  [[services.tcp_checks]]
+    grace_period = "10s"
+    interval = "2s"
+    timeout = "20s"
+
 [[services]]
   internal_port = 3001
   force_https = true
@@ -46,6 +46,11 @@ primary_region = 'fra'
   [[services.ports]]
     port = 445
     handlers = ['tls', 'http']
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "1s"
+    timeout = "4s"
 
 [[vm]]
   memory = '0.5gb'

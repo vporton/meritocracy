@@ -46,5 +46,3 @@
 - web3modal (not only MetaMask)
 
 - `npm setup` in `"start"` is wrong.
-
-- Put DB into a Docker volume.

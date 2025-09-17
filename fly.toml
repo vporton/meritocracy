@@ -48,9 +48,9 @@ primary_region = 'fra'
     handlers = ['tls', 'http']
 
   [[services.tcp_checks]]
-    grace_period = "1s"
-    interval = "1s"
-    timeout = "4s"
+    grace_period = "10s"
+    interval = "4s"
+    timeout = "30s"
 
 [[vm]]
   memory = '0.5gb'

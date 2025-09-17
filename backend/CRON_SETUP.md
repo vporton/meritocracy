@@ -4,7 +4,7 @@ This document describes the bi-monthly cron functionality that automatically cre
 
 ## Overview
 
-The cron service runs automatically on the 1st and 15th of every month at 2:00 AM UTC, creating evaluation flows for users who:
+The cron service runs automatically on the 1st of every other month at 2:00 AM UTC, creating evaluation flows for users who:
 - Are onboarded (`onboarded: true`)
 - Were last updated more than 1 month ago
 
@@ -29,9 +29,9 @@ The cron job management endpoints (start, stop, run) have been removed for secur
 ## Configuration
 
 The cron job is automatically started when the server starts up. The schedule is:
-- **Frequency**: Bi-monthly (1st and 15th of every month)
+- **Frequency**: Bi-monthly (1st of every other month)
 - **Time**: 2:00 AM UTC
-- **Cron Expression**: `0 2 1,15 * *`
+- **Cron Expression**: `0 2 1 */2 *`
 
 ## How It Works
 

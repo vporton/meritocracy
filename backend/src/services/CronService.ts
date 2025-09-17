@@ -19,7 +19,7 @@ export class CronService {
 
   /**
    * Start the bi-monthly cron job for user evaluation flows
-   * Runs on the 1st and 15th of every month at 2:00 AM
+   * Runs on the 1st of every other month at 2:00 AM UTC
    */
   startBiMonthlyEvaluationCron() {
     if (this.cronJob) {
@@ -27,13 +27,13 @@ export class CronService {
       return;
     }
 
-    // Cron expression: "0 2 1,15 * *" means:
+    // Cron expression: "0 2 1 */2 *" means:
     // - 0 minutes
     // - 2 hours (2 AM)
-    // - 1st and 15th day of month
-    // - Every month
+    // - 1st day of month
+    // - Every 2nd month (January, March, May, July, September, November)
     // - Every day of week
-    this.cronJob = cron.schedule('0 2 1,15 * *', async () => {
+    this.cronJob = cron.schedule('0 2 1 */2 *', async () => {
       console.log('🕐 Bi-monthly evaluation cron job triggered');
       await this.runBiMonthlyEvaluation();
     }, {
@@ -41,7 +41,7 @@ export class CronService {
     });
 
     this.cronJob.start();
-    console.log('✅ Bi-monthly evaluation cron job started (runs on 1st and 15th at 2:00 AM UTC)');
+    console.log('✅ Bi-monthly evaluation cron job started (runs on 1st of every other month at 2:00 AM UTC)');
   }
 
   /**
@@ -224,7 +224,7 @@ export class CronService {
       biMonthlyEvaluation: {
         isRunning: this.cronJob !== null,
         nextRun: this.cronJob ? this.getNextRunTime() : null,
-        schedule: '0 2 1,15 * * (1st and 15th of every month at 2:00 AM UTC)'
+        schedule: '0 2 1 */2 * (1st of every other month at 2:00 AM UTC)'
       },
       weeklyGasDistribution: {
         isRunning: this.weeklyGasDistributionJob !== null,
@@ -240,27 +240,43 @@ export class CronService {
   private getNextRunTime(): Date | null {
     if (!this.cronJob) return null;
     
-    // This is a simplified calculation - in a real implementation,
-    // you might want to use a more sophisticated method to calculate next run time
     const now = new Date();
     const currentDay = now.getDate();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    // Check if we're before the 1st of this month
-    if (currentDay < 1) {
+    // Bi-monthly runs on odd months (0, 2, 4, 6, 8, 10) - January, March, May, July, September, November
+    const isOddMonth = currentMonth % 2 === 0;
+    
+    // Check if we're before the 1st of this month and this is an odd month
+    if (currentDay < 1 && isOddMonth) {
       return new Date(currentYear, currentMonth, 1, 2, 0, 0);
     }
-    // Check if we're before the 15th of this month
-    else if (currentDay < 15) {
-      return new Date(currentYear, currentMonth, 15, 2, 0, 0);
+    
+    // Find the next odd month
+    let nextMonth = currentMonth;
+    let nextYear = currentYear;
+    
+    // If current month is odd and we're past the 1st, or if current month is even
+    if ((isOddMonth && currentDay >= 1) || !isOddMonth) {
+      // Move to next odd month
+      nextMonth = currentMonth + 1;
+      if (nextMonth > 11) {
+        nextMonth = 0;
+        nextYear = currentYear + 1;
+      }
+      
+      // If next month is even, move to the one after that
+      if (nextMonth % 2 === 1) {
+        nextMonth = nextMonth + 1;
+        if (nextMonth > 11) {
+          nextMonth = 0;
+          nextYear = nextYear + 1;
+        }
+      }
     }
-    // Otherwise, next run is 1st of next month
-    else {
-      const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-      const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-      return new Date(nextYear, nextMonth, 1, 2, 0, 0);
-    }
+    
+    return new Date(nextYear, nextMonth, 1, 2, 0, 0);
   }
 
   /**

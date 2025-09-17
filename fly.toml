@@ -93,6 +93,7 @@ primary_region = 'fra'
   GITHUB_CLIENT_ID="Iv23licVYHEyHPX6NUvI"
 
   # ORCID OAuth
+  ORCID_DOMAIN="orcid.org"  
   ORCID_CLIENT_ID="APP-49SONSSG0X34Q4UI"
 
   # BitBucket OAuth
@@ -118,5 +119,3 @@ primary_region = 'fra'
   # - injection: no injection
   # - prompt randomization: don't randomize (pass the prompt as is)
   OPEN_AI_FAKE=false
-
-  ORCID_DOMAIN="orcid.org"  

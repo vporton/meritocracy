@@ -8,6 +8,11 @@ primary_region = 'fra'
 
 [build]
 
+[[services.tcp_checks]]
+  grace_period = "10s"
+  interval = "2s"
+  timeout = "20s"
+
 [[services]]
   internal_port = 4173
   force_https = true

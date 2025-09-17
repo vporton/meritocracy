@@ -51,3 +51,59 @@ primary_region = 'fra'
 [[mounts]]
   source = "db"
   destination = "/db"
+
+[env]
+  # Database Configuration
+  # Choose one of the following database URLs and uncomment it:
+
+  # SQLite (default for development)
+  DATABASE_URL="file:/db/sqlite.db"
+
+  # PostgreSQL
+  # DATABASE_URL="postgresql://username:password@localhost:5432/socialism?schema=public"
+
+  # MySQL
+  # DATABASE_URL="mysql://username:password@localhost:3306/socialism"
+
+  # Server Configuration
+  PORT=3001
+  NODE_ENV=production
+
+  # CORS Configuration
+  API_URL=https://socialism.fly.io:445
+
+  # CORS Configuration
+  FRONTEND_URL=https://socialism.fly.io
+
+  # OAuth Provider Configuration
+  # GitHub OAuth
+  GITHUB_CLIENT_ID=Iv23licVYHEyHPX6NUvI
+
+  # ORCID OAuth
+  ORCID_CLIENT_ID=APP-49SONSSG0X34Q4UI
+
+  # BitBucket OAuth
+  BITBUCKET_CLIENT_ID=PFdcCeTaGXXY723bfBuTe3deVJDstaf2
+
+  # GitLab OAuth
+  GITLAB_CLIENT_ID=9f2ec00bfdcc86eaa10d2973e0dffb0d50c4c0072a6e7544c2fc10c08c2579d0
+
+  # OpenAI Configuration
+  OPENAI_MODEL=gpt-5-mini
+  # batch (for production) or nonbatch (useful for debugging)
+  OPENAI_FLEX_MODE=nonbatch
+  # Do no reasoning
+  OPENAI_NO_REASONING=yes
+  # Specify `minimal` for spending less tokens during debugging
+  OPENAI_OVERRIDE_REASONING_EFFORT=minimal
+  # Limit the number of tool (search) calls
+  OPENAI_OVERRIDE_MAX_TOOL_CALLS=3
+  # OpenAI Fake Mode (for testing/development)
+  # When set to true, replaces OpenAI outputs with predefined values:
+  # - onboarding: true
+  # - worth: 0.1% of GDP
+  # - injection: no injection
+  # - prompt randomization: don't randomize (pass the prompt as is)
+  OPEN_AI_FAKE=false
+
+  ORCID_DOMAIN=orcid.org

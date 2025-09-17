@@ -90,17 +90,17 @@ primary_region = 'fra'
 
   # OAuth Provider Configuration
   # GitHub OAuth
-  GITHUB_CLIENT_ID="Iv23licVYHEyHPX6NUvI"
+  GITHUB_CLIENT_ID="Iv23liACVkYe3qylnSpT"
 
   # ORCID OAuth
   ORCID_DOMAIN="orcid.org"  
-  ORCID_CLIENT_ID="APP-49SONSSG0X34Q4UI"
+  ORCID_CLIENT_ID="APP-CNFU262DB2VL0XQ3"
 
   # BitBucket OAuth
   BITBUCKET_CLIENT_ID="PFdcCeTaGXXY723bfBuTe3deVJDstaf2"
 
   # GitLab OAuth
-  GITLAB_CLIENT_ID="9f2ec00bfdcc86eaa10d2973e0dffb0d50c4c0072a6e7544c2fc10c08c2579d0"
+  GITLAB_CLIENT_ID="8a8b4b40b8d3d78ccde78b4c80ffd69db99ca6f022a42ac0159ab21c8d148da6"
 
   # OpenAI Configuration
   OPENAI_MODEL="gpt-5-mini"

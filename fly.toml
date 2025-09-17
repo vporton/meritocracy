@@ -26,9 +26,9 @@ primary_region = 'fra'
     handlers = ['tls', 'http']
 
   [[services.tcp_checks]]
-    grace_period = "10s"
+    grace_period = "20s"
     interval = "2s"
-    timeout = "20s"
+    timeout = "2s"
 
 [[services]]
   internal_port = 3001
@@ -49,8 +49,8 @@ primary_region = 'fra'
 
   [[services.tcp_checks]]
     grace_period = "10s"
-    interval = "4s"
-    timeout = "30s"
+    interval = "2s"
+    timeout = "2s"
 
 [[vm]]
   memory = '0.5gb'

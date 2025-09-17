@@ -75,6 +75,9 @@ primary_region = 'fra'
   # CORS Configuration
   FRONTEND_URL="https://socialism.fly.io"
 
+  # Ethereum network
+  ETHEREUM_NETWORK=mainnet
+
   # OAuth Provider Configuration
   # GitHub OAuth
   GITHUB_CLIENT_ID="Iv23licVYHEyHPX6NUvI"
@@ -106,4 +109,4 @@ primary_region = 'fra'
   # - prompt randomization: don't randomize (pass the prompt as is)
   OPEN_AI_FAKE=false
 
-  ORCID_DOMAIN="orcid.org"
+  ORCID_DOMAIN="orcid.org"  

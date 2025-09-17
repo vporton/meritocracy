@@ -146,10 +146,10 @@ async function initializeApp() {
   }
 }
 
+// Initialize global data
+await initializeApp();
+console.log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
-  
-  // Initialize global data
-  await initializeApp();
 });

@@ -76,7 +76,7 @@ primary_region = 'fra'
   FRONTEND_URL="https://socialism.fly.io"
 
   # Ethereum network
-  ETHEREUM_NETWORK=mainnet
+  ETHEREUM_NETWORK="mainnet"
 
   # OAuth Provider Configuration
   # GitHub OAuth

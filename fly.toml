@@ -70,10 +70,10 @@ primary_region = 'fra'
   NODE_ENV="production"
 
   # CORS Configuration
-  API_URL="https://socialism.fly.io:445"
+  API_URL="https://socialism.fly.dev:445"
 
   # CORS Configuration
-  FRONTEND_URL="https://socialism.fly.io"
+  FRONTEND_URL="https://socialism.fly.dev"
 
   # Ethereum network
   ETHEREUM_NETWORK="mainnet"

@@ -46,3 +46,5 @@
 - web3modal (not only MetaMask)
 
 - `npm setup` in `"start"` is wrong.
+
+- Merge the history (and bans?), when merging accounts.

@@ -23,11 +23,8 @@ ENV VITE_GITLAB_CLIENT_ID=8a8b4b40b8d3d78ccde78b4c80ffd69db99ca6f022a42ac0159ab2
 ENV VITE_ORCID_DOMAIN=orcid.org
 
 COPY . ./
-RUN npm install
-RUN npm install --prefix backend
-RUN npm install --prefix frontend
+RUN npm install --workspaces
 RUN npm run build
 
 CMD ["npm", "start"]
 #CMD ["sleep", "inf"]
-

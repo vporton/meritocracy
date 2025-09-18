@@ -28,4 +28,6 @@ RUN npm install --prefix backend
 RUN npm install --prefix frontend
 RUN npm run build
 
-CMD ["npm", "start"]
+# CMD ["npm", "start"]
+CMD ["sleep", "inf"]
+

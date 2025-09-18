@@ -30,4 +30,3 @@ RUN npm run build
 
 CMD ["npm", "start"]
 #CMD ["sleep", "inf"]
-

@@ -44,3 +44,5 @@
 - web3modal (not only MetaMask)
 
 - Merge the history (and bans?), when merging accounts.
+
+- If user disconnect (all) his/her accounts, he gets rid of a ban. This is a security vulnerability.

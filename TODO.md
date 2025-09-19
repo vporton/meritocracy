@@ -23,6 +23,7 @@
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
 - TODO@P3 Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.
+  Also use running average of user worth to reduce used AI tokens.
 
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
   If this is the case, we should rewrite this in ICP.

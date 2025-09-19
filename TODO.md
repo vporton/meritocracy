@@ -1,48 +1,46 @@
-- ICP blockchain, Solana, Bitcoin, BCH payments.
+- TODO@P3 ICP blockchain, Solana, Bitcoin, BCH payments.
 
-- Connect with BitBucket and GitLab doesn't work.
+- TODO@P3 Connect with BitBucket and GitLab doesn't work.
 
-- Require to log-in every 2 months, to avoid dead users.
+- TODO@P2 Require to log-in every 2 months, to avoid dead users.
   Even better let AI checks whether the user is active.
 
-- Confirmation of email, instead of taking emails from GitHub, etc.
+- TODO@P1 Confirmation of email, instead of taking emails from GitHub, etc.
   Consider email the same login method, as Ethereum, ORCID, GitHub, etc.
 
-- After failed login, the button text is "Try again". Thus the name of the button is not shown.
+- FIXME@P2 After failed login, the button text is "Try again". Thus the name of the button is not shown.
 
-- Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.
+- TODO@P3 Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.
 
-- Protect against prompt injections by inserting random strings before and after answers.
+- TODO@P2 Protect against prompt injections by inserting random strings before and after answers.
 
-- Inefficient checking for whether all dependencies are COMPLETE.
+- TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
 
-- Remove tasks after finishing.
+- TODO@P3 Remove tasks after finishing.
 
-- `MedianRunner.run` is duplicate code.
+- TODO@P3 `MedianRunner.run` is duplicate code.
 
-- Should we check (with t=0) randomized prompts for accurately representing the original prompt?
+- TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
-- `WorthThresholdCheckRunner` and `MedianRunner` are clearly too complex. Refactor.
+- TODO@P3 Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.
 
-- Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.
-
-- Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
+- TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
   If this is the case, we should rewrite this in ICP.
 
-- Add indexes to the DB.
+- TODO@P1 Add indexes to the DB.
 
-- Check that `customId`s and filenames for OpenAI are unique!
+- TODO@P1 Check that `customId`s and filenames for OpenAI are unique!
 
-- Delete DB migrations before the release.
+- TODO@P2 Delete DB migrations before the release.
 
-- Always run prompt randomization as non-batch, because its cost is low.
+- TODO@P3 Always run prompt randomization as non-batch, because its cost is low.
 
-- Leaderboard shows wrong values.
+- FIXME@P2 Leaderboard shows wrong values.
 
-- Rewrite Ethereum connection in backend using Viem.
+- TODO@P2 Rewrite Ethereum connection in backend using Viem.
 
-- web3modal (not only MetaMask)
+- TODO@P2 web3modal (not only MetaMask)
 
-- Merge the history (and bans?), when merging accounts.
+- TODO@P2 Merge the history, when merging accounts.
 
-- If user disconnect (all) his/her accounts, he gets rid of a ban. This is a security vulnerability.
+- FIXME@P1 If user disconnect (all) his/her accounts, he gets rid of a ban. This is a security vulnerability.

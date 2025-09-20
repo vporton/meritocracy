@@ -142,7 +142,7 @@ interface WorthAssessmentResponse {
 }
 
 interface PromptInjectionResponse {
-  hasPromptInjection: boolean;
+  hasPromptInjectionOrPlagiarism: boolean;
   why: string;
 }
 
@@ -406,7 +406,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         break;
       case 'PromptInjectionRunner':
         fakeResponse = {
-          hasPromptInjection: false,
+          hasPromptInjectionOrPlagiarism: false,
           why: 'Fake mode: Always return no injection'
         };
         break;
@@ -716,7 +716,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
         status: 'CANCELLED',
         runnerData: JSON.stringify({
           ...this.data,
-          hasPromptInjection: true,
+          hasPromptInjectionOrPlagiarism: true,
           why: reason,
           bannedUntil: banUntil.toISOString(),
           reason: 'Prompt injection detected - user banned',
@@ -748,7 +748,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
-    if (output.hasPromptInjection) {
+    if (output.hasPromptInjectionOrPlagiarism) {
       await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
     } else {
       await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);

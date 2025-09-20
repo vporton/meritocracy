@@ -425,6 +425,11 @@ const ConnectForm = () => {
         setEmailForm({ email: '', name: '' });
         setShowEmailForm(false);
         
+        // Log the success message to console for debugging
+        if (result.message) {
+          console.log('Email registration success:', result.message);
+        }
+        
         if (result.requiresVerification) {
           // Show message about email verification
           setTimeout(() => {

@@ -35,6 +35,15 @@ class EmailService {
       }
     };
 
+    console.log('EmailService initialization - SMTP config:', {
+      host: emailConfig.host,
+      port: emailConfig.port,
+      secure: emailConfig.secure,
+      hasUser: !!emailConfig.auth.user,
+      hasPass: !!emailConfig.auth.pass,
+      user: emailConfig.auth.user || 'empty'
+    });
+
     // Only create transporter if we have valid credentials
     if (emailConfig.auth.user && emailConfig.auth.pass) {
       this.transporter = nodemailer.createTransport(emailConfig);
@@ -46,6 +55,10 @@ class EmailService {
   }
 
   async sendVerificationEmail(email: string, verificationToken: string, userId: number): Promise<boolean> {
+    console.log('EmailService.sendVerificationEmail called with:', { email, userId, token: verificationToken });
+    console.log('Transporter exists:', !!this.transporter);
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    
     if (!this.transporter) {
       // In development mode, log the verification details instead of failing
       if (process.env.NODE_ENV === 'development') {

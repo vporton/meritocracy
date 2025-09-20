@@ -7,7 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (authData: AuthData, provider: string) => Promise<{ success: boolean; error?: string; user?: User }>;
-  registerEmail: (email: string, name?: string) => Promise<{ success: boolean; error?: string; user?: User; requiresVerification?: boolean }>;
+  registerEmail: (email: string, name?: string) => Promise<{ success: boolean; error?: string; user?: User; requiresVerification?: boolean; message?: string }>;
   verifyEmail: (token: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   resendVerification: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -132,7 +132,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       
       const response = await authApi.registerEmail(email, name);
-      const { user: userData, session, requiresVerification } = response.data;
+      const { message, user: userData, session, requiresVerification } = response.data;
+      
+      console.log('Email registration response:', { message, requiresVerification });
       
       if (session) {
         setUser(userData);
@@ -145,7 +147,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return { 
         success: true, 
         user: userData, 
-        requiresVerification 
+        requiresVerification,
+        message 
       };
     } catch (error: any) {
       console.error('Email registration failed:', error);

@@ -66,8 +66,8 @@ function generateUserPrompt(userData: any): string {
     accountInfo.push(`Name: ${userData.name}`);
   }
   
-  // Add email if available
-  if (userData.email) {
+  // Add email if available and verified
+  if (userData.email && userData.emailVerified) {
     accountInfo.push(`Email: ${userData.email}`);
   }
 

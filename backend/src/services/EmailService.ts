@@ -47,6 +47,25 @@ class EmailService {
 
   async sendVerificationEmail(email: string, verificationToken: string, userId: number): Promise<boolean> {
     if (!this.transporter) {
+      // In development mode, log the verification details instead of failing
+      if (process.env.NODE_ENV === 'development') {
+        const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+        console.log('=== EMAIL VERIFICATION (DEVELOPMENT MODE) ===');
+        console.log(`Email: ${email}`);
+        console.log(`Verification Token: ${verificationToken}`);
+        console.log(`Verification URL: ${verificationUrl}`);
+        console.log('==========================================');
+        
+        // Still store the token in the database
+        try {
+          await this.storeVerificationToken(verificationToken, email, userId);
+          return true;
+        } catch (error) {
+          console.error('Failed to store verification token:', error);
+          return false;
+        }
+      }
+      
       console.error('Email service not configured - cannot send verification email');
       return false;
     }

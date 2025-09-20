@@ -358,7 +358,12 @@ router.post('/register/email', async (req, res): Promise<void> => {
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // In development mode, allow @localhost emails for testing
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const emailRegex = isDevelopment 
+      ? /^[^\s@]+@(localhost|127\.0\.0\.1|[\w.-]+\.[\w.-]+)$/
+      : /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
     if (!emailRegex.test(email)) {
       res.status(400).json({ error: 'Invalid email format' });
       return;

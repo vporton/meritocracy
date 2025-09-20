@@ -25,8 +25,6 @@
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
   If this is the case, we should rewrite this in ICP.
 
-- TODO@P1 Check that filenames for OpenAI are unique!
-
 - TODO@P2 Delete DB migrations before the release.
 
 - TODO@P3 Always run prompt randomization as non-batch, because its cost is low.

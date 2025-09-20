@@ -47,12 +47,14 @@ interface MessageEvent {
 }
 
 const ConnectForm = () => {
-  const { login, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
+  const { login, registerEmail, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const { connect, connectors } = useConnect();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
   const [pendingEthereumConnection, setPendingEthereumConnection] = useState(false);
+  const [emailForm, setEmailForm] = useState({ email: '', name: '' });
+  const [showEmailForm, setShowEmailForm] = useState(false);
   
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -129,6 +131,10 @@ const ConnectForm = () => {
       if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
       if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
       if (user.gitlabHandle) connectedProviders.push({ name: 'GitLab', value: user.gitlabHandle });
+      if (user.email) {
+        const emailStatus = user.emailVerified ? '✓' : '⚠️';
+        connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
+      }
       
       return (
         <div className="connected-status">
@@ -392,6 +398,57 @@ const ConnectForm = () => {
     window.addEventListener('message', handleMessage as any);
   };
 
+  // Email connection handler
+  const handleEmailConnect = async () => {
+    // Check if already connected and user wants to disconnect
+    if (isProviderConnected('email')) {
+      return handleDisconnect('email');
+    }
+
+    if (!showEmailForm) {
+      setShowEmailForm(true);
+      return;
+    }
+
+    if (!emailForm.email.trim()) {
+      setConnectStatus(prev => ({ ...prev, email: 'error', error: 'Email is required' }));
+      return;
+    }
+
+    try {
+      setConnectStatus(prev => ({ ...prev, email: 'connecting' }));
+      
+      const result = await registerEmail(emailForm.email.trim(), emailForm.name.trim() || undefined);
+      
+      if (result.success) {
+        setConnectStatus(prev => ({ ...prev, email: 'success' }));
+        setEmailForm({ email: '', name: '' });
+        setShowEmailForm(false);
+        
+        if (result.requiresVerification) {
+          // Show message about email verification
+          setTimeout(() => {
+            setConnectStatus(prev => {
+              const { email, ...rest } = prev;
+              return rest;
+            });
+          }, 3000);
+        } else {
+          // Reset status after a short delay
+          setTimeout(() => setConnectStatus(prev => {
+            const { email, ...rest } = prev;
+            return rest;
+          }), 2000);
+        }
+      } else {
+        setConnectStatus(prev => ({ ...prev, email: 'error', error: result.error }));
+      }
+    } catch (error: any) {
+      console.error('Email connection error:', error);
+      setConnectStatus(prev => ({ ...prev, email: 'error', error: error.message }));
+    }
+  };
+
   // Helper function to check if a provider is connected
   const isProviderConnected = (provider: string): boolean => {
     if (!user) return false;
@@ -401,7 +458,8 @@ const ConnectForm = () => {
       orcid: 'orcidId', 
       github: 'githubHandle',
       bitbucket: 'bitbucketHandle',
-      gitlab: 'gitlabHandle'
+      gitlab: 'gitlabHandle',
+      email: 'email'
     };
     
     const field = providerFields[provider];
@@ -420,7 +478,8 @@ const ConnectForm = () => {
       orcid: 'ORCID',
       github: 'GitHub',
       bitbucket: 'BitBucket',
-      gitlab: 'GitLab'
+      gitlab: 'GitLab',
+      email: 'Email'
     };
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
@@ -529,7 +588,72 @@ const ConnectForm = () => {
           <span className="connect-icon">🦊</span>
           {getButtonText('gitlab')}
         </button>
+
+        {/* Email Connect */}
+        <button
+          className={getButtonClass('email')}
+          onClick={handleEmailConnect}
+          disabled={isLoading || connectStatus.email === 'connecting' || connectStatus.email === 'disconnecting'}
+        >
+          <span className="connect-icon">📧</span>
+          {getButtonText('email')}
+        </button>
       </div>
+
+      {/* Email Form */}
+      {showEmailForm && (
+        <div className="email-form">
+          <h3>Connect with Email</h3>
+          <div className="form-group">
+            <label htmlFor="email">Email Address *</label>
+            <input
+              type="email"
+              id="email"
+              value={emailForm.email}
+              onChange={(e) => setEmailForm(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="Enter your email address"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="name">Name (Optional)</label>
+            <input
+              type="text"
+              id="name"
+              value={emailForm.name}
+              onChange={(e) => setEmailForm(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter your name"
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={handleEmailConnect}
+              disabled={isLoading || connectStatus.email === 'connecting'}
+              className="submit-button"
+            >
+              {connectStatus.email === 'connecting' ? 'Connecting...' : 'Connect Email'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowEmailForm(false);
+                setEmailForm({ email: '', name: '' });
+                setConnectStatus(prev => {
+                  const { email, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              className="cancel-button"
+            >
+              Cancel
+            </button>
+          </div>
+          <p className="email-info">
+            <strong>Note:</strong> You will receive a verification email. Please check your inbox and click the verification link to complete the connection.
+          </p>
+        </div>
+      )}
 
       {/* Error Display */}
       {Object.entries(connectStatus).map(([provider, status]) => 

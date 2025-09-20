@@ -10,6 +10,7 @@ datasource db {
 model User {
   id                Int         @id @default(autoincrement())
   email             String?     @unique
+  emailVerified     Boolean     @default(false)
   name              String?
   ethereumAddress   String?     @unique
   orcidId           String?     @unique
@@ -25,6 +26,7 @@ model User {
   openaiLogs        OpenAILog[]
   sessions          Session[]
   gasTokenDistributions GasTokenDistribution[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@map("users")
 }
@@ -164,4 +166,18 @@ model GasTokenReserve {
   updatedAt         DateTime @updatedAt
 
   @@map("gas_token_reserves")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  userId    Int
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verification_tokens")
 }

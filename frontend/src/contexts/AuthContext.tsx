@@ -1,12 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
-import { User, AuthData } from '../services/api';
+import { User, AuthData, authApi } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (authData: AuthData, provider: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  registerEmail: (email: string, name?: string) => Promise<{ success: boolean; error?: string; user?: User; requiresVerification?: boolean }>;
+  verifyEmail: (token: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  resendVerification: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | undefined>;
   updateAuthData: (userData: User, sessionToken: string) => void;
@@ -124,6 +127,81 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const registerEmail = async (email: string, name?: string) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await authApi.registerEmail(email, name);
+      const { user: userData, session, requiresVerification } = response.data;
+      
+      if (session) {
+        setUser(userData);
+        setToken(session.token);
+        localStorage.setItem('authToken', session.token);
+      } else {
+        setUser(userData);
+      }
+      
+      return { 
+        success: true, 
+        user: userData, 
+        requiresVerification 
+      };
+    } catch (error: any) {
+      console.error('Email registration failed:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Email registration failed' 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyEmail = async (token: string) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await authApi.verifyEmail(token);
+      const { user: userData } = response.data;
+      
+      setUser(userData);
+      
+      return { 
+        success: true, 
+        user: userData 
+      };
+    } catch (error: any) {
+      console.error('Email verification failed:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Email verification failed' 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    try {
+      setIsLoading(true);
+      
+      await authApi.resendVerification();
+      
+      return { 
+        success: true 
+      };
+    } catch (error: any) {
+      console.error('Resend verification failed:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Failed to resend verification email' 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const updateAuthData = (userData: User, sessionToken: string) => {
     setUser(userData);
     setToken(sessionToken);
@@ -135,6 +213,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading,
     isAuthenticated: !!user,
     login,
+    registerEmail,
+    verifyEmail,
+    resendVerification,
     logout,
     refreshUser,
     updateAuthData,

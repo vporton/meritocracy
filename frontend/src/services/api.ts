@@ -20,7 +20,8 @@ api.interceptors.request.use((config) => {
 
 interface User {
   id: number;
-  email: string;
+  email?: string;
+  emailVerified?: boolean;
   name?: string;
   ethereumAddress?: string;
   orcidId?: string;
@@ -78,6 +79,7 @@ interface AuthData {
   githubHandle?: string;
   bitbucketHandle?: string;
   gitlabHandle?: string;
+  token?: string; // For email verification
 }
 
 interface DBLogEntry {
@@ -166,6 +168,12 @@ export const postsApi = {
 export const authApi = {
   login: (provider: string, userData: AuthData): Promise<AxiosResponse<{ user: User; session: { token: string; expiresAt: string } }>> => 
     api.post(`/api/auth/login/${provider}`, userData),
+  registerEmail: (email: string, name?: string): Promise<AxiosResponse<{ message: string; user: User; session?: { token: string; expiresAt: string }; requiresVerification?: boolean }>> => 
+    api.post('/api/auth/register/email', { email, name }),
+  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User }>> => 
+    api.post('/api/auth/verify/email', { token }),
+  resendVerification: (): Promise<AxiosResponse<{ message: string }>> => 
+    api.post('/api/auth/resend-verification'),
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),

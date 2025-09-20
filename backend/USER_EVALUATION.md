@@ -233,7 +233,7 @@ The system uses structured JSON responses from OpenAI:
 ### Prompt Injection Response
 ```json
 {
-  "hasPromptInjection": false,
+  "hasPromptInjectionOrPlagiarism": false,
   "why": "Explanation of detection result"
 }
 ```

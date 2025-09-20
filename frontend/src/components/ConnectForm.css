@@ -99,6 +99,14 @@
   background: linear-gradient(135deg, #e24329, #c73e1d);
 }
 
+.email-button {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.email-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
 /* Loading state */
 .connect-button.loading::after {
   content: '';
@@ -138,6 +146,17 @@
 
 .connect-button.connected:hover:not(:disabled) {
   background: linear-gradient(135deg, #059669, #047857) !important;
+  transform: translateY(-1px);
+}
+
+/* Waiting for verification state */
+.connect-button.waiting-for-verification {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border: 2px solid #b45309;
+}
+
+.connect-button.waiting-for-verification:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706, #b45309) !important;
   transform: translateY(-1px);
 }
 
@@ -258,6 +277,108 @@
   margin-bottom: 0.5rem;
 }
 
+/* Email Form Styles */
+.email-form {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.email-form h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.submit-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex: 1;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.submit-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: #4b5563;
+}
+
+.email-info {
+  margin: 0;
+  padding: 1rem;
+  background: #dbeafe;
+  border-radius: 6px;
+  border-left: 4px solid #3b82f6;
+  color: #1e40af;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.email-info strong {
+  font-weight: 600;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .connect-form {
@@ -268,5 +389,18 @@
   .connect-button {
     padding: 0.875rem 1.25rem;
     font-size: 0.95rem;
+  }
+
+  .email-form {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .submit-button,
+  .cancel-button {
+    width: 100%;
   }
 }

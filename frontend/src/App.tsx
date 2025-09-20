@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import Logs from './pages/Logs'
 import ConnectForm from './components/ConnectForm'
 import OAuthCallback from './components/OAuthCallback'
+import VerifyEmail from './pages/VerifyEmail'
 import './App.css'
 
 const queryClient = new QueryClient()
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/logs" element={<Logs />} />
                 <Route path="/connect" element={<ConnectForm />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 {/* Redirect old login route to new connect route */}
                 <Route path="/login" element={<Navigate to="/connect" replace />} />
                 <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />

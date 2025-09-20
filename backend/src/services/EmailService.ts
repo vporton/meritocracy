@@ -47,13 +47,24 @@ class EmailService {
     // In development mode, always create a transporter (even without credentials)
     // In production mode, only create transporter if we have valid credentials
     if (process.env.NODE_ENV === 'development') {
-      this.transporter = nodemailer.createTransport(emailConfig);
-      this.config = emailConfig;
+      // For development, disable TLS/STARTTLS to avoid certificate issues
+      const devConfig = {
+        ...emailConfig,
+        secure: false,
+        tls: {
+          rejectUnauthorized: false
+        },
+        ignoreTLS: true // TODO@P2: Support not only in dev mode.
+      };
+      
+      this.transporter = nodemailer.createTransport(devConfig);
+      this.config = devConfig;
       console.log('Email service initialized for development mode with config:', {
-        host: emailConfig.host,
-        port: emailConfig.port,
-        secure: emailConfig.secure,
-        hasAuth: !!(emailConfig.auth.user && emailConfig.auth.pass)
+        host: devConfig.host,
+        port: devConfig.port,
+        secure: devConfig.secure,
+        hasAuth: !!(devConfig.auth.user && devConfig.auth.pass),
+        ignoreTLS: devConfig.ignoreTLS
       });
     } else if (emailConfig.auth.user && emailConfig.auth.pass) {
       this.transporter = nodemailer.createTransport(emailConfig);

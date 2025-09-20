@@ -52,3 +52,5 @@
 
 - FIXME@P2 A user can create two accounts with non-overriding connections.
   However, the AI may decide that it is the same user and reward him/her multiple times.
+
+-  TODO@P1 Ban for severe plagiarism.

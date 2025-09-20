@@ -65,29 +65,4 @@ router.post('/start', requireAuth, async (req, res) => {
   }
 });
 
-// TODO@P2: Shouldn't be a public endpoint.
-/**
- * POST /api/evaluation/execute
- * Execute ready tasks in the evaluation flow
- */
-router.post('/execute', async (req, res) => {
-  try {
-    const taskExecutor = new TaskExecutor(prisma);
-    const executedCount = await taskExecutor.executeReadyTasks();
-
-    return res.json({
-      success: true,
-      message: 'Tasks executed',
-      executedCount
-    });
-
-  } catch (error) {
-    console.error('Error executing tasks:', error);
-    return res.status(500).json({
-      error: 'Failed to execute tasks',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
 export default router;

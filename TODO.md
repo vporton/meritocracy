@@ -5,9 +5,6 @@
 - TODO@P2 Require to log-in every 2 months, to avoid dead users.
   Even better let AI checks whether the user is active.
 
-- TODO@P1 Confirmation of email, instead of taking emails from GitHub, etc.
-  Consider email the same login method, as Ethereum, ORCID, GitHub, etc.
-
 - FIXME@P2 After failed login, the button text is "Try again". Thus the name of the button is not shown.
 
 - TODO@P3 Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.

@@ -121,7 +121,7 @@ primary_region = 'fra'
   OPEN_AI_FAKE=false
 
   SMTP_HOST="smtp-relay.brevo.com"
-  SMTP_SENDER_EMAIL="noreply@vporton.name"
+  SMTP_SENDER_EMAIL="porton.victor@gmail.com"
   SMTP_USER="porton.victor@gmail.com"
   SMTP_PORT=587
   SMTP_SECURE=false

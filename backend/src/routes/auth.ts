@@ -102,15 +102,17 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       });
     } else {
       // No current user, create new one
+      const createData: any = {};
+      if (name) createData.name = name;
+      if (ethereumAddress) createData.ethereumAddress = ethereumAddress;
+      if (orcidId) createData.orcidId = orcidId;
+      if (githubHandle) createData.githubHandle = githubHandle;
+      if (bitbucketHandle) createData.bitbucketHandle = bitbucketHandle;
+      if (gitlabHandle) createData.gitlabHandle = gitlabHandle;
+      if (email) createData.email = email;
+      
       return await prisma.user.create({
-        data: {
-          name,
-          ethereumAddress,
-          orcidId,
-          githubHandle,
-          bitbucketHandle,
-          gitlabHandle
-        }
+        data: createData
       });
     }
   } else {
@@ -120,32 +122,33 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user
       await prisma.user.delete({where: {id: existingUser.id}});
+      const updateData: any = {};
+      if (email || existingUser.email) updateData.email = email || existingUser.email;
+      if (name || existingUser.name) updateData.name = name || existingUser.name;
+      if (ethereumAddress || existingUser.ethereumAddress) updateData.ethereumAddress = ethereumAddress || existingUser.ethereumAddress;
+      if (orcidId || existingUser.orcidId) updateData.orcidId = orcidId || existingUser.orcidId;
+      if (githubHandle || existingUser.githubHandle) updateData.githubHandle = githubHandle || existingUser.githubHandle;
+      if (bitbucketHandle || existingUser.bitbucketHandle) updateData.bitbucketHandle = bitbucketHandle || existingUser.bitbucketHandle;
+      if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
+      
       return await prisma.user.update({
         where: { id: currentUserId },
-        data: {
-          // Merge existing user data with new provider data
-          email: email || existingUser.email || undefined,
-          name: name || existingUser.name || undefined,
-          ethereumAddress: ethereumAddress || existingUser.ethereumAddress || undefined,
-          orcidId: orcidId || existingUser.orcidId || undefined,
-          githubHandle: githubHandle || existingUser.githubHandle || undefined,
-          bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle || undefined,
-          gitlabHandle: gitlabHandle || existingUser.gitlabHandle || undefined,
-        }
+        data: updateData
       });
     } else {
       // Either no current user or current user is the same as existing user
+      const updateData: any = {};
+      if (email || existingUser.email) updateData.email = email || existingUser.email;
+      if (name || existingUser.name) updateData.name = name || existingUser.name;
+      if (ethereumAddress || existingUser.ethereumAddress) updateData.ethereumAddress = ethereumAddress || existingUser.ethereumAddress;
+      if (orcidId || existingUser.orcidId) updateData.orcidId = orcidId || existingUser.orcidId;
+      if (githubHandle || existingUser.githubHandle) updateData.githubHandle = githubHandle || existingUser.githubHandle;
+      if (bitbucketHandle || existingUser.bitbucketHandle) updateData.bitbucketHandle = bitbucketHandle || existingUser.bitbucketHandle;
+      if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
+      
       return await prisma.user.update({
         where: { id: existingUser.id },
-        data: {
-          email: email || existingUser.email,
-          name: name || existingUser.name,
-          ethereumAddress: ethereumAddress || existingUser.ethereumAddress,
-          orcidId: orcidId || existingUser.orcidId,
-          githubHandle: githubHandle || existingUser.githubHandle,
-          bitbucketHandle: bitbucketHandle || existingUser.bitbucketHandle,
-          gitlabHandle: gitlabHandle || existingUser.gitlabHandle
-        }
+        data: updateData
       });
     }
   }

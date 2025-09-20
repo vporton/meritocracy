@@ -67,12 +67,13 @@ class EmailService {
         ignoreTLS: devConfig.ignoreTLS
       });
     } else if (emailConfig.auth.user && emailConfig.auth.pass) {
-      // For production, add proper TLS configuration
+      // For production, add proper TLS configuration and auth method
       const prodConfig = {
         ...emailConfig,
         tls: {
           rejectUnauthorized: true
-        }
+        },
+        authMethod: 'PLAIN'
       };
       
       this.transporter = nodemailer.createTransport(prodConfig);

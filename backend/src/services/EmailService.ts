@@ -56,7 +56,7 @@ class EmailService {
         tls: {
           rejectUnauthorized: false
         },
-        ignoreTLS: true // TODO@P2: Support not only in dev mode.
+        ignoreTLS: true
       };
       
       this.transporter = nodemailer.createTransport(devConfig);

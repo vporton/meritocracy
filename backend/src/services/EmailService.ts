@@ -67,9 +67,17 @@ class EmailService {
         ignoreTLS: devConfig.ignoreTLS
       });
     } else if (emailConfig.auth.user && emailConfig.auth.pass) {
-      this.transporter = nodemailer.createTransport(emailConfig);
-      this.config = emailConfig;
-      console.log('Email service initialized with SMTP configuration');
+      // For production, add proper TLS configuration
+      const prodConfig = {
+        ...emailConfig,
+        tls: {
+          rejectUnauthorized: true
+        }
+      };
+      
+      this.transporter = nodemailer.createTransport(prodConfig);
+      this.config = prodConfig;
+      console.log('Email service initialized with production SMTP configuration');
     } else {
       console.warn('Email service not configured - SMTP credentials missing');
     }

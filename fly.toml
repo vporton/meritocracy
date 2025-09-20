@@ -118,7 +118,7 @@ primary_region = 'fra'
   # - worth: 0.1% of GDP
   # - injection: no injection
   # - prompt randomization: don't randomize (pass the prompt as is)
-  OPEN_AI_FAKE=false
+  OPEN_AI_FAKE=true
 
   SMTP_HOST="smtp-relay.brevo.com"
   SMTP_SENDER_EMAIL="noreply@vporton.name"

@@ -55,3 +55,5 @@
   Solvable by KYC.
 
 - TODO@P3 Add KYC to catch fraudsters. https://business.didit.me/console is free KYC!
+
+- TODO@P3 Don't allow worth assessment, when only KYC and/or Ethereum connected.

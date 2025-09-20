@@ -41,7 +41,9 @@ class EmailService {
       secure: emailConfig.secure,
       hasUser: !!emailConfig.auth.user,
       hasPass: !!emailConfig.auth.pass,
-      user: emailConfig.auth.user || 'empty'
+      user: emailConfig.auth.user || 'empty',
+      passLength: emailConfig.auth.pass ? emailConfig.auth.pass.length : 0,
+      passPreview: emailConfig.auth.pass ? emailConfig.auth.pass.substring(0, 4) + '...' : 'empty'
     });
 
     // In development mode, always create a transporter (even without credentials)
@@ -88,6 +90,14 @@ class EmailService {
     console.log('EmailService.sendVerificationEmail called with:', { email, userId, token: verificationToken });
     console.log('Transporter exists:', !!this.transporter);
     console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('Current SMTP config:', {
+      host: this.config?.host,
+      port: this.config?.port,
+      secure: this.config?.secure,
+      hasUser: !!this.config?.auth?.user,
+      hasPass: !!this.config?.auth?.pass,
+      user: this.config?.auth?.user || 'empty'
+    });
     
     if (!this.transporter) {
       console.error('Email service not configured - cannot send verification email');

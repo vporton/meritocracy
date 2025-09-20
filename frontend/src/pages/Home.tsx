@@ -287,7 +287,7 @@ function Home() {
                   your salary calculation may be delayed by up to <strong>two months</strong>!
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  Make sure to connect all your accounts on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
+                  Make sure to connect all accounts, that have your publications, on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
                 </p>
               </div>
 

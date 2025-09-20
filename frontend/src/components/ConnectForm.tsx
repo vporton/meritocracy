@@ -494,6 +494,14 @@ const ConnectForm = () => {
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
     
+    // Special handling for email: check verification status
+    if (provider === 'email' && isConnected && !status) {
+      if (user?.email && !user?.emailVerified) {
+        return 'Waiting for email';
+      }
+      return `Disconnect ${displayName}`;
+    }
+    
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {
       return `Disconnect ${displayName}`;
@@ -534,7 +542,17 @@ const ConnectForm = () => {
     if (status === 'success') className += ' success';
     if (status === 'verification-sent') className += ' verification-sent';
     if (status === 'error') className += ' error';
-    if (isConnected && !status) className += ' connected';
+    
+    // Special handling for email verification status
+    if (provider === 'email' && isConnected && !status) {
+      if (user?.email && !user?.emailVerified) {
+        className += ' waiting-for-verification';
+      } else {
+        className += ' connected';
+      }
+    } else if (isConnected && !status) {
+      className += ' connected';
+    }
     
     return className;
   };

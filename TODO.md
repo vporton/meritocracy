@@ -57,3 +57,6 @@
 - TODO@P3 Add KYC to catch fraudsters. https://business.didit.me/console is free KYC!
 
 - TODO@P3 Don't allow worth assessment, when only KYC and/or Ethereum connected.
+
+- TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"
+  to "Disconnect Email" state.

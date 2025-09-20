@@ -45,3 +45,5 @@
 - TODO@P2 Merge the history, when merging accounts.
 
 - FIXME@P1 If user disconnect (all) his/her accounts, he gets rid of a ban. This is a security vulnerability.
+
+- TODO@P3 Give back token like GIV of Giveth.

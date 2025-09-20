@@ -119,3 +119,8 @@ primary_region = 'fra'
   # - injection: no injection
   # - prompt randomization: don't randomize (pass the prompt as is)
   OPEN_AI_FAKE=false
+
+  SMTP_HOST="smtp-relay.brevo.com"
+  SMTP_SENDER_EMAIL="noreply@vporton.name"
+  SMTP_USER="porton.victor@gmail.com"
+  SMTP_PORT=587

@@ -90,8 +90,16 @@ class EmailService {
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       
+      // Use a proper sender address - in development mode, use a default one
+      // If the user doesn't contain a domain (no @ symbol), use localhost domain
+      const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
+      console.log('Sender email being used:', senderEmail);
+      console.log('Config auth user:', this.config!.auth.user);
+      
+      console.log('Recipient email:', email);
+      
       const mailOptions = {
-        from: `"Socialism Platform" <${this.config!.auth.user}>`,
+        from: `"Socialism Platform" <${senderEmail}>`,
         to: email,
         subject: 'Verify Your Email Address - Socialism Platform',
         html: `

@@ -50,4 +50,4 @@
 - TODO@P3 Don't allow worth assessment, when only KYC and/or Ethereum connected.
 
 - TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"
-  to "Disconnect Email" state.
+  to "Disconnect Email" state through browser inter-windows communication.

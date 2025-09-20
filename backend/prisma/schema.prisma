@@ -28,6 +28,8 @@ model User {
   gasTokenDistributions GasTokenDistribution[]
   emailVerificationTokens EmailVerificationToken[]
 
+  @@index([onboarded])
+  @@index([shareInGDP])
   @@map("users")
 }
 
@@ -40,6 +42,8 @@ model Session {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([expiresAt])
   @@map("sessions")
 }
 
@@ -99,6 +103,9 @@ model Task {
   Batches         Batches[]
   NonBatches      NonBatches[]
 
+  @@index([status])
+  @@index([runnerClassName])
+  @@index([completedAt])
   @@map("tasks")
 }
 
@@ -130,6 +137,11 @@ model OpenAILog {
   task             Task?     @relation(fields: [taskId], references: [id])
   user             User?     @relation(fields: [userId], references: [id])
 
+  @@index([userId])
+  @@index([taskId])
+  @@index([runnerClassName])
+  @@index([createdAt])
+  @@index([storeId])
   @@map("openai_logs")
 }
 
@@ -155,6 +167,9 @@ model GasTokenDistribution {
   updatedAt         DateTime @updatedAt
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([status])
+  @@index([distributionDate])
   @@map("gas_token_distributions")
 }
 
@@ -179,5 +194,8 @@ model EmailVerificationToken {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([used])
   @@map("email_verification_tokens")
 }

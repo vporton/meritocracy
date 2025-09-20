@@ -124,4 +124,4 @@ primary_region = 'fra'
   SMTP_SENDER_EMAIL="noreply@vporton.name"
   SMTP_USER="porton.victor@gmail.com"
   SMTP_PORT=587
-  SMTP_SECURE=true
+  SMTP_SECURE=false

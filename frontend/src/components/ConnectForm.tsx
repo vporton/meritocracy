@@ -389,7 +389,6 @@ const ConnectForm = () => {
       }
     };
 
-    console.log(`XXX Adding message listener for ${provider}`); // FIXME@P1: Remove this after debugging.
     window.addEventListener('message', handleMessage as any);
   };
 

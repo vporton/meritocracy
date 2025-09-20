@@ -52,5 +52,6 @@
 
 - FIXME@P2 A user can create two accounts with non-overriding connections.
   However, the AI may decide that it is the same user and reward him/her multiple times.
+  Solvable by KYC.
 
 - TODO@P3 Add KYC to catch fraudsters.

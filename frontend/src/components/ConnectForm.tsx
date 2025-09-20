@@ -421,25 +421,30 @@ const ConnectForm = () => {
       const result = await registerEmail(emailForm.email.trim(), emailForm.name.trim() || undefined);
       
       if (result.success) {
-        setConnectStatus(prev => ({ ...prev, email: 'success' }));
-        setEmailForm({ email: '', name: '' });
-        setShowEmailForm(false);
-        
         // Log the success message to console for debugging
         if (result.message) {
           console.log('Email registration success:', result.message);
         }
         
         if (result.requiresVerification) {
-          // Show message about email verification
+          // Show "verification sent" status instead of success
+          setConnectStatus(prev => ({ ...prev, email: 'verification-sent' }));
+          setEmailForm({ email: '', name: '' });
+          setShowEmailForm(false);
+          
+          // Reset status after a longer delay to give user time to read the message
           setTimeout(() => {
             setConnectStatus(prev => {
               const { email, ...rest } = prev;
               return rest;
             });
-          }, 3000);
+          }, 5000);
         } else {
-          // Reset status after a short delay
+          // Only show success if email is already verified (no verification required)
+          setConnectStatus(prev => ({ ...prev, email: 'success' }));
+          setEmailForm({ email: '', name: '' });
+          setShowEmailForm(false);
+          
           setTimeout(() => setConnectStatus(prev => {
             const { email, ...rest } = prev;
             return rest;
@@ -507,6 +512,8 @@ const ConnectForm = () => {
         return 'Disconnecting...';
       case 'success':
         return 'Success!';
+      case 'verification-sent':
+        return 'Check Email!';
       case 'error':
         return 'Try Again';
       case 'cancelled':
@@ -525,6 +532,7 @@ const ConnectForm = () => {
       className += ' loading';
     }
     if (status === 'success') className += ' success';
+    if (status === 'verification-sent') className += ' verification-sent';
     if (status === 'error') className += ' error';
     if (isConnected && !status) className += ' connected';
     

@@ -26,8 +26,8 @@ class EmailService {
     // For development, we'll use a simple SMTP configuration
     // In production, you might want to use services like SendGrid, AWS SES, etc.
     const emailConfig = {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
+      host: process.env.SMTP_HOST || 'localhost',
+      port: parseInt(process.env.SMTP_PORT || '25'),
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER || '',
@@ -44,8 +44,18 @@ class EmailService {
       user: emailConfig.auth.user || 'empty'
     });
 
-    // Only create transporter if we have valid credentials
-    if (emailConfig.auth.user && emailConfig.auth.pass) {
+    // In development mode, always create a transporter (even without credentials)
+    // In production mode, only create transporter if we have valid credentials
+    if (process.env.NODE_ENV === 'development') {
+      this.transporter = nodemailer.createTransport(emailConfig);
+      this.config = emailConfig;
+      console.log('Email service initialized for development mode with config:', {
+        host: emailConfig.host,
+        port: emailConfig.port,
+        secure: emailConfig.secure,
+        hasAuth: !!(emailConfig.auth.user && emailConfig.auth.pass)
+      });
+    } else if (emailConfig.auth.user && emailConfig.auth.pass) {
       this.transporter = nodemailer.createTransport(emailConfig);
       this.config = emailConfig;
       console.log('Email service initialized with SMTP configuration');
@@ -60,28 +70,11 @@ class EmailService {
     console.log('NODE_ENV:', process.env.NODE_ENV);
     
     if (!this.transporter) {
-      // In development mode, log the verification details instead of failing
-      if (process.env.NODE_ENV === 'development') {
-        const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-        console.log('=== EMAIL VERIFICATION (DEVELOPMENT MODE) ===');
-        console.log(`Email: ${email}`);
-        console.log(`Verification Token: ${verificationToken}`);
-        console.log(`Verification URL: ${verificationUrl}`);
-        console.log('==========================================');
-        
-        // Still store the token in the database
-        try {
-          await this.storeVerificationToken(verificationToken, email, userId);
-          return true;
-        } catch (error) {
-          console.error('Failed to store verification token:', error);
-          return false;
-        }
-      }
-      
       console.error('Email service not configured - cannot send verification email');
       return false;
     }
+
+    console.log('Using transporter to send email');
 
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
@@ -131,6 +124,15 @@ class EmailService {
 
       const info = await this.transporter.sendMail(mailOptions);
       console.log('Verification email sent successfully:', info.messageId);
+      
+      // In development mode, also log the verification details for easy testing
+      if (process.env.NODE_ENV === 'development') {
+        console.log('=== DEVELOPMENT MODE: EMAIL VERIFICATION DETAILS ===');
+        console.log(`Email: ${email}`);
+        console.log(`Verification Token: ${verificationToken}`);
+        console.log(`Verification URL: ${verificationUrl}`);
+        console.log('===================================================');
+      }
       
       // Store the verification token in the database
       await this.storeVerificationToken(verificationToken, email, userId);

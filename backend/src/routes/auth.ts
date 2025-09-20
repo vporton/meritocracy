@@ -372,13 +372,13 @@ router.post('/register/email', async (req, res): Promise<void> => {
     // Get current user ID from token if present (for connecting additional accounts)
     const currentUserId = await getCurrentUserFromToken(req);
     
-    // Check if email is already taken by another user
+    // Check if email is already taken by another user (only if verified)
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
-    if (existingUser && (!currentUserId || existingUser.id !== currentUserId)) {
-      res.status(400).json({ error: 'Email is already registered' });
+    if (existingUser && existingUser.emailVerified && (!currentUserId || existingUser.id !== currentUserId)) {
+      res.status(400).json({ error: 'Email is already registered and verified' });
       return;
     }
 
@@ -413,8 +413,11 @@ router.post('/register/email', async (req, res): Promise<void> => {
 
     // If user is already authenticated, return success immediately
     if (currentUserId) {
+      const responseMessage = 'Verification email sent successfully';
+      console.log('Sending response message (existing user):', responseMessage);
+      
       res.json({
-        message: 'Verification email sent successfully',
+        message: responseMessage,
         user: {
           ...user,
           emailVerified: false // Will be true after verification
@@ -426,8 +429,11 @@ router.post('/register/email', async (req, res): Promise<void> => {
     // For new users, create a temporary session that requires email verification
     const session = await createSession(user.id);
     
+    const responseMessage = 'Registration successful. Please check your email to verify your account.';
+    console.log('Sending response message:', responseMessage);
+    
     res.json({
-      message: 'Registration successful. Please check your email to verify your account.',
+      message: responseMessage,
       user: {
         ...user,
         emailVerified: false

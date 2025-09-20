@@ -47,3 +47,5 @@
 - FIXME@P1 If user disconnect (all) his/her accounts, he gets rid of a ban. This is a security vulnerability.
 
 - TODO@P3 Give back token like GIV of Giveth.
+
+- TODO@P2 Delete disconnected accounts. However, don't delete bans.

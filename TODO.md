@@ -54,4 +54,4 @@
   However, the AI may decide that it is the same user and reward him/her multiple times.
   Solvable by KYC.
 
-- TODO@P3 Add KYC to catch fraudsters.
+- TODO@P3 Add KYC to catch fraudsters. https://business.didit.me/console is free KYC!

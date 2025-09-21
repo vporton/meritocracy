@@ -51,3 +51,5 @@
 
 - TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"
   to "Disconnect Email" state through browser inter-windows communication.
+
+- TODO@P3 Should the user be able to add more than one email?

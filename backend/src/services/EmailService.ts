@@ -83,8 +83,6 @@ class EmailService {
       // If the user doesn't contain a domain (no @ symbol), use localhost domain
       const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
       console.log('Sender email being used:', senderEmail);
-      console.log('Config auth user:', this.config!.auth.user);
-      
       console.log('Recipient email:', email);
       
       const mailOptions = {
@@ -135,11 +133,7 @@ class EmailService {
       
       // In development mode, also log the verification details for easy testing
       if (process.env.NODE_ENV === 'development') {
-        console.log('=== DEVELOPMENT MODE: EMAIL VERIFICATION DETAILS ===');
-        console.log(`Email: ${email}`);
-        console.log(`Verification Token: ${verificationToken}`);
         console.log(`Verification URL: ${verificationUrl}`);
-        console.log('===================================================');
       }
       
       // Store the verification token in the database

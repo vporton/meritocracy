@@ -216,12 +216,6 @@ export abstract class BaseRunner implements TaskRunner {
           errorMessage: errorMessage || null
         }
       });
-      
-      this.log('info', `📝 Logged OpenAI response`, { 
-        customId, 
-        hasResponse: !!responseData,
-        hasError: !!errorMessage
-      });
     } catch (error) {
       this.log('error', `Failed to log OpenAI response`, { 
         customId, 
@@ -355,7 +349,6 @@ export abstract class BaseRunner implements TaskRunner {
       throw new TaskRunnerError(`Task with ID ${taskId} not found`, taskId, this.constructor.name);
     }
 
-    console.log('DEBUG task', task);
     return task as TaskWithDependencies;
   }
 
@@ -629,13 +622,6 @@ export class MedianRunner extends BaseRunner {
         });
       }
     }
-
-    this.log('info', `Processed dependencies for median calculation`, {
-      totalDependencies: task.dependencies.length,
-      completedCount,
-      cancelledCount,
-      validWorthValues: worthValues.length
-    });
 
     return worthValues;
   }

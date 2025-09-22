@@ -198,13 +198,6 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
           taskId: taskId || null
         }
       });
-      
-      this.log('info', `📝 Logged OpenAI request`, { 
-        customId, 
-        storeId, 
-        taskId,
-        userId: this.data.userId 
-      });
     } catch (error) {
       this.log('error', `Failed to log OpenAI request`, { 
         customId, 
@@ -232,12 +225,6 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
           responseData: responseData ? JSON.stringify(responseData) : null,
           errorMessage: errorMessage || null
         }
-      });
-      
-      this.log('info', `📝 Logged OpenAI response`, { 
-        customId, 
-        hasResponse: !!responseData,
-        hasError: !!errorMessage
       });
     } catch (error) {
       this.log('error', `Failed to log OpenAI response`, { 

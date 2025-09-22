@@ -433,7 +433,6 @@ router.post('/register/email', async (req, res): Promise<void> => {
     const session = await createSession(user.id);
     
     const responseMessage = 'Registration successful. Please check your email to verify your account.';
-    console.log('Sending response message:', responseMessage);
     
     res.json({
       message: responseMessage,

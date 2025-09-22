@@ -409,7 +409,6 @@ router.post('/register/email', async (req, res): Promise<void> => {
     const verificationToken = EmailService.generateVerificationToken();
     console.log('About to send verification email for:', email, 'user:', user.id, 'token:', verificationToken);
     const emailSent = await EmailService.sendVerificationEmail(email, verificationToken, user.id);
-    console.log('Email send result:', emailSent);
 
     if (!emailSent) {
       res.status(500).json({ error: 'Failed to send verification email' });

@@ -74,8 +74,6 @@ class EmailService {
       return false;
     }
 
-    console.log('Using transporter to send email');
-
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
       

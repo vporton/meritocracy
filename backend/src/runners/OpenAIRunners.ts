@@ -455,7 +455,8 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
           initiatedAt: new Date().toISOString(),
           completedAt: new Date().toISOString(),
           ...fakeResponse
-        })
+        }),
+        storeId
       }
     });
   }

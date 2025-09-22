@@ -275,7 +275,7 @@ export class TaskManager {
       }
 
       // Check if the task has a customId and storeId (indicating it made an OpenAI request)
-      if (runnerData.customId && runnerData.storeId) {
+      if (runnerData.customId && task.storeId) {
         console.log(`Checking output for task ${taskId} with customId: ${runnerData.customId}`);
         
         // Create a temporary runner instance to check the output

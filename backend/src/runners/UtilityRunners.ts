@@ -35,6 +35,7 @@ class OpenAIError extends TaskRunnerError {
 interface TaskWithDependencies {
   id: number;
   status: string;
+  storeId: string;
   runnerData: string | null;
   dependencies: Array<{
     dependency: {
@@ -337,7 +338,11 @@ export abstract class BaseRunner implements TaskRunner {
   protected async getTaskWithDependencies(taskId: number): Promise<TaskWithDependencies> {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        runnerData: true,
+        storeId: true,
         dependencies: {
           include: {
             dependency: true,
@@ -350,6 +355,7 @@ export abstract class BaseRunner implements TaskRunner {
       throw new TaskRunnerError(`Task with ID ${taskId} not found`, taskId, this.constructor.name);
     }
 
+    console.log('DEBUG task', task);
     return task as TaskWithDependencies;
   }
 
@@ -518,6 +524,7 @@ export class MedianRunner extends BaseRunner {
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     // Extract worth values from dependency results
     const worthValues = await this.processWorthDependencyResults(task);
+    console.log('DEBUG worthValues', worthValues);
 
     // Calculate median
     const median = worthValues.length === 0 ? 0 : this.calculateMedian(worthValues);
@@ -600,7 +607,7 @@ export class MedianRunner extends BaseRunner {
 
         const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
         
-        if (!depData.customId || !depData.storeId) {
+        if (!depData.customId || !dep.dependency.storeId) {
           this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
           continue;
         }
@@ -608,7 +615,7 @@ export class MedianRunner extends BaseRunner {
         // Get the result from the dependency
         const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
           customId: depData.customId, 
-          storeId: depData.storeId 
+          storeId: dep.dependency.storeId 
         });
 
         if (typeof response.worthAsFractionOfGDP === 'number') {

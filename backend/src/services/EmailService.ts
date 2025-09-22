@@ -80,8 +80,6 @@ class EmailService {
       // Use a proper sender address - in development mode, use a default one
       // If the user doesn't contain a domain (no @ symbol), use localhost domain
       const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
-      console.log('Sender email being used:', senderEmail);
-      console.log('Recipient email:', email);
       
       const mailOptions = {
         from: `"Socialism Platform" <${senderEmail}>`,

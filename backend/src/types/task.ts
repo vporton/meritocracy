@@ -175,13 +175,6 @@ export class TaskRunnerRegistry {
       }
     }
 
-    // TODO@P2: `storeId` should be set differently.
-    // Merge existing data with new output, including storeId if available
-    const mergedData = {
-      ...existingData,
-      ...(currentTask?.storeId && { storeId: currentTask.storeId }),
-    };
-
     // Update the task status to COMPLETED and set data
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
@@ -189,7 +182,6 @@ export class TaskRunnerRegistry {
         status: TaskStatus.COMPLETED,
         completedAt: new Date(),
         updatedAt: new Date(),
-        runnerData: JSON.stringify(mergedData)
       }
     });
 

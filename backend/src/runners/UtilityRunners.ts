@@ -35,6 +35,7 @@ class OpenAIError extends TaskRunnerError {
 interface TaskWithDependencies {
   id: number;
   status: string;
+  storeId: string;
   runnerData: string | null;
   dependencies: Array<{
     dependency: {
@@ -215,12 +216,6 @@ export abstract class BaseRunner implements TaskRunner {
           errorMessage: errorMessage || null
         }
       });
-      
-      this.log('info', `📝 Logged OpenAI response`, { 
-        customId, 
-        hasResponse: !!responseData,
-        hasError: !!errorMessage
-      });
     } catch (error) {
       this.log('error', `Failed to log OpenAI response`, { 
         customId, 
@@ -337,7 +332,11 @@ export abstract class BaseRunner implements TaskRunner {
   protected async getTaskWithDependencies(taskId: number): Promise<TaskWithDependencies> {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        runnerData: true,
+        storeId: true,
         dependencies: {
           include: {
             dependency: true,
@@ -518,6 +517,7 @@ export class MedianRunner extends BaseRunner {
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     // Extract worth values from dependency results
     const worthValues = await this.processWorthDependencyResults(task);
+    console.log('DEBUG worthValues', worthValues);
 
     // Calculate median
     const median = worthValues.length === 0 ? 0 : this.calculateMedian(worthValues);
@@ -600,7 +600,7 @@ export class MedianRunner extends BaseRunner {
 
         const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
         
-        if (!depData.customId || !depData.storeId) {
+        if (!depData.customId || !dep.dependency.storeId) {
           this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
           continue;
         }
@@ -608,7 +608,7 @@ export class MedianRunner extends BaseRunner {
         // Get the result from the dependency
         const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
           customId: depData.customId, 
-          storeId: depData.storeId 
+          storeId: dep.dependency.storeId 
         });
 
         if (typeof response.worthAsFractionOfGDP === 'number') {
@@ -622,13 +622,6 @@ export class MedianRunner extends BaseRunner {
         });
       }
     }
-
-    this.log('info', `Processed dependencies for median calculation`, {
-      totalDependencies: task.dependencies.length,
-      completedCount,
-      cancelledCount,
-      validWorthValues: worthValues.length
-    });
 
     return worthValues;
   }

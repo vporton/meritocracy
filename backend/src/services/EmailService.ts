@@ -69,18 +69,6 @@ class EmailService {
   }
 
   async sendVerificationEmail(email: string, verificationToken: string, userId: number): Promise<boolean> {
-    console.log('EmailService.sendVerificationEmail called with:', { email, userId, token: verificationToken });
-    console.log('Transporter exists:', !!this.transporter);
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('Current SMTP config:', {
-      host: this.config?.host,
-      port: this.config?.port,
-      secure: this.config?.secure,
-      hasUser: !!this.config?.auth?.user,
-      hasPass: !!this.config?.auth?.pass,
-      user: this.config?.auth?.user || 'empty'
-    });
-    
     if (!this.transporter) {
       console.error('Email service not configured - cannot send verification email');
       return false;

@@ -418,7 +418,6 @@ router.post('/register/email', async (req, res): Promise<void> => {
     // If user is already authenticated, return success immediately
     if (currentUserId) {
       const responseMessage = 'Verification email sent successfully';
-      console.log('Sending response message (existing user):', responseMessage);
       
       res.json({
         message: responseMessage,

@@ -76,6 +76,7 @@ function Home() {
     checkEthereumStatus()
   }, [])
 
+  // TODO@P3: duplicate code
   useEffect(() => {
     const fetchWorldGdp = async () => {
       try {

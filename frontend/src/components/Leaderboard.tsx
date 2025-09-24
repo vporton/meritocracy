@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react'
-import { usersApi, LeaderboardEntry } from '../services/api'
+import api, { usersApi, LeaderboardEntry } from '../services/api'
 
 interface LeaderboardProps {
   limit?: number;
   showTop?: number; // Number of top entries to show by default
+}
+
+// TODO@P3: duplicate code
+interface WorldGdpData {
+  worldGdp: number;
+  formatted: string;
+  currency: string;
+  lastUpdated: string;
 }
 
 function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
@@ -11,6 +19,23 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
+  const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
+
+  // TODO@P3: duplicate code
+  useEffect(() => {
+    const fetchWorldGdp = async () => {
+      try {
+        const response = await api.get('/api/global/gdp')
+        if (response.data.success) {
+          setWorldGdp(response.data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch world GDP:', error)
+      }
+    }
+
+    fetchWorldGdp()
+  }, [])
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -139,7 +164,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
               fontWeight: 'bold',
               color: '#4caf50'
             }}>
-              {entry.formatted}
+              {entry.shareInGDP} of GDP = ${(entry.shareInGDP * worldGdp!.worldGdp).toLocaleString()}
             </div>
           </div>
         ))}

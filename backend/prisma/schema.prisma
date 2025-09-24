@@ -96,6 +96,7 @@ model Task {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   completedAt     DateTime?
+  lockTime        DateTime?        // Used to prevent multiple processes from processing the same task
   openaiLogs      OpenAILog[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
@@ -106,6 +107,7 @@ model Task {
   @@index([status])
   @@index([runnerClassName])
   @@index([completedAt])
+  @@index([lockTime])
   @@map("tasks")
 }
 

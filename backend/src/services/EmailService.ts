@@ -69,24 +69,10 @@ class EmailService {
   }
 
   async sendVerificationEmail(email: string, verificationToken: string, userId: number): Promise<boolean> {
-    console.log('EmailService.sendVerificationEmail called with:', { email, userId, token: verificationToken });
-    console.log('Transporter exists:', !!this.transporter);
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('Current SMTP config:', {
-      host: this.config?.host,
-      port: this.config?.port,
-      secure: this.config?.secure,
-      hasUser: !!this.config?.auth?.user,
-      hasPass: !!this.config?.auth?.pass,
-      user: this.config?.auth?.user || 'empty'
-    });
-    
     if (!this.transporter) {
       console.error('Email service not configured - cannot send verification email');
       return false;
     }
-
-    console.log('Using transporter to send email');
 
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
@@ -94,10 +80,6 @@ class EmailService {
       // Use a proper sender address - in development mode, use a default one
       // If the user doesn't contain a domain (no @ symbol), use localhost domain
       const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
-      console.log('Sender email being used:', senderEmail);
-      console.log('Config auth user:', this.config!.auth.user);
-      
-      console.log('Recipient email:', email);
       
       const mailOptions = {
         from: `"Socialism Platform" <${senderEmail}>`,
@@ -147,11 +129,7 @@ class EmailService {
       
       // In development mode, also log the verification details for easy testing
       if (process.env.NODE_ENV === 'development') {
-        console.log('=== DEVELOPMENT MODE: EMAIL VERIFICATION DETAILS ===');
-        console.log(`Email: ${email}`);
-        console.log(`Verification Token: ${verificationToken}`);
         console.log(`Verification URL: ${verificationUrl}`);
-        console.log('===================================================');
       }
       
       // Store the verification token in the database

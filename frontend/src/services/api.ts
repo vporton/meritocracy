@@ -136,7 +136,6 @@ interface LeaderboardEntry {
   userId: number;
   name: string;
   shareInGDP: number;
-  formatted: string;
 }
 
 // Users API

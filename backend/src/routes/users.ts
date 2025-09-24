@@ -46,12 +46,6 @@ router.get('/leaderboard', async (req, res): Promise<void> => {
       userId: user.id,
       name: user.name || `User ${user.id}`,
       shareInGDP: user.shareInGDP!,
-      formatted: user.shareInGDP!.toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      })
     }));
 
     res.json({ 
@@ -129,12 +123,7 @@ router.get('/me/gdp-share', requireAuth, async (req, res): Promise<void> => {
         name: user.name,
         email: user.email,
         shareInGDP: user.shareInGDP,
-        formatted: user.shareInGDP.toLocaleString('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        })
+        value: user.shareInGDP
       }
     });
   } catch (error: any) {

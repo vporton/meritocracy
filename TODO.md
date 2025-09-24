@@ -29,8 +29,6 @@
 
 - TODO@P3 Always run prompt randomization as non-batch, because its cost is low.
 
-- FIXME@P2 Leaderboard shows wrong values.
-
 - TODO@P2 Rewrite Ethereum connection in backend using Viem.
 
 - TODO@P2 web3modal (not only MetaMask)

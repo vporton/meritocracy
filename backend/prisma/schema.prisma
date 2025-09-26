@@ -8,31 +8,30 @@ datasource db {
 }
 
 model User {
-  id                Int         @id @default(autoincrement())
-  email             String?     @unique
-  emailVerified     Boolean     @default(false)
-  name              String?
-  ethereumAddress   String?     @unique
-  orcidId           String?     @unique
-  githubHandle      String?     @unique
-  bitbucketHandle   String?     @unique
-  gitlabHandle      String?     @unique
-  onboarded         Boolean     @default(false)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  bannedTill        DateTime?
-  lastPaymentAmount Decimal?
-  shareInGDP        Float?
-  // KYC verification fields
-  kycStatus         String?     // PENDING, VERIFIED, REJECTED, EXPIRED
-  kycVerifiedAt     DateTime?   // When KYC was verified
-  kycRejectedAt     DateTime?   // When KYC was rejected
-  kycRejectionReason String?    // Reason for rejection
-  kycData           String?     // JSON string containing verification data from Didit
-  openaiLogs        OpenAILog[]
-  sessions          Session[]
-  gasTokenDistributions GasTokenDistribution[]
+  id                      Int                      @id @default(autoincrement())
+  email                   String?                  @unique
+  emailVerified           Boolean                  @default(false)
+  name                    String?
+  ethereumAddress         String?                  @unique
+  orcidId                 String?                  @unique
+  githubHandle            String?                  @unique
+  bitbucketHandle         String?                  @unique
+  gitlabHandle            String?                  @unique
+  onboarded               Boolean                  @default(false)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  bannedTill              DateTime?
+  lastPaymentAmount       Decimal?
+  shareInGDP              Float?
+  kycStatus               String?
+  kycVerifiedAt           DateTime?
+  kycRejectedAt           DateTime?
+  kycRejectionReason      String?
+  kycData                 String?
   emailVerificationTokens EmailVerificationToken[]
+  gasTokenDistributions   GasTokenDistribution[]
+  openaiLogs              OpenAILog[]
+  sessions                Session[]
 
   @@index([onboarded])
   @@index([shareInGDP])
@@ -103,13 +102,13 @@ model Task {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   completedAt     DateTime?
-  lockTime        DateTime?        // Used to prevent multiple processes from processing the same task
+  storeId         String?
+  lockTime        DateTime?
+  Batches         Batches[]
+  NonBatches      NonBatches[]
   openaiLogs      OpenAILog[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
-  storeId         String?          // TODO@P3: Can we eliminate NULL?
-  Batches         Batches[]
-  NonBatches      NonBatches[]
 
   @@index([status])
   @@index([runnerClassName])
@@ -143,8 +142,8 @@ model OpenAILog {
   errorMessage     String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  task             Task?     @relation(fields: [taskId], references: [id])
   user             User?     @relation(fields: [userId], references: [id])
+  task             Task?     @relation(fields: [taskId], references: [id])
 
   @@index([userId])
   @@index([taskId])
@@ -164,17 +163,17 @@ model Global {
 }
 
 model GasTokenDistribution {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  amount            Decimal  // Amount in ETH (gas token)
-  amountUsd         Decimal  // USD value at time of distribution
-  distributionDate  DateTime @default(now())
-  status            String   @default("PENDING") // PENDING, SENT, FAILED, DEFERRED
-  transactionHash   String?  // Ethereum transaction hash if sent
-  errorMessage      String?  // Error message if failed
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  amount           Decimal
+  amountUsd        Decimal
+  distributionDate DateTime @default(now())
+  status           String   @default("PENDING")
+  transactionHash  String?
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -183,11 +182,11 @@ model GasTokenDistribution {
 }
 
 model GasTokenReserve {
-  id                Int      @id @default(autoincrement())
-  totalReserve      Decimal  @default(0) // Total accumulated reserve in ETH
-  lastDistribution  DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  totalReserve     Decimal  @default(0)
+  lastDistribution DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("gas_token_reserves")
 }

@@ -125,6 +125,29 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
   } else {
     // One user found, update with new information
     if (currentUserId !== null && currentUserId !== existingUser.id) {
+      // Get the current user to check for conflicting KYC data
+      const currentUser = await prisma.user.findUnique({
+        where: { id: currentUserId }
+      });
+      
+      if (!currentUser) {
+        throw new Error('Current user not found');
+      }
+      
+      // Check if users have different (issuingState, personalNumber) - don't allow merge
+      const existingKycData = existingUser.issuingState && existingUser.personalNumber 
+        ? { issuingState: existingUser.issuingState, personalNumber: existingUser.personalNumber }
+        : null;
+      const currentKycData = currentUser.issuingState && currentUser.personalNumber 
+        ? { issuingState: currentUser.issuingState, personalNumber: currentUser.personalNumber }
+        : null;
+      
+      if (existingKycData && currentKycData && 
+          (existingKycData.issuingState !== currentKycData.issuingState || 
+           existingKycData.personalNumber !== currentKycData.personalNumber)) {
+        throw new Error('Cannot merge users with different KYC data (issuingState, personalNumber)');
+      }
+      
       const updateData: any = {};
       if (email || existingUser.email) updateData.email = email || existingUser.email;
       if (name || existingUser.name) updateData.name = name || existingUser.name;

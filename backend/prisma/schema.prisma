@@ -28,6 +28,7 @@ model User {
   kycVerifiedAt     DateTime?   // When KYC was verified
   kycRejectedAt     DateTime?   // When KYC was rejected
   kycRejectionReason String?    // Reason for rejection
+  kycData           String?     // JSON string containing verification data from Didit
   openaiLogs        OpenAILog[]
   sessions          Session[]
   gasTokenDistributions GasTokenDistribution[]

@@ -1269,12 +1269,58 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   }
 });
 
-// Didit KYC callback endpoint
+// Didit KYC callback endpoint with webhook signature verification
 router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
   try {
-    console.log('Didit KYC callback received:', req.body);
+    // Get the raw request body for signature verification
+    const rawBody = req.body;
+    const rawBodyString = (req as any).rawBody;
     
-    const { session_id, status, metadata, rejection_reason } = req.body;
+    // Get headers for signature verification
+    const signature = req.get('X-Signature');
+    const timestamp = req.get('X-Timestamp');
+    const webhookSecretKey = process.env.DIDIT_WEBHOOK_KEY;
+    
+    // Ensure all required data is present
+    if (!signature || !timestamp || !webhookSecretKey) {
+      console.error('Missing required webhook verification data');
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+    
+    // Validate the timestamp to ensure the request is fresh (within 5 minutes)
+    const currentTime = Math.floor(Date.now() / 1000);
+    const incomingTime = parseInt(timestamp, 10);
+    if (Math.abs(currentTime - incomingTime) > 300) {
+      console.error('Request timestamp is stale');
+      res.status(401).json({ message: 'Request timestamp is stale.' });
+      return;
+    }
+    
+    // Generate an HMAC from the raw body using the shared secret
+    const crypto = require('crypto');
+    const hmac = crypto.createHmac('sha256', webhookSecretKey);
+    const expectedSignature = hmac.update(rawBodyString).digest('hex');
+    
+    // Compare using timingSafeEqual for security
+    const expectedSignatureBuffer = Buffer.from(expectedSignature, 'utf8');
+    const providedSignatureBuffer = Buffer.from(signature, 'utf8');
+    
+    if (
+      expectedSignatureBuffer.length !== providedSignatureBuffer.length ||
+      !crypto.timingSafeEqual(expectedSignatureBuffer, providedSignatureBuffer)
+    ) {
+      console.error(`Invalid signature. Computed (${expectedSignature}), Provided (${signature})`);
+      res.status(401).json({
+        message: `Invalid signature. Computed (${expectedSignature}), Provided (${signature})`,
+      });
+      return;
+    }
+    
+    // Signature is valid, proceed with processing
+    console.log('Didit KYC callback received and verified:', rawBody);
+    
+    const { session_id, status, webhook_type, vendor_data, decision } = rawBody;
     
     if (!session_id) {
       console.error('No session_id in Didit callback');
@@ -1282,39 +1328,79 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       return;
     }
     
-    if (!metadata || !metadata.session_id) {
-      console.error('No metadata.session_id in Didit callback');
-      res.status(400).json({ error: 'metadata.session_id is required' });
-      return;
+    // Find the session by vendor_data (which should be our user ID or session ID)
+    let session;
+    let user;
+    
+    if (vendor_data) {
+      // Try to find by user ID first
+      user = await prisma.user.findUnique({
+        where: { id: vendor_data }
+      });
+      
+      if (user) {
+        // Find the most recent session for this user
+        session = await prisma.session.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' }
+        });
+      } else {
+        // Try to find by session ID
+        session = await prisma.session.findUnique({
+          where: { id: vendor_data },
+          include: { user: true }
+        });
+        if (session) {
+          user = session.user;
+        }
+      }
     }
     
-    // Find the session by ID from metadata (which is our Session.id)
-    const session = await prisma.session.findUnique({
-      where: { id: metadata.session_id },
-      include: { user: true }
-    });
-    
-    if (!session) {
-      console.error('Session not found for ID:', metadata.session_id);
-      res.status(404).json({ error: 'Session not found' });
+    if (!user) {
+      console.error('User not found for vendor_data:', vendor_data);
+      res.status(404).json({ error: 'User not found' });
       return;
     }
-    
-    const user = session.user;
     
     // Update user KYC status based on Didit response
     const updateData: any = {
       kycStatus: status?.toUpperCase() || 'UNKNOWN'
     };
     
-    if (status?.toLowerCase() === 'verified') {
+    // Handle different statuses according to Didit webhook format
+    if (status === 'Approved') {
       updateData.kycVerifiedAt = new Date();
       updateData.kycRejectedAt = null;
       updateData.kycRejectionReason = null;
-    } else if (status?.toLowerCase() === 'rejected') {
+      
+      // Store additional verification data if available
+      if (decision && decision.id_verification) {
+        const idData = decision.id_verification;
+        updateData.kycData = JSON.stringify({
+          documentType: idData.document_type,
+          documentNumber: idData.document_number,
+          firstName: idData.first_name,
+          lastName: idData.last_name,
+          dateOfBirth: idData.date_of_birth,
+          nationality: idData.nationality,
+          issuingState: idData.issuing_state,
+          expirationDate: idData.expiration_date
+        });
+      }
+    } else if (status === 'Declined') {
       updateData.kycRejectedAt = new Date();
-      updateData.kycRejectionReason = rejection_reason || 'Verification rejected';
+      updateData.kycRejectionReason = 'Verification declined by Didit';
       updateData.kycVerifiedAt = null;
+      
+      // Store rejection details if available
+      if (decision && decision.reviews && decision.reviews.length > 0) {
+        const review = decision.reviews[0];
+        updateData.kycRejectionReason = review.comment || 'Verification declined by Didit';
+      }
+    } else if (status === 'In Review') {
+      updateData.kycStatus = 'PENDING';
+    } else if (status === 'Abandoned') {
+      updateData.kycStatus = 'ABANDONED';
     }
     
     // Update user KYC status
@@ -1326,8 +1412,9 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     console.log('KYC status updated for user:', {
       userId: user.id,
       kycStatus: updateData.kycStatus,
-      sessionId: session.id,
-      diditSessionId: session_id
+      sessionId: session?.id,
+      diditSessionId: session_id,
+      webhookType: webhook_type
     });
     
     res.json({

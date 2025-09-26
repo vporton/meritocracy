@@ -31,7 +31,7 @@
 
 - TODO@P3 Give back token like GIV of Giveth.
 
-- TODO@P2 Delete disconnected accounts. However, don't delete bans.
+- TODO@P3 Delete disconnected accounts, when disconnect, not in Cron.
 
 - TODO@P3 Don't allow worth assessment, when only KYC and/or Ethereum connected.
 

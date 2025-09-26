@@ -25,7 +25,6 @@ model User {
   shareInGDP        Float?
   // KYC verification fields
   kycStatus         String?     // PENDING, VERIFIED, REJECTED, EXPIRED
-  kycSessionId      String?     // Didit session ID
   kycVerifiedAt     DateTime?   // When KYC was verified
   kycRejectedAt     DateTime?   // When KYC was rejected
   kycRejectionReason String?    // Reason for rejection

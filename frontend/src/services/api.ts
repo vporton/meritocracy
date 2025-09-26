@@ -32,7 +32,6 @@ interface User {
   shareInGDP?: number;
   // KYC fields
   kycStatus?: string;
-  kycSessionId?: string;
   kycVerifiedAt?: string;
   kycRejectedAt?: string;
   kycRejectionReason?: string;
@@ -185,7 +184,7 @@ export const authApi = {
   // KYC API
   initiateKyc: (): Promise<AxiosResponse<{ url: string; sessionId: string | null }>> => 
     api.post('/api/auth/kyc/initiate'),
-  getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycSessionId?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> => 
+  getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> => 
     api.get('/api/auth/kyc/status'),
 }
 

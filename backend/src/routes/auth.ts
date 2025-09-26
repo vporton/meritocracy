@@ -614,7 +614,6 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
     
     res.json({
       kycStatus: user.kycStatus,
-      kycSessionId: user.kycSessionId,
       kycVerifiedAt: user.kycVerifiedAt,
       kycRejectedAt: user.kycRejectedAt,
       kycRejectionReason: user.kycRejectionReason
@@ -1262,14 +1261,14 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       return;
     }
     
-    // Find the user by session token from metadata
+    // Find the session by ID from metadata (which is our Session.id)
     const session = await prisma.session.findUnique({
-      where: { token: metadata.session_id },
+      where: { id: metadata.session_id },
       include: { user: true }
     });
     
     if (!session) {
-      console.error('Session not found for token:', metadata.session_id);
+      console.error('Session not found for ID:', metadata.session_id);
       res.status(404).json({ error: 'Session not found' });
       return;
     }
@@ -1278,7 +1277,6 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     
     // Update user KYC status based on Didit response
     const updateData: any = {
-      kycSessionId: session_id,
       kycStatus: status?.toUpperCase() || 'UNKNOWN'
     };
     
@@ -1292,6 +1290,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       updateData.kycVerifiedAt = null;
     }
     
+    // Update user KYC status
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: updateData
@@ -1300,7 +1299,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     console.log('KYC status updated for user:', {
       userId: user.id,
       kycStatus: updateData.kycStatus,
-      kycSessionId: session_id
+      sessionId: session.id,
+      diditSessionId: session_id
     });
     
     res.json({
@@ -1352,13 +1352,13 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         'Content-Type': 'application/json',
         'x-api-key': process.env.DIDIT_API_KEY
       },
-      body: JSON.stringify({
-        workflow_id: process.env.DIDIT_WORKFLOW,
-        vendor_data: process.env.INSTALLATION_UID,
-        metadata: {
-          session_id: session.token
-        },
-      })
+        body: JSON.stringify({
+          workflow_id: process.env.DIDIT_WORKFLOW,
+          vendor_data: process.env.INSTALLATION_UID,
+          metadata: {
+            session_id: session.id
+          },
+        })
     });
 
     if (!diditResponse.ok) {
@@ -1380,11 +1380,10 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       return;
     }
 
-    // Store KYC session info in user record
+    // Store KYC session info
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        kycSessionId: diditData.session_id || null,
         kycStatus: 'PENDING'
       }
     });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useConnect, useAccount, useSignMessage } from 'wagmi';
+import { useConnect, useAccount, useSignMessage, useConnectorClient } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import { User, authApi } from '../services/api';
 import './ConnectForm.css';
@@ -49,21 +49,37 @@ interface MessageEvent {
 const ConnectForm = () => {
   const { login, registerEmail, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const { connect, connectors } = useConnect();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { data: connectorClient } = useConnectorClient();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
-  const [pendingEthereumConnection, setPendingEthereumConnection] = useState(false);
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
   
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
     const handleEthereumAuth = async () => {
-      if (pendingEthereumConnection && address && isConnected) {
+      console.log('useEffect triggered with:', { 
+        address: !!address, 
+        isConnected, 
+        connector: !!connector, 
+        connectorClient: !!connectorClient, 
+        isProviderConnected: isProviderConnected('ethereum') 
+      });
+      
+      if (address && isConnected && connector && !isProviderConnected('ethereum')) {
         console.log('useEffect: Address available after connection:', address);
-        setPendingEthereumConnection(false);
+        
+        // Wait for connectorClient to be ready if it's not available yet
+        if (!connectorClient) {
+          console.log('Waiting for connector client to be ready...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
         
         try {
+          // Wait a bit for the connection to be fully established
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           // Now sign the message
           console.log('Setting status to signing');
           setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
@@ -71,6 +87,24 @@ const ConnectForm = () => {
           console.log('About to sign message:', message);
           
           console.log('Trying signMessageAsync...');
+          console.log('Current connection state:', { address, isConnected, connector: connector?.name });
+          console.log('Connector client available:', !!connectorClient);
+          console.log('Available connectors:', connectors.map(c => ({ name: c.name, id: c.id })));
+          
+          // Check if we have a valid connector and client
+          if (!connector) {
+            throw new Error('No connector found');
+          }
+          
+          // Try to get connectorClient again after waiting
+          const currentConnectorClient = connectorClient;
+          if (!currentConnectorClient) {
+            console.log('Connector client still not ready, retrying...');
+            throw new Error('Connector client not ready - please try again');
+          }
+          
+          console.log('Using connector:', connector.name);
+          
           const signature = await signMessageAsync({ message });
           console.log('Signature result:', signature ? 'received' : 'null/undefined');
           console.log('Actual signature value:', signature);
@@ -118,7 +152,7 @@ const ConnectForm = () => {
     };
     
     handleEthereumAuth();
-  }, [pendingEthereumConnection, address, isConnected, signMessageAsync, login]);
+  }, [address, isConnected, signMessageAsync, login, connectors, connector, connectorClient]);
   
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
@@ -205,56 +239,82 @@ const ConnectForm = () => {
     }
   };
 
-  // Ethereum/Web3 Connect
+  // Ethereum/Web3 Connect - show wallet selection
   const handleEthereumConnect = async () => {
-    // Check if already connected and user wants to disconnect
+    console.log('Ethereum connect button clicked!');
+    console.log('Current state:', { isConnected, isProviderConnected: isProviderConnected('ethereum'), connectors: connectors.length });
+    
+    // Check if already connected to our platform and user wants to disconnect
     if (isProviderConnected('ethereum')) {
+      console.log('Already connected to platform, disconnecting...');
       return handleDisconnect('ethereum');
     }
-    console.log('=== ETHEREUM CONNECT STARTED ===');
-    console.log('Initial state - isConnected:', isConnected, 'address:', address);
     
+    // Always show wallet selection modal first, regardless of current connection state
+    console.log('Showing wallet selection modal...');
+    setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
+  };
+
+  // Handle wallet selection
+  const handleWalletSelect = async (selectedConnector: any) => {
     try {
-      // Set connecting status immediately
-      console.log('Setting status to connecting');
       setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
+      console.log('Connecting to wallet:', selectedConnector.name);
+      console.log('Connector details:', selectedConnector);
       
-      // If not connected, connect first
-      if (!isConnected) {
-        console.log('Not connected, attempting to connect...');
-        const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0];
-        console.log('Found connector:', connector?.name);
+      // If already connected to this connector, proceed with authentication
+      if (isConnected && selectedConnector.name === connector?.name) {
+        console.log('Already connected to this wallet, proceeding with authentication...');
+        setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
         
-        // Set flag to trigger useEffect when address becomes available
-        setPendingEthereumConnection(true);
+        // Proceed with authentication directly
+        const message = `Connect to Socialism platform with address: ${address}`;
+        console.log('Attempting to sign message...');
         
-        await connect({ connector });
-        console.log('Connect initiated');
+        const signature = await signMessageAsync({ message });
+        console.log('Signature result:', signature ? 'received' : 'null/undefined');
         
-        // The useEffect will handle the rest when address is available
+        if (!signature) {
+          throw new Error('Signature was cancelled');
+        }
+        
+        // Now authenticate with backend
+        console.log('Setting status to authenticating');
+        setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
+        
+        console.log('Calling backend login API...');
+        const authResult = await login({
+          ethereumAddress: address,
+          signature,
+          message
+        }, 'ethereum');
+        console.log('Backend login result:', authResult);
+        
+        if (authResult.success) {
+          console.log('Connect successful! Setting status to success');
+          setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
+          // Reset status after a short delay
+          setTimeout(() => setConnectStatus(prev => {
+            const { ethereum, ...rest } = prev;
+            return rest;
+          }), 2000);
+        } else {
+          console.log('Connect failed. Setting status to error');
+          setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
+        }
       } else {
-        console.log('Already connected, proceeding with existing address:', address);
-        // If already connected, trigger the auth flow directly
-        setPendingEthereumConnection(true);
+        // Connect to the selected wallet
+        await connect({ connector: selectedConnector });
+        console.log('Wallet connection initiated successfully');
       }
     } catch (error: any) {
-      console.error('ERROR in handleEthereumConnect:', error);
-      console.log('Error type:', typeof error);
-      console.log('Error message:', error.message);
-      console.log('Error stack:', error.stack);
-      
-      setPendingEthereumConnection(false);
-      
+      console.error('Wallet connection error:', error);
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
-        console.log('Setting status to cancelled');
         setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
       } else {
-        console.log('Setting status to error');
         setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: error.message }));
       }
     }
-    
-    console.log('=== ETHEREUM CONNECT ENDED ===');
   };
 
   // OAuth Connect Handler
@@ -542,6 +602,8 @@ const ConnectForm = () => {
     const status = connectStatus[provider];
     const isConnected = isProviderConnected(provider);
     
+    console.log(`Button text for ${provider}:`, { status, isConnected });
+    
     // Map provider names to display names
     const providerDisplayNames: Record<string, string> = {
       ethereum: 'Ethereum',
@@ -580,6 +642,8 @@ const ConnectForm = () => {
     }
     
     switch (status) {
+      case 'selecting':
+        return 'Select Wallet...';
       case 'connecting':
         return 'Connecting...';
       case 'signing':
@@ -598,6 +662,8 @@ const ConnectForm = () => {
         return 'Try Again';
       case 'cancelled':
         return 'Try Again';
+      case 'connecting':
+        return 'Connecting...';
       default:
         return `Connect with ${displayName}`;
     }
@@ -608,7 +674,7 @@ const ConnectForm = () => {
     const isConnected = isProviderConnected(provider);
     let className = `connect-button ${provider}-button`;
     
-    if (status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing' || status === 'disconnecting') {
+    if (status === 'selecting' || status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing' || status === 'disconnecting') {
       className += ' loading';
     }
     if (status === 'success') className += ' success';
@@ -654,8 +720,21 @@ const ConnectForm = () => {
         {/* Ethereum Connect */}
         <button
           className={getButtonClass('ethereum')}
-          onClick={handleEthereumConnect}
+          onClick={() => {
+            // If there's an error, clear it and try again
+            if (connectStatus.ethereum === 'error') {
+              setConnectStatus(prev => {
+                const { ethereum, ...rest } = prev;
+                return rest;
+              });
+            }
+            handleEthereumConnect();
+          }}
           disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting'}
+          style={{ 
+            backgroundColor: (isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting') ? 'gray' : 'blue',
+            cursor: (isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting') ? 'not-allowed' : 'pointer'
+          }}
         >
           <span className="connect-icon">⟠</span>
           {getButtonText('ethereum')}
@@ -791,6 +870,42 @@ const ConnectForm = () => {
           <strong>Note:</strong> If you have accounts on multiple platforms, they will be automatically merged into one account.
         </p>
       </div>
+      
+      {/* Wallet Selection Modal */}
+      {connectStatus.ethereum === 'selecting' && (
+        <div className="wallet-selection-modal">
+          <div className="modal-overlay" onClick={() => setConnectStatus(prev => ({ ...prev, ethereum: undefined }))} />
+          <div className="modal-content">
+            <h3>Select a Wallet</h3>
+            <div className="wallet-options">
+              {console.log('Rendering wallet selection modal with connectors:', connectors)}
+              {connectors.map((connector) => (
+                <button
+                  key={connector.uid}
+                  className="wallet-option"
+                  onClick={() => handleWalletSelect(connector)}
+                >
+                  <span className="wallet-icon">
+                    {connector.name === 'MetaMask' && '🦊'}
+                    {connector.name === 'WalletConnect' && '🔗'}
+                    {connector.name === 'Coinbase Wallet' && '🔵'}
+                    {connector.name === 'Safe' && '🛡️'}
+                    {connector.name === 'Rainbow' && '🌈'}
+                    {!['MetaMask', 'WalletConnect', 'Coinbase Wallet', 'Safe', 'Rainbow'].includes(connector.name) && '💳'}
+                  </span>
+                  <span className="wallet-name">{connector.name}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              className="modal-close"
+              onClick={() => setConnectStatus(prev => ({ ...prev, ethereum: undefined }))}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

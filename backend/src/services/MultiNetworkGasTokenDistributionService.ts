@@ -474,10 +474,14 @@ export class MultiNetworkGasTokenDistributionService {
       for (const [networkName, info] of networkInfo) {
         const reserve = reserveStatus.get(networkName);
         status.set(networkName, {
-          ...info,
-          ...reserve,
+          name: info.name,
+          chainId: info.chainId,
+          address: info.address,
+          balance: info.balance.toString(), // Convert BigInt to string
+          gasPrice: info.gasPrice.toString(), // Convert BigInt to string
           balanceFormatted: multiNetworkEthereumService.formatEther(info.balance),
-          gasPriceFormatted: multiNetworkEthereumService.formatEther(info.gasPrice)
+          gasPriceFormatted: multiNetworkEthereumService.formatEther(info.gasPrice),
+          ...reserve
         });
       }
       

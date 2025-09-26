@@ -28,6 +28,8 @@ model User {
   kycRejectedAt           DateTime?
   kycRejectionReason      String?
   kycData                 String?
+  issuingState            String?
+  personalNumber          String?
   emailVerificationTokens EmailVerificationToken[]
   gasTokenDistributions   GasTokenDistribution[]
   openaiLogs              OpenAILog[]
@@ -36,6 +38,7 @@ model User {
   @@index([onboarded])
   @@index([shareInGDP])
   @@index([kycStatus])
+  @@unique([issuingState, personalNumber])
   @@map("users")
 }
 

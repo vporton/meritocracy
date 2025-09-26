@@ -136,7 +136,7 @@ const ConnectForm = () => {
         connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
       }
       if (user.kycStatus) {
-        const kycStatusIcon = user.kycStatus === 'VERIFIED' ? '✓' : 
+        const kycStatusIcon = user.kycStatus === 'APPROVED' ? '✓' : 
                               user.kycStatus === 'REJECTED' ? '❌' : 
                               user.kycStatus === 'PENDING' ? '⏳' : '❓';
         connectedProviders.push({ name: 'KYC', value: `${user.kycStatus} ${kycStatusIcon}` });
@@ -529,8 +529,8 @@ const ConnectForm = () => {
     
     const field = providerFields[provider];
     if (provider === 'kyc') {
-      // KYC is connected if status is VERIFIED
-      return user.kycStatus === 'VERIFIED';
+      // KYC is connected if status is APPROVED
+      return user.kycStatus === 'APPROVED';
     }
     
     const isConnected = field && user[field] != null && user[field] !== '';
@@ -565,7 +565,7 @@ const ConnectForm = () => {
     
     // Special handling for KYC: show status
     if (provider === 'kyc' && !status) {
-      if (user?.kycStatus === 'VERIFIED') {
+      if (user?.kycStatus === 'APPROVED') {
         return 'KYC passed';
       } else if (user?.kycStatus === 'PENDING') {
         return 'KYC Pending...';
@@ -624,7 +624,7 @@ const ConnectForm = () => {
       }
     } else if (provider === 'kyc' && !status) {
       // Special handling for KYC status
-      if (user?.kycStatus === 'VERIFIED') {
+      if (user?.kycStatus === 'APPROVED') {
         className += ' connected';
       } else if (user?.kycStatus === 'PENDING') {
         className += ' waiting-for-verification';
@@ -715,7 +715,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('kyc')}
           onClick={handleKycConnect}
-          disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting' || user?.kycStatus === 'VERIFIED'}
+          disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting' || user?.kycStatus === 'APPROVED'}
         >
           <span className="connect-icon">🆔</span>
           {getButtonText('kyc')}

@@ -73,7 +73,7 @@ export async function requireKYC(req: express.Request, res: express.Response, ne
     }
 
     // Require KYC verification
-    if (user.kycStatus !== 'VERIFIED' || !user.kycVerifiedAt) {
+    if (user.kycStatus !== 'APPROVED' || !user.kycVerifiedAt) {
       res.status(403).json({
         error: 'KYC verification is required',
         kycStatus: user.kycStatus,

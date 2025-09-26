@@ -186,7 +186,7 @@ function Home() {
 
   const hasKycVerification = () => {
     if (!user) return false
-    return user.kycStatus === 'VERIFIED'
+    return user.kycStatus === 'APPROVED'
   }
 
   if (loading) {

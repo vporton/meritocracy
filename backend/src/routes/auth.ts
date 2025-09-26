@@ -1233,7 +1233,7 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
     
     // Handle KYC disconnection specially
     if (provider === 'kyc') {
-      if (user.kycStatus !== 'VERIFIED') {
+      if (user.kycStatus !== 'APPROVED') {
         res.status(400).json({ error: 'KYC not verified' });
         return;
       }

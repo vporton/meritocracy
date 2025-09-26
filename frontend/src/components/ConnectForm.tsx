@@ -57,102 +57,20 @@ const ConnectForm = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   
   // Handle Ethereum connection flow when address becomes available
+  // Note: This useEffect is disabled in favor of manual authentication flow in wallet selection
   useEffect(() => {
-    const handleEthereumAuth = async () => {
-      console.log('useEffect triggered with:', { 
-        address: !!address, 
-        isConnected, 
-        connector: !!connector, 
-        connectorClient: !!connectorClient, 
-        isProviderConnected: isProviderConnected('ethereum') 
-      });
-      
-      if (address && isConnected && connector && !isProviderConnected('ethereum')) {
-        console.log('useEffect: Address available after connection:', address);
-        
-        // Wait for connectorClient to be ready if it's not available yet
-        if (!connectorClient) {
-          console.log('Waiting for connector client to be ready...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-        
-        try {
-          // Wait a bit for the connection to be fully established
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Now sign the message
-          console.log('Setting status to signing');
-          setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-          const message = `Connect to Socialism platform with address: ${address}`;
-          console.log('About to sign message:', message);
-          
-          console.log('Trying signMessageAsync...');
-          console.log('Current connection state:', { address, isConnected, connector: connector?.name });
-          console.log('Connector client available:', !!connectorClient);
-          console.log('Available connectors:', connectors.map(c => ({ name: c.name, id: c.id })));
-          
-          // Check if we have a valid connector and client
-          if (!connector) {
-            throw new Error('No connector found');
-          }
-          
-          // Try to get connectorClient again after waiting
-          const currentConnectorClient = connectorClient;
-          if (!currentConnectorClient) {
-            console.log('Connector client still not ready, retrying...');
-            throw new Error('Connector client not ready - please try again');
-          }
-          
-          console.log('Using connector:', connector.name);
-          
-          const signature = await signMessageAsync({ message });
-          console.log('Signature result:', signature ? 'received' : 'null/undefined');
-          console.log('Actual signature value:', signature);
-
-          if (!signature) {
-            throw new Error('Signature was cancelled');
-          }
-
-          // Now authenticate with backend
-          console.log('Setting status to authenticating');
-          setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-          
-          console.log('Calling backend login API...');
-          const authResult = await login({
-            ethereumAddress: address,
-            signature,
-            message
-          }, 'ethereum');
-          console.log('Backend login result:', authResult);
-
-          if (authResult.success) {
-            console.log('Connect successful! Setting status to success');
-            setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
-            // Reset status after a short delay to allow connecting more accounts
-            setTimeout(() => setConnectStatus(prev => {
-              const { ethereum, ...rest } = prev;
-              return rest;
-            }), 2000);
-          } else {
-            console.log('Connect failed. Setting status to error');
-            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
-          }
-        } catch (error: any) {
-          console.error('ERROR in useEffect handleEthereumAuth:', error);
-          
-          if (error.message.includes('rejected') || error.message.includes('cancelled')) {
-            console.log('Setting status to cancelled');
-            setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
-          } else {
-            console.log('Setting status to error');
-            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: error.message }));
-          }
-        }
-      }
-    };
+    console.log('useEffect triggered with:', { 
+      address: !!address, 
+      isConnected, 
+      connector: !!connector, 
+      connectorClient: !!connectorClient, 
+      isProviderConnected: isProviderConnected('ethereum'),
+      currentStatus: connectStatus.ethereum
+    });
     
-    handleEthereumAuth();
-  }, [address, isConnected, signMessageAsync, login, connectors, connector, connectorClient]);
+    // Disabled automatic authentication - now handled manually in wallet selection
+    console.log('Automatic authentication disabled - use wallet selection modal instead');
+  }, [address, isConnected, signMessageAsync, login, connectors, connector, connectorClient, connectStatus.ethereum]);
   
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
@@ -261,6 +179,7 @@ const ConnectForm = () => {
       setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
       console.log('Connecting to wallet:', selectedConnector.name);
       console.log('Connector details:', selectedConnector);
+      console.log('Current connection state:', { isConnected, connector: connector?.name });
       
       // If already connected to this connector, proceed with authentication
       if (isConnected && selectedConnector.name === connector?.name) {
@@ -304,8 +223,102 @@ const ConnectForm = () => {
         }
       } else {
         // Connect to the selected wallet
+        console.log('Attempting to connect to wallet...');
         await connect({ connector: selectedConnector });
         console.log('Wallet connection initiated successfully');
+        
+        // Wait for the connection to be established with timeout
+        let connectionAttempts = 0;
+        const maxAttempts = 10;
+        
+        while (connectionAttempts < maxAttempts && (!isConnected || !address)) {
+          console.log(`Waiting for connection... attempt ${connectionAttempts + 1}/${maxAttempts}`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          connectionAttempts++;
+        }
+        
+        // Check if connection was successful
+        if (isConnected && address) {
+          console.log('Connection successful, proceeding with authentication...');
+          setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
+          
+          // Proceed with authentication
+          const message = `Connect to Socialism platform with address: ${address}`;
+          console.log('Attempting to sign message...');
+          
+          const signature = await signMessageAsync({ message });
+          console.log('Signature result:', signature ? 'received' : 'null/undefined');
+          
+          if (!signature) {
+            throw new Error('Signature was cancelled');
+          }
+          
+          // Now authenticate with backend
+          console.log('Setting status to authenticating');
+          setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
+          
+          console.log('Calling backend login API...');
+          const authResult = await login({
+            ethereumAddress: address,
+            signature,
+            message
+          }, 'ethereum');
+          console.log('Backend login result:', authResult);
+          
+          if (authResult.success) {
+            console.log('Connect successful! Setting status to success');
+            setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
+            // Reset status after a short delay
+            setTimeout(() => setConnectStatus(prev => {
+              const { ethereum, ...rest } = prev;
+              return rest;
+            }), 2000);
+          } else {
+            console.log('Connect failed. Setting status to error');
+            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
+          }
+        } else {
+          console.log('Connection not established, trying direct authentication anyway...');
+          // Even if the connection state isn't updated, try to proceed with authentication
+          // This handles cases where the hooks don't update immediately
+          try {
+            setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
+            
+            // Try to get the address from the connector directly
+            const currentAddress = address || await selectedConnector.getAccount?.();
+            if (currentAddress) {
+              console.log('Found address from connector, proceeding with authentication...');
+              const message = `Connect to Socialism platform with address: ${currentAddress}`;
+              
+              const signature = await signMessageAsync({ message });
+              if (!signature) {
+                throw new Error('Signature was cancelled');
+              }
+              
+              setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
+              const authResult = await login({
+                ethereumAddress: currentAddress,
+                signature,
+                message
+              }, 'ethereum');
+              
+              if (authResult.success) {
+                setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
+                setTimeout(() => setConnectStatus(prev => {
+                  const { ethereum, ...rest } = prev;
+                  return rest;
+                }), 2000);
+              } else {
+                setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
+              }
+            } else {
+              throw new Error('No address available');
+            }
+          } catch (authError: any) {
+            console.error('Fallback authentication failed:', authError);
+            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: 'Failed to connect to wallet' }));
+          }
+        }
       }
     } catch (error: any) {
       console.error('Wallet connection error:', error);

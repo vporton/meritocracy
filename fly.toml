@@ -63,6 +63,8 @@ primary_region = 'ewr'
   destination = "/db"
 
 [env]
+  INSTALLATION_UID=c6cdc8be-626a-4962-a1ac-6ec32e439fc3
+
   # Database Configuration
   # Choose one of the following database URLs and uncomment it:
 

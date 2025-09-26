@@ -1195,6 +1195,33 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
 
     const user = session.user;
     
+    // Handle KYC disconnection specially
+    if (provider === 'kyc') {
+      if (user.kycStatus !== 'VERIFIED') {
+        res.status(400).json({ error: 'KYC not verified' });
+        return;
+      }
+      
+      // Clear all KYC-related fields
+      const updateData = {
+        kycStatus: null,
+        kycVerifiedAt: null,
+        kycRejectedAt: null,
+        kycRejectionReason: null
+      };
+      
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: updateData
+      });
+      
+      res.json({ 
+        message: 'KYC disconnected successfully',
+        user: updatedUser 
+      });
+      return;
+    }
+
     // Determine which field to clear based on provider
     const providerFields: Record<string, string> = {
       ethereum: 'ethereumAddress',

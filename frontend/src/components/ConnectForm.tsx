@@ -55,7 +55,6 @@ const ConnectForm = () => {
   const [pendingEthereumConnection, setPendingEthereumConnection] = useState(false);
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [kycStatus, setKycStatus] = useState<string>('');
   
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -405,10 +404,15 @@ const ConnectForm = () => {
     window.addEventListener('message', handleMessage as any);
   };
 
-  // KYC initiation handler
-  const handleKycInitiate = async () => {
+  // KYC connection handler
+  const handleKycConnect = async () => {
+    // Check if already connected and user wants to disconnect
+    if (isProviderConnected('kyc')) {
+      return handleDisconnect('kyc');
+    }
+
     try {
-      setKycStatus('initiating');
+      setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
       
       const response = await authApi.initiateKyc();
       const data = response.data;
@@ -416,22 +420,28 @@ const ConnectForm = () => {
       if (data.url) {
         // Open KYC URL in new tab
         window.open(data.url, '_blank');
-        setKycStatus('opened');
+        setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
         
         // Reset status after a delay
         setTimeout(() => {
-          setKycStatus('');
+          setConnectStatus(prev => {
+            const { kyc, ...rest } = prev;
+            return rest;
+          });
         }, 3000);
       } else {
         throw new Error('No KYC URL received');
       }
     } catch (error: any) {
-      console.error('KYC initiation error:', error);
-      setKycStatus('error');
+      console.error('KYC connection error:', error);
+      setConnectStatus(prev => ({ ...prev, kyc: 'error', error: error.message }));
       
       // Reset status after a delay
       setTimeout(() => {
-        setKycStatus('');
+        setConnectStatus(prev => {
+          const { kyc, ...rest } = prev;
+          return rest;
+        });
       }, 5000);
     }
   };
@@ -507,10 +517,16 @@ const ConnectForm = () => {
       github: 'githubHandle',
       bitbucket: 'bitbucketHandle',
       gitlab: 'gitlabHandle',
-      email: 'email'
+      email: 'email',
+      kyc: 'kycStatus'
     };
     
     const field = providerFields[provider];
+    if (provider === 'kyc') {
+      // KYC is connected if status is VERIFIED
+      return user.kycStatus === 'VERIFIED';
+    }
+    
     const isConnected = field && user[field] != null && user[field] !== '';
     
     return isConnected;
@@ -527,7 +543,8 @@ const ConnectForm = () => {
       github: 'GitHub',
       bitbucket: 'BitBucket',
       gitlab: 'GitLab',
-      email: 'Email'
+      email: 'Email',
+      kyc: 'KYC'
     };
     
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
@@ -538,6 +555,17 @@ const ConnectForm = () => {
         return 'Waiting for email';
       }
       return `Disconnect ${displayName}`;
+    }
+    
+    // Special handling for KYC: show status
+    if (provider === 'kyc' && !status) {
+      if (user?.kycStatus === 'VERIFIED') {
+        return `Disconnect ${displayName}`;
+      } else if (user?.kycStatus === 'PENDING') {
+        return 'KYC Pending...';
+      } else if (user?.kycStatus === 'REJECTED') {
+        return 'KYC Rejected - Try Again';
+      }
     }
     
     // If connected and no temporary status, show disconnect option
@@ -587,6 +615,15 @@ const ConnectForm = () => {
         className += ' waiting-for-verification';
       } else {
         className += ' connected';
+      }
+    } else if (provider === 'kyc' && !status) {
+      // Special handling for KYC status
+      if (user?.kycStatus === 'VERIFIED') {
+        className += ' connected';
+      } else if (user?.kycStatus === 'PENDING') {
+        className += ' waiting-for-verification';
+      } else if (user?.kycStatus === 'REJECTED') {
+        className += ' error';
       }
     } else if (isConnected && !status) {
       className += ' connected';
@@ -668,23 +705,15 @@ const ConnectForm = () => {
           {getButtonText('email')}
         </button>
 
-        {/* KYC Verification - only show if user is authenticated */}
-        {isAuthenticated && user && (
-          <button
-            className={`connect-button kyc-button ${kycStatus === 'initiating' ? 'loading' : ''} ${kycStatus === 'opened' ? 'success' : ''} ${kycStatus === 'error' ? 'error' : ''} ${user.kycStatus === 'VERIFIED' ? 'connected' : ''} ${user.kycStatus === 'REJECTED' ? 'error' : ''}`}
-            onClick={handleKycInitiate}
-            disabled={isLoading || kycStatus === 'initiating' || user.kycStatus === 'VERIFIED'}
-          >
-            <span className="connect-icon">🆔</span>
-            {kycStatus === 'initiating' ? 'Starting KYC...' : 
-             kycStatus === 'opened' ? 'KYC Opened!' : 
-             kycStatus === 'error' ? 'Try Again' : 
-             user.kycStatus === 'VERIFIED' ? 'KYC Verified ✓' :
-             user.kycStatus === 'REJECTED' ? 'KYC Rejected - Try Again' :
-             user.kycStatus === 'PENDING' ? 'KYC Pending...' :
-             'Start KYC Verification'}
-          </button>
-        )}
+        {/* KYC Verification */}
+        <button
+          className={getButtonClass('kyc')}
+          onClick={handleKycConnect}
+          disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting'}
+        >
+          <span className="connect-icon">🆔</span>
+          {getButtonText('kyc')}
+        </button>
       </div>
 
       {/* Email Form */}

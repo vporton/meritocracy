@@ -1298,7 +1298,6 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     }
     
     // Generate an HMAC from the raw body using the shared secret
-    const crypto = require('crypto');
     const hmac = crypto.createHmac('sha256', webhookSecretKey);
     const expectedSignature = hmac.update(rawBodyString).digest('hex');
     

@@ -17,7 +17,7 @@ router.get('/wallet-info', async (req: Request, res: Response) => {
                 balance: balance.toString(),
                 currency: 'ETH',
                 network: network.name,
-                chainId: network.chainId.toString()
+                chainId: network.id.toString()
             }
         });
     } catch (error) {
@@ -41,16 +41,14 @@ router.post('/verify-signature', async (req: Request, res: Response) => {
             });
         }
         
-        const recoveredAddress = ethereumService.verifyMessage(message, signature);
+        const isValid = await ethereumService.verifyMessage(message, signature);
         const signerAddress = ethereumService.getAddress();
-        const isValid = recoveredAddress.toLowerCase() === signerAddress.toLowerCase();
         
         res.json({
             success: true,
             data: {
                 message,
                 signature,
-                recoveredAddress,
                 signerAddress,
                 isValid
             }
@@ -67,18 +65,16 @@ router.post('/verify-signature', async (req: Request, res: Response) => {
 // Get network information
 router.get('/network', async (req: Request, res: Response) => {
     try {
-        const provider = ethereumService.getProvider();
-        const network = await provider.getNetwork();
-        const feeData = await provider.getFeeData();
+        const publicClient = ethereumService.getPublicClient();
+        const network = await ethereumService.getNetwork();
+        const gasPrice = await publicClient.getGasPrice();
         
         res.json({
             success: true,
             data: {
                 name: network.name,
-                chainId: network.chainId.toString(),
-                gasPrice: feeData.gasPrice?.toString(),
-                maxFeePerGas: feeData.maxFeePerGas?.toString(),
-                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas?.toString()
+                chainId: network.id.toString(),
+                gasPrice: gasPrice.toString()
             }
         });
     } catch (error) {

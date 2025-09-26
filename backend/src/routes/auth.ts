@@ -1245,7 +1245,10 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       },
       body: JSON.stringify({
         workflow_id: process.env.DIDIT_WORKFLOW,
-        vendor_data: process.env.INSTALLATION_UID
+        vendor_data: process.env.INSTALLATION_UID,
+        metadata: {
+          session_id: session.token
+        },
       })
     });
 

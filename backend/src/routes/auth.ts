@@ -1327,36 +1327,27 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       return;
     }
     
-    // Find the session by vendor_data (which should be our user ID or session ID)
+    // Find the session by session_id from metadata (vendor_data is INSTALLATION_UID)
     let session;
     let user;
     
-    if (vendor_data) {
-      // Try to find by user ID first
-      user = await prisma.user.findUnique({
-        where: { id: vendor_data }
+    // The session_id should be in the metadata from the Didit callback
+    const metadata = rawBody.metadata;
+    const sessionId = metadata?.session_id;
+    
+    if (sessionId) {
+      // Find the session by session ID
+      session = await prisma.session.findUnique({
+        where: { id: sessionId },
+        include: { user: true }
       });
-      
-      if (user) {
-        // Find the most recent session for this user
-        session = await prisma.session.findFirst({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' }
-        });
-      } else {
-        // Try to find by session ID
-        session = await prisma.session.findUnique({
-          where: { id: vendor_data },
-          include: { user: true }
-        });
-        if (session) {
-          user = session.user;
-        }
+      if (session) {
+        user = session.user;
       }
     }
     
     if (!user) {
-      console.error('User not found for vendor_data:', vendor_data);
+      console.error('User not found for session_id:', sessionId, 'or vendor_data:', vendor_data);
       res.status(404).json({ error: 'User not found' });
       return;
     }

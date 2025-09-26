@@ -182,7 +182,7 @@ export const authApi = {
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
   // KYC API
-  initiateKyc: (): Promise<AxiosResponse<{ url: string; sessionId: string | null }>> => 
+  initiateKyc: (): Promise<AxiosResponse<{ url: string; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User }>> => 
     api.post('/api/auth/kyc/initiate'),
   getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> => 
     api.get('/api/auth/kyc/status'),

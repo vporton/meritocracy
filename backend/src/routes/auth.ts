@@ -1345,29 +1345,48 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
 // KYC initiation endpoint
 router.post('/kyc/initiate', async (req, res): Promise<void> => {
   try {
+    let session;
+    let user;
+    
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'No token provided' });
-      return;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // User is authenticated, use existing session
+      const token = authHeader.substring(7);
+      
+      session = await prisma.session.findUnique({
+        where: { token },
+        include: { user: true }
+      });
+      
+      if (!session || session.expiresAt < new Date()) {
+        res.status(401).json({ error: 'Invalid or expired token' });
+        return;
+      }
+      
+      user = session.user;
+    } else {
+      // User is not authenticated, create a temporary user and session for KYC
+      user = await prisma.user.create({
+        data: {
+          // Create a minimal user record for KYC
+          name: 'KYC User',
+          email: null,
+          ethereumAddress: null,
+          orcidId: null,
+          githubHandle: null,
+          bitbucketHandle: null,
+          gitlabHandle: null,
+          onboarded: false,
+          kycStatus: 'PENDING'
+        }
+      });
+      
+      // Create a session for this temporary user
+      session = await createSession(user.id);
     }
-
-    const token = authHeader.substring(7);
-    
-    // Find session and get user
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: { user: true }
-    });
-    
-    if (!session || session.expiresAt < new Date()) {
-      res.status(401).json({ error: 'Invalid or expired token' });
-      return;
-    }
-
-    const user = session.user;
     
     // Check environment variables
-    if (!process.env.DIDIT_WORKFLOW || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
+    if (!process.env.DIDIT_WORKFLOW_ID || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
       res.status(500).json({ error: 'KYC service configuration missing' });
       return;
     }
@@ -1380,7 +1399,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         'x-api-key': process.env.DIDIT_API_KEY
       },
         body: JSON.stringify({
-          workflow_id: process.env.DIDIT_WORKFLOW,
+          workflow_id: process.env.DIDIT_WORKFLOW_ID,
           vendor_data: process.env.INSTALLATION_UID,
           metadata: {
             session_id: session.id
@@ -1415,10 +1434,21 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       }
     });
 
-    res.json({
+    const response: any = {
       url: diditData.url,
       sessionId: diditData.session_id || null
-    });
+    };
+    
+    // If user was not authenticated, include session token for frontend
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      response.session = {
+        token: session.token,
+        expiresAt: session.expiresAt
+      };
+      response.user = user;
+    }
+    
+    res.json(response);
   } catch (error: any) {
     console.error('KYC initiation error:', error);
     res.status(500).json({ error: 'Failed to initiate KYC verification' });

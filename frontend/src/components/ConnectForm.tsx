@@ -418,6 +418,12 @@ const ConnectForm = () => {
       const data = response.data;
       
       if (data.url) {
+        // If we got a session back (for unauthenticated users), update auth context
+        if (data.session && data.user) {
+          console.log('KYC created new session for unauthenticated user');
+          updateAuthData(data.user, data.session.token);
+        }
+        
         // Open KYC URL in new tab
         window.open(data.url, '_blank');
         setConnectStatus(prev => ({ ...prev, kyc: 'success' }));

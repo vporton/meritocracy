@@ -29,8 +29,6 @@
 
 - TODO@P3 Always run prompt randomization as non-batch, because its cost is low.
 
-- TODO@P2 Rewrite Ethereum connection in backend using Viem.
-
 - TODO@P3 Give back token like GIV of Giveth.
 
 - TODO@P2 Delete disconnected accounts. However, don't delete bans.

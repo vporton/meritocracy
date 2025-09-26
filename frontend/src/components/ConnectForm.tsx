@@ -55,6 +55,7 @@ const ConnectForm = () => {
   const [pendingEthereumConnection, setPendingEthereumConnection] = useState(false);
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [kycStatus, setKycStatus] = useState<string>('');
   
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -398,6 +399,49 @@ const ConnectForm = () => {
     window.addEventListener('message', handleMessage as any);
   };
 
+  // KYC initiation handler
+  const handleKycInitiate = async () => {
+    try {
+      setKycStatus('initiating');
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/kyc/initiate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to initiate KYC');
+      }
+      
+      const data = await response.json();
+      
+      if (data.url) {
+        // Open KYC URL in new tab
+        window.open(data.url, '_blank');
+        setKycStatus('opened');
+        
+        // Reset status after a delay
+        setTimeout(() => {
+          setKycStatus('');
+        }, 3000);
+      } else {
+        throw new Error('No KYC URL received');
+      }
+    } catch (error: any) {
+      console.error('KYC initiation error:', error);
+      setKycStatus('error');
+      
+      // Reset status after a delay
+      setTimeout(() => {
+        setKycStatus('');
+      }, 5000);
+    }
+  };
+
   // Email connection handler
   const handleEmailConnect = async () => {
     // Check if already connected and user wants to disconnect
@@ -629,6 +673,21 @@ const ConnectForm = () => {
           <span className="connect-icon">📧</span>
           {getButtonText('email')}
         </button>
+
+        {/* KYC Verification - only show if user is authenticated */}
+        {isAuthenticated && user && (
+          <button
+            className={`connect-button kyc-button ${kycStatus === 'initiating' ? 'loading' : ''} ${kycStatus === 'opened' ? 'success' : ''} ${kycStatus === 'error' ? 'error' : ''}`}
+            onClick={handleKycInitiate}
+            disabled={isLoading || kycStatus === 'initiating'}
+          >
+            <span className="connect-icon">🆔</span>
+            {kycStatus === 'initiating' ? 'Starting KYC...' : 
+             kycStatus === 'opened' ? 'KYC Opened!' : 
+             kycStatus === 'error' ? 'Try Again' : 
+             'Start KYC Verification'}
+          </button>
+        )}
       </div>
 
       {/* Email Form */}

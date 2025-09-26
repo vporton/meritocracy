@@ -1206,6 +1206,88 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   }
 });
 
+// KYC initiation endpoint
+router.post('/kyc/initiate', async (req, res): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'No token provided' });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Find session and get user
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
+
+    const user = session.user;
+    
+    // Check environment variables
+    if (!process.env.DIDIT_WORKFLOW || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
+      res.status(500).json({ error: 'KYC service configuration missing' });
+      return;
+    }
+
+    // Call Didit API to initiate KYC session
+    const diditResponse = await fetch('https://verification.didit.me/v2/session/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.DIDIT_API_KEY
+      },
+      body: JSON.stringify({
+        workflow_id: process.env.DIDIT_WORKFLOW,
+        vendor_data: process.env.INSTALLATION_UID
+      })
+    });
+
+    if (!diditResponse.ok) {
+      const errorText = await diditResponse.text();
+      console.error('Didit API error:', {
+        status: diditResponse.status,
+        statusText: diditResponse.statusText,
+        body: errorText
+      });
+      res.status(500).json({ error: 'Failed to initiate KYC session' });
+      return;
+    }
+
+    const diditData: any = await diditResponse.json();
+    
+    if (!diditData.url) {
+      console.error('Didit API response missing URL:', diditData);
+      res.status(500).json({ error: 'Invalid response from KYC service' });
+      return;
+    }
+
+    // Store KYC session info in user record (optional - for tracking)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        // You might want to add KYC-related fields to your schema
+        // kycSessionId: diditData.session_id,
+        // kycStatus: 'pending'
+      }
+    });
+
+    res.json({
+      url: diditData.url,
+      sessionId: diditData.session_id || null
+    });
+  } catch (error: any) {
+    console.error('KYC initiation error:', error);
+    res.status(500).json({ error: 'Failed to initiate KYC verification' });
+  }
+});
+
 // Cleanup expired sessions (should be called periodically)
 router.delete('/sessions/cleanup', async (req, res) => {
   try {

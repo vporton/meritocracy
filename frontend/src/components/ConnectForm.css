@@ -107,6 +107,14 @@
   background: linear-gradient(135deg, #1d4ed8, #1e40af);
 }
 
+.kyc-button {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.kyc-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+
 /* Loading state */
 .connect-button.loading::after {
   content: '';

@@ -125,3 +125,6 @@ primary_region = 'ewr'
   SMTP_USER="porton.victor@gmail.com"
   SMTP_PORT=587
   SMTP_SECURE=false
+
+  DIDIT_APP_ID="a4efc76a-f3bf-4e99-84c2-859718ad1827"
+  DIDIT_WORKFLOW_ID="dc8ef904-c1a8-4911-824d-becd5904cf1f"

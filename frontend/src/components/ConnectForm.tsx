@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
-import { User } from '../services/api';
+import { User, authApi } from '../services/api';
 import './ConnectForm.css';
 
 interface ConnectStatus {
@@ -55,6 +55,7 @@ const ConnectForm = () => {
   const [pendingEthereumConnection, setPendingEthereumConnection] = useState(false);
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [kycStatus, setKycStatus] = useState<string>('');
   
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -134,6 +135,12 @@ const ConnectForm = () => {
       if (user.email) {
         const emailStatus = user.emailVerified ? '✓' : '⚠️';
         connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
+      }
+      if (user.kycStatus) {
+        const kycStatusIcon = user.kycStatus === 'VERIFIED' ? '✓' : 
+                              user.kycStatus === 'REJECTED' ? '❌' : 
+                              user.kycStatus === 'PENDING' ? '⏳' : '❓';
+        connectedProviders.push({ name: 'KYC', value: `${user.kycStatus} ${kycStatusIcon}` });
       }
       
       return (
@@ -398,6 +405,37 @@ const ConnectForm = () => {
     window.addEventListener('message', handleMessage as any);
   };
 
+  // KYC initiation handler
+  const handleKycInitiate = async () => {
+    try {
+      setKycStatus('initiating');
+      
+      const response = await authApi.initiateKyc();
+      const data = response.data;
+      
+      if (data.url) {
+        // Open KYC URL in new tab
+        window.open(data.url, '_blank');
+        setKycStatus('opened');
+        
+        // Reset status after a delay
+        setTimeout(() => {
+          setKycStatus('');
+        }, 3000);
+      } else {
+        throw new Error('No KYC URL received');
+      }
+    } catch (error: any) {
+      console.error('KYC initiation error:', error);
+      setKycStatus('error');
+      
+      // Reset status after a delay
+      setTimeout(() => {
+        setKycStatus('');
+      }, 5000);
+    }
+  };
+
   // Email connection handler
   const handleEmailConnect = async () => {
     // Check if already connected and user wants to disconnect
@@ -629,6 +667,24 @@ const ConnectForm = () => {
           <span className="connect-icon">📧</span>
           {getButtonText('email')}
         </button>
+
+        {/* KYC Verification - only show if user is authenticated */}
+        {isAuthenticated && user && (
+          <button
+            className={`connect-button kyc-button ${kycStatus === 'initiating' ? 'loading' : ''} ${kycStatus === 'opened' ? 'success' : ''} ${kycStatus === 'error' ? 'error' : ''} ${user.kycStatus === 'VERIFIED' ? 'connected' : ''} ${user.kycStatus === 'REJECTED' ? 'error' : ''}`}
+            onClick={handleKycInitiate}
+            disabled={isLoading || kycStatus === 'initiating' || user.kycStatus === 'VERIFIED'}
+          >
+            <span className="connect-icon">🆔</span>
+            {kycStatus === 'initiating' ? 'Starting KYC...' : 
+             kycStatus === 'opened' ? 'KYC Opened!' : 
+             kycStatus === 'error' ? 'Try Again' : 
+             user.kycStatus === 'VERIFIED' ? 'KYC Verified ✓' :
+             user.kycStatus === 'REJECTED' ? 'KYC Rejected - Try Again' :
+             user.kycStatus === 'PENDING' ? 'KYC Pending...' :
+             'Start KYC Verification'}
+          </button>
+        )}
       </div>
 
       {/* Email Form */}

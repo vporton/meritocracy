@@ -30,6 +30,11 @@ interface User {
   gitlabHandle?: string;
   onboarded: boolean;
   shareInGDP?: number;
+  // KYC fields
+  kycStatus?: string;
+  kycVerifiedAt?: string;
+  kycRejectedAt?: string;
+  kycRejectionReason?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -176,6 +181,11 @@ export const authApi = {
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
+  // KYC API
+  initiateKyc: (): Promise<AxiosResponse<{ url: string; sessionId: string | null }>> => 
+    api.post('/api/auth/kyc/initiate'),
+  getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> => 
+    api.get('/api/auth/kyc/status'),
 }
 
 // Logs API

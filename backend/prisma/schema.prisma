@@ -23,6 +23,11 @@ model User {
   bannedTill        DateTime?
   lastPaymentAmount Decimal?
   shareInGDP        Float?
+  // KYC verification fields
+  kycStatus         String?     // PENDING, VERIFIED, REJECTED, EXPIRED
+  kycVerifiedAt     DateTime?   // When KYC was verified
+  kycRejectedAt     DateTime?   // When KYC was rejected
+  kycRejectionReason String?    // Reason for rejection
   openaiLogs        OpenAILog[]
   sessions          Session[]
   gasTokenDistributions GasTokenDistribution[]
@@ -30,6 +35,7 @@ model User {
 
   @@index([onboarded])
   @@index([shareInGDP])
+  @@index([kycStatus])
   @@map("users")
 }
 

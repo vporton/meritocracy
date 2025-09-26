@@ -588,6 +588,42 @@ router.get('/me', async (req, res): Promise<void> => {
   }
 });
 
+// Get KYC status endpoint
+router.get('/kyc/status', async (req, res): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'No token provided' });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Find session
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
+    
+    const user = session.user;
+    
+    res.json({
+      kycStatus: user.kycStatus,
+      kycVerifiedAt: user.kycVerifiedAt,
+      kycRejectedAt: user.kycRejectedAt,
+      kycRejectionReason: user.kycRejectionReason
+    });
+  } catch (error: any) {
+    console.error('Get KYC status error:', error);
+    res.status(500).json({ error: 'Failed to get KYC status' });
+  }
+});
+
 // TODO@P3: Do we need both this .get handler and the .post handler?
 // OAuth callback endpoints for secure token exchange
 // GET route for OAuth provider redirects
@@ -1203,6 +1239,162 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Disconnect error:', error);
     res.status(500).json({ error: 'Failed to disconnect provider' });
+  }
+});
+
+// Didit KYC callback endpoint
+router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
+  try {
+    console.log('Didit KYC callback received:', req.body);
+    
+    const { session_id, status, metadata, rejection_reason } = req.body;
+    
+    if (!session_id) {
+      console.error('No session_id in Didit callback');
+      res.status(400).json({ error: 'session_id is required' });
+      return;
+    }
+    
+    if (!metadata || !metadata.session_id) {
+      console.error('No metadata.session_id in Didit callback');
+      res.status(400).json({ error: 'metadata.session_id is required' });
+      return;
+    }
+    
+    // Find the session by ID from metadata (which is our Session.id)
+    const session = await prisma.session.findUnique({
+      where: { id: metadata.session_id },
+      include: { user: true }
+    });
+    
+    if (!session) {
+      console.error('Session not found for ID:', metadata.session_id);
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    
+    const user = session.user;
+    
+    // Update user KYC status based on Didit response
+    const updateData: any = {
+      kycStatus: status?.toUpperCase() || 'UNKNOWN'
+    };
+    
+    if (status?.toLowerCase() === 'verified') {
+      updateData.kycVerifiedAt = new Date();
+      updateData.kycRejectedAt = null;
+      updateData.kycRejectionReason = null;
+    } else if (status?.toLowerCase() === 'rejected') {
+      updateData.kycRejectedAt = new Date();
+      updateData.kycRejectionReason = rejection_reason || 'Verification rejected';
+      updateData.kycVerifiedAt = null;
+    }
+    
+    // Update user KYC status
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: updateData
+    });
+    
+    console.log('KYC status updated for user:', {
+      userId: user.id,
+      kycStatus: updateData.kycStatus,
+      sessionId: session.id,
+      diditSessionId: session_id
+    });
+    
+    res.json({
+      success: true,
+      message: 'KYC status updated successfully',
+      userId: user.id,
+      kycStatus: updateData.kycStatus
+    });
+  } catch (error: any) {
+    console.error('Didit KYC callback error:', error);
+    res.status(500).json({ error: 'Failed to process KYC callback' });
+  }
+});
+
+// KYC initiation endpoint
+router.post('/kyc/initiate', async (req, res): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'No token provided' });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Find session and get user
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
+
+    const user = session.user;
+    
+    // Check environment variables
+    if (!process.env.DIDIT_WORKFLOW || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
+      res.status(500).json({ error: 'KYC service configuration missing' });
+      return;
+    }
+
+    // Call Didit API to initiate KYC session
+    const diditResponse = await fetch('https://verification.didit.me/v2/session/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.DIDIT_API_KEY
+      },
+        body: JSON.stringify({
+          workflow_id: process.env.DIDIT_WORKFLOW,
+          vendor_data: process.env.INSTALLATION_UID,
+          metadata: {
+            session_id: session.id
+          },
+        })
+    });
+
+    if (!diditResponse.ok) {
+      const errorText = await diditResponse.text();
+      console.error('Didit API error:', {
+        status: diditResponse.status,
+        statusText: diditResponse.statusText,
+        body: errorText
+      });
+      res.status(500).json({ error: 'Failed to initiate KYC session' });
+      return;
+    }
+
+    const diditData: any = await diditResponse.json();
+    
+    if (!diditData.url) {
+      console.error('Didit API response missing URL:', diditData);
+      res.status(500).json({ error: 'Invalid response from KYC service' });
+      return;
+    }
+
+    // Store KYC session info
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        kycStatus: 'PENDING'
+      }
+    });
+
+    res.json({
+      url: diditData.url,
+      sessionId: diditData.session_id || null
+    });
+  } catch (error: any) {
+    console.error('KYC initiation error:', error);
+    res.status(500).json({ error: 'Failed to initiate KYC verification' });
   }
 });
 

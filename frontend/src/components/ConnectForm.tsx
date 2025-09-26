@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
-import { User } from '../services/api';
+import { User, authApi } from '../services/api';
 import './ConnectForm.css';
 
 interface ConnectStatus {
@@ -135,6 +135,12 @@ const ConnectForm = () => {
       if (user.email) {
         const emailStatus = user.emailVerified ? '✓' : '⚠️';
         connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
+      }
+      if (user.kycStatus) {
+        const kycStatusIcon = user.kycStatus === 'VERIFIED' ? '✓' : 
+                              user.kycStatus === 'REJECTED' ? '❌' : 
+                              user.kycStatus === 'PENDING' ? '⏳' : '❓';
+        connectedProviders.push({ name: 'KYC', value: `${user.kycStatus} ${kycStatusIcon}` });
       }
       
       return (
@@ -404,20 +410,8 @@ const ConnectForm = () => {
     try {
       setKycStatus('initiating');
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/kyc/initiate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to initiate KYC');
-      }
-      
-      const data = await response.json();
+      const response = await authApi.initiateKyc();
+      const data = response.data;
       
       if (data.url) {
         // Open KYC URL in new tab
@@ -677,14 +671,17 @@ const ConnectForm = () => {
         {/* KYC Verification - only show if user is authenticated */}
         {isAuthenticated && user && (
           <button
-            className={`connect-button kyc-button ${kycStatus === 'initiating' ? 'loading' : ''} ${kycStatus === 'opened' ? 'success' : ''} ${kycStatus === 'error' ? 'error' : ''}`}
+            className={`connect-button kyc-button ${kycStatus === 'initiating' ? 'loading' : ''} ${kycStatus === 'opened' ? 'success' : ''} ${kycStatus === 'error' ? 'error' : ''} ${user.kycStatus === 'VERIFIED' ? 'connected' : ''} ${user.kycStatus === 'REJECTED' ? 'error' : ''}`}
             onClick={handleKycInitiate}
-            disabled={isLoading || kycStatus === 'initiating'}
+            disabled={isLoading || kycStatus === 'initiating' || user.kycStatus === 'VERIFIED'}
           >
             <span className="connect-icon">🆔</span>
             {kycStatus === 'initiating' ? 'Starting KYC...' : 
              kycStatus === 'opened' ? 'KYC Opened!' : 
              kycStatus === 'error' ? 'Try Again' : 
+             user.kycStatus === 'VERIFIED' ? 'KYC Verified ✓' :
+             user.kycStatus === 'REJECTED' ? 'KYC Rejected - Try Again' :
+             user.kycStatus === 'PENDING' ? 'KYC Pending...' :
              'Start KYC Verification'}
           </button>
         )}

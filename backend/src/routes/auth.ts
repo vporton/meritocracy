@@ -588,6 +588,43 @@ router.get('/me', async (req, res): Promise<void> => {
   }
 });
 
+// Get KYC status endpoint
+router.get('/kyc/status', async (req, res): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'No token provided' });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Find session
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+    
+    if (!session || session.expiresAt < new Date()) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
+    
+    const user = session.user;
+    
+    res.json({
+      kycStatus: user.kycStatus,
+      kycSessionId: user.kycSessionId,
+      kycVerifiedAt: user.kycVerifiedAt,
+      kycRejectedAt: user.kycRejectedAt,
+      kycRejectionReason: user.kycRejectionReason
+    });
+  } catch (error: any) {
+    console.error('Get KYC status error:', error);
+    res.status(500).json({ error: 'Failed to get KYC status' });
+  }
+});
+
 // TODO@P3: Do we need both this .get handler and the .post handler?
 // OAuth callback endpoints for secure token exchange
 // GET route for OAuth provider redirects
@@ -1206,6 +1243,78 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   }
 });
 
+// Didit KYC callback endpoint
+router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
+  try {
+    console.log('Didit KYC callback received:', req.body);
+    
+    const { session_id, status, metadata, rejection_reason } = req.body;
+    
+    if (!session_id) {
+      console.error('No session_id in Didit callback');
+      res.status(400).json({ error: 'session_id is required' });
+      return;
+    }
+    
+    if (!metadata || !metadata.session_id) {
+      console.error('No metadata.session_id in Didit callback');
+      res.status(400).json({ error: 'metadata.session_id is required' });
+      return;
+    }
+    
+    // Find the user by session token from metadata
+    const session = await prisma.session.findUnique({
+      where: { token: metadata.session_id },
+      include: { user: true }
+    });
+    
+    if (!session) {
+      console.error('Session not found for token:', metadata.session_id);
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    
+    const user = session.user;
+    
+    // Update user KYC status based on Didit response
+    const updateData: any = {
+      kycSessionId: session_id,
+      kycStatus: status?.toUpperCase() || 'UNKNOWN'
+    };
+    
+    if (status?.toLowerCase() === 'verified') {
+      updateData.kycVerifiedAt = new Date();
+      updateData.kycRejectedAt = null;
+      updateData.kycRejectionReason = null;
+    } else if (status?.toLowerCase() === 'rejected') {
+      updateData.kycRejectedAt = new Date();
+      updateData.kycRejectionReason = rejection_reason || 'Verification rejected';
+      updateData.kycVerifiedAt = null;
+    }
+    
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: updateData
+    });
+    
+    console.log('KYC status updated for user:', {
+      userId: user.id,
+      kycStatus: updateData.kycStatus,
+      kycSessionId: session_id
+    });
+    
+    res.json({
+      success: true,
+      message: 'KYC status updated successfully',
+      userId: user.id,
+      kycStatus: updateData.kycStatus
+    });
+  } catch (error: any) {
+    console.error('Didit KYC callback error:', error);
+    res.status(500).json({ error: 'Failed to process KYC callback' });
+  }
+});
+
 // KYC initiation endpoint
 router.post('/kyc/initiate', async (req, res): Promise<void> => {
   try {
@@ -1271,13 +1380,12 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       return;
     }
 
-    // Store KYC session info in user record (optional - for tracking)
+    // Store KYC session info in user record
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        // You might want to add KYC-related fields to your schema
-        // kycSessionId: diditData.session_id,
-        // kycStatus: 'pending'
+        kycSessionId: diditData.session_id || null,
+        kycStatus: 'PENDING'
       }
     });
 

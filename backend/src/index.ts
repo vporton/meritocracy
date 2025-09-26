@@ -55,7 +55,15 @@ app.use(cors({
   credentials: true,
 }));
 app.use(morgan('combined'));
-app.use(express.json());
+// Configure body parsing with raw body capture for webhook signature verification
+app.use(express.json({
+  verify: (req, res, buf, encoding) => {
+    if (buf && buf.length) {
+      // Store the raw body in the request object for webhook signature verification
+      (req as any).rawBody = buf.toString(encoding as BufferEncoding || 'utf8');
+    }
+  },
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes

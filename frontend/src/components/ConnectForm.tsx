@@ -566,7 +566,7 @@ const ConnectForm = () => {
     // Special handling for KYC: show status
     if (provider === 'kyc' && !status) {
       if (user?.kycStatus === 'VERIFIED') {
-        return `Disconnect ${displayName}`;
+        return 'KYC passed';
       } else if (user?.kycStatus === 'PENDING') {
         return 'KYC Pending...';
       } else if (user?.kycStatus === 'REJECTED') {
@@ -715,7 +715,7 @@ const ConnectForm = () => {
         <button
           className={getButtonClass('kyc')}
           onClick={handleKycConnect}
-          disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting'}
+          disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting' || user?.kycStatus === 'VERIFIED'}
         >
           <span className="connect-icon">🆔</span>
           {getButtonText('kyc')}

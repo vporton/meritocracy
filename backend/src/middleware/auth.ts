@@ -47,3 +47,46 @@ export async function optionalAuth(req: express.Request, res: express.Response, 
   (req as any).userId = userId;
   next();
 }
+
+// Middleware to require KYC verification
+export async function requireKYC(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        kycStatus: true, 
+        kycVerifiedAt: true,
+        kycRejectedAt: true,
+        kycRejectionReason: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Require KYC verification
+    if (user.kycStatus !== 'VERIFIED' || !user.kycVerifiedAt) {
+      res.status(403).json({
+        error: 'KYC verification is required',
+        kycStatus: user.kycStatus,
+        kycVerifiedAt: user.kycVerifiedAt,
+        kycRejectedAt: user.kycRejectedAt,
+        kycRejectionReason: user.kycRejectionReason
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error checking KYC status:', error);
+    res.status(500).json({ error: 'Failed to verify KYC status' });
+  }
+}

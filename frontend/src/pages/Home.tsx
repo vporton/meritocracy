@@ -184,6 +184,11 @@ function Home() {
     return !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle || user.ethereumAddress)
   }
 
+  const hasKycVerification = () => {
+    if (!user) return false
+    return user.kycStatus === 'VERIFIED'
+  }
+
   if (loading) {
     return <div className="loading">Checking server status...</div>
   }
@@ -270,7 +275,7 @@ function Home() {
                 Your evaluation process has been completed. You can view your progress and results in the <a href="/logs" style={{ color: '#b45309', textDecoration: 'underline' }}>Logs</a> page.
               </p>
             </div>
-          ) : hasConnectedAccounts() ? (
+          ) : hasConnectedAccounts() && hasKycVerification() ? (
             <div>
               {/* Prominent warning about connecting accounts */}
               <div style={{
@@ -292,7 +297,7 @@ function Home() {
                 </p>
               </div>
 
-              <p>✅ You have connected accounts and are ready to start your evaluation!</p>
+              <p>✅ You have connected accounts and completed KYC verification. You are ready to start your evaluation!</p>
               <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
                 Click the button below to begin the AI analysis of your contributions and receive your GDP share calculation.
               </p>
@@ -326,6 +331,37 @@ function Home() {
                   </>
                 )}
               </button>
+            </div>
+          ) : hasConnectedAccounts() && !hasKycVerification() ? (
+            <div>
+              {/* KYC requirement warning */}
+              <div style={{
+                padding: '1rem',
+                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                borderRadius: '8px',
+                borderLeft: '4px solid #f59e0b',
+                marginBottom: '1.5rem'
+              }}>
+                <p style={{ margin: 0, color: '#92400e', fontWeight: '600', fontSize: '1rem' }}>
+                  🆔 <strong>KYC Verification Required!</strong>
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
+                  You must complete KYC (Know Your Customer) verification before you can start the onboarding process.
+                </p>
+                <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
+                  Please go to the <a href="/connect" style={{ color: '#b45309', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> and complete your KYC verification.
+                </p>
+                {user.kycStatus && (
+                  <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
+                    Current KYC Status: <strong>{user.kycStatus}</strong>
+                  </p>
+                )}
+              </div>
+
+              <p>⚠️ You have connected accounts but need to complete KYC verification first.</p>
+              <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
+                KYC verification is required for compliance and security purposes before starting the evaluation process.
+              </p>
             </div>
           ) : (
             <div>
@@ -424,6 +460,9 @@ function Home() {
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
                 Have you connected ALL your accounts (GitHub, ORCID, BitBucket, GitLab, etc.)? 
                 If not, your salary calculation may be delayed by up to <strong>two months</strong>!
+              </p>
+              <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
+                ✅ KYC verification is complete and required for onboarding.
               </p>
             </div>
             <p style={{ margin: '0 0 1.5rem 0', color: '#666' }}>

@@ -4,7 +4,7 @@ import { UserEvaluationFlow } from '../services/UserEvaluationFlow.js';
 import { TaskExecutor } from '../services/TaskExecutor.js';
 import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireKYC } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ registerAllRunners();
  * POST /api/evaluation/start
  * Start a user evaluation flow
  */
-router.post('/start', requireAuth, async (req, res) => {
+router.post('/start', requireAuth, requireKYC, async (req, res) => {
   try {
     const { userData } = req.body;
     const userId = (req as any).userId; // Get from authenticated session

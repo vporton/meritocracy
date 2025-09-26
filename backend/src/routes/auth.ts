@@ -161,7 +161,6 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user.
-      // FIXME@P2: Don't merge KYC statuses.
       return await prisma.$transaction(async (tx) => {
         await tx.user.delete({where: {id: existingUser.id}});
         return await tx.user.update({

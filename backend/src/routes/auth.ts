@@ -1385,9 +1385,59 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     }
     
     if (!user) {
-      console.error('User not found for session_id:', sessionId, 'or vendor_data:', vendor_data);
-      res.status(404).json({ error: 'User not found' });
-      return;
+      console.log('Session not found, creating new user for KYC webhook:', {
+        session_id,
+        vendor_data,
+        sessionId,
+        webhook_type,
+        status
+      });
+      
+      // Create a new user for this KYC session
+      const kycData = decision?.id_verification;
+      let userName = 'KYC User';
+      let userEmail = null;
+      
+      // Extract user information from KYC data if available
+      if (kycData) {
+        if (kycData.first_name && kycData.last_name) {
+          userName = `${kycData.first_name} ${kycData.last_name}`.trim();
+        } else if (kycData.first_name) {
+          userName = kycData.first_name;
+        } else if (kycData.last_name) {
+          userName = kycData.last_name;
+        }
+        
+        if (kycData.email) {
+          userEmail = kycData.email;
+        }
+      }
+      
+      // Create new user
+      user = await prisma.user.create({
+        data: {
+          name: userName,
+          email: userEmail,
+          ethereumAddress: null,
+          orcidId: null,
+          githubHandle: null,
+          bitbucketHandle: null,
+          gitlabHandle: null,
+          onboarded: false,
+          kycStatus: 'PENDING'
+        } as any
+      });
+      
+      // Create a new session for this user
+      session = await createSession(user.id);
+      
+      console.log('Created new user and session for KYC webhook:', {
+        userId: user.id,
+        sessionId: session.id,
+        originalSessionId: sessionId,
+        userName,
+        userEmail
+      });
     }
     
     // Update user KYC status based on Didit response
@@ -1476,7 +1526,9 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       kycStatus: updateData.kycStatus,
       sessionId: session?.id,
       diditSessionId: session_id,
-      webhookType: webhook_type
+      webhookType: webhook_type,
+      newUserCreated: !sessionId || session?.id !== sessionId,
+      originalSessionId: sessionId
     });
     
     res.json({
@@ -1527,11 +1579,20 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
           gitlabHandle: null,
           onboarded: false,
           kycStatus: 'PENDING'
-        }
+        } as any
       });
       
-      // Create a session for this temporary user
+      // Create a session for this temporary user with extended expiration for KYC
       session = await createSession(user.id);
+      
+      // Extend session expiration for KYC process (30 days instead of 7)
+      const extendedExpiresAt = new Date();
+      extendedExpiresAt.setDate(extendedExpiresAt.getDate() + 30);
+      
+      session = await prisma.session.update({
+        where: { id: session.id },
+        data: { expiresAt: extendedExpiresAt }
+      });
     }
     
     // Check environment variables
@@ -1580,7 +1641,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       where: { id: user.id },
       data: {
         kycStatus: 'PENDING'
-      }
+      } as any
     });
 
     const response: any = {

@@ -45,5 +45,3 @@
   to "Disconnect Email" state through browser inter-windows communication.
 
 - TODO@P3 Should the user be able to add more than one email?
-
-- FIXME@P2 If a user connected KYC (only) and his/her session timed out, he/she won't be able to connect again!

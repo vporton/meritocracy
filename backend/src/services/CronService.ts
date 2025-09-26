@@ -4,20 +4,24 @@ import { UserEvaluationFlow, UserEvaluationData } from './UserEvaluationFlow.js'
 import { TaskManager } from './TaskManager.js';
 import { GasTokenDistributionService } from './GasTokenDistributionService.js';
 import { MultiNetworkGasTokenDistributionService } from './MultiNetworkGasTokenDistributionService.js';
+import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupService.js';
 
 export class CronService {
   private prisma: PrismaClient;
   private userEvaluationFlow: UserEvaluationFlow;
   private gasTokenDistributionService: GasTokenDistributionService;
   private multiNetworkGasTokenDistributionService: MultiNetworkGasTokenDistributionService;
+  private disconnectedAccountCleanupService: DisconnectedAccountCleanupService;
   private cronJob: cron.ScheduledTask | null = null;
   private weeklyGasDistributionJob: cron.ScheduledTask | null = null;
+  private monthlyCleanupJob: cron.ScheduledTask | null = null;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.userEvaluationFlow = new UserEvaluationFlow(prisma);
     this.gasTokenDistributionService = new GasTokenDistributionService(prisma);
     this.multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(prisma);
+    this.disconnectedAccountCleanupService = new DisconnectedAccountCleanupService(prisma);
   }
 
   /**
@@ -97,6 +101,44 @@ export class CronService {
   }
 
   /**
+   * Start the monthly cron job for disconnected account cleanup
+   * Runs on the 1st of every month at 4:00 AM UTC
+   */
+  startMonthlyCleanupCron() {
+    if (this.monthlyCleanupJob) {
+      console.log('⚠️  Monthly cleanup cron job is already running');
+      return;
+    }
+
+    // Cron expression: "0 4 1 * *" means:
+    // - 0 minutes
+    // - 4 hours (4 AM)
+    // - 1st day of month
+    // - Every month
+    // - Every day of week
+    this.monthlyCleanupJob = cron.schedule('0 4 1 * *', async () => {
+      console.log('🕐 Monthly disconnected account cleanup cron job triggered');
+      await this.runMonthlyCleanup();
+    }, {
+      timezone: 'UTC'
+    });
+
+    this.monthlyCleanupJob.start();
+    console.log('✅ Monthly cleanup cron job started (runs on 1st of every month at 4:00 AM UTC)');
+  }
+
+  /**
+   * Stop the monthly cleanup cron job
+   */
+  stopMonthlyCleanupCron() {
+    if (this.monthlyCleanupJob) {
+      this.monthlyCleanupJob.stop();
+      this.monthlyCleanupJob = null;
+      console.log('⏹️  Monthly cleanup cron job stopped');
+    }
+  }
+
+  /**
    * Manually trigger the weekly gas token distribution process
    * This can be called via API endpoint for testing
    */
@@ -128,6 +170,39 @@ export class CronService {
       return result;
     } catch (error) {
       console.error('💥 Fatal error in weekly multi-network gas token distribution process:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Manually trigger the monthly disconnected account cleanup process
+   * This can be called via API endpoint for testing
+   */
+  async runMonthlyCleanup() {
+    console.log('🔄 Starting monthly disconnected account cleanup process...');
+    
+    try {
+      const result = await this.disconnectedAccountCleanupService.cleanupDisconnectedAccounts(30, false);
+      
+      if (result.success) {
+        console.log('✅ Monthly disconnected account cleanup completed successfully');
+        console.log(`🗑️  Deleted ${result.deletedCount} disconnected accounts`);
+        console.log(`🛡️  Preserved ${result.preservedBannedCount} banned accounts`);
+        console.log(`🛡️  Preserved ${result.preservedKycCount} KYC accounts`);
+        console.log(`📊 Details: ${result.details.disconnectedAccounts} disconnected, ${result.details.bannedAccounts} banned, ${result.details.kycAccounts} with KYC, ${result.details.accountsWithActiveSessions} with active sessions`);
+        
+        if (result.errors.length > 0) {
+          console.log('⚠️  Some errors occurred:');
+          result.errors.forEach(error => console.log(`  - ${error}`));
+        }
+      } else {
+        console.error('❌ Monthly disconnected account cleanup failed');
+        result.errors.forEach(error => console.error(`  - ${error}`));
+      }
+
+      return result;
+    } catch (error) {
+      console.error('💥 Fatal error in monthly disconnected account cleanup process:', error);
       throw error;
     }
   }
@@ -238,6 +313,11 @@ export class CronService {
         isRunning: this.weeklyGasDistributionJob !== null,
         nextRun: this.weeklyGasDistributionJob ? this.getNextWeeklyRunTime() : null,
         schedule: '0 3 * * 0 (Every Sunday at 3:00 AM UTC)'
+      },
+      monthlyCleanup: {
+        isRunning: this.monthlyCleanupJob !== null,
+        nextRun: this.monthlyCleanupJob ? this.getNextMonthlyCleanupRunTime() : null,
+        schedule: '0 4 1 * * (1st of every month at 4:00 AM UTC)'
       }
     };
   }
@@ -315,10 +395,33 @@ export class CronService {
   }
 
   /**
+   * Get the next run time for the monthly cleanup cron job
+   */
+  private getNextMonthlyCleanupRunTime(): Date | null {
+    if (!this.monthlyCleanupJob) return null;
+    
+    const now = new Date();
+    const currentDay = now.getDate();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // If it's the 1st and before 4 AM, next run is today at 4 AM
+    if (currentDay === 1 && (currentHour < 4 || (currentHour === 4 && currentMinute === 0))) {
+      return new Date(now.getFullYear(), now.getMonth(), 1, 4, 0, 0);
+    }
+    
+    // Otherwise, next run is the 1st of next month at 4 AM
+    const nextRun = new Date(now.getFullYear(), now.getMonth() + 1, 1, 4, 0, 0);
+    
+    return nextRun;
+  }
+
+  /**
    * Cleanup method to stop cron jobs when the service is destroyed
    */
   destroy() {
     this.stopBiMonthlyEvaluationCron();
     this.stopWeeklyGasDistributionCron();
+    this.stopMonthlyCleanupCron();
   }
 }

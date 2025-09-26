@@ -22,6 +22,7 @@ import globalRoutes from './routes/global.js';
 import logsRoutes from './routes/logs.js';
 import cronRoutes from './routes/cron.js';
 import multiNetworkGasRoutes from './routes/multi-network-gas.js';
+import cleanupRoutes from './routes/cleanup.js';
 
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
@@ -84,6 +85,7 @@ app.use('/api/global', globalRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/multi-network-gas', multiNetworkGasRoutes);
+app.use('/api/cleanup', cleanupRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -133,6 +135,9 @@ async function initializeApp() {
     
     // Start the weekly gas token distribution cron job
     cronService.startWeeklyGasDistributionCron();
+    
+    // Start the monthly disconnected account cleanup cron job
+    cronService.startMonthlyCleanupCron();
     
     console.log('✅ Cron service initialization complete');
     

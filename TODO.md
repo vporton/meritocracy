@@ -31,8 +31,6 @@
 
 - TODO@P2 Rewrite Ethereum connection in backend using Viem.
 
-- TODO@P2 web3modal (not only MetaMask)
-
 - TODO@P3 Give back token like GIV of Giveth.
 
 - TODO@P2 Delete disconnected accounts. However, don't delete bans.

@@ -3,11 +3,13 @@ import * as cron from 'node-cron';
 import { UserEvaluationFlow, UserEvaluationData } from './UserEvaluationFlow.js';
 import { TaskManager } from './TaskManager.js';
 import { GasTokenDistributionService } from './GasTokenDistributionService.js';
+import { MultiNetworkGasTokenDistributionService } from './MultiNetworkGasTokenDistributionService.js';
 
 export class CronService {
   private prisma: PrismaClient;
   private userEvaluationFlow: UserEvaluationFlow;
   private gasTokenDistributionService: GasTokenDistributionService;
+  private multiNetworkGasTokenDistributionService: MultiNetworkGasTokenDistributionService;
   private cronJob: cron.ScheduledTask | null = null;
   private weeklyGasDistributionJob: cron.ScheduledTask | null = null;
 
@@ -15,6 +17,7 @@ export class CronService {
     this.prisma = prisma;
     this.userEvaluationFlow = new UserEvaluationFlow(prisma);
     this.gasTokenDistributionService = new GasTokenDistributionService(prisma);
+    this.multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(prisma);
   }
 
   /**
@@ -98,28 +101,33 @@ export class CronService {
    * This can be called via API endpoint for testing
    */
   async runWeeklyGasDistribution() {
-    console.log('🔄 Starting weekly gas token distribution process...');
+    console.log('🔄 Starting weekly multi-network gas token distribution process...');
     
     try {
-      const result = await this.gasTokenDistributionService.processWeeklyDistribution();
+      const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
       
       if (result.success) {
-        console.log('✅ Weekly gas token distribution completed successfully');
+        console.log('✅ Weekly multi-network gas token distribution completed successfully');
         console.log(`💰 Total distributed: ${result.totalDistributed.toFixed(6)} ETH`);
         console.log(`🏦 Total reserved: ${result.totalReserved.toFixed(6)} ETH`);
+        
+        // Log per-network results
+        for (const [networkName, networkResult] of result.networkResults) {
+          console.log(`🌐 [${networkName}]: ${networkResult.distributed.toFixed(6)} ETH distributed, ${networkResult.reserved.toFixed(6)} ETH reserved`);
+        }
         
         if (result.errors.length > 0) {
           console.log('⚠️  Some errors occurred:');
           result.errors.forEach(error => console.log(`  - ${error}`));
         }
       } else {
-        console.error('❌ Weekly gas token distribution failed');
+        console.error('❌ Weekly multi-network gas token distribution failed');
         result.errors.forEach(error => console.error(`  - ${error}`));
       }
 
       return result;
     } catch (error) {
-      console.error('💥 Fatal error in weekly gas token distribution process:', error);
+      console.error('💥 Fatal error in weekly multi-network gas token distribution process:', error);
       throw error;
     }
   }

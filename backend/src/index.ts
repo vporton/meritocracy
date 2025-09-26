@@ -21,6 +21,7 @@ import evaluationRoutes from './routes/evaluation.js';
 import globalRoutes from './routes/global.js';
 import logsRoutes from './routes/logs.js';
 import cronRoutes from './routes/cron.js';
+import multiNetworkGasRoutes from './routes/multi-network-gas.js';
 
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
@@ -82,6 +83,7 @@ app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/global', globalRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/cron', cronRoutes);
+app.use('/api/multi-network-gas', multiNetworkGasRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

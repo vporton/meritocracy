@@ -15,7 +15,7 @@ async function ethereumExample() {
         
         // Get network information
         const network = await ethereumService.getNetwork();
-        console.log('Network:', network.name, 'Chain ID:', network.chainId);
+        console.log('Network:', network.name, 'Chain ID:', network.id);
         
         // Get balance
         const balance = await ethereumService.getBalance();
@@ -28,14 +28,13 @@ async function ethereumExample() {
         console.log('Signature:', signature);
         
         // Verify the signature
-        const recoveredAddress = ethereumService.verifyMessage(message, signature);
-        console.log('Recovered Address:', recoveredAddress);
-        console.log('Signature Valid:', recoveredAddress.toLowerCase() === address.toLowerCase());
+        const isValid = await ethereumService.verifyMessage(message, signature);
+        console.log('Signature Valid:', isValid);
         
         // Example: Get current gas price
-        const provider = ethereumService.getProvider();
-        const gasPrice = await provider.getFeeData();
-        console.log('Current Gas Price:', gasPrice.gasPrice?.toString(), 'wei');
+        const publicClient = ethereumService.getPublicClient();
+        const gasPrice = await publicClient.getGasPrice();
+        console.log('Current Gas Price:', gasPrice.toString(), 'wei');
         
     } catch (error) {
         console.error('Error in Ethereum example:', error);

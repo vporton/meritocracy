@@ -1,4 +1,18 @@
-import { ethers } from 'ethers';
+import { 
+    createPublicClient, 
+    createWalletClient, 
+    http, 
+    parseEther, 
+    formatEther,
+    getContract,
+    type PublicClient,
+    type WalletClient,
+    type Address,
+    type Hash,
+    type Chain
+} from 'viem';
+import { mainnet, sepolia, polygon, localhost } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -23,103 +37,133 @@ function loadEthereumConfig(): { privateKey?: string; mnemonic?: string; network
 }
 
 class EthereumService {
-    private provider!: ethers.Provider;
-    private signer!: ethers.Wallet | ethers.HDNodeWallet;
+    private publicClient!: PublicClient;
+    private walletClient!: WalletClient;
+    private account!: ReturnType<typeof privateKeyToAccount>;
     private config: ReturnType<typeof loadEthereumConfig>;
 
     constructor() {
         this.config = loadEthereumConfig();
-        this.initializeProvider();
-        this.initializeSigner();
+        this.initializeClients();
+        this.initializeAccount();
     }
 
-    private initializeProvider(): void {
-        // Initialize provider based on network
-        if (this.config.rpcUrl) {
-            // Use custom RPC URL if provided
-            this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
-        } else {
-            // Use default providers for common networks
-            switch (this.config.network) {
-                case 'mainnet':
-                    this.provider = ethers.getDefaultProvider('mainnet');
-                    break;
-                case 'goerli':
-                    this.provider = ethers.getDefaultProvider('goerli');
-                    break;
-                case 'sepolia':
-                    this.provider = ethers.getDefaultProvider('sepolia');
-                    break;
-                case 'polygon':
-                    this.provider = new ethers.JsonRpcProvider('https://polygon-rpc.com');
-                    break;
-                case 'localhost':
-                    this.provider = new ethers.JsonRpcProvider('http://localhost:8545');
-                    break;
-                default:
-                    this.provider = ethers.getDefaultProvider('mainnet');
-            }
+    private getChain(): Chain {
+        // Return appropriate chain based on network
+        switch (this.config.network) {
+            case 'mainnet':
+                return mainnet;
+            case 'sepolia':
+                return sepolia;
+            case 'localhost':
+                return localhost;
+            default:
+                return mainnet;
         }
     }
 
-    private initializeSigner(): void {
-        if (this.config.mnemonic) {
-            // Create wallet from mnemonic
-            const wallet = ethers.Wallet.fromPhrase(this.config.mnemonic);
-            this.signer = wallet.connect(this.provider);
-        } else if (this.config.privateKey) {
-            // Create wallet from private key
-            this.signer = new ethers.Wallet(this.config.privateKey, this.provider);
+    private initializeClients(): void {
+        const chain = this.getChain();
+        
+        // Initialize public client for read operations
+        this.publicClient = createPublicClient({
+            chain,
+            transport: this.config.rpcUrl ? http(this.config.rpcUrl) : http()
+        });
+
+        // Initialize wallet client for write operations
+        this.walletClient = createWalletClient({
+            chain,
+            transport: this.config.rpcUrl ? http(this.config.rpcUrl) : http()
+        });
+    }
+
+    private initializeAccount(): void {
+        if (this.config.privateKey) {
+            // Create account from private key
+            this.account = privateKeyToAccount(this.config.privateKey as `0x${string}`);
+        } else if (this.config.mnemonic) {
+            // Note: Viem doesn't have built-in mnemonic support like ethers
+            // You would need to use a library like @scure/bip39 to derive the private key
+            // For now, we'll throw an error and suggest using private key
+            throw new Error('Mnemonic support not implemented. Please use ETHEREUM_PRIVATE_KEY instead.');
         } else {
             throw new Error('No private key or mnemonic found in configuration');
         }
     }
 
     // Getter methods
-    public getProvider(): ethers.Provider {
-        return this.provider;
+    public getPublicClient(): PublicClient {
+        return this.publicClient;
     }
 
-    public getSigner(): ethers.Wallet | ethers.HDNodeWallet {
-        return this.signer;
+    public getWalletClient(): WalletClient {
+        return this.walletClient;
     }
 
-    public getAddress(): string {
-        return this.signer.address;
+    public getAccount(): ReturnType<typeof privateKeyToAccount> {
+        return this.account;
+    }
+
+    public getAddress(): Address {
+        return this.account.address;
     }
 
     // Utility methods
     public async getBalance(): Promise<bigint> {
-        return await this.provider.getBalance(this.signer.address);
+        return await this.publicClient.getBalance({ address: this.account.address });
     }
 
-    public async getNetwork(): Promise<ethers.Network> {
-        return await this.provider.getNetwork();
+    public async getNetwork(): Promise<Chain> {
+        return this.publicClient.chain!;
     }
 
-    public async sendTransaction(to: string, value: string, data?: string): Promise<ethers.TransactionResponse> {
-        const tx = {
+    public async sendTransaction(to: Address, value: string, data?: `0x${string}`): Promise<Hash> {
+        return await this.walletClient.sendTransaction({
+            account: this.account,
             to,
-            value: ethers.parseEther(value),
-            data: data || '0x'
-        };
-
-        return await this.signer.sendTransaction(tx);
+            value: parseEther(value),
+            data: data || '0x',
+            chain: this.publicClient.chain
+        });
     }
 
     // Contract interaction helper
-    public getContract(address: string, abi: ethers.InterfaceAbi): ethers.Contract {
-        return new ethers.Contract(address, abi, this.signer);
+    public getContract(address: Address, abi: any) {
+        return getContract({
+            address,
+            abi,
+            client: {
+                public: this.publicClient,
+                wallet: this.walletClient
+            }
+        });
     }
 
     // Sign message
-    public async signMessage(message: string): Promise<string> {
-        return await this.signer.signMessage(message);
+    public async signMessage(message: string): Promise<`0x${string}`> {
+        return await this.walletClient.signMessage({
+            account: this.account,
+            message
+        });
     }
 
     // Verify signature
-    public verifyMessage(message: string, signature: string): string {
-        return ethers.verifyMessage(message, signature);
+    public async verifyMessage(message: string, signature: `0x${string}`): Promise<boolean> {
+        return await this.publicClient.verifyMessage({
+            address: this.account.address,
+            message,
+            signature
+        });
+    }
+
+    // Additional utility methods
+    public formatEther(wei: bigint): string {
+        return formatEther(wei);
+    }
+
+    public parseEther(ether: string): bigint {
+        return parseEther(ether);
     }
 }
 

@@ -90,3 +90,57 @@ export async function requireKYC(req: express.Request, res: express.Response, ne
     res.status(500).json({ error: 'Failed to verify KYC status' });
   }
 }
+
+// Middleware to require additional connections beyond KYC and Ethereum
+export async function requireAdditionalConnections(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        orcidId: true,
+        githubHandle: true,
+        bitbucketHandle: true,
+        gitlabHandle: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Check if user has at least one additional connection beyond KYC and Ethereum
+    const hasAdditionalConnection = !!(
+      user.orcidId || 
+      user.githubHandle || 
+      user.bitbucketHandle || 
+      user.gitlabHandle
+    );
+
+    if (!hasAdditionalConnection) {
+      res.status(403).json({
+        error: 'Additional connections are required for worth assessment',
+        message: 'You must connect at least one of the following: ORCID, GitHub, Bitbucket, or GitLab',
+        requiredConnections: ['ORCID', 'GitHub', 'Bitbucket', 'GitLab'],
+        currentConnections: {
+          orcidId: user.orcidId,
+          githubHandle: user.githubHandle,
+          bitbucketHandle: user.bitbucketHandle,
+          gitlabHandle: user.gitlabHandle
+        }
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error checking additional connections:', error);
+    res.status(500).json({ error: 'Failed to verify additional connections' });
+  }
+}

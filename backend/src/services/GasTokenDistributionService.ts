@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { ethers } from 'ethers';
 import { ethereumService } from './ethereum.js';
 import { GlobalDataService } from './GlobalDataService.js';
 
@@ -41,7 +40,9 @@ export class GasTokenDistributionService {
    * Get the current gas token reserve
    */
   private async getGasTokenReserve(): Promise<number> {
-    const reserve = await this.prisma.gasTokenReserve.findFirst();
+    const reserve = await this.prisma.gasTokenReserve.findUnique({
+      where: { network: 'mainnet' } // Default to mainnet for backward compatibility
+    });
     return reserve ? Number(reserve.totalReserve) : 0;
   }
 
@@ -50,12 +51,13 @@ export class GasTokenDistributionService {
    */
   private async updateGasTokenReserve(amount: number): Promise<void> {
     await this.prisma.gasTokenReserve.upsert({
-      where: { id: 1 },
+      where: { network: 'mainnet' }, // Default to mainnet for backward compatibility
       update: { 
         totalReserve: amount,
         lastDistribution: new Date()
       },
       create: { 
+        network: 'mainnet', // Default to mainnet for backward compatibility
         totalReserve: amount,
         lastDistribution: new Date()
       }
@@ -67,7 +69,7 @@ export class GasTokenDistributionService {
    */
   private async getWalletBalance(): Promise<number> {
     const balance = await ethereumService.getBalance();
-    return Number(ethers.formatEther(balance));
+    return Number(ethereumService.formatEther(balance));
   }
 
   /**
@@ -135,8 +137,8 @@ export class GasTokenDistributionService {
    * Send ETH to a user's ethereum address
    */
   private async sendEthToUser(ethereumAddress: string, amountEth: number): Promise<string> {
-    const tx = await ethereumService.sendTransaction(ethereumAddress, amountEth.toString());
-    return tx.hash;
+    const tx = await ethereumService.sendTransaction(ethereumAddress as `0x${string}`, amountEth.toString());
+    return tx;
   }
 
   /**
@@ -182,6 +184,7 @@ export class GasTokenDistributionService {
             await this.prisma.gasTokenDistribution.create({
               data: {
                 userId: dist.userId,
+                network: 'mainnet', // Default to mainnet for backward compatibility
                 amount: dist.amountEth,
                 amountUsd: dist.amountUsd,
                 status: 'DEFERRED'
@@ -205,6 +208,7 @@ export class GasTokenDistributionService {
               await this.prisma.gasTokenDistribution.create({
                 data: {
                   userId: dist.userId,
+                  network: 'mainnet', // Default to mainnet for backward compatibility
                   amount: dist.amountEth,
                   amountUsd: dist.amountUsd,
                   status: 'SENT',
@@ -232,6 +236,7 @@ export class GasTokenDistributionService {
               await this.prisma.gasTokenDistribution.create({
                 data: {
                   userId: dist.userId,
+                  network: 'mainnet', // Default to mainnet for backward compatibility
                   amount: dist.amountEth,
                   amountUsd: dist.amountUsd,
                   status: 'FAILED',
@@ -320,7 +325,9 @@ export class GasTokenDistributionService {
    * Get current reserve status
    */
   async getReserveStatus() {
-    const reserve = await this.prisma.gasTokenReserve.findFirst();
+    const reserve = await this.prisma.gasTokenReserve.findUnique({
+      where: { network: 'mainnet' } // Default to mainnet for backward compatibility
+    });
     const walletBalance = await this.getWalletBalance();
     
     return {

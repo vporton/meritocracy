@@ -168,6 +168,7 @@ model Global {
 model GasTokenDistribution {
   id               Int      @id @default(autoincrement())
   userId           Int
+  network          String   // Network identifier (e.g., 'mainnet', 'polygon', 'arbitrum')
   amount           Decimal
   amountUsd        Decimal
   distributionDate DateTime @default(now())
@@ -179,18 +180,22 @@ model GasTokenDistribution {
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([network])
   @@index([status])
   @@index([distributionDate])
+  @@unique([userId, network, distributionDate]) // Prevent duplicate distributions per network per day
   @@map("gas_token_distributions")
 }
 
 model GasTokenReserve {
   id               Int      @id @default(autoincrement())
+  network          String   // Network identifier (e.g., 'mainnet', 'polygon', 'arbitrum')
   totalReserve     Decimal  @default(0)
   lastDistribution DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  @@unique([network]) // One reserve per network
   @@map("gas_token_reserves")
 }
 

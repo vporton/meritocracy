@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api, { usersApi } from '../services/api'
 import { ethers } from 'ethers'
 import Leaderboard from '../components/Leaderboard'
+import MultiNetworkGasBalances from '../components/MultiNetworkGasBalances'
 import { useAuth } from '../contexts/AuthContext'
 
 interface ServerStatus {
@@ -31,7 +32,7 @@ function Home() {
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
-  const [ethereumStatus, setEthereumStatus] = useState<{network: string, balance: bigint, currency: string, address?: string} | undefined>()
+  const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
   const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -56,24 +57,32 @@ function Home() {
   }, [])
 
   useEffect(() => {
-    const checkEthereumStatus = async () => {
+    const fetchPrimaryNetworkAddress = async () => {
       try {
-        const response = await api.get('/api/ethereum/wallet-info')
-        const data = response.data.data
-        setEthereumStatus({
-          network: data.network,
-          balance: BigInt(data.balance),
-          currency: data.currency,
-          address: data.address
-        })
+        // Try to get the primary network address from multi-network status
+        const response = await api.get('/api/multi-network-gas/status')
+        if (response.data.success && response.data.data.enabledNetworks.length > 0) {
+          const firstNetwork = response.data.data.enabledNetworks[0]
+          const networkInfo = response.data.data.networks[firstNetwork]
+          if (networkInfo?.address) {
+            setPrimaryNetworkAddress(networkInfo.address)
+          }
+        }
       } catch (error) {
-        // setEthereumStatus({ error: 'Failed to connect to server' })
-      } finally {
-        setLoading(false)
+        // Fallback to single network endpoint
+        try {
+          const response = await api.get('/api/ethereum/wallet-info')
+          const data = response.data.data
+          if (data.address) {
+            setPrimaryNetworkAddress(data.address)
+          }
+        } catch (fallbackError) {
+          console.log('Failed to fetch network address:', fallbackError)
+        }
       }
     }
 
-    checkEthereumStatus()
+    fetchPrimaryNetworkAddress()
   }, [])
 
   // TODO@P3: duplicate code
@@ -212,10 +221,7 @@ function Home() {
           </div>
         )}
       </div>
-      <div className="card">
-        <p>✅ <strong>EVM network:</strong> {ethereumStatus?.network}</p>
-        <p>📦 <strong>EVM gas token balance:</strong> {ethereumStatus ? ethers.formatEther(ethereumStatus.balance) : "n/a"} {ethereumStatus?.currency}</p>
-      </div>
+      <MultiNetworkGasBalances />
       
       <div className="card">
         <h3>🌍 World Economy</h3>
@@ -378,7 +384,7 @@ function Home() {
         </div>
       )}
       
-      {ethereumStatus?.address && (
+      {primaryNetworkAddress && (
         <div className="card">
           <h3>💖 Support This Project</h3>
           <p>Help support the development of this open-source project by donating Ethereum or ERC-20 tokens:</p>
@@ -397,10 +403,10 @@ function Home() {
             gap: '1rem'
           }}>
             <span style={{ flex: 1, color: '#ffffff' }}>
-              {ethereumStatus.address}
+              {primaryNetworkAddress}
             </span>
             <button 
-              onClick={() => copyToClipboard(ethereumStatus.address!)}
+              onClick={() => copyToClipboard(primaryNetworkAddress)}
               style={{
                 background: copySuccess ? '#4caf50' : '#646cff',
                 border: 'none',
@@ -417,7 +423,7 @@ function Home() {
             </button>
           </div>
           <p style={{ fontSize: '0.9rem', color: '#888' }}>
-            This address accepts ETH and all ERC-20 tokens on {ethereumStatus.network}
+            This address accepts ETH and all ERC-20 tokens on all supported networks
           </p>
         </div>
       )}

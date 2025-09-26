@@ -3,7 +3,7 @@
 - TODO@P3 Connect with BitBucket and GitLab doesn't work.
 
 - TODO@P2 Require to log-in every 2 months, to avoid dead users.
-  Even better let AI checks whether the user is active.
+  Even better let AI or KYC check whether the user is active.
 
 - FIXME@P2 After failed login, the button text is "Try again". Thus the name of the button is not shown.
 
@@ -29,15 +29,9 @@
 
 - TODO@P3 Always run prompt randomization as non-batch, because its cost is low.
 
-- TODO@P2 Rewrite Ethereum connection in backend using Viem.
-
-- TODO@P2 web3modal (not only MetaMask)
-
-- TODO@P1 Merge the history and bans, when merging accounts.
-
 - TODO@P3 Give back token like GIV of Giveth.
 
-- TODO@P2 Delete disconnected accounts. However, don't delete bans.
+- TODO@P3 Delete disconnected accounts, when disconnect, not in Cron.
 
 - TODO@P3 Don't allow worth assessment, when only KYC and/or Ethereum connected.
 

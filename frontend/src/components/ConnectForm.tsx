@@ -675,8 +675,6 @@ const ConnectForm = () => {
         return 'Try Again';
       case 'cancelled':
         return 'Try Again';
-      case 'connecting':
-        return 'Connecting...';
       default:
         return `Connect with ${displayName}`;
     }

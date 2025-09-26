@@ -33,8 +33,6 @@
 
 - TODO@P2 web3modal (not only MetaMask)
 
-- TODO@P1 Merge the history and bans, when merging accounts.
-
 - TODO@P3 Give back token like GIV of Giveth.
 
 - TODO@P2 Delete disconnected accounts. However, don't delete bans.

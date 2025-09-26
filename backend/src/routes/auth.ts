@@ -162,7 +162,44 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user.
       return await prisma.$transaction(async (tx) => {
+        // Handle bannedTill - use the more restrictive ban (later date)
+        if (existingUser.bannedTill && currentUser.bannedTill) {
+          updateData.bannedTill = existingUser.bannedTill > currentUser.bannedTill 
+            ? existingUser.bannedTill 
+            : currentUser.bannedTill;
+        } else if (existingUser.bannedTill) {
+          updateData.bannedTill = existingUser.bannedTill;
+        }
+        
+        // Transfer related data from existing user to current user
+        // Transfer sessions
+        await tx.session.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+        
+        // Transfer gas token distributions
+        await tx.gasTokenDistribution.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+        
+        // Transfer OpenAI logs
+        await tx.openAILog.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+        
+        // Transfer email verification tokens
+        await tx.emailVerificationToken.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+        
+        // Delete the existing user (this will cascade delete any remaining related data)
         await tx.user.delete({where: {id: existingUser.id}});
+        
+        // Update the current user with merged data
         return await tx.user.update({
           where: { id: currentUserId },
           data: updateData

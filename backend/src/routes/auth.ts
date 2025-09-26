@@ -42,6 +42,8 @@ interface UserData {
   githubHandle?: string;
   bitbucketHandle?: string;
   gitlabHandle?: string;
+  issuingState?: string;
+  personalNumber?: string;
 }
 
 // Helper function to find or create user based on provided data.
@@ -53,7 +55,7 @@ interface UserData {
 // and set B1 to A1. Then we need to deal only with two users, because A1!=B1.
 // We delete that user that had been previously set to our data!
 async function findOrCreateUser(userData: UserData, currentUserId: number | null = null) {
-  const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle } = userData;
+  const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle, issuingState, personalNumber } = userData;
   // First, check for exact matches using unique fields
   const searchConditions: UserData[] = [];
   if (email) searchConditions.push({ email });
@@ -62,6 +64,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
   if (githubHandle) searchConditions.push({ githubHandle });
   if (bitbucketHandle) searchConditions.push({ bitbucketHandle });
   if (gitlabHandle) searchConditions.push({ gitlabHandle });
+  if (issuingState && personalNumber) searchConditions.push({ issuingState, personalNumber });
 
   if (searchConditions.length === 0) {
     throw new Error('No identifying information provided');
@@ -98,6 +101,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
           githubHandle: githubHandle || currentUser.githubHandle,
           bitbucketHandle: bitbucketHandle || currentUser.bitbucketHandle,
           gitlabHandle: gitlabHandle || currentUser.gitlabHandle,
+          issuingState: issuingState || currentUser.issuingState,
+          personalNumber: personalNumber || currentUser.personalNumber,
         }
       });
     } else {
@@ -110,6 +115,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (bitbucketHandle) createData.bitbucketHandle = bitbucketHandle;
       if (gitlabHandle) createData.gitlabHandle = gitlabHandle;
       if (email) createData.email = email;
+      if (issuingState) createData.issuingState = issuingState;
+      if (personalNumber) createData.personalNumber = personalNumber;
       
       return await prisma.user.create({
         data: createData
@@ -118,6 +125,29 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
   } else {
     // One user found, update with new information
     if (currentUserId !== null && currentUserId !== existingUser.id) {
+      // Get the current user to check for conflicting KYC data
+      const currentUser = await prisma.user.findUnique({
+        where: { id: currentUserId }
+      });
+      
+      if (!currentUser) {
+        throw new Error('Current user not found');
+      }
+      
+      // Check if users have different (issuingState, personalNumber) - don't allow merge
+      const existingKycData = existingUser.issuingState && existingUser.personalNumber 
+        ? { issuingState: existingUser.issuingState, personalNumber: existingUser.personalNumber }
+        : null;
+      const currentKycData = currentUser.issuingState && currentUser.personalNumber 
+        ? { issuingState: currentUser.issuingState, personalNumber: currentUser.personalNumber }
+        : null;
+      
+      if (existingKycData && currentKycData && 
+          (existingKycData.issuingState !== currentKycData.issuingState || 
+           existingKycData.personalNumber !== currentKycData.personalNumber)) {
+        throw new Error('Cannot merge users with different KYC data (issuingState, personalNumber)');
+      }
+      
       const updateData: any = {};
       if (email || existingUser.email) updateData.email = email || existingUser.email;
       if (name || existingUser.name) updateData.name = name || existingUser.name;
@@ -126,6 +156,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (githubHandle || existingUser.githubHandle) updateData.githubHandle = githubHandle || existingUser.githubHandle;
       if (bitbucketHandle || existingUser.bitbucketHandle) updateData.bitbucketHandle = bitbucketHandle || existingUser.bitbucketHandle;
       if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
+      if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
+      if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
       
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user.
@@ -147,6 +179,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (githubHandle || existingUser.githubHandle) updateData.githubHandle = githubHandle || existingUser.githubHandle;
       if (bitbucketHandle || existingUser.bitbucketHandle) updateData.bitbucketHandle = bitbucketHandle || existingUser.bitbucketHandle;
       if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
+      if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
+      if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
       
       return await prisma.user.update({
         where: { id: existingUser.id },
@@ -616,7 +650,9 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
       kycStatus: user.kycStatus,
       kycVerifiedAt: user.kycVerifiedAt,
       kycRejectedAt: user.kycRejectedAt,
-      kycRejectionReason: user.kycRejectionReason
+      kycRejectionReason: user.kycRejectionReason,
+      issuingState: user.issuingState,
+      personalNumber: user.personalNumber
     });
   } catch (error: any) {
     console.error('Get KYC status error:', error);
@@ -1207,7 +1243,9 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
         kycStatus: null,
         kycVerifiedAt: null,
         kycRejectedAt: null,
-        kycRejectionReason: null
+        kycRejectionReason: null,
+        issuingState: null,
+        personalNumber: null
       };
       
       const updatedUser = await prisma.user.update({
@@ -1376,6 +1414,12 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           updateData.name = idData.last_name;
         }
         
+        // Extract and store KYC fields for user identification
+        if (idData.issuing_state && idData.document_number) {
+          updateData.issuingState = idData.issuing_state;
+          updateData.personalNumber = idData.document_number;
+        }
+        
         updateData.kycData = JSON.stringify({
           documentType: idData.document_type,
           documentNumber: idData.document_number,
@@ -1404,10 +1448,28 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     }
     
     // Update user KYC status
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: updateData
-    });
+    let updatedUser;
+    try {
+      updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: updateData
+      });
+    } catch (error: any) {
+      // Handle unique constraint violation for KYC fields
+      if (error.code === 'P2002' && error.meta?.target?.includes('issuingState')) {
+        console.error('KYC combination already exists for another user:', {
+          userId: user.id,
+          issuingState: updateData.issuingState,
+          personalNumber: updateData.personalNumber
+        });
+        res.status(409).json({ 
+          error: 'This KYC combination is already associated with another user',
+          kycStatus: 'DUPLICATE'
+        });
+        return;
+      }
+      throw error; // Re-throw if it's a different error
+    }
     
     console.log('KYC status updated for user:', {
       userId: user.id,

@@ -39,12 +39,6 @@
 
 - TODO@P2 Delete disconnected accounts. However, don't delete bans.
 
-- FIXME@P2 A user can create two accounts with non-overriding connections.
-  However, the AI may decide that it is the same user and reward him/her multiple times.
-  Solvable by KYC.
-
-- TODO@P3 Add KYC to catch fraudsters. https://business.didit.me/console is free KYC!
-
 - TODO@P3 Don't allow worth assessment, when only KYC and/or Ethereum connected.
 
 - TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"

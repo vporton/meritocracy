@@ -1366,6 +1366,16 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       // Store additional verification data if available
       if (decision && decision.id_verification) {
         const idData = decision.id_verification;
+        
+        // Store user name from KYC verification data
+        if (idData.first_name && idData.last_name) {
+          updateData.name = `${idData.first_name} ${idData.last_name}`.trim();
+        } else if (idData.first_name) {
+          updateData.name = idData.first_name;
+        } else if (idData.last_name) {
+          updateData.name = idData.last_name;
+        }
+        
         updateData.kycData = JSON.stringify({
           documentType: idData.document_type,
           documentNumber: idData.document_number,

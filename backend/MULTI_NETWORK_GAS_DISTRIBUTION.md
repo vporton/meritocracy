@@ -83,6 +83,10 @@ model GasTokenReserve {
 ETHEREUM_MAINNET_ENABLED=true
 ETHEREUM_MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
 
+# CELO Configuration
+ETHEREUM_CELO_ENABLED=true
+ETHEREUM_CELO_RPC_URL=https://celo-json-rpc.stakely.io
+
 # Polygon Configuration
 ETHEREUM_POLYGON_ENABLED=false
 ETHEREUM_POLYGON_RPC_URL=https://polygon-mainnet.infura.io/v3/YOUR_PROJECT_ID

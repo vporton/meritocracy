@@ -56,6 +56,7 @@ To enable networks, configure your `.env` file in the `backend/` directory:
 ```env
 # Enable networks
 ETHEREUM_MAINNET_ENABLED=true
+ETHEREUM_CELO_ENABLED=true
 ETHEREUM_POLYGON_ENABLED=true
 ETHEREUM_ARBITRUM_ENABLED=true
 ETHEREUM_OPTIMISM_ENABLED=true
@@ -65,6 +66,7 @@ ETHEREUM_LOCALHOST_ENABLED=false
 
 # Provide RPC URLs (replace YOUR_PROJECT_ID with your actual Infura/Alchemy project ID)
 ETHEREUM_MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
+ETHEREUM_CELO_RPC_URL=https://celo-json-rpc.stakely.io
 ETHEREUM_POLYGON_RPC_URL=https://polygon-mainnet.infura.io/v3/YOUR_PROJECT_ID
 ETHEREUM_ARBITRUM_RPC_URL=https://arbitrum-mainnet.infura.io/v3/YOUR_PROJECT_ID
 ETHEREUM_OPTIMISM_RPC_URL=https://optimism-mainnet.infura.io/v3/YOUR_PROJECT_ID

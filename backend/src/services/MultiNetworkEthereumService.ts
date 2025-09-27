@@ -11,7 +11,7 @@ import {
     type Hash,
     type Chain
 } from 'viem';
-import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost } from 'viem/chains';
+import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost, celo } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
 
@@ -57,6 +57,14 @@ export class MultiNetworkEthereumService {
                 enabled: process.env.ETHEREUM_MAINNET_ENABLED === 'true',
                 gasReserve: 0.01,
                 minimumDistributionUsd: 20
+            },
+            {
+                name: 'celo',
+                chain: celo,
+                rpcUrl: process.env.ETHEREUM_CELO_RPC_URL,
+                enabled: process.env.ETHEREUM_CELO_ENABLED === 'true',
+                gasReserve: 0.1,
+                minimumDistributionUsd: 5
             },
             {
                 name: 'polygon',

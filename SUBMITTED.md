@@ -8,4 +8,4 @@
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction
       * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause
-      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ - submitted 27 Sep 2025.
+      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ - submitted to CeloPG 27 Sep 2025.

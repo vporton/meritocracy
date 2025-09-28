@@ -28,4 +28,4 @@
     * TODO
   * https://gap.karmahq.xyz/funding-map - apply for funding
     * TODO
-* https://www.cryptoaltruists.com -  contacted 28 Sep 2025
+* https://www.cryptoaltruists.com - contacted 28 Sep 2025

@@ -43,3 +43,4 @@
 - TODO@P3 Allow to enter a blockchain address instead of using a wallet.
 
 - TODO@P1 Add AML-screening to KYC. That's to block sanctioned persons, etc. This is a paid service.
+  Also must report sanctioned persons: https://chatgpt.com/s/t_68d8ad9b47f481918adb9e07beee5d05

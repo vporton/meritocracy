@@ -14,3 +14,4 @@
   * Kraken - https://www.kraken.com/features/grants - submitted 28 Sep 2025.
   * https://hrf.org/program/financial-freedom/bitcoin-development-fund/ - submitted 28 Sep 2025. [It typically takes us ~one month to review an application. If you do not hear back from us by then please feel free to reach out to bdf@hrf.org to follow up.]
   * https://developergrant.okcoin.com/ - submitted 28 Sep 2025.
+  * https://grants.bitcoindevs.xyz/apply - applied to OpenSats 28 Sep 2025.

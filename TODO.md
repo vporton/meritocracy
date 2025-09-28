@@ -41,3 +41,5 @@
 - TODO@P3 Should the user be able to add more than one email?
 
 - TODO@P3 Allow to enter a blockchain address instead of using a wallet.
+
+- TODO@P1 Add AML-screening to KYC. That's to block sanctioned persons, etc. This is a paid service.

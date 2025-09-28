@@ -23,7 +23,7 @@
   Also use running average of user worth to reduce used AI tokens.
 
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
-  If this is the case, we should rewrite this in ICP.
+  If this is the case, we should rewrite this in ICP. Use ZenDB to replace SQL.
 
 - TODO@P2 Delete DB migrations before the release.
 

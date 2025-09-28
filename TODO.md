@@ -44,3 +44,5 @@
 
 - TODO@P1 Add AML-screening to KYC. That's to block sanctioned persons, etc. This is a paid service.
   Also must report sanctioned persons: https://chatgpt.com/s/t_68d8b2750e6881919f9fa1a16e9f1a13
+
+- TODO@P2 Logging displayed at `/logs` is excessive.

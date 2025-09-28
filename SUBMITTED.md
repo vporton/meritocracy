@@ -10,4 +10,6 @@
       * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause
       * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ - submitted to CeloPG 27 Sep 2025.
     * Ethereum Foundation - unlikely to support: They impower builders, not end users.
-* Kraken - https://www.kraken.com/features/grants- submitted 28 Sep 2025.
+* https://www.google.com/search?q=bitcoin+grants
+  * Kraken - https://www.kraken.com/features/grants - submitted 28 Sep 2025.
+  * https://hrf.org/program/financial-freedom/bitcoin-development-fund/ - submitted 28 Sep 2025.

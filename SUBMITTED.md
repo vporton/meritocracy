@@ -26,3 +26,5 @@
     * TODO
   * https://collectiveshift.io/funding/crypto-grants-programs-guide/
     * TODO
+  * https://gap.karmahq.xyz/funding-map - apply for funding
+    * TODO

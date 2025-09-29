@@ -490,7 +490,29 @@ const ConnectForm = () => {
       const response = await authApi.initiateKyc();
       const data = response.data;
       
-      if (data.url) {
+      // Check if KYC was skipped
+      if (data.skipped) {
+        console.log('KYC was skipped - automatically verified');
+        
+        // If we got a session back (for unauthenticated users), update auth context
+        if (data.session && data.user) {
+          console.log('KYC created new session for unauthenticated user');
+          updateAuthData(data.user, data.session.token);
+        } else {
+          // Refresh user data to get updated KYC status
+          await refreshUser();
+        }
+        
+        setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
+        
+        // Reset status after a delay
+        setTimeout(() => {
+          setConnectStatus(prev => {
+            const { kyc, ...rest } = prev;
+            return rest;
+          });
+        }, 3000);
+      } else if (data.url) {
         // If we got a session back (for unauthenticated users), update auth context
         if (data.session && data.user) {
           console.log('KYC created new session for unauthenticated user');

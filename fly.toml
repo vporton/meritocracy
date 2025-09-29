@@ -130,3 +130,7 @@ primary_region = 'ewr'
 
   DIDIT_APP_ID="a4efc76a-f3bf-4e99-84c2-859718ad1827"
   DIDIT_WORKFLOW_ID="c7d40f00-c3dd-4044-9104-e01c4206494d"
+
+  # KYC Configuration
+  # Set to true to skip KYC verification and automatically set users as verified
+  SKIP_KYC=true

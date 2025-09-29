@@ -1631,6 +1631,42 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       });
     }
     
+    // Check if KYC should be skipped
+    if (process.env.SKIP_KYC === 'true') {
+      console.log('SKIP_KYC is enabled - setting KYC as passed for user:', user.id);
+      
+      // Update user KYC status to VERIFIED
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          kycStatus: 'APPROVED',
+          kycVerifiedAt: new Date(),
+          kycRejectedAt: null,
+          kycRejectionReason: null,
+          kycData: JSON.stringify({ skipped: true, reason: 'SKIP_KYC environment variable enabled' })
+        } as any
+      });
+
+      const response: any = {
+        url: null, // No external URL needed
+        sessionId: null,
+        skipped: true,
+        message: 'KYC skipped - status set to VERIFIED'
+      };
+      
+      // If user was not authenticated, include session token for frontend
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        response.session = {
+          token: session.token,
+          expiresAt: session.expiresAt
+        };
+        response.user = user;
+      }
+      
+      res.json(response);
+      return;
+    }
+    
     // Check environment variables
     if (!process.env.DIDIT_WORKFLOW_ID || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
       res.status(500).json({ error: 'KYC service configuration missing' });

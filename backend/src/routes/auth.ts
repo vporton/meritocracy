@@ -1482,7 +1482,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     };
     
     // Handle different statuses according to Didit webhook format
-    if (status === 'Approved' && !aml || aml.status === 'Approved') {
+    if (status === 'Approved' && aml?.status === 'Approved') {
       updateData.kycVerifiedAt = new Date();
       updateData.kycRejectedAt = null;
       updateData.kycRejectionReason = null;
@@ -1531,7 +1531,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
       
       // Send OFAC report only for AML rejections (sanctions screening)
-      if (aml.status === 'Rejected') {
+      if (aml?.status === 'Rejected') {
         try {
           const kycData = decision?.id_verification ? {
             documentType: decision.id_verification.document_type,

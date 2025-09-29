@@ -49,6 +49,4 @@
 
 - TODO@P3 Allow to enter a blockchain address instead of using a wallet.
 
-- TODO@P1 Must report sanctioned persons: https://chatgpt.com/s/t_68d8b2750e6881919f9fa1a16e9f1a13
-
 - TODO@P2 Logging displayed at `/logs` is excessive.

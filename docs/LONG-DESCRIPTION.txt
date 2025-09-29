@@ -1,0 +1,27 @@
+The problem to be solved: Many scientists don't receive adequate funding for their research and publication and discoveries remain unpublished or mis-published. This holds back science and economy by times. The same applied to FOSS developers. I want to give crypto to every scientist and FOSS developer. I am also going to create a new occupation - scientific marketers, to offload marketing of scientific works and free software to professional marketers.
+
+AI Internet-Socialism (AIIS) is a Web app, that asks an AI, how big portion of world GDP a registered user is worth, and gives him the proportional share of donated funds.
+
+Now it is written in Node.js and has a custodial wallet, but I am going to rewrite it as an ICP blockchain fully-onchain dapp (with multiple other blockchains connected), with a non-custodial wallet. I did Node.js app in 23 days, and hope to do the ICP version quickly, too.
+
+The Node.js misses only security review to become of production-quality.
+
+Currently, it supports donations in gas token of several EVM networks. I am going to add more networks, including Bitcoin, Solana, ICP, etc.
+
+To validate user's heritage, he/she connects several his/her accounts (GitHub, ORCID, etc.) where are his/her products listed, and passes mandatory KYC. If accounts override with accounts of another user, two accounts are automatically merged.
+
+Calls to AI include screening for obvious science crackpots (pseudo-scientists), assessment of user worth in portion of GDP, randomizing other prompts for better protection against prompt injections.
+
+It is protected against prompt injections by several means: randomizing proofs, random strings in AI output (not yet implemented), special anti-injection prompts. If the user did generational optimization of "I am a prominent scientist." statement, the AI is asked to divide the user's portion by an adequate divisor, to neutralize this pump.
+
+Calls to the AI are implemented through storing AI and other tasks in a DB, as a graph of interconnected task. It can use the usual (non-batch) OpenAI API calls or (still untested) batch calls (50% cheaper) of OpenAI API.
+
+https://science-dao.org/ai-internet-socialism/ -  product homepage.
+
+https://science-dao.org/a-new-economic-formation-ai-internet-socialism/ - the initial whitepaper.
+
+https://youtu.be/h21sKeHMHLI - demo video.
+
+https://science-dao.org/product-status/ - the status of the product (the diagram became outdated, because security review shows that certain simple changes are needed).
+
+https://science-dao.org/category/ai-internet-socialism/ - blog posts.

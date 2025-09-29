@@ -1,3 +1,8 @@
+- TODO@P1 Instead of running Injection tests on random Web documents, retrieve the same documents
+  as ones using for Worth assessment.
+
+- TODO@P2 Against prompt injection add random strings to output and JSON labels.
+
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH payments.
 
 - TODO@P3 Connect with BitBucket and GitLab doesn't work.

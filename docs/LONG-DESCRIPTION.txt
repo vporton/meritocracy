@@ -14,7 +14,7 @@ Calls to AI include screening for obvious science crackpots (pseudo-scientists),
 
 It is protected against prompt injections by several means: randomizing proofs, random strings in AI output (not yet implemented), special anti-injection prompts. If the user did generational optimization of "I am a prominent scientist." statement, the AI is asked to divide the user's portion by an adequate divisor, to neutralize this pump.
 
-Calls to the AI are implemented through storing AI and other tasks in a DB, as a graph of interconnected task. It can use the usual (non-batch) OpenAI API calls or (still untested) batch calls (50% cheaper) of OpenAI API.
+Calls to the AI are implemented through storing AI and other tasks in a DB, as a graph of interconnected tasks. It can use the usual (non-batch) OpenAI API calls or (still untested) batch calls (50% cheaper) of OpenAI API.
 
 https://science-dao.org/ai-internet-socialism/ -  product homepage.
 

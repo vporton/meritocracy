@@ -1530,28 +1530,30 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         updateData.kycRejectionReason = rejectionReason;
       }
       
-      // Send OFAC report for declined/rejected KYC
-      try {
-        const kycData = decision?.id_verification ? {
-          documentType: decision.id_verification.document_type,
-          documentNumber: decision.id_verification.document_number,
-          firstName: decision.id_verification.first_name,
-          lastName: decision.id_verification.last_name,
-          dateOfBirth: decision.id_verification.date_of_birth,
-          nationality: decision.id_verification.nationality,
-          issuingState: decision.id_verification.issuing_state,
-          personalNumber: decision.id_verification.document_number
-        } : null;
-        
-        const emailSent = await EmailService.sendOFACReport(user, kycData, aml, rejectionReason);
-        if (emailSent) {
-          console.log('OFAC report sent successfully for user:', user.id);
-        } else {
-          console.error('Failed to send OFAC report for user:', user.id);
+      // Send OFAC report only for AML rejections (sanctions screening)
+      if (aml.status === 'Rejected') {
+        try {
+          const kycData = decision?.id_verification ? {
+            documentType: decision.id_verification.document_type,
+            documentNumber: decision.id_verification.document_number,
+            firstName: decision.id_verification.first_name,
+            lastName: decision.id_verification.last_name,
+            dateOfBirth: decision.id_verification.date_of_birth,
+            nationality: decision.id_verification.nationality,
+            issuingState: decision.id_verification.issuing_state,
+            personalNumber: decision.id_verification.document_number
+          } : null;
+          
+          const emailSent = await EmailService.sendOFACReport(user, kycData, aml, rejectionReason);
+          if (emailSent) {
+            console.log('OFAC report sent successfully for AML rejection - user:', user.id);
+          } else {
+            console.error('Failed to send OFAC report for AML rejection - user:', user.id);
+          }
+        } catch (emailError) {
+          console.error('Error sending OFAC report for AML rejection:', emailError);
+          // Don't fail the entire KYC callback if email fails
         }
-      } catch (emailError) {
-        console.error('Error sending OFAC report:', emailError);
-        // Don't fail the entire KYC callback if email fails
       }
     } else if (status === 'In Review') {
       updateData.kycStatus = 'PENDING';

@@ -1,7 +1,7 @@
 - TODO@P1 Instead of running Injection tests on random Web documents, retrieve the same documents
   as ones using for Worth assessment.
   To avoid hacker outputting injections only when the request is done by OpenAI,
-  list the URL in the anti-injection prompts and let OpenAI retrieve them.
+  list the URL in the anti-injection user prompts and let OpenAI retrieve them.
 
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 

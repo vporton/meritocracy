@@ -1393,7 +1393,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     // Signature is valid, proceed with processing
     console.log('Didit KYC callback received and verified:', rawBody);
     
-    const { session_id, status, webhook_type, vendor_data, decision } = rawBody;
+    const { session_id, status, webhook_type, vendor_data, decision, aml } = rawBody;
     
     if (!session_id) {
       console.error('No session_id in Didit callback');
@@ -1482,7 +1482,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     };
     
     // Handle different statuses according to Didit webhook format
-    if (status === 'Approved') {
+    if (status === 'Approved' && !aml || aml.status === 'Approved') {
       updateData.kycVerifiedAt = new Date();
       updateData.kycRejectedAt = null;
       updateData.kycRejectionReason = null;
@@ -1517,7 +1517,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           expirationDate: idData.expiration_date
         });
       }
-    } else if (status === 'Declined') {
+    } else if (status === 'Declined' || aml.status === 'Rejected') {
       updateData.kycRejectedAt = new Date();
       updateData.kycRejectionReason = 'Verification declined by Didit';
       updateData.kycVerifiedAt = null;

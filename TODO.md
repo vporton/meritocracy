@@ -1,3 +1,10 @@
+- TODO@P1 Instead of running Injection tests on random Web documents, retrieve the same documents
+  as ones using for Worth assessment.
+  To avoid hacker outputting injections only when the request is done by OpenAI,
+  list the URL in the anti-injection user prompts and let OpenAI retrieve them.
+
+- TODO@P2 Against prompt injection add random strings to output and JSON labels.
+
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH payments.
 
 - TODO@P3 Connect with BitBucket and GitLab doesn't work.
@@ -23,7 +30,7 @@
   Also use running average of user worth to reduce used AI tokens.
 
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
-  If this is the case, we should rewrite this in ICP.
+  If this is the case, we should rewrite this in ICP. Use ZenDB to replace SQL.
 
 - TODO@P2 Delete DB migrations before the release.
 
@@ -39,3 +46,10 @@
   to "Disconnect Email" state through browser inter-windows communication.
 
 - TODO@P3 Should the user be able to add more than one email?
+
+- TODO@P3 Allow to enter a blockchain address instead of using a wallet.
+
+- TODO@P1 Add AML-screening to KYC. That's to block sanctioned persons, etc. This is a paid service.
+  Also must report sanctioned persons: https://chatgpt.com/s/t_68d8b2750e6881919f9fa1a16e9f1a13
+
+- TODO@P2 Logging displayed at `/logs` is excessive.

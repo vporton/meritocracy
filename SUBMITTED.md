@@ -8,4 +8,26 @@
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction
       * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause
-      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ - submitted 27 Sep 2025.
+      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ - submitted to CeloPG 27 Sep 2025.
+    * Ethereum Foundation - unlikely to support: They impower builders, not end users.
+    * TODO
+* https://www.google.com/search?q=bitcoin+grants
+  * Kraken - https://www.kraken.com/features/grants - submitted 28 Sep 2025.
+  * https://hrf.org/program/financial-freedom/bitcoin-development-fund/ - submitted 28 Sep 2025. [It typically takes us ~one month to review an application. If you do not hear back from us by then please feel free to reach out to bdf@hrf.org to follow up.]
+  * https://developergrant.okcoin.com/ - submitted 28 Sep 2025.
+  * https://grants.bitcoindevs.xyz/apply - applied to OpenSats 28 Sep 2025.
+  * https://www.coinfabrik.com/web3-grants/
+    * TODO
+    * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025.
+    * TODO
+  * https://blockworks.co/grants
+    * TODO
+  * https://blockchaingrants.org
+    * TODO
+  * https://bitcointalk.org/index.php?topic=5502452.0
+    * TODO
+  * https://collectiveshift.io/funding/crypto-grants-programs-guide/
+    * TODO
+  * https://gap.karmahq.xyz/funding-map - apply for funding
+    * TODO
+* https://www.cryptoaltruists.com - contacted 28 Sep 2025

@@ -18,6 +18,8 @@
   * https://grants.bitcoindevs.xyz/apply - applied to OpenSats 28 Sep 2025.
   * https://www.coinfabrik.com/web3-grants/
     * TODO
+    * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025.
+    * TODO
   * https://blockworks.co/grants
     * TODO
   * https://blockchaingrants.org

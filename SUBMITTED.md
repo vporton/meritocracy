@@ -19,6 +19,7 @@
   * https://www.coinfabrik.com/web3-grants/
     * TODO
     * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025.
+    * Moonbeam - submitted 29 Sep 2025.
     * TODO
   * https://blockworks.co/grants
     * TODO

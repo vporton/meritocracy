@@ -37,10 +37,15 @@
             <mxPoint x="225" y="150" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-40" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-66" target="tDPhRY8hEL3OmALvMrwS-88">
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-40" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-69" target="tDPhRY8hEL3OmALvMrwS-66">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="165" y="210" as="sourcePoint" />
             <mxPoint x="160" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-104" value="&amp;gt;1e-11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="tDPhRY8hEL3OmALvMrwS-40">
+          <mxGeometry x="-0.1171" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
@@ -97,14 +102,10 @@
         <mxCell id="tDPhRY8hEL3OmALvMrwS-64" value="&lt;div&gt;Randomize:&lt;/div&gt;How much&amp;nbsp; the user is worth?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="105" y="160" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-65" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-69" target="tDPhRY8hEL3OmALvMrwS-66">
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-65" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-66" target="tDPhRY8hEL3OmALvMrwS-88">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="310" y="250" as="sourcePoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-103" value="&amp;gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;1e-11&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="tDPhRY8hEL3OmALvMrwS-65">
-          <mxGeometry x="-0.1122" y="4" relative="1" as="geometry">
-            <mxPoint as="offset" />
+            <mxPoint x="40" y="250" as="sourcePoint" />
+            <mxPoint x="60" y="300" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-66" value="Randomize:&lt;br&gt;Is there a prompt injection?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
@@ -128,68 +129,70 @@
             <mxPoint x="610" y="220" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-72" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-90" target="tDPhRY8hEL3OmALvMrwS-95">
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-72" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-92" target="tDPhRY8hEL3OmALvMrwS-90">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="165" y="560" as="sourcePoint" />
-            <mxPoint x="170" y="580" as="targetPoint" />
+            <mxPoint x="165" y="530" as="sourcePoint" />
+            <mxPoint x="170" y="550" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-88" value="&lt;div&gt;Randomize:&lt;/div&gt;How much&amp;nbsp; the user is worth?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="105" y="380" width="120" height="60" as="geometry" />
+          <mxGeometry x="105" y="350" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-89" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-92" target="tDPhRY8hEL3OmALvMrwS-90">
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-89" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-90" target="tDPhRY8hEL3OmALvMrwS-95">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="310" y="470" as="sourcePoint" />
+            <mxPoint x="50" y="460" as="sourcePoint" />
+            <mxPoint x="60" y="500" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-90" value="Randomize:&lt;br&gt;Is there a prompt injection?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="105" y="480" width="120" height="60" as="geometry" />
+          <mxGeometry x="105" y="450" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-91" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-88" target="tDPhRY8hEL3OmALvMrwS-92">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="225" y="410" as="sourcePoint" />
-            <mxPoint x="880" y="445" as="targetPoint" />
+            <mxPoint x="225" y="380" as="sourcePoint" />
+            <mxPoint x="880" y="415" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-92" value="&lt;div&gt;Randomized:&lt;/div&gt;How much&amp;nbsp; the user is worth?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="270" y="380" width="120" height="60" as="geometry" />
+          <mxGeometry x="270" y="350" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-93" value="Randomized:&lt;br&gt;Is there a prompt injection?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="270" y="480" width="120" height="60" as="geometry" />
+          <mxGeometry x="270" y="450" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-94" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-90" target="tDPhRY8hEL3OmALvMrwS-93">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="560" y="490" as="sourcePoint" />
-            <mxPoint x="610" y="440" as="targetPoint" />
+            <mxPoint x="560" y="460" as="sourcePoint" />
+            <mxPoint x="610" y="410" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-95" value="&lt;div&gt;Randomize:&lt;/div&gt;How much&amp;nbsp; the user is worth?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="105" y="600" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-96" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-99" target="tDPhRY8hEL3OmALvMrwS-97">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="310" y="690" as="sourcePoint" />
-          </mxGeometry>
+          <mxGeometry x="105" y="540" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-97" value="Randomize:&lt;br&gt;Is there a prompt injection?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="105" y="700" width="120" height="60" as="geometry" />
+          <mxGeometry x="105" y="640" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-98" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-95" target="tDPhRY8hEL3OmALvMrwS-99">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="225" y="630" as="sourcePoint" />
-            <mxPoint x="880" y="665" as="targetPoint" />
+            <mxPoint x="225" y="570" as="sourcePoint" />
+            <mxPoint x="880" y="605" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-99" value="&lt;div&gt;Randomized:&lt;/div&gt;How much&amp;nbsp; the user is worth?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="270" y="600" width="120" height="60" as="geometry" />
+          <mxGeometry x="270" y="540" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-100" value="Randomized:&lt;br&gt;Is there a prompt injection?" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="270" y="700" width="120" height="60" as="geometry" />
+          <mxGeometry x="270" y="640" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-101" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-97" target="tDPhRY8hEL3OmALvMrwS-100">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="560" y="710" as="sourcePoint" />
-            <mxPoint x="610" y="660" as="targetPoint" />
+            <mxPoint x="560" y="650" as="sourcePoint" />
+            <mxPoint x="610" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-105" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-99" target="tDPhRY8hEL3OmALvMrwS-97">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="305" y="600" as="sourcePoint" />
+            <mxPoint x="140" y="640" as="targetPoint" />
           </mxGeometry>
         </mxCell>
       </root>

@@ -34,7 +34,7 @@
     * TODO
 * https://www.cryptoaltruists.com - contacted 28 Sep 2025
 * OpenAI:
-  * https://openai.com/index/people-first-ai-fund/ - applied 1 Oct 2025.
+  * https://openai.com/index/people-first-ai-fund/ - request no more than 10% of annual operating budget.
   * https://openai.com/form/researcher-access-program/ ($1000 in credits) - applied 1 Oct 2025.
   * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025.
 * https://www.google.com/search?q=ai+grants

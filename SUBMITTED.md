@@ -33,3 +33,7 @@
   * https://gap.karmahq.xyz/funding-map - apply for funding
     * TODO
 * https://www.cryptoaltruists.com - contacted 28 Sep 2025
+* OpenAI:
+  * https://openai.com/index/people-first-ai-fund/ - applied 1 Oct 2025.
+  * https://openai.com/form/researcher-access-program/ ($1000 in credits) - applied 1 Oct 2025.
+  * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025.

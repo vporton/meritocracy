@@ -30,7 +30,7 @@
     * TODO
   * https://collectiveshift.io/funding/crypto-grants-programs-guide/
     * TODO
-  * https://gap.karmahq.xyz/funding-map - apply for funding
+  * https://gap.karmahq.xyz/funding-map
     * TODO
 * https://www.cryptoaltruists.com - contacted 28 Sep 2025
 * OpenAI:

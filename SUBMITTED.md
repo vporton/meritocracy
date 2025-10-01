@@ -37,3 +37,4 @@
   * https://openai.com/index/people-first-ai-fund/ - applied 1 Oct 2025.
   * https://openai.com/form/researcher-access-program/ ($1000 in credits) - applied 1 Oct 2025.
   * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025.
+* https://aigrant.org / https://aigrant.com - applied 1 Oct 2025.

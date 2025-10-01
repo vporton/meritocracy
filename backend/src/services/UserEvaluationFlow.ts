@@ -68,9 +68,9 @@ export class UserEvaluationFlow {
     const pair1Worth = await this.createWorthAssessmentTask(evaluationData, [pair1Randomize.id]);
     completionTasks.push(pair1Worth.id);
     
-    // Pair 2: Injection check
+    // Pair 2: Injection check (depends on pair1 worth assessment for URLs)
     const pair2Randomize = await this.createRandomizePromptTask(evaluationData, [pair1Worth.id], injectionPrompt);
-    const pair2Injection = await this.createPromptInjectionTask(evaluationData, [pair2Randomize.id], 1);
+    const pair2Injection = await this.createPromptInjectionTask(evaluationData, [pair2Randomize.id, pair1Worth.id], 1);
     completionTasks.push(pair2Injection.id);
     
     // Pair 3: Worth assessment
@@ -78,9 +78,9 @@ export class UserEvaluationFlow {
     const pair3Worth = await this.createWorthAssessmentTask(evaluationData, [pair3Randomize.id]);
     completionTasks.push(pair3Worth.id);
     
-    // Pair 4: Injection check
+    // Pair 4: Injection check (depends on all previous worth assessments for URLs)
     const pair4Randomize = await this.createRandomizePromptTask(evaluationData, [pair3Worth.id], injectionPrompt);
-    const pair4Injection = await this.createPromptInjectionTask(evaluationData, [pair4Randomize.id], 2);
+    const pair4Injection = await this.createPromptInjectionTask(evaluationData, [pair4Randomize.id, pair1Worth.id, pair3Worth.id], 2);
     completionTasks.push(pair4Injection.id);
     
     // Pair 5: Worth assessment
@@ -88,9 +88,9 @@ export class UserEvaluationFlow {
     const pair5Worth = await this.createWorthAssessmentTask(evaluationData, [pair5Randomize.id]);
     completionTasks.push(pair5Worth.id);
     
-    // Pair 6: Injection check
+    // Pair 6: Injection check (depends on all previous worth assessments for URLs)
     const pair6Randomize = await this.createRandomizePromptTask(evaluationData, [pair5Worth.id], injectionPrompt);
-    const pair6Injection = await this.createPromptInjectionTask(evaluationData, [pair6Randomize.id], 3);
+    const pair6Injection = await this.createPromptInjectionTask(evaluationData, [pair6Randomize.id, pair1Worth.id, pair3Worth.id, pair5Worth.id], 3);
     completionTasks.push(pair6Injection.id);
     
     // Create median task that depends on all worth assessment tasks

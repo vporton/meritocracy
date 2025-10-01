@@ -615,6 +615,91 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
   protected getResponseSchema(): any {
     return worthAssessmentSchema;
   }
+
+  /**
+   * Override onOutput to capture sources from the OpenAI response
+   */
+  protected async onOutput(customId: string, output: any): Promise<void> {
+    // Get the full response to extract sources
+    const fullResponse = await this.getFullOpenAIResponse(customId);
+    const sources = this.extractSourcesFromResponse(fullResponse);
+    
+    // Store the output with sources
+    const outputWithSources = {
+      ...output,
+      sources: sources
+    };
+    
+    await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, outputWithSources);
+  }
+
+  /**
+   * Get the full OpenAI response including metadata
+   */
+  private async getFullOpenAIResponse(customId: string): Promise<any> {
+    const task = await this.getTaskWithDependencies(this.taskId);
+    if (!task.storeId) {
+      throw new Error('No storeId found for task');
+    }
+    
+    const store = await createAIBatchStore(task.storeId, this.taskId);
+    const outputter = await createAIOutputter(store);
+    
+    try {
+      const response = (await outputter.getOutput(customId))!;
+      return response;
+    } catch (error) {
+      this.log('error', 'Failed to get full OpenAI response', { customId, error });
+      return null;
+    }
+  }
+
+  /**
+   * Extract sources from OpenAI response
+   */
+  private extractSourcesFromResponse(response: any): string[] {
+    if (!response || !response.output) {
+      return [];
+    }
+
+    const sources: string[] = [];
+    
+    // Look through all output messages for web search results
+    for (const message of response.output) {
+      if (message && message.content) {
+        for (const content of message.content) {
+          if (content.type === 'text' && content.text) {
+            // Look for URLs in the text content
+            const urlMatches = content.text.match(/https?:\/\/[^\s\)]+/g);
+            if (urlMatches) {
+              sources.push(...urlMatches);
+            }
+          }
+          
+          // Look for web search sources in the content
+          if (content.sources && Array.isArray(content.sources)) {
+            for (const source of content.sources) {
+              if (source.url) {
+                sources.push(source.url);
+              }
+            }
+          }
+        }
+      }
+      
+      // Look for web search calls in the message
+      if (message.web_search_call && message.web_search_call.action && message.web_search_call.action.sources) {
+        for (const source of message.web_search_call.action.sources) {
+          if (source.url) {
+            sources.push(source.url);
+          }
+        }
+      }
+    }
+    
+    // Remove duplicates
+    return [...new Set(sources)];
+  }
 }
 
 
@@ -729,10 +814,76 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     const userData = this.data.userData || {};
     
     // Get randomized prompt from dependency (randomizePrompt task)
-    const randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
+    let randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
+    
+    // Collect URLs from all worth assessment dependencies
+    const urlsFromWorthAssessments = await this.collectUrlsFromWorthAssessments(task);
+    
+    // If we have URLs from worth assessments, modify the prompt to include them
+    if (urlsFromWorthAssessments.length > 0) {
+      const sourcesList = urlsFromWorthAssessments.map(url => `- ${url}`).join('\n');
+      randomizedPrompt = randomizedPrompt.replace('<SOURCES_LIST>', sourcesList);
+    } else {
+      randomizedPrompt = randomizedPrompt.replace('<SOURCES_LIST>', 'No sources available from worth assessments.');
+    }
+    
     const userPrompt: string = generateUserPrompt(userData);
     
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
+  }
+
+  /**
+   * Collect URLs from all worth assessment dependencies
+   * @param task - The task with dependencies
+   * @returns Array of URLs from worth assessments
+   */
+  private async collectUrlsFromWorthAssessments(task: TaskWithDependencies): Promise<string[]> {
+    const allUrls: string[] = [];
+    
+    // Look for worth assessment tasks in the dependency chain
+    for (const dep of task.dependencies) {
+      // Check if this dependency is a worth assessment task
+      if (dep.dependency.runnerClassName === 'WorthAssessmentRunner' && 
+          dep.dependency.status === 'COMPLETED' && 
+          dep.dependency.runnerData) {
+        
+        try {
+          const depData = JSON.parse(dep.dependency.runnerData);
+          
+          // Check if the worth assessment has sources
+          if (depData.sources && Array.isArray(depData.sources)) {
+            allUrls.push(...depData.sources);
+          }
+          
+          // Also try to get sources from the OpenAI response if available
+          if (depData.customId && dep.dependency.storeId) {
+            try {
+              const response = await this.getOpenAIResult({
+                customId: depData.customId,
+                storeId: dep.dependency.storeId
+              });
+              
+              if (response && response.sources && Array.isArray(response.sources)) {
+                allUrls.push(...response.sources);
+              }
+            } catch (error) {
+              this.log('warn', 'Failed to get sources from worth assessment response', {
+                dependencyId: dep.dependency.id,
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
+        } catch (error) {
+          this.log('warn', 'Failed to parse worth assessment dependency data', {
+            dependencyId: dep.dependency.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+    }
+    
+    // Remove duplicates and return
+    return [...new Set(allUrls)];
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {

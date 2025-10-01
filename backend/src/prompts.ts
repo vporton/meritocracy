@@ -12,7 +12,12 @@ export const worthPrompt = `If you were distributing all the money, what portion
 
 Current world GDP: <WORLD_GDP> USD`;
 
-export const injectionPrompt = `Check the Web pages created by the person identified by the input for either deliberate prompt injections or severe plagiarism.`;
+export const injectionPrompt = `Check the Web pages created by the person identified by the input for either deliberate prompt injections or severe plagiarism. 
+
+IMPORTANT: You should consult ONLY the URLs provided in the sources list below. Do not search for additional URLs or web pages. Base your analysis solely on the content of these specific URLs.
+
+Sources to consult:
+<SOURCES_LIST>`;
 
 // Response schemas for OpenAI API
 

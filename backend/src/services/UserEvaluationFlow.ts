@@ -25,63 +25,82 @@ export class UserEvaluationFlow {
    * Create the complete flow graph for user evaluation
    * Returns the root task ID that can be used to start the evaluation
    * 
-   * Flow according to diagram:
-   * 1. Scientist Onboarding → First Worth Assessment → WorthThresholdCheckRunner
-   * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second and Third Worth Assessment → Median
-   * 3. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
+   * Flow according to new diagram:
+   * 1. Actor → gpt-5-mini Assessment (scientist check)
+   * 2. Bi-monthly trigger → Sequential randomization and assessment pairs
+   * 3. Each pair: Randomize → Randomized (can lead to ban or median)
    */
   async createOnboardingFlow(evaluationData: UserEvaluationData) {
     console.log(`🔄 Creating onboarding flow for user ${evaluationData.userId}`);
 
     // Step 1: Create the initial scientist check task
-     const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
+    const scientistOnboardingTask = await this.createScientistOnboardingTask(evaluationData);
     
     return this.createEvaluationFlow(evaluationData, scientistOnboardingTask);
   }
 
   /**
-   * Create the flow graph for user evaluation
+   * Create the flow graph for user evaluation according to the new diagram
    * Returns the root task ID that can be used to start the evaluation
    * 
-   * Flow according to diagram:
-   * 1. First Worth Assessment → WorthThresholdCheckRunner
-   * 2. If worth > 1e-11: WorthThresholdCheckRunner → Prompt Injection Checks → Second and Third Worth Assessment → Median
-   * 3. If worth <= 1e-11: WorthThresholdCheckRunner → Median (directly)
+   * New Flow according to diagram:
+   * 1. Actor → gpt-5-mini Assessment (scientist check)
+   * 2. Bi-monthly trigger → Sequential randomization and assessment pairs
+   * 3. Each pair: Randomize → Randomized (can lead to ban or median)
+   * 4. 6 pairs total: 3 worth assessment pairs + 3 injection check pairs
    */
   async createEvaluationFlow(evaluationData: UserEvaluationData, scientistOnboardingTask?: Task) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
 
-    // Step 2: Create the first worth assessment task
     const worthPromptWithGdp = await this.getWorthPromptWithGdp();
-    const firstWorthRandomizeTask = await this.createRandomizePromptTask(
+    const completionTasks: number[] = [];
+    
+    // Create 6 sequential pairs as per the new diagram:
+    // 3 pairs of "Randomize: How much the user is worth?" → "Randomized: How much the user is worth?"
+    // 3 pairs of "Randomize: Is there a prompt injection?" → "Randomized: Is there a prompt injection?"
+    
+    // Pair 1: Worth assessment
+    const pair1Randomize = await this.createRandomizePromptTask(
       evaluationData,
-      scientistOnboardingTask !== undefined ? [scientistOnboardingTask.id] : [],
+      scientistOnboardingTask ? [scientistOnboardingTask.id] : [],
       worthPromptWithGdp
     );
-    const firstWorthTask = await this.createWorthAssessmentTask(evaluationData, [firstWorthRandomizeTask.id]);
+    const pair1Worth = await this.createWorthAssessmentTask(evaluationData, [pair1Randomize.id]);
+    completionTasks.push(pair1Worth.id);
     
-    // Step 3: Create the worth threshold check task
-    const thresholdCheckTask = await this.createWorthThresholdCheckTask(evaluationData, [firstWorthTask.id]);
+    // Pair 2: Injection check
+    const pair2Randomize = await this.createRandomizePromptTask(evaluationData, [pair1Worth.id], injectionPrompt);
+    const pair2Injection = await this.createPromptInjectionTask(evaluationData, [pair2Randomize.id], 1);
+    completionTasks.push(pair2Injection.id);
     
-    // Step 4: Create the prompt injection check flow (only if threshold is exceeded)
-    const injectionFlow = await this.createPromptInjectionFlow(evaluationData, [thresholdCheckTask.id]);
+    // Pair 3: Worth assessment
+    const pair3Randomize = await this.createRandomizePromptTask(evaluationData, [pair2Injection.id], worthPromptWithGdp);
+    const pair3Worth = await this.createWorthAssessmentTask(evaluationData, [pair3Randomize.id]);
+    completionTasks.push(pair3Worth.id);
     
-    // Step 5: Create the second worth assessment task (after injection checks)
-    const secondWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPromptWithGdp);
-    const secondWorthTask = await this.createWorthAssessmentTask(evaluationData, [secondWorthRandomizeTask.id]);
+    // Pair 4: Injection check
+    const pair4Randomize = await this.createRandomizePromptTask(evaluationData, [pair3Worth.id], injectionPrompt);
+    const pair4Injection = await this.createPromptInjectionTask(evaluationData, [pair4Randomize.id], 2);
+    completionTasks.push(pair4Injection.id);
     
-    // Step 6: Create the third worth assessment task (only if injection checks pass)
-    const thirdWorthRandomizeTask = await this.createRandomizePromptTask(evaluationData, injectionFlow.completionTasks, worthPromptWithGdp);
-    const thirdWorthTask = await this.createWorthAssessmentTask(evaluationData, [thirdWorthRandomizeTask.id]);
+    // Pair 5: Worth assessment
+    const pair5Randomize = await this.createRandomizePromptTask(evaluationData, [pair4Injection.id], worthPromptWithGdp);
+    const pair5Worth = await this.createWorthAssessmentTask(evaluationData, [pair5Randomize.id]);
+    completionTasks.push(pair5Worth.id);
     
-    // Step 7: Create median task that depends on all worth assessment tasks
-    // Note: The median task will process available worth values even if some dependencies are cancelled
-    const medianTask = await this.createMedianTask(evaluationData, [firstWorthTask.id, secondWorthTask.id, thirdWorthTask.id]);
+    // Pair 6: Injection check
+    const pair6Randomize = await this.createRandomizePromptTask(evaluationData, [pair5Worth.id], injectionPrompt);
+    const pair6Injection = await this.createPromptInjectionTask(evaluationData, [pair6Randomize.id], 3);
+    completionTasks.push(pair6Injection.id);
+    
+    // Create median task that depends on all worth assessment tasks
+    const worthTasks = [pair1Worth.id, pair3Worth.id, pair5Worth.id];
+    const medianTask = await this.createMedianTask(evaluationData, worthTasks);
     
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask?.id || 'N/A'}`);
-    console.log(`📊 Flow structure: Scientist → Worth → Threshold Check → [Injection Checks] → Worth → Median`);
-    console.log(`📊 Both Second and Third Worth Assessments depend on injection checks passing`);
-    return scientistOnboardingTask?.id || firstWorthTask.id;
+    console.log(`📊 Flow structure: Scientist → 6 sequential pairs (3 worth + 3 injection) → Median`);
+    console.log(`📊 Each injection check can lead to ban, each worth assessment contributes to median`);
+    return scientistOnboardingTask?.id || pair1Randomize.id;
   }
 
   /**
@@ -193,20 +212,24 @@ export class UserEvaluationFlow {
 
 
   /**
-   * Create a worth threshold check task
-   * This corresponds to "Compare user worth (WorthThresholdCheckRunner) to 1e-11" in the diagram
+   * Create a single prompt injection check task
+   * This corresponds to "Randomized: Is there a prompt injection?" in the diagram
    */
-  private async createWorthThresholdCheckTask(
+  private async createPromptInjectionTask(
     evaluationData: UserEvaluationData,
-    dependencies: number[]
+    dependencies: number[],
+    checkNumber: number
   ) {
     const task = await this.prisma.task.create({
       data: {
         status: TaskStatus.NOT_STARTED,
-        runnerClassName: 'WorthThresholdCheckRunner',
+        runnerClassName: 'PromptInjectionRunner',
         runnerData: JSON.stringify({
           userId: evaluationData.userId,
-          threshold: 1e-11 // Default threshold from the diagram
+          userData: evaluationData.userData,
+          checkNumber: checkNumber,
+          banDuration: '1y',
+          banReason: 'Prompt injection detected'
         })
       }
     });
@@ -224,65 +247,6 @@ export class UserEvaluationFlow {
     return task;
   }
 
-  /**
-   * Create sequential prompt injection check flow (6 tasks total)
-   * According to diagram: 3 pairs of "Randomize prompt" → "Randomized" tasks
-   * Each pair can result in ban if injection detected, or continue to next pair
-   */
-  private async createPromptInjectionFlow(
-    evaluationData: UserEvaluationData,
-    dependencies: number[]
-  ) {
-    const injectionTasks: any = []; // TODO@P3: type
-    let currentDependencies = dependencies;
-    
-    // Create 3 pairs of injection check tasks (6 tasks total)
-    for (let pairIndex = 0; pairIndex < 3; pairIndex++) {
-      // Create randomize prompt task for injection check
-      const randomizeTask = await this.createRandomizePromptTask(
-        evaluationData, 
-        currentDependencies, 
-        injectionPrompt
-      );
-      
-      // Create injection detection task
-      const injectionTask = await this.prisma.task.create({
-        data: {
-          status: TaskStatus.NOT_STARTED,
-          runnerClassName: 'PromptInjectionRunner',
-          runnerData: JSON.stringify({
-            userId: evaluationData.userId,
-            userData: evaluationData.userData,
-            checkNumber: pairIndex + 1,
-            banDuration: '1y',
-            banReason: 'Prompt injection detected'
-          })
-        }
-      });
-
-      // Create dependency on the randomization task
-      await this.prisma.taskDependency.create({
-        data: {
-          taskId: injectionTask.id,
-          dependencyId: randomizeTask.id
-        }
-      });
-      
-      injectionTasks.push({
-        randomizeTask,
-        injectionTask,
-        pairIndex: pairIndex + 1
-      });
-      
-      // Next pair depends on current injection task
-      currentDependencies = [injectionTask.id];
-    }
-
-    return {
-      injectionTasks,
-      completionTasks: injectionTasks.map(t => t.injectionTask.id) // Tasks that must complete before median
-    };
-  }
 
 
 

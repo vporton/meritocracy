@@ -737,7 +737,9 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
 
   protected async onOutput(customId: string, output: any): Promise<void> {
     if (output.hasPromptInjectionOrPlagiarism) {
-      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+      // Get the task to pass to handleInjectionDetected
+      const task = await this.getTaskWithDependencies(this.taskId);
+      await this.handleInjectionDetected(task, output.why || 'Prompt injection detected');
     } else {
       await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
     }

@@ -41,5 +41,5 @@
   * https://aigrant.org / https://aigrant.com - applied 1 Oct 2025.
   * https://grantsfinder.portkey.ai/
     * TODO
-  * https://genaifund.ai/fintech-ai-innovation-grants/ - TODO
+  * https://genaifund.ai/fintech-ai-innovation-grants/ - applied 1 Oct 2025.
   * TODO

@@ -39,3 +39,6 @@
   * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025.
 * https://www.google.com/search?q=ai+grants
   * https://aigrant.org / https://aigrant.com - applied 1 Oct 2025.
+  * https://grantsfinder.portkey.ai/
+    * TODO
+  * https://genaifund.ai/fintech-ai-innovation-grants/ - TODO

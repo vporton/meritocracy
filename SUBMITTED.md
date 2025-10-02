@@ -50,6 +50,6 @@
     * https://www2.fundsforngos.org - noted
   * The RAAIS Foundation Grants https://www.raais.org/grants - submitted 2 Oct 2025
   * Google.org Accelerator: Generative AI open call https://impactchallenge.withgoogle.com/genaiaccelerator/ - ended
-  * https://airudi.com/en/blog/7-grant-for-your-artificial-intelligence-projects/ - Canada
+  * 7 grants for your artificial intelligence projects https://airudi.com/en/blog/7-grant-for-your-artificial-intelligence-projects/ - Canada
     * TODO
   * TODO

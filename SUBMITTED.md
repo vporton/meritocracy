@@ -42,4 +42,14 @@
   * https://grantsfinder.portkey.ai/
     * TODO
   * https://genaifund.ai/fintech-ai-innovation-grants/ - applied 1 Oct 2025.
+  * https://www2.fundsforngos.org/articles-listicles/20-grants-for-ngos-using-ai-for-social-good/
+    * AI for social good awards https://research.google/programs-and-events/past-programs/ai-for-social-good-awards/ - not found how to contact.
+    * IBM Watson AI XPRIZE - past competition
+    * https://omidyar.com - We do not accept funding requests or proposals. 
+    * https://data.org - submitted 2 Oct 2025
+    * https://www2.fundsforngos.org - noted
+  * The RAAIS Foundation Grants https://www.raais.org/grants - submitted 2 Oct 2025
+  * Google.org Accelerator: Generative AI open call https://impactchallenge.withgoogle.com/genaiaccelerator/ - ended
+  * https://airudi.com/en/blog/7-grant-for-your-artificial-intelligence-projects/ - Canada
+    * TODO
   * TODO

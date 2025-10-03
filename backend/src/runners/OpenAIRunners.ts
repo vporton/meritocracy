@@ -820,14 +820,12 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     const urlsFromWorthAssessments = await this.collectUrlsFromWorthAssessments(task);
     
     // If we have URLs from worth assessments, modify the prompt to include them
-    if (urlsFromWorthAssessments.length > 0) {
-      const sourcesList = urlsFromWorthAssessments.map(url => `- ${url}`).join('\n');
-      randomizedPrompt = randomizedPrompt.replace('<SOURCES_LIST>', sourcesList);
-    } else {
-      randomizedPrompt = randomizedPrompt.replace('<SOURCES_LIST>', 'No sources available from worth assessments.');
-    }
-    
-    const userPrompt: string = generateUserPrompt(userData);
+    const sourcesList = urlsFromWorthAssessments.length > 0 ?
+      urlsFromWorthAssessments.map(url => `- ${url}`).join('\n') : 'No sources available from worth assessments.';
+
+    // Prompt injection detector should list URLs in the user prompt, not system one,
+    // to avoid depending on URLs containing injections.
+    const userPrompt: string = generateUserPrompt(userData) + '\n\n' + `URLs to check:\n${sourcesList}`; // TODO@P3: Refactor.
     
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }

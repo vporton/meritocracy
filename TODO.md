@@ -1,6 +1,3 @@
-- TODO@P2 Prompt injection detector should list URLs in the user prompt, not system one,
-  to avoid depending on URLs containing injections.
-
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH payments.

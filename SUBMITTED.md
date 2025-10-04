@@ -7,13 +7,12 @@
     * Polygon - does not accept applications now
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction
-      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause
-      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ - submitted to CeloPG 27 Sep 2025.
+      * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause - submitted to CeloPG 27 Sep 2025.
     * Ethereum Foundation - unlikely to support: They impower builders, not end users.
     * TODO
 * https://www.google.com/search?q=bitcoin+grants
   * Kraken - https://www.kraken.com/features/grants - submitted 28 Sep 2025.
-  * https://hrf.org/program/financial-freedom/bitcoin-development-fund/ - submitted 28 Sep 2025. [It typically takes us ~one month to review an application. If you do not hear back from us by then please feel free to reach out to bdf@hrf.org to follow up.]
+  * https://hrf.org/program/financial-freedom/bitcoin-development-fund/ - submitted 28 Sep 2025 - rejected 4 Oct 2025 "the project does not align with the goal of our Fund"
   * https://developergrant.okcoin.com/ - submitted 28 Sep 2025.
   * https://grants.bitcoindevs.xyz/apply - applied to OpenSats 28 Sep 2025.
   * https://www.coinfabrik.com/web3-grants/

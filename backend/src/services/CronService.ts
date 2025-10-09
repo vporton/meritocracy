@@ -2,14 +2,12 @@ import { PrismaClient } from '@prisma/client';
 import * as cron from 'node-cron';
 import { UserEvaluationFlow, UserEvaluationData } from './UserEvaluationFlow.js';
 import { TaskManager } from './TaskManager.js';
-import { GasTokenDistributionService } from './GasTokenDistributionService.js';
 import { MultiNetworkGasTokenDistributionService } from './MultiNetworkGasTokenDistributionService.js';
 import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupService.js';
 
 export class CronService {
   private prisma: PrismaClient;
   private userEvaluationFlow: UserEvaluationFlow;
-  private gasTokenDistributionService: GasTokenDistributionService;
   private multiNetworkGasTokenDistributionService: MultiNetworkGasTokenDistributionService;
   private disconnectedAccountCleanupService: DisconnectedAccountCleanupService;
   private cronJob: cron.ScheduledTask | null = null;
@@ -19,7 +17,6 @@ export class CronService {
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.userEvaluationFlow = new UserEvaluationFlow(prisma);
-    this.gasTokenDistributionService = new GasTokenDistributionService(prisma);
     this.multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(prisma);
     this.disconnectedAccountCleanupService = new DisconnectedAccountCleanupService(prisma);
   }

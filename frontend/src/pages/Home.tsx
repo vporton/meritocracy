@@ -69,16 +69,7 @@ function Home() {
           }
         }
       } catch (error) {
-        // Fallback to single network endpoint
-        try {
-          const response = await api.get('/api/ethereum/wallet-info')
-          const data = response.data.data
-          if (data.address) {
-            setPrimaryNetworkAddress(data.address)
-          }
-        } catch (fallbackError) {
-          console.log('Failed to fetch network address:', fallbackError)
-        }
+        console.log('Failed to fetch network address:', fallbackError)
       }
     }
 

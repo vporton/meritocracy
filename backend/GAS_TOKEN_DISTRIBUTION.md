@@ -31,11 +31,9 @@ Tracks accumulated reserve funds:
 
 ### Minimum Distribution Threshold
 - **$20 USD**: Distributions below this amount are deferred to reserve
-- Configurable in `GasTokenDistributionService.MINIMUM_DISTRIBUTION_USD`
 
 ### Gas Reserve
 - **0.01 ETH**: Kept in wallet for transaction fees
-- Configurable in `GasTokenDistributionService.GAS_RESERVE_ETH`
 
 ### ETH Price
 - Currently uses placeholder value ($2000)
@@ -55,13 +53,6 @@ Returns status of both cron jobs (bi-monthly evaluation and weekly gas distribut
 These endpoints exposed sensitive financial data and allowed dangerous operations. The system is designed to run automatically without manual intervention.
 
 ## Service Classes
-
-### GasTokenDistributionService
-Main service handling distribution logic:
-- `processWeeklyDistribution()`: Main distribution process
-- `calculateDistributions()`: Calculate amounts based on GDP shares
-- `getReserveStatus()`: Get current reserve information
-- `getAllDistributionHistory()`: Get distribution history
 
 ### CronService
 Updated to include weekly gas distribution:

@@ -16,7 +16,6 @@ dotenv.config({ path: 'ethereum-keys.secret' });
 
 import userRoutes from './routes/users.js';
 import authRoutes from './routes/auth.js';
-import ethereumRoutes from './routes/ethereum.js';
 import evaluationRoutes from './routes/evaluation.js';
 import globalRoutes from './routes/global.js';
 import logsRoutes from './routes/logs.js';
@@ -79,7 +78,6 @@ app.get('/', (req, res) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/ethereum', ethereumRoutes);
 app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/global', globalRoutes);
 app.use('/api/logs', logsRoutes);

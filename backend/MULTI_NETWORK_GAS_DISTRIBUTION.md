@@ -253,7 +253,6 @@ const networkStatus = await multiNetworkGasTokenDistributionService.getNetworkSt
 ## Migration from Single Network
 
 ### Backward Compatibility
-- Original `GasTokenDistributionService` remains available
 - Legacy API endpoints continue to work
 - Gradual migration path
 - Configuration flexibility

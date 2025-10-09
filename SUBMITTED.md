@@ -19,7 +19,9 @@
     * TODO
     * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025.
     * Moonbeam - submitted 29 Sep 2025 - rejected 10 Oct 2025 ("high volume of applications received").
-    * Arbitrum - 29 Sep 2025: Phase 3 of the Arbitrum Foundation Grant Program has now ended!
+    * Arbitrum - 29 Sep 2025:
+      * Phase 3 of the Arbitrum Foundation Grant Program has now ended!
+      * Arbitrum DAO Grant Program - submitted 10 Oct 2025
     * TODO
   * https://blockworks.co/grants
     * TODO

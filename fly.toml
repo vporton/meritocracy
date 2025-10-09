@@ -90,6 +90,10 @@ primary_region = 'ewr'
   # Ethereum network
   ETHEREUM_NETWORK="mainnet"
 
+  MEZO_TESTNET_ENABLED=true
+  MEZO_TESTNET_RPC_URL="https://rpc.test.mezo.org"
+
+
   # OAuth Provider Configuration
   # GitHub OAuth
   GITHUB_CLIENT_ID="Iv23liACVkYe3qylnSpT"

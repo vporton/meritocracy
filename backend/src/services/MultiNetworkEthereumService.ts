@@ -9,7 +9,8 @@ import {
     type WalletClient,
     type Address,
     type Hash,
-    type Chain
+    type Chain,
+    defineChain
 } from 'viem';
 import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost, celo } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -18,6 +19,71 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 dotenv.config({ path: 'ethereum-keys.secret' });
+
+
+export const mezoChainConfig = {
+    blockTime: 1_000,
+    // contracts,
+    // formatters,
+    // serializers,
+    // fees,
+} as const;
+
+export const mezoTestnetChainConfig = {
+    blockTime: 1_000,
+    // contracts,
+    // formatters,
+    // serializers,
+    // fees,
+} as const;
+
+export const mezoTestnet = /*#__PURE__*/ defineChain({
+    ...mezoTestnetChainConfig,
+    id: 31611,
+    name: 'Mezo Testnet',
+    nativeCurrency: {
+      decimals: 8,
+      name: 'Bitcoin',
+      symbol: 'BTC',
+    },
+    rpcUrls: {
+      default: { http: ['https://mezo-node-0.test.mezo.org'] },
+    },
+    blockExplorers: {
+      default: {
+        name: 'Block explorer app',
+        url: 'https://explorer.test.mezo.org',
+        apiUrl: undefined,
+      },
+    },
+    contracts: {
+    },
+    testnet: true,
+});
+
+export const mezo = /*#__PURE__*/ defineChain({
+    ...mezoChainConfig,
+    id: 31612,
+    name: 'Mezo',
+    nativeCurrency: {
+      decimals: 8,
+      name: 'Bitcoin',
+      symbol: 'BTC',
+    },
+    rpcUrls: {
+      default: { http: ['https://rpc-internal.mezo.org'] },
+    },
+    blockExplorers: {
+      default: {
+        name: 'Block explorer app',
+        url: 'https://explorer.mezo.org',
+        apiUrl: undefined,
+      },
+    },
+    contracts: {
+    },
+    testnet: false,
+});
 
 export interface NetworkConfig {
     name: string;
@@ -49,6 +115,7 @@ export class MultiNetworkEthereumService {
     }
 
     private initializeNetworks(): void {
+        // TODO@P2: Set sensible values.
         const networkConfigs: NetworkConfig[] = [
             {
                 name: 'mainnet',
@@ -99,10 +166,26 @@ export class MultiNetworkEthereumService {
                 minimumDistributionUsd: 10
             },
             {
+                name: 'mezo',
+                chain: mezo,
+                rpcUrl: process.env.MEZORPC_URL,
+                enabled: process.env.MEZO_ENABLED === 'true',
+                gasReserve: 0.01,
+                minimumDistributionUsd: 10
+            },
+            {
                 name: 'sepolia',
                 chain: sepolia,
                 rpcUrl: process.env.ETHEREUM_SEPOLIA_RPC_URL,
                 enabled: process.env.ETHEREUM_SEPOLIA_ENABLED === 'true',
+                gasReserve: 0.01,
+                minimumDistributionUsd: 0.1 // Very low for testnet
+            },
+            {
+                name: 'mezoTestnet',
+                chain: mezoTestnet,
+                rpcUrl: process.env.MEZO_TESTNET_RPC_URL,
+                enabled: process.env.MEZO_TESTNET_ENABLED === 'true',
                 gasReserve: 0.01,
                 minimumDistributionUsd: 0.1 // Very low for testnet
             },

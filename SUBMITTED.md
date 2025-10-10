@@ -42,8 +42,7 @@
   * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025.
 * https://www.google.com/search?q=ai+grants
   * https://aigrant.org / https://aigrant.com - applied 1 Oct 2025.
-  * https://grantsfinder.portkey.ai/
-    * TODO
+  * https://grantsfinder.portkey.ai - empty list
   * https://genaifund.ai/fintech-ai-innovation-grants/ - applied 1 Oct 2025.
   * https://www2.fundsforngos.org/articles-listicles/20-grants-for-ngos-using-ai-for-social-good/
     * AI for social good awards https://research.google/programs-and-events/past-programs/ai-for-social-good-awards/ - not found how to contact.

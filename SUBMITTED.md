@@ -62,5 +62,6 @@
 * https://abstrakta.org - asked for a grant 10 Oct 2025
 * https://forum.1hive.org/c/proposals/12 - submitted 10 Oct 2025
 * Moloch DAO https://forum.daohaus.club/c/moloch-rises - can't load the page 10 Oct 2025
-* https://www.alchemy.com/dapps/top/daos
-  * https://grants.buidlguidl.com - required 5 points from https://speedrunethereum.com (a coder's test)
+* https://www.google.com/search?q=public+good+dao
+  * https://www.alchemy.com/dapps/top/daos
+    * https://grants.buidlguidl.com - required 5 points from https://speedrunethereum.com (a coder's test)

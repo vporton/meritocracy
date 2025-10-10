@@ -66,4 +66,7 @@
   * https://www.alchemy.com/dapps/top/daos
     * https://grants.buidlguidl.com - required 5 points from https://speedrunethereum.com (a coder's test)
     * Vector DAO - submitted 10 Oct 2025
-    * TODO
+    * Friends With Benefits - require 750 $FBW ($465)
+    * BitDAO / Mantle - requires smart contract on Mantle
+    * MetaCartel - does not yet provide grants
+    * Cabin DAO https://creators.mirror.xyz - the site does not load

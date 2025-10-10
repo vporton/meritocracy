@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { multiNetworkEthereumService, NetworkConfig } from './MultiNetworkEthereumService.js';
+import { multiNetworkEthereumService } from './MultiNetworkEthereumService.js';
 import { GlobalDataService } from './GlobalDataService.js';
 
 export interface MultiNetworkDistributionResult {

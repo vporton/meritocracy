@@ -30,6 +30,7 @@
     * Base - submitted 10 Oct 2025
     * TODO
   * https://bitcointalk.org/index.php?topic=5502452.0
+    * Square Crypto https://spiral.xyz/#grants - emailed 10 Oct 2025
     * TODO
   * https://collectiveshift.io/funding/crypto-grants-programs-guide/
     * TODO

@@ -27,6 +27,8 @@
     * TODO
   * https://blockchaingrants.org
     * TODO
+    * Base - submitted 10 Oct 2025
+    * TODO
   * https://bitcointalk.org/index.php?topic=5502452.0
     * TODO
   * https://collectiveshift.io/funding/crypto-grants-programs-guide/
@@ -55,3 +57,4 @@
     * TODO
   * CIFAR AI Catalyst Grants https://cifarportal.smapply.io/prog/ai_safety_catalyst_call/ - only Canadian
   * TODO
+* 1inch - applied 10 Oct 2025

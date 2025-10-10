@@ -53,7 +53,6 @@
   * The RAAIS Foundation Grants https://www.raais.org/grants - submitted 2 Oct 2025
   * Google.org Accelerator: Generative AI open call https://impactchallenge.withgoogle.com/genaiaccelerator/ - ended
   * 7 grants for your artificial intelligence projects https://airudi.com/en/blog/7-grant-for-your-artificial-intelligence-projects/ - Canada
-    * TODO
   * CIFAR AI Catalyst Grants https://cifarportal.smapply.io/prog/ai_safety_catalyst_call/ - only Canadian
   * TODO
 * 1inch - applied 10 Oct 2025

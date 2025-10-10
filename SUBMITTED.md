@@ -65,3 +65,4 @@
 * https://www.google.com/search?q=public+good+dao
   * https://www.alchemy.com/dapps/top/daos
     * https://grants.buidlguidl.com - required 5 points from https://speedrunethereum.com (a coder's test)
+    * Vector DAO - submitted 10 Oct 2025

@@ -61,3 +61,5 @@
 * https://www.google.com/search?q=desci+grants
 * https://abstrakta.org - asked for a grant 10 Oct 2025
 * https://forum.1hive.org/c/proposals/12 - submitted 10 Oct 2025
+* Moloch DAO https://forum.daohaus.club/c/moloch-rises - can't load the page 10 Oct 2025
+* https://grants.buidlguidl.com - required 5 points from https://speedrunethereum.com

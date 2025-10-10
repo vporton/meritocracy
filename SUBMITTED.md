@@ -58,3 +58,6 @@
   * CIFAR AI Catalyst Grants https://cifarportal.smapply.io/prog/ai_safety_catalyst_call/ - only Canadian
   * TODO
 * 1inch - applied 10 Oct 2025
+* https://www.google.com/search?q=desci+grants
+* https://abstrakta.org - asked for a grant 10 Oct 2025
+* https://forum.1hive.org/c/proposals/12 - submitted 10 Oct 2025

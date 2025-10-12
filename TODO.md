@@ -48,3 +48,5 @@
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
           Subtract gas cost from user.
+
+- TODO@P3 Donation to the system through MetaMask et al.

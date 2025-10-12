@@ -378,7 +378,7 @@ function Home() {
       {primaryNetworkAddress && (
         <div className="card">
           <h3>💖 Support This Project</h3>
-          <p>Help support the development of this open-source project by donating Ethereum or ERC-20 tokens:</p>
+          <p>Help support the development of this open-source project by donating Ethereum or other gas token (ERC-20 is yet not supported):</p>
           <div style={{ 
             background: '#2a2a2a', 
             padding: '1rem', 
@@ -414,7 +414,7 @@ function Home() {
             </button>
           </div>
           <p style={{ fontSize: '0.9rem', color: '#888' }}>
-            This address accepts ETH and all ERC-20 tokens on all supported networks
+            This address accepts ETH and other gas tokens on all supported networks
           </p>
         </div>
       )}

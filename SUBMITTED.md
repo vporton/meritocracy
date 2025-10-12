@@ -69,3 +69,24 @@
     * BitDAO / Mantle - requires smart contract on Mantle
     * MetaCartel - does not yet provide grants
     * Cabin DAO https://creators.mirror.xyz - the site does not load
+* Software Grants (in my tree):
+  * gate.io https://www.gate.io/grants - the form does not work (filed a support request 12 Oct 2025)
+  * Hedera grants (need to use their blockchain?): - TODO
+    * https://hedera.com/ecosystem/grants-accelerators:
+    * https://hashgraph-association.com/
+    * https://www.hbarfoundation.org/apply
+    * https://docs.google.com/forms/d/e/1FAIpQLSckvx0yITNlHhs3v1FYy0M6v_4bqh-dcFtN8k3mEX0XajJJCQ/viewform
+    * https://www.f6s.com/lumoslabs.co/about
+  * https://futo.org/fellows/ - applied 8 Sep 2025
+  * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025
+  * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025
+  * https://techforgood.zendesk.com - submitted 12 Oct 2025
+  * www.globalgiving.org (they require me to provide annual reports, brochures, newsletters, or news reports)
+  * https://rashi.org.il - contacted 12 Oct 2025
+  * https://accelerator.ou.org/apply - contacted 12 Oct 2025, will consider for the next cohort
+  * https://astera.org - sent 12 Oct 2025
+  * https://www.openphilanthropy.org - contacted 12 Oct 2025
+  * https://www.shell.com/what-we-do/technology-and-innovation/innovate-with-shell/share-your-idea.html - submitted 12 Oct 2025
+  * https://chainforgood.org - submitted 12 Oct 2025
+  * https://app.akindo.io - applied
+  * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIS 17 Sep 2025

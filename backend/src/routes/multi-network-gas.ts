@@ -21,8 +21,6 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
 
   const {
     tokenType,
-    minimumDistributionAmount,
-    minimumDistributionUsd
   } = source;
 
   if (typeof tokenType === 'string') {
@@ -30,11 +28,6 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
     if (normalized === 'NATIVE') {
       overrides.tokenType = normalized as TokenDistributionOptions['tokenType'];
     }
-  }
-
-  const minValue = parseNumber(minimumDistributionAmount ?? minimumDistributionUsd);
-  if (minValue !== undefined) {
-    overrides.minimumDistributionAmount = minValue;
   }
 
   return overrides;
@@ -56,7 +49,6 @@ router.get('/status', async (req, res) => {
       totalNetworks: enabledNetworks.length,
       token: {
         type: overrides.tokenType ?? 'NATIVE',
-        minimumDistributionAmount: overrides.minimumDistributionAmount
       }
     };
 
@@ -87,7 +79,6 @@ router.get('/reserve-status', async (req, res) => {
       data: Object.fromEntries(reserveStatus),
       token: {
         type: overrides.tokenType ?? 'NATIVE',
-        minimumDistributionAmount: overrides.minimumDistributionAmount
       }
     });
   } catch (error) {
@@ -159,7 +150,6 @@ router.get('/network/:networkName/status', async (req, res) => {
       data: status,
       token: {
         type: overrides.tokenType ?? networkReserve?.tokenType ?? 'NATIVE',
-        minimumDistributionAmount: overrides.minimumDistributionAmount ?? networkReserve?.minimumDistributionUsd
       }
     });
   } catch (error) {
@@ -248,7 +238,6 @@ router.post('/run-distribution', async (req, res) => {
         errors: result.errors,
         token: {
           type: overrides.tokenType ?? 'NATIVE',
-          minimumDistributionAmount: overrides.minimumDistributionAmount
         }
       },
       overrides

@@ -4,14 +4,12 @@ import type { TokenDescriptor, TokenType } from '../types/token.js';
 
 export interface TokenDistributionOptions {
   tokenType?: TokenType;
-  minimumDistributionAmount?: number;
 }
 
 interface NetworkTokenContext extends TokenDescriptor {
   networkName: string;
   nativeTokenSymbol: string;
   nativeTokenDecimals: number;
-  minimumDistributionAmount: number;
 }
 
 export interface DistributionFiber {
@@ -59,14 +57,12 @@ export class MultiNetworkGasTokenDistributionService {
     this.prisma = prisma;
     this.defaultTokenOptions = {
       tokenType: defaultTokenOptions?.tokenType ?? 'NATIVE',
-      minimumDistributionAmount: defaultTokenOptions?.minimumDistributionAmount
     };
   }
 
   private resolveTokenOptions(overrides?: TokenDistributionOptions): TokenDistributionOptions {
     return {
       tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType,
-      minimumDistributionAmount: overrides?.minimumDistributionAmount ?? this.defaultTokenOptions.minimumDistributionAmount
     };
   }
 
@@ -94,7 +90,6 @@ export class MultiNetworkGasTokenDistributionService {
       tokenDecimals: nativeMetadata.decimals,
       nativeTokenSymbol: nativeMetadata.symbol,
       nativeTokenDecimals: nativeMetadata.decimals,
-      minimumDistributionAmount: tokenOptions.minimumDistributionAmount ?? networkConfig.minimumDistributionUsd
     };
   }
 
@@ -250,33 +245,6 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (dist.amountToken > remainingAmount) {
           dist.amountToken = remainingAmount;
-        }
-
-        if (dist.amountToken < context.minimumDistributionAmount) {
-          result.reservedAmount += dist.amountToken;
-
-          await this.prisma.gasTokenDistribution.create({
-            data: {
-              userId: dist.userId,
-              network: context.networkName,
-              amount: dist.amountToken,
-              amountUsd: 0,
-              status: 'DEFERRED',
-              tokenType: context.tokenType,
-              tokenSymbol: context.tokenSymbol,
-              tokenDecimals: context.tokenDecimals
-            }
-          });
-
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'DEFERRED'
-          });
-
-          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} - below ${context.minimumDistributionAmount} ${context.tokenSymbol} minimum`);
-          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
-          continue;
         }
 
         let gasCostToken: number | undefined;
@@ -611,7 +579,6 @@ export class MultiNetworkGasTokenDistributionService {
         availableForDistribution,
         lastDistribution: reserve?.lastDistribution || null,
         gasReserve,
-        minimumDistributionUsd: context.minimumDistributionAmount
       });
     }
 

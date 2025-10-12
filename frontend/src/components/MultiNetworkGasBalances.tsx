@@ -12,7 +12,6 @@ interface NetworkInfo {
   gasReserve: number;
   availableForDistribution: number;
   totalReserve: number;
-  minimumDistributionUsd: number;
   lastDistribution?: string;
 }
 
@@ -29,7 +28,6 @@ interface ReserveStatus {
     availableForDistribution: number;
     lastDistribution?: string;
     gasReserve: number;
-    minimumDistributionUsd: number;
   };
 }
 
@@ -215,9 +213,6 @@ function MultiNetworkGasBalances() {
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Reserve:</strong> {reserveInfo?.totalReserve?.toFixed(6) || '0'} ETH
-                  </p>
-                  <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Min Distribution:</strong> ${networkInfo.minimumDistributionUsd || 'N/A'}
                   </p>
                 </div>
               </div>

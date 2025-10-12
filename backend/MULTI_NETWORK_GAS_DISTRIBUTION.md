@@ -128,13 +128,13 @@ ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 ## Token Configuration & Overrides
 
 - The distribution service always operates on each network's native gas token.
-- Optional overrides allow forcing the token type to `NATIVE` (default) and adjusting the minimum distribution amount per transfer via `minimumDistributionAmount`.
+- Optional overrides allow forcing the token type to `NATIVE` (default).
 - No price feeds or USD conversions are used. All thresholds and balances are handled directly in native token units.
 
 ## API Endpoints
 
 ### Multi-Network Status
-- `GET /api/multi-network-gas/status` - Get status of all enabled networks (optional query override: `minimumDistributionAmount`)
+- `GET /api/multi-network-gas/status` - Get status of all enabled networks
 - `GET /api/multi-network-gas/reserve-status` - Get reserve status for all networks (same optional override)
 - `GET /api/multi-network-gas/network/:networkName/status` - Get detailed status for a specific network (supports the same override)
 
@@ -144,7 +144,7 @@ ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 - `GET /api/multi-network-gas/user/:userId/distribution-history` - Get distribution history for a specific user
 
 ### Manual Operations
-- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution (optional JSON body with `minimumDistributionAmount`)
+- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution
 
 ## Async Fiber Processing
 

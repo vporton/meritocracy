@@ -5,12 +5,12 @@ This document describes the enhanced token distribution system that supports mul
 ## Overview
 
 The multi-network distribution system extends the original single-network system to support:
-- **Multiple Token Types**: Native gas tokens and configurable ERC-20 assets per network
+- **Native Gas Tokens Only**: Distributes each network's own gas asset
 - **Multiple Networks**: Ethereum Mainnet, Polygon, Arbitrum, Optimism, Base, Sepolia, and localhost
 - **Async Fibers**: Parallel processing of distributions across networks
 - **Unified Address**: One EVM address per user across all networks
 - **Network-Specific Configuration**: Different gas reserves and minimum distribution thresholds per network
-- **Gas Cost Guardrail**: Skip transfers when estimated gas exceeds 20% of the transfer value
+- **Gas Cost Guardrail**: Stop once transfers would be less than 5× the estimated gas cost
 - **Comprehensive Monitoring**: Per-network status, reserves, and distribution history
 
 ## Architecture
@@ -33,6 +33,8 @@ The multi-network distribution system extends the original single-network system
 | Base | 8453 | 0.005 ETH | $10 | Coinbase L2 |
 | Sepolia | 11155111 | 0.01 ETH | $0.1 | Testnet |
 | Localhost | 1337 | 0.01 ETH | $0.1 | Development |
+
+> Minimum distribution values are now expressed directly in native token units. Adjust them per network as needed.
 
 ## Database Schema Changes
 
@@ -125,21 +127,16 @@ ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 
 ## Token Configuration & Overrides
 
-- The distribution service defaults to the native gas asset (`ETH`) with a fallback price of $2000.
-- To distribute ERC-20 tokens, provide overrides via API query parameters or request body:
-  - `tokenType`: `ERC20`
-  - `tokenSymbol`: e.g. `DAI`
-  - `tokenDecimals`: token decimals (default `18`)
-  - `tokenAddresses`: JSON object mapping network name to contract address
-  - Optional pricing hints: `coingeckoId`, `coingeckoPlatformId`, `fallbackPriceUsd`, `nativeFallbackPriceUsd`
-- The same overrides apply to reserve and status endpoints, enabling dashboards to pivot between assets.
+- The distribution service always operates on each network's native gas token.
+- Optional overrides allow forcing the token type to `NATIVE` (default) and adjusting the minimum distribution amount per transfer via `minimumDistributionAmount`.
+- No price feeds or USD conversions are used. All thresholds and balances are handled directly in native token units.
 
 ## API Endpoints
 
 ### Multi-Network Status
-- `GET /api/multi-network-gas/status` - Get status of all enabled networks (optional query overrides: `tokenType`, `tokenSymbol`, `tokenDecimals`, `coingeckoId`, `coingeckoPlatformId`)
-- `GET /api/multi-network-gas/reserve-status` - Get reserve status for all networks (same optional query overrides as above)
-- `GET /api/multi-network-gas/network/:networkName/status` - Get detailed status for a specific network (supports query overrides)
+- `GET /api/multi-network-gas/status` - Get status of all enabled networks (optional query override: `minimumDistributionAmount`)
+- `GET /api/multi-network-gas/reserve-status` - Get reserve status for all networks (same optional override)
+- `GET /api/multi-network-gas/network/:networkName/status` - Get detailed status for a specific network (supports the same override)
 
 ### Distribution History
 - `GET /api/multi-network-gas/distribution-history` - Get distribution history across all networks
@@ -147,7 +144,7 @@ ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 - `GET /api/multi-network-gas/user/:userId/distribution-history` - Get distribution history for a specific user
 
 ### Manual Operations
-- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution (optional JSON body overrides matching the query parameters above)
+- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution (optional JSON body with `minimumDistributionAmount`)
 
 ## Async Fiber Processing
 

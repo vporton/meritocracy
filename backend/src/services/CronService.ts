@@ -147,12 +147,12 @@ export class CronService {
       
       if (result.success) {
         console.log('✅ Weekly multi-network token distribution completed successfully');
-        console.log(`💰 Total distributed: $${result.totalDistributedUsd.toFixed(2)} USD`);
-        console.log(`🏦 Total reserved: $${result.totalReservedUsd.toFixed(2)} USD`);
+        console.log(`💰 Total distributed: ${result.totalDistributedAmount.toFixed(6)} tokens`);
+        console.log(`🏦 Total reserved: ${result.totalReservedAmount.toFixed(6)} tokens`);
         
         for (const [networkName, networkResult] of result.networkResults) {
           console.log(
-            `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed ($${networkResult.distributedUsd.toFixed(2)}), ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved ($${networkResult.reservedUsd.toFixed(2)})`
+            `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed, ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved`
           );
         }
         

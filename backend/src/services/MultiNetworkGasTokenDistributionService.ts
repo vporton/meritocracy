@@ -1,37 +1,23 @@
 import { PrismaClient } from '@prisma/client';
-import { multiNetworkEthereumService, type TokenTransferRequest } from './MultiNetworkEthereumService.js';
-import { GlobalDataService } from './GlobalDataService.js';
-import { TokenPriceService, COINGECKO_PLATFORM_BY_NETWORK } from './TokenPriceService.js';
+import { multiNetworkEthereumService } from './MultiNetworkEthereumService.js';
 import type { TokenDescriptor, TokenType } from '../types/token.js';
 
 export interface TokenDistributionOptions {
-  tokenType: TokenType;
-  tokenSymbol: string;
-  tokenDecimals: number;
-  tokenAddresses?: Record<string, `0x${string}`>;
-  coingeckoId?: string;
-  coingeckoPlatformId?: string;
-  fallbackPriceUsd?: number;
-  nativeFallbackPriceUsd?: number;
-  minimumDistributionUsd?: number;
+  tokenType?: TokenType;
+  minimumDistributionAmount?: number;
 }
 
 interface NetworkTokenContext extends TokenDescriptor {
   networkName: string;
-  tokenPriceUsd: number;
   nativeTokenSymbol: string;
   nativeTokenDecimals: number;
-  nativeTokenPriceUsd: number;
-  minimumDistributionUsd: number;
-  coingeckoId?: string;
-  coingeckoPlatformId?: string;
+  minimumDistributionAmount: number;
 }
 
 export interface DistributionFiber {
   userId: number;
   ethereumAddress: string;
   amountToken: number;
-  amountUsd: number;
   shareInGDP: number;
 }
 
@@ -39,21 +25,15 @@ export interface NetworkDistributionResult {
   tokenSymbol: string;
   tokenType: TokenType;
   tokenDecimals: number;
-  tokenPriceUsd: number;
-  nativeTokenSymbol: string;
-  nativeTokenPriceUsd: number;
   distributedAmount: number;
-  distributedUsd: number;
   reservedAmount: number;
-  reservedUsd: number;
   distributions: Array<{
     userId: number;
     amount: number;
-    amountUsd: number;
     status: 'SENT' | 'DEFERRED' | 'FAILED';
     transactionHash?: string;
     errorMessage?: string;
-    gasCostUsd?: number;
+    gasCostToken?: number;
   }>;
   errors: string[];
   distributed?: number;
@@ -62,8 +42,8 @@ export interface NetworkDistributionResult {
 
 export interface MultiNetworkDistributionResult {
   success: boolean;
-  totalDistributedUsd: number;
-  totalReservedUsd: number;
+  totalDistributedAmount: number;
+  totalReservedAmount: number;
   networkResults: Map<string, NetworkDistributionResult>;
   errors: string[];
   totalDistributed?: number;
@@ -73,35 +53,20 @@ export interface MultiNetworkDistributionResult {
 export class MultiNetworkGasTokenDistributionService {
   private prisma: PrismaClient;
   private readonly GAS_COST_VALUE_MULTIPLIER = 5;
-  private readonly DEFAULT_NATIVE_TOKEN_PRICE_USD = 2000;
   private readonly defaultTokenOptions: TokenDistributionOptions;
 
-  constructor(prisma: PrismaClient, defaultTokenOptions?: Partial<TokenDistributionOptions>) {
+  constructor(prisma: PrismaClient, defaultTokenOptions?: TokenDistributionOptions) {
     this.prisma = prisma;
     this.defaultTokenOptions = {
       tokenType: defaultTokenOptions?.tokenType ?? 'NATIVE',
-      tokenSymbol: defaultTokenOptions?.tokenSymbol ?? 'ETH',
-      tokenDecimals: defaultTokenOptions?.tokenDecimals ?? 18,
-      tokenAddresses: defaultTokenOptions?.tokenAddresses,
-      coingeckoId: defaultTokenOptions?.coingeckoId ?? 'ethereum',
-      coingeckoPlatformId: defaultTokenOptions?.coingeckoPlatformId,
-      fallbackPriceUsd: defaultTokenOptions?.fallbackPriceUsd ?? this.DEFAULT_NATIVE_TOKEN_PRICE_USD,
-      nativeFallbackPriceUsd: defaultTokenOptions?.nativeFallbackPriceUsd ?? this.DEFAULT_NATIVE_TOKEN_PRICE_USD,
-      minimumDistributionUsd: defaultTokenOptions?.minimumDistributionUsd
+      minimumDistributionAmount: defaultTokenOptions?.minimumDistributionAmount
     };
   }
 
-  private resolveTokenOptions(overrides?: Partial<TokenDistributionOptions>): TokenDistributionOptions {
+  private resolveTokenOptions(overrides?: TokenDistributionOptions): TokenDistributionOptions {
     return {
       tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType,
-      tokenSymbol: overrides?.tokenSymbol ?? this.defaultTokenOptions.tokenSymbol,
-      tokenDecimals: overrides?.tokenDecimals ?? this.defaultTokenOptions.tokenDecimals,
-      tokenAddresses: overrides?.tokenAddresses ?? this.defaultTokenOptions.tokenAddresses,
-      coingeckoId: overrides?.coingeckoId ?? this.defaultTokenOptions.coingeckoId,
-      coingeckoPlatformId: overrides?.coingeckoPlatformId ?? this.defaultTokenOptions.coingeckoPlatformId,
-      fallbackPriceUsd: overrides?.fallbackPriceUsd ?? this.defaultTokenOptions.fallbackPriceUsd ?? this.DEFAULT_NATIVE_TOKEN_PRICE_USD,
-      nativeFallbackPriceUsd: overrides?.nativeFallbackPriceUsd ?? this.defaultTokenOptions.nativeFallbackPriceUsd ?? this.DEFAULT_NATIVE_TOKEN_PRICE_USD,
-      minimumDistributionUsd: overrides?.minimumDistributionUsd ?? this.defaultTokenOptions.minimumDistributionUsd
+      minimumDistributionAmount: overrides?.minimumDistributionAmount ?? this.defaultTokenOptions.minimumDistributionAmount
     };
   }
 
@@ -115,50 +80,21 @@ export class MultiNetworkGasTokenDistributionService {
       return null;
     }
 
-    const tokenAddress = tokenOptions.tokenType === 'ERC20'
-      ? tokenOptions.tokenAddresses?.[networkName]
-      : undefined;
-
-    if (tokenOptions.tokenType === 'ERC20' && !tokenAddress) {
-      console.warn(`⚠️  Token address not configured for ${tokenOptions.tokenSymbol} on ${networkName}, skipping`);
+    if (tokenOptions.tokenType && tokenOptions.tokenType !== 'NATIVE') {
+      console.warn(`⚠️  Only native gas token distributions are supported. Skipping ${networkName}.`);
       return null;
     }
 
     const nativeMetadata = multiNetworkEthereumService.getNativeTokenMetadata(networkName);
 
-    const tokenPriceUsd = await TokenPriceService.getTokenPriceUsd({
-      tokenType: tokenOptions.tokenType,
-      tokenSymbol: tokenOptions.tokenSymbol,
-      tokenDecimals: tokenOptions.tokenDecimals,
-      tokenAddress,
-      coingeckoId: tokenOptions.coingeckoId,
-      coingeckoPlatformId: tokenOptions.coingeckoPlatformId ?? COINGECKO_PLATFORM_BY_NETWORK[networkName],
+    return {
       networkName,
-      fallbackPriceUsd: tokenOptions.fallbackPriceUsd ?? this.DEFAULT_NATIVE_TOKEN_PRICE_USD
-    });
-
-    const nativeTokenPriceUsd = await TokenPriceService.getTokenPriceUsd({
       tokenType: 'NATIVE',
       tokenSymbol: nativeMetadata.symbol,
       tokenDecimals: nativeMetadata.decimals,
-      coingeckoId: nativeMetadata.coingeckoId ?? (nativeMetadata.symbol === tokenOptions.tokenSymbol ? tokenOptions.coingeckoId : undefined),
-      networkName,
-      fallbackPriceUsd: tokenOptions.nativeFallbackPriceUsd ?? this.DEFAULT_NATIVE_TOKEN_PRICE_USD
-    });
-
-    return {
-      networkName,
-      tokenType: tokenOptions.tokenType,
-      tokenSymbol: tokenOptions.tokenSymbol,
-      tokenDecimals: tokenOptions.tokenDecimals,
-      tokenAddress,
-      tokenPriceUsd,
       nativeTokenSymbol: nativeMetadata.symbol,
       nativeTokenDecimals: nativeMetadata.decimals,
-      nativeTokenPriceUsd,
-      minimumDistributionUsd: tokenOptions.minimumDistributionUsd ?? networkConfig.minimumDistributionUsd,
-      coingeckoId: tokenOptions.coingeckoId,
-      coingeckoPlatformId: tokenOptions.coingeckoPlatformId ?? COINGECKO_PLATFORM_BY_NETWORK[networkName]
+      minimumDistributionAmount: tokenOptions.minimumDistributionAmount ?? networkConfig.minimumDistributionUsd
     };
   }
 
@@ -186,7 +122,6 @@ export class MultiNetworkGasTokenDistributionService {
       update: { 
         totalReserve: amount,
         lastDistribution: new Date(),
-        tokenAddress: context.tokenAddress,
         tokenDecimals: context.tokenDecimals
       },
       create: { 
@@ -195,7 +130,6 @@ export class MultiNetworkGasTokenDistributionService {
         lastDistribution: new Date(),
         tokenType: context.tokenType,
         tokenSymbol: context.tokenSymbol,
-        tokenAddress: context.tokenAddress,
         tokenDecimals: context.tokenDecimals
       }
     });
@@ -229,10 +163,10 @@ export class MultiNetworkGasTokenDistributionService {
       return new Map();
     }
 
-    // Get current world GDP
-    const worldGdp = await GlobalDataService.getWorldGdp();
-    if (!worldGdp) {
-      throw new Error('World GDP data not available');
+    const totalShare = users.reduce((sum, user) => sum + (user.shareInGDP ?? 0), 0);
+    if (totalShare <= 0) {
+      console.warn('⚠️  Total share in GDP is zero. Skipping distribution.');
+      return new Map();
     }
 
     const enabledNetworks = multiNetworkEthereumService.getEnabledNetworks();
@@ -242,11 +176,6 @@ export class MultiNetworkGasTokenDistributionService {
     for (const networkName of enabledNetworks) {
       const tokenContext = await this.buildNetworkTokenContext(networkName, tokenOptions);
       if (!tokenContext) {
-        continue;
-      }
-
-      if (tokenContext.tokenPriceUsd <= 0) {
-        console.warn(`⚠️  Token price unavailable or zero for ${tokenContext.tokenSymbol} on ${networkName}, skipping`);
         continue;
       }
 
@@ -270,21 +199,21 @@ export class MultiNetworkGasTokenDistributionService {
         continue;
       }
 
-      const distributions: DistributionFiber[] = users.map(user => {
-        const userGdpShare = user.shareInGDP!;
-        const userGdpAmount = (userGdpShare / 100) * worldGdp;
-        const amountUsd = userGdpAmount;
-        const amountToken = amountUsd / tokenContext.tokenPriceUsd;
+      const distributions: DistributionFiber[] = users
+        .map(user => {
+          const userShare = user.shareInGDP ?? 0;
+          const proportion = userShare / totalShare;
+          const amountToken = proportion > 0 ? totalAvailable * proportion : 0;
 
-        return {
-          userId: user.id,
-          ethereumAddress: user.ethereumAddress!,
-          amountToken,
-          amountUsd,
-          shareInGDP: userGdpShare
-        };
-      });
-      distributions.sort((a, b) => b.amountUsd - a.amountUsd);
+          return {
+            userId: user.id,
+            ethereumAddress: user.ethereumAddress!,
+            amountToken,
+            shareInGDP: userShare
+          };
+        })
+        .filter(dist => dist.amountToken > 0);
+      distributions.sort((a, b) => b.amountToken - a.amountToken);
 
       networkDistributions.set(networkName, { context: tokenContext, distributions });
     }
@@ -303,35 +232,38 @@ export class MultiNetworkGasTokenDistributionService {
       tokenSymbol: context.tokenSymbol,
       tokenType: context.tokenType,
       tokenDecimals: context.tokenDecimals,
-      tokenPriceUsd: context.tokenPriceUsd,
-      nativeTokenSymbol: context.nativeTokenSymbol,
-      nativeTokenPriceUsd: context.nativeTokenPriceUsd,
       distributedAmount: 0,
-      distributedUsd: 0,
       reservedAmount: 0,
-      reservedUsd: 0,
       distributions: [],
       errors: []
     };
 
     console.log(`🔄 Processing ${distributions.length} ${context.tokenSymbol} distributions on ${context.networkName}...`);
 
+    let remainingAmount = distributions.reduce((sum, dist) => sum + dist.amountToken, 0);
+
     for (const dist of distributions) {
       try {
-        if (dist.amountUsd < context.minimumDistributionUsd) {
+        if (remainingAmount <= 0) {
+          break;
+        }
+
+        if (dist.amountToken > remainingAmount) {
+          dist.amountToken = remainingAmount;
+        }
+
+        if (dist.amountToken < context.minimumDistributionAmount) {
           result.reservedAmount += dist.amountToken;
-          result.reservedUsd += dist.amountUsd;
 
           await this.prisma.gasTokenDistribution.create({
             data: {
               userId: dist.userId,
               network: context.networkName,
               amount: dist.amountToken,
-              amountUsd: dist.amountUsd,
+              amountUsd: 0,
               status: 'DEFERRED',
               tokenType: context.tokenType,
               tokenSymbol: context.tokenSymbol,
-              tokenAddress: context.tokenAddress,
               tokenDecimals: context.tokenDecimals
             }
           });
@@ -339,15 +271,15 @@ export class MultiNetworkGasTokenDistributionService {
           result.distributions.push({
             userId: dist.userId,
             amount: dist.amountToken,
-            amountUsd: dist.amountUsd,
             status: 'DEFERRED'
           });
 
-          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: $${dist.amountUsd.toFixed(2)} (${dist.amountToken.toFixed(6)} ${context.tokenSymbol}) - below $${context.minimumDistributionUsd} threshold`);
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} - below ${context.minimumDistributionAmount} ${context.tokenSymbol} minimum`);
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
           continue;
         }
 
-        let gasCostUsd: number | undefined;
+        let gasCostToken: number | undefined;
         let estimationError: string | undefined;
         let shouldStopDueToGasCost = false;
         const amountAsString = dist.amountToken.toLocaleString('en-US', {
@@ -366,12 +298,12 @@ export class MultiNetworkGasTokenDistributionService {
           const gasCostNative = Number(
             multiNetworkEthereumService.formatUnits(estimate.gasCostWei, context.nativeTokenDecimals)
           );
-          gasCostUsd = gasCostNative * context.nativeTokenPriceUsd;
+          gasCostToken = gasCostNative;
 
-          if (gasCostUsd !== undefined) {
-            const minimumRequiredUsd = gasCostUsd * this.GAS_COST_VALUE_MULTIPLIER;
-            if (dist.amountUsd <= minimumRequiredUsd) {
-              estimationError = `Transfer value $${dist.amountUsd.toFixed(4)} must exceed $${minimumRequiredUsd.toFixed(4)} to stay ${this.GAS_COST_VALUE_MULTIPLIER}x above the estimated gas cost ($${gasCostUsd.toFixed(4)})`;
+          if (gasCostToken !== undefined) {
+            const minimumRequired = gasCostToken * this.GAS_COST_VALUE_MULTIPLIER;
+            if (dist.amountToken <= minimumRequired) {
+              estimationError = `Transfer amount ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} must exceed ${minimumRequired.toFixed(6)} ${context.tokenSymbol} to stay ${this.GAS_COST_VALUE_MULTIPLIER}x above the estimated gas cost (${gasCostToken.toFixed(6)} ${context.tokenSymbol})`;
               shouldStopDueToGasCost = true;
             }
           }
@@ -382,19 +314,17 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimationError) {
           result.reservedAmount += dist.amountToken;
-          result.reservedUsd += dist.amountUsd;
 
           await this.prisma.gasTokenDistribution.create({
             data: {
               userId: dist.userId,
               network: context.networkName,
               amount: dist.amountToken,
-              amountUsd: dist.amountUsd,
+              amountUsd: 0,
               status: 'DEFERRED',
               errorMessage: estimationError,
               tokenType: context.tokenType,
               tokenSymbol: context.tokenSymbol,
-              tokenAddress: context.tokenAddress,
               tokenDecimals: context.tokenDecimals
             }
           });
@@ -402,15 +332,15 @@ export class MultiNetworkGasTokenDistributionService {
           result.distributions.push({
             userId: dist.userId,
             amount: dist.amountToken,
-            amountUsd: dist.amountUsd,
             status: 'DEFERRED',
             errorMessage: estimationError,
-            gasCostUsd
+            gasCostToken
           });
 
           console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError}`);
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
           if (shouldStopDueToGasCost) {
-            console.log(`🛑 [${context.networkName}] Halting further distributions because transfer values no longer exceed ${this.GAS_COST_VALUE_MULTIPLIER}x the estimated gas cost.`);
+            console.log(`🛑 [${context.networkName}] Halting further distributions because transfer amounts no longer exceed ${this.GAS_COST_VALUE_MULTIPLIER}x the estimated gas cost.`);
             break;
           }
           continue;
@@ -429,12 +359,11 @@ export class MultiNetworkGasTokenDistributionService {
               userId: dist.userId,
               network: context.networkName,
               amount: dist.amountToken,
-              amountUsd: dist.amountUsd,
+              amountUsd: 0,
               status: 'SENT',
               transactionHash,
               tokenType: context.tokenType,
               tokenSymbol: context.tokenSymbol,
-              tokenAddress: context.tokenAddress,
               tokenDecimals: context.tokenDecimals
             }
           });
@@ -442,20 +371,19 @@ export class MultiNetworkGasTokenDistributionService {
           result.distributions.push({
             userId: dist.userId,
             amount: dist.amountToken,
-            amountUsd: dist.amountUsd,
             status: 'SENT',
             transactionHash,
-            gasCostUsd
+            gasCostToken
           });
 
           result.distributedAmount += dist.amountToken;
-          result.distributedUsd += dist.amountUsd;
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
 
-          const gasInfo = gasCostUsd !== undefined ? ` (gas $${gasCostUsd.toFixed(4)})` : '';
-          console.log(`✅ [${context.networkName}] Sent ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} ($${dist.amountUsd.toFixed(2)}) to user ${dist.userId}${gasInfo} - TX: ${transactionHash}`);
+          const gasInfo = gasCostToken !== undefined ? ` (gas ${gasCostToken.toFixed(6)} ${context.tokenSymbol})` : '';
+          console.log(`✅ [${context.networkName}] Sent ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} to user ${dist.userId}${gasInfo} - TX: ${transactionHash}`);
         } catch (error) {
           result.reservedAmount += dist.amountToken;
-          result.reservedUsd += dist.amountUsd;
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
 
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -464,12 +392,11 @@ export class MultiNetworkGasTokenDistributionService {
               userId: dist.userId,
               network: context.networkName,
               amount: dist.amountToken,
-              amountUsd: dist.amountUsd,
+              amountUsd: 0,
               status: 'FAILED',
               errorMessage,
               tokenType: context.tokenType,
               tokenSymbol: context.tokenSymbol,
-              tokenAddress: context.tokenAddress,
               tokenDecimals: context.tokenDecimals
             }
           });
@@ -477,10 +404,9 @@ export class MultiNetworkGasTokenDistributionService {
           result.distributions.push({
             userId: dist.userId,
             amount: dist.amountToken,
-            amountUsd: dist.amountUsd,
             status: 'FAILED',
             errorMessage,
-            gasCostUsd
+            gasCostToken
           });
 
           const message = `Failed to send to user ${dist.userId}: ${errorMessage}`;
@@ -498,7 +424,7 @@ export class MultiNetworkGasTokenDistributionService {
     const newReserve = currentReserve + result.reservedAmount;
     await this.updateGasTokenReserve(context, newReserve);
 
-    console.log(`📊 [${context.networkName}] Distribution completed: ${result.distributedAmount.toFixed(6)} ${context.tokenSymbol} distributed ($${result.distributedUsd.toFixed(2)}), ${result.reservedAmount.toFixed(6)} ${context.tokenSymbol} reserved ($${result.reservedUsd.toFixed(2)})`);
+    console.log(`📊 [${context.networkName}] Distribution completed: ${result.distributedAmount.toFixed(6)} ${context.tokenSymbol} distributed, ${result.reservedAmount.toFixed(6)} ${context.tokenSymbol} reserved`);
 
     return {
       ...result,
@@ -514,17 +440,17 @@ export class MultiNetworkGasTokenDistributionService {
     overrides?: Partial<TokenDistributionOptions>
   ): Promise<MultiNetworkDistributionResult> {
     const tokenOptions = this.resolveTokenOptions(overrides);
-    console.log(`🔄 Starting multi-network distribution for ${tokenOptions.tokenSymbol} (${tokenOptions.tokenType})...`);
+    console.log('🔄 Starting multi-network native gas token distribution...');
 
     try {
       const networkDistributions = await this.calculateDistributions(tokenOptions);
       
       if (networkDistributions.size === 0) {
-        console.log(`ℹ️  No users eligible for ${tokenOptions.tokenSymbol} distribution`);
+        console.log('ℹ️  No users eligible for gas token distribution');
         return {
           success: true,
-          totalDistributedUsd: 0,
-          totalReservedUsd: 0,
+          totalDistributedAmount: 0,
+          totalReservedAmount: 0,
           totalDistributed: 0,
           totalReserved: 0,
           networkResults: new Map(),
@@ -534,8 +460,8 @@ export class MultiNetworkGasTokenDistributionService {
 
       const result: MultiNetworkDistributionResult = {
         success: true,
-        totalDistributedUsd: 0,
-        totalReservedUsd: 0,
+        totalDistributedAmount: 0,
+        totalReservedAmount: 0,
         totalDistributed: 0,
         totalReserved: 0,
         networkResults: new Map(),
@@ -547,8 +473,8 @@ export class MultiNetworkGasTokenDistributionService {
           try {
             const networkResult = await this.processNetworkDistribution(context, distributions);
             result.networkResults.set(networkName, networkResult);
-            result.totalDistributedUsd += networkResult.distributedUsd;
-            result.totalReservedUsd += networkResult.reservedUsd;
+            result.totalDistributedAmount += networkResult.distributedAmount;
+            result.totalReservedAmount += networkResult.reservedAmount;
             
             result.errors.push(...networkResult.errors.map(error => `[${networkName}] ${error}`));
           } catch (error) {
@@ -561,15 +487,15 @@ export class MultiNetworkGasTokenDistributionService {
 
       await Promise.all(networkPromises);
 
-      result.totalDistributed = result.totalDistributedUsd;
-      result.totalReserved = result.totalReservedUsd;
+      result.totalDistributed = result.totalDistributedAmount;
+      result.totalReserved = result.totalReservedAmount;
 
-      console.log(`📊 Multi-network ${tokenOptions.tokenSymbol} distribution completed:`);
-      console.log(`  💰 Total distributed: $${result.totalDistributedUsd.toFixed(2)} USD`);
-      console.log(`  🏦 Total reserved: $${result.totalReservedUsd.toFixed(2)} USD`);
+      console.log('📊 Multi-network gas token distribution completed:');
+      console.log(`  💰 Total distributed: ${result.totalDistributedAmount.toFixed(6)} tokens`);
+      console.log(`  🏦 Total reserved: ${result.totalReservedAmount.toFixed(6)} tokens`);
       
       for (const [networkName, networkResult] of result.networkResults) {
-        console.log(`  🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed ($${networkResult.distributedUsd.toFixed(2)}), ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved ($${networkResult.reservedUsd.toFixed(2)})`);
+        console.log(`  🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed, ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved`);
         console.log(`    ✅ Successful: ${networkResult.distributions.filter(d => d.status === 'SENT').length}`);
         console.log(`    ⏳ Deferred: ${networkResult.distributions.filter(d => d.status === 'DEFERRED').length}`);
         console.log(`    ❌ Failed: ${networkResult.distributions.filter(d => d.status === 'FAILED').length}`);
@@ -584,12 +510,12 @@ export class MultiNetworkGasTokenDistributionService {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`💥 Fatal error in multi-network ${tokenOptions.tokenSymbol} distribution:`, errorMessage);
+      console.error('💥 Fatal error in multi-network gas token distribution:', errorMessage);
       
       return {
         success: false,
-        totalDistributedUsd: 0,
-        totalReservedUsd: 0,
+        totalDistributedAmount: 0,
+        totalReservedAmount: 0,
         totalDistributed: 0,
         totalReserved: 0,
         networkResults: new Map(),
@@ -679,16 +605,13 @@ export class MultiNetworkGasTokenDistributionService {
         tokenSymbol: context.tokenSymbol,
         tokenType: context.tokenType,
         tokenDecimals: context.tokenDecimals,
-        tokenAddress: context.tokenAddress ?? null,
-        tokenPriceUsd: context.tokenPriceUsd,
         nativeTokenSymbol: context.nativeTokenSymbol,
-        nativeTokenPriceUsd: context.nativeTokenPriceUsd,
         totalReserve: reserveAmount,
         walletBalance,
         availableForDistribution,
         lastDistribution: reserve?.lastDistribution || null,
         gasReserve,
-        minimumDistributionUsd: context.minimumDistributionUsd
+        minimumDistributionUsd: context.minimumDistributionAmount
       });
     }
 

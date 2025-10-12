@@ -13,76 +13,28 @@ const parseNumber = (value: unknown): number | undefined => {
   return Number.isNaN(num) ? undefined : num;
 };
 
-const parseTokenDistributionOverrides = (source: any): Partial<TokenDistributionOptions> => {
-  const overrides: Partial<TokenDistributionOptions> = {};
+const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions => {
+  const overrides: TokenDistributionOptions = {};
   if (!source || typeof source !== 'object') {
     return overrides;
   }
 
   const {
     tokenType,
-    tokenSymbol,
-    tokenDecimals,
-    tokenAddresses,
-    coingeckoId,
-    coingeckoPlatformId,
-    fallbackPriceUsd,
-    nativeFallbackPriceUsd,
+    minimumDistributionAmount,
     minimumDistributionUsd
   } = source;
 
   if (typeof tokenType === 'string') {
     const normalized = tokenType.toUpperCase();
-    if (normalized === 'NATIVE' || normalized === 'ERC20') {
+    if (normalized === 'NATIVE') {
       overrides.tokenType = normalized as TokenDistributionOptions['tokenType'];
     }
   }
 
-  if (typeof tokenSymbol === 'string' && tokenSymbol.trim().length > 0) {
-    overrides.tokenSymbol = tokenSymbol.trim();
-  }
-
-  const decimalsNumber = parseNumber(tokenDecimals);
-  if (decimalsNumber !== undefined) {
-    overrides.tokenDecimals = decimalsNumber;
-  }
-
-  if (tokenAddresses) {
-    if (typeof tokenAddresses === 'string') {
-      try {
-        const parsed = JSON.parse(tokenAddresses);
-        if (parsed && typeof parsed === 'object') {
-          overrides.tokenAddresses = parsed;
-        }
-      } catch {
-        // ignore invalid JSON
-      }
-    } else if (typeof tokenAddresses === 'object') {
-      overrides.tokenAddresses = tokenAddresses as Record<string, `0x${string}`>;
-    }
-  }
-
-  if (typeof coingeckoId === 'string' && coingeckoId.trim().length > 0) {
-    overrides.coingeckoId = coingeckoId.trim();
-  }
-
-  if (typeof coingeckoPlatformId === 'string' && coingeckoPlatformId.trim().length > 0) {
-    overrides.coingeckoPlatformId = coingeckoPlatformId.trim();
-  }
-
-  const fallback = parseNumber(fallbackPriceUsd);
-  if (fallback !== undefined) {
-    overrides.fallbackPriceUsd = fallback;
-  }
-
-  const nativeFallback = parseNumber(nativeFallbackPriceUsd);
-  if (nativeFallback !== undefined) {
-    overrides.nativeFallbackPriceUsd = nativeFallback;
-  }
-
-  const minimumUsd = parseNumber(minimumDistributionUsd);
-  if (minimumUsd !== undefined) {
-    overrides.minimumDistributionUsd = minimumUsd;
+  const minValue = parseNumber(minimumDistributionAmount ?? minimumDistributionUsd);
+  if (minValue !== undefined) {
+    overrides.minimumDistributionAmount = minValue;
   }
 
   return overrides;
@@ -103,9 +55,8 @@ router.get('/status', async (req, res) => {
       networks: Object.fromEntries(networkStatus),
       totalNetworks: enabledNetworks.length,
       token: {
-        symbol: overrides.tokenSymbol,
-        type: overrides.tokenType,
-        decimals: overrides.tokenDecimals
+        type: overrides.tokenType ?? 'NATIVE',
+        minimumDistributionAmount: overrides.minimumDistributionAmount
       }
     };
 
@@ -135,9 +86,8 @@ router.get('/reserve-status', async (req, res) => {
       success: true,
       data: Object.fromEntries(reserveStatus),
       token: {
-        symbol: overrides.tokenSymbol,
-        type: overrides.tokenType,
-        decimals: overrides.tokenDecimals
+        type: overrides.tokenType ?? 'NATIVE',
+        minimumDistributionAmount: overrides.minimumDistributionAmount
       }
     });
   } catch (error) {
@@ -208,9 +158,8 @@ router.get('/network/:networkName/status', async (req, res) => {
       success: true,
       data: status,
       token: {
-        symbol: overrides.tokenSymbol ?? networkReserve?.tokenSymbol,
-        type: overrides.tokenType ?? networkReserve?.tokenType,
-        decimals: overrides.tokenDecimals ?? networkReserve?.tokenDecimals
+        type: overrides.tokenType ?? networkReserve?.tokenType ?? 'NATIVE',
+        minimumDistributionAmount: overrides.minimumDistributionAmount ?? networkReserve?.minimumDistributionUsd
       }
     });
   } catch (error) {
@@ -295,14 +244,11 @@ router.post('/run-distribution', async (req, res) => {
       data: {
         totalDistributed: result.totalDistributed,
         totalReserved: result.totalReserved,
-        totalDistributedUsd: result.totalDistributedUsd,
-        totalReservedUsd: result.totalReservedUsd,
         networkResults: Object.fromEntries(result.networkResults),
         errors: result.errors,
         token: {
-          symbol: overrides.tokenSymbol ?? undefined,
-          type: overrides.tokenType ?? undefined,
-          decimals: overrides.tokenDecimals ?? undefined
+          type: overrides.tokenType ?? 'NATIVE',
+          minimumDistributionAmount: overrides.minimumDistributionAmount
         }
       },
       overrides

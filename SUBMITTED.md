@@ -68,7 +68,7 @@
     * Friends With Benefits - require 750 $FBW ($465)
     * BitDAO / Mantle - requires smart contract on Mantle
     * MetaCartel - does not yet provide grants
-    * Cabin DAO https://creators.mirror.xyz - the site does not load
+    * Cabin DAO https://creators.mirror.xyz - for nature-lovers
 * Software Grants (in my tree):
   * gate.io https://www.gate.io/grants - the form does not work (filed a support request 12 Oct 2025)
   * Hedera grants (need to use their blockchain?): - TODO

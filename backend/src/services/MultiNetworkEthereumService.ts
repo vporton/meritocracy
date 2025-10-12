@@ -1,10 +1,11 @@
 import { 
     createPublicClient, 
     createWalletClient, 
+    formatEther,
+    formatUnits,
     http, 
     parseEther, 
-    formatEther,
-    getContract,
+    parseUnits,
     type PublicClient,
     type WalletClient,
     type Address,
@@ -15,10 +16,31 @@ import {
 import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost, celo } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
+import { TokenDescriptor } from '../types/token.js';
 
 // Load environment variables
 dotenv.config();
 dotenv.config({ path: 'ethereum-keys.secret' });
+
+const ERC20_ABI = [
+    {
+        type: 'function',
+        name: 'balanceOf',
+        stateMutability: 'view',
+        inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+        outputs: [{ name: 'balance', type: 'uint256', internalType: 'uint256' }]
+    },
+    {
+        type: 'function',
+        name: 'transfer',
+        stateMutability: 'nonpayable',
+        inputs: [
+            { name: 'to', type: 'address', internalType: 'address' },
+            { name: 'amount', type: 'uint256', internalType: 'uint256' }
+        ],
+        outputs: [{ name: 'success', type: 'bool', internalType: 'bool' }]
+    }
+] as const;
 
 
 export const mezoChainConfig = {
@@ -92,6 +114,9 @@ export interface NetworkConfig {
     enabled: boolean;
     gasReserve: number; // ETH amount to keep as gas reserve
     minimumDistributionUsd: number; // Minimum USD amount to distribute
+    nativeTokenSymbol?: string;
+    nativeTokenDecimals?: number;
+    nativeTokenCoingeckoId?: string;
 }
 
 export interface NetworkClient {
@@ -99,6 +124,19 @@ export interface NetworkClient {
     walletClient: WalletClient;
     account: ReturnType<typeof privateKeyToAccount>;
     config: NetworkConfig;
+}
+
+export interface TokenTransferRequest {
+    networkName: string;
+    token: TokenDescriptor;
+    to: Address;
+    amount: string;
+}
+
+export interface TokenTransferCostEstimate extends TokenTransferRequest {
+    gasEstimate: bigint;
+    gasPrice: bigint;
+    gasCostWei: bigint;
 }
 
 export class MultiNetworkEthereumService {
@@ -123,7 +161,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_MAINNET_RPC_URL,
                 enabled: process.env.ETHEREUM_MAINNET_ENABLED === 'true',
                 gasReserve: 0.01,
-                minimumDistributionUsd: 20
+                minimumDistributionUsd: 20,
+                nativeTokenSymbol: mainnet.nativeCurrency.symbol,
+                nativeTokenDecimals: mainnet.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'ethereum'
             },
             {
                 name: 'celo',
@@ -131,7 +172,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_CELO_RPC_URL,
                 enabled: process.env.ETHEREUM_CELO_ENABLED === 'true',
                 gasReserve: 0.1,
-                minimumDistributionUsd: 5
+                minimumDistributionUsd: 5,
+                nativeTokenSymbol: celo.nativeCurrency.symbol,
+                nativeTokenDecimals: celo.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'celo'
             },
             {
                 name: 'polygon',
@@ -139,7 +183,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_POLYGON_RPC_URL,
                 enabled: process.env.ETHEREUM_POLYGON_ENABLED === 'true',
                 gasReserve: 0.1, // Higher reserve for Polygon due to lower gas costs
-                minimumDistributionUsd: 5 // Lower threshold for Polygon
+                minimumDistributionUsd: 5, // Lower threshold for Polygon
+                nativeTokenSymbol: polygon.nativeCurrency.symbol,
+                nativeTokenDecimals: polygon.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'matic-network'
             },
             {
                 name: 'arbitrum',
@@ -147,7 +194,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_ARBITRUM_RPC_URL,
                 enabled: process.env.ETHEREUM_ARBITRUM_ENABLED === 'true',
                 gasReserve: 0.005,
-                minimumDistributionUsd: 10
+                minimumDistributionUsd: 10,
+                nativeTokenSymbol: arbitrum.nativeCurrency.symbol,
+                nativeTokenDecimals: arbitrum.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'ethereum'
             },
             {
                 name: 'optimism',
@@ -155,7 +205,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_OPTIMISM_RPC_URL,
                 enabled: process.env.ETHEREUM_OPTIMISM_ENABLED === 'true',
                 gasReserve: 0.005,
-                minimumDistributionUsd: 10
+                minimumDistributionUsd: 10,
+                nativeTokenSymbol: optimism.nativeCurrency.symbol,
+                nativeTokenDecimals: optimism.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'ethereum'
             },
             {
                 name: 'base',
@@ -163,7 +216,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_BASE_RPC_URL,
                 enabled: process.env.ETHEREUM_BASE_ENABLED === 'true',
                 gasReserve: 0.005,
-                minimumDistributionUsd: 10
+                minimumDistributionUsd: 10,
+                nativeTokenSymbol: base.nativeCurrency.symbol,
+                nativeTokenDecimals: base.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'ethereum'
             },
             {
                 name: 'mezo',
@@ -171,7 +227,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.MEZORPC_URL,
                 enabled: process.env.MEZO_ENABLED === 'true',
                 gasReserve: 0.01,
-                minimumDistributionUsd: 10
+                minimumDistributionUsd: 10,
+                nativeTokenSymbol: mezo.nativeCurrency.symbol,
+                nativeTokenDecimals: mezo.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'bitcoin'
             },
             {
                 name: 'sepolia',
@@ -179,7 +238,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_SEPOLIA_RPC_URL,
                 enabled: process.env.ETHEREUM_SEPOLIA_ENABLED === 'true',
                 gasReserve: 0.01,
-                minimumDistributionUsd: 0.1 // Very low for testnet
+                minimumDistributionUsd: 0.1, // Very low for testnet
+                nativeTokenSymbol: sepolia.nativeCurrency.symbol,
+                nativeTokenDecimals: sepolia.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'ethereum'
             },
             {
                 name: 'mezoTestnet',
@@ -187,7 +249,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.MEZO_TESTNET_RPC_URL,
                 enabled: process.env.MEZO_TESTNET_ENABLED === 'true',
                 gasReserve: 0.01,
-                minimumDistributionUsd: 0.1 // Very low for testnet
+                minimumDistributionUsd: 0.1, // Very low for testnet
+                nativeTokenSymbol: mezoTestnet.nativeCurrency.symbol,
+                nativeTokenDecimals: mezoTestnet.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'bitcoin'
             },
             {
                 name: 'localhost',
@@ -195,7 +260,10 @@ export class MultiNetworkEthereumService {
                 rpcUrl: process.env.ETHEREUM_LOCALHOST_RPC_URL || 'http://localhost:8545',
                 enabled: process.env.ETHEREUM_LOCALHOST_ENABLED === 'true',
                 gasReserve: 0.01,
-                minimumDistributionUsd: 0.1
+                minimumDistributionUsd: 0.1,
+                nativeTokenSymbol: localhost.nativeCurrency.symbol,
+                nativeTokenDecimals: localhost.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'ethereum'
             }
         ];
 
@@ -274,6 +342,107 @@ export class MultiNetworkEthereumService {
             throw new Error(`Network ${networkName} not found or not enabled`);
         }
         return await client.publicClient.getBalance({ address: client.account.address });
+    }
+
+    /**
+     * Get balance for native or ERC-20 token on a specific network
+     */
+    public async getTokenBalance(networkName: string, token: TokenDescriptor): Promise<bigint> {
+        if (token.tokenType === 'NATIVE') {
+            return await this.getBalance(networkName);
+        }
+
+        if (!token.tokenAddress) {
+            throw new Error(`Token address is required to fetch ERC-20 balance for ${token.tokenSymbol}`);
+        }
+
+        const client = this.networks.get(networkName);
+        if (!client) {
+            throw new Error(`Network ${networkName} not found or not enabled`);
+        }
+
+        return await client.publicClient.readContract({
+            address: token.tokenAddress,
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [client.account.address]
+        });
+    }
+
+    /**
+     * Estimate gas usage and cost for transferring a token
+     */
+    public async estimateTokenTransferCost(request: TokenTransferRequest): Promise<TokenTransferCostEstimate> {
+        const client = this.networks.get(request.networkName);
+        if (!client) {
+            throw new Error(`Network ${request.networkName} not found or not enabled`);
+        }
+
+        const decimals = request.token.tokenDecimals ?? client.config.nativeTokenDecimals ?? client.config.chain.nativeCurrency.decimals;
+        const amountRaw = parseUnits(request.amount, decimals);
+
+        let gasEstimate: bigint;
+        if (request.token.tokenType === 'ERC20') {
+            if (!request.token.tokenAddress) {
+                throw new Error(`Token address is required to estimate ERC-20 transfer for ${request.token.tokenSymbol}`);
+            }
+            gasEstimate = await client.publicClient.estimateContractGas({
+                address: request.token.tokenAddress,
+                abi: ERC20_ABI,
+                functionName: 'transfer',
+                args: [request.to, amountRaw],
+                account: client.account.address
+            });
+        } else {
+            gasEstimate = await client.publicClient.estimateGas({
+                account: client.account.address,
+                to: request.to,
+                value: amountRaw
+            });
+        }
+
+        const gasPrice = await this.getGasPrice(request.networkName);
+        return {
+            ...request,
+            gasEstimate,
+            gasPrice,
+            gasCostWei: gasEstimate * gasPrice
+        };
+    }
+
+    /**
+     * Send native or ERC-20 token transfer on a specific network
+     */
+    public async sendTokenTransfer(request: TokenTransferRequest): Promise<Hash> {
+        const client = this.networks.get(request.networkName);
+        if (!client) {
+            throw new Error(`Network ${request.networkName} not found or not enabled`);
+        }
+
+        const decimals = request.token.tokenDecimals ?? client.config.nativeTokenDecimals ?? client.config.chain.nativeCurrency.decimals;
+        const amountRaw = parseUnits(request.amount, decimals);
+
+        if (request.token.tokenType === 'ERC20') {
+            if (!request.token.tokenAddress) {
+                throw new Error(`Token address is required to send ERC-20 transfer for ${request.token.tokenSymbol}`);
+            }
+
+            return await client.walletClient.writeContract({
+                account: client.account,
+                address: request.token.tokenAddress,
+                abi: ERC20_ABI,
+                functionName: 'transfer',
+                args: [request.to, amountRaw],
+                chain: client.publicClient.chain
+            });
+        }
+
+        return await client.walletClient.sendTransaction({
+            account: client.account,
+            to: request.to,
+            value: amountRaw,
+            chain: client.publicClient.chain
+        });
     }
 
     /**
@@ -421,12 +590,37 @@ export class MultiNetworkEthereumService {
     /**
      * Utility methods
      */
+    public getNativeTokenMetadata(networkName: string): {
+        symbol: string;
+        decimals: number;
+        coingeckoId?: string;
+    } {
+        const client = this.networks.get(networkName);
+        if (!client) {
+            throw new Error(`Network ${networkName} not found or not enabled`);
+        }
+
+        return {
+            symbol: client.config.nativeTokenSymbol ?? client.config.chain.nativeCurrency.symbol,
+            decimals: client.config.nativeTokenDecimals ?? client.config.chain.nativeCurrency.decimals,
+            coingeckoId: client.config.nativeTokenCoingeckoId
+        };
+    }
+
     public formatEther(wei: bigint): string {
         return formatEther(wei);
     }
 
     public parseEther(ether: string): bigint {
         return parseEther(ether);
+    }
+
+    public formatUnits(value: bigint, decimals: number): string {
+        return formatUnits(value, decimals);
+    }
+
+    public parseUnits(value: string, decimals: number): bigint {
+        return parseUnits(value, decimals);
     }
 
     /**

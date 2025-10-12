@@ -36,6 +36,7 @@ model User {
   sessions                Session[]
 
   @@index([onboarded])
+  @@index([onboarded, shareInGDP(sort: Desc)])
   @@index([shareInGDP])
   @@index([kycStatus])
   @@unique([issuingState, personalNumber])
@@ -175,6 +176,10 @@ model GasTokenDistribution {
   status           String   @default("PENDING")
   transactionHash  String?
   errorMessage     String?
+  tokenType        String   @default("NATIVE") // NATIVE or ERC20
+  tokenSymbol      String   @default("ETH")
+  tokenAddress     String?
+  tokenDecimals    Int      @default(18)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -183,7 +188,8 @@ model GasTokenDistribution {
   @@index([network])
   @@index([status])
   @@index([distributionDate])
-  @@unique([userId, network, distributionDate]) // Prevent duplicate distributions per network per day
+  @@index([network, tokenSymbol])
+  @@unique([userId, network, tokenSymbol, distributionDate]) // Prevent duplicate distributions per network/token per day
   @@map("gas_token_distributions")
 }
 
@@ -192,10 +198,14 @@ model GasTokenReserve {
   network          String   // Network identifier (e.g., 'mainnet', 'polygon', 'arbitrum')
   totalReserve     Decimal  @default(0)
   lastDistribution DateTime @default(now())
+  tokenType        String   @default("NATIVE") // NATIVE or ERC20
+  tokenSymbol      String   @default("ETH")
+  tokenAddress     String?
+  tokenDecimals    Int      @default(18)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  @@unique([network]) // One reserve per network
+  @@unique([network, tokenSymbol, tokenType]) // One reserve per network/token
   @@map("gas_token_reserves")
 }
 

@@ -140,19 +140,20 @@ export class CronService {
    * This can be called via API endpoint for testing
    */
   async runWeeklyGasDistribution() {
-    console.log('🔄 Starting weekly multi-network gas token distribution process...');
+    console.log('🔄 Starting weekly multi-network token distribution process...');
     
     try {
       const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
       
       if (result.success) {
-        console.log('✅ Weekly multi-network gas token distribution completed successfully');
-        console.log(`💰 Total distributed: ${result.totalDistributed.toFixed(6)} ETH`);
-        console.log(`🏦 Total reserved: ${result.totalReserved.toFixed(6)} ETH`);
+        console.log('✅ Weekly multi-network token distribution completed successfully');
+        console.log(`💰 Total distributed: $${result.totalDistributedUsd.toFixed(2)} USD`);
+        console.log(`🏦 Total reserved: $${result.totalReservedUsd.toFixed(2)} USD`);
         
-        // Log per-network results
         for (const [networkName, networkResult] of result.networkResults) {
-          console.log(`🌐 [${networkName}]: ${networkResult.distributed.toFixed(6)} ETH distributed, ${networkResult.reserved.toFixed(6)} ETH reserved`);
+          console.log(
+            `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed ($${networkResult.distributedUsd.toFixed(2)}), ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved ($${networkResult.reservedUsd.toFixed(2)})`
+          );
         }
         
         if (result.errors.length > 0) {
@@ -160,13 +161,13 @@ export class CronService {
           result.errors.forEach(error => console.log(`  - ${error}`));
         }
       } else {
-        console.error('❌ Weekly multi-network gas token distribution failed');
+        console.error('❌ Weekly multi-network token distribution failed');
         result.errors.forEach(error => console.error(`  - ${error}`));
       }
 
       return result;
     } catch (error) {
-      console.error('💥 Fatal error in weekly multi-network gas token distribution process:', error);
+      console.error('💥 Fatal error in weekly multi-network token distribution process:', error);
       throw error;
     }
   }

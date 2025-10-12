@@ -1,14 +1,16 @@
-# Multi-Network Gas Token Distribution System
+# Multi-Network Token Distribution System
 
-This document describes the enhanced gas token distribution system that supports multiple Ethereum-compatible networks with async fiber processing.
+This document describes the enhanced token distribution system that supports multiple Ethereum-compatible networks with async fiber processing.
 
 ## Overview
 
-The multi-network gas token distribution system extends the original single-network system to support:
+The multi-network distribution system extends the original single-network system to support:
+- **Multiple Token Types**: Native gas tokens and configurable ERC-20 assets per network
 - **Multiple Networks**: Ethereum Mainnet, Polygon, Arbitrum, Optimism, Base, Sepolia, and localhost
 - **Async Fibers**: Parallel processing of distributions across networks
 - **Unified Address**: One EVM address per user across all networks
 - **Network-Specific Configuration**: Different gas reserves and minimum distribution thresholds per network
+- **Gas Cost Guardrail**: Skip transfers when estimated gas exceeds 20% of the transfer value
 - **Comprehensive Monitoring**: Per-network status, reserves, and distribution history
 
 ## Architecture
@@ -46,11 +48,16 @@ model GasTokenDistribution {
   status           String   @default("PENDING")
   transactionHash  String?
   errorMessage     String?
+  tokenType        String   @default("NATIVE")
+  tokenSymbol      String   @default("ETH")
+  tokenAddress     String?
+  tokenDecimals    Int      @default(18)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, network, distributionDate]) // Prevent duplicates
+  @@index([network, tokenSymbol])
+  @@unique([userId, network, tokenSymbol, distributionDate]) // Prevent duplicates per token
   @@map("gas_token_distributions")
 }
 ```
@@ -62,10 +69,14 @@ model GasTokenReserve {
   network          String   // Network identifier
   totalReserve     Decimal  @default(0)
   lastDistribution DateTime @default(now())
+  tokenType        String   @default("NATIVE")
+  tokenSymbol      String   @default("ETH")
+  tokenAddress     String?
+  tokenDecimals    Int      @default(18)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  @@unique([network]) // One reserve per network
+  @@unique([network, tokenSymbol, tokenType]) // One reserve per network/token
   @@map("gas_token_reserves")
 }
 ```
@@ -112,12 +123,23 @@ ETHEREUM_LOCALHOST_ENABLED=false
 ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 ```
 
+## Token Configuration & Overrides
+
+- The distribution service defaults to the native gas asset (`ETH`) with a fallback price of $2000.
+- To distribute ERC-20 tokens, provide overrides via API query parameters or request body:
+  - `tokenType`: `ERC20`
+  - `tokenSymbol`: e.g. `DAI`
+  - `tokenDecimals`: token decimals (default `18`)
+  - `tokenAddresses`: JSON object mapping network name to contract address
+  - Optional pricing hints: `coingeckoId`, `coingeckoPlatformId`, `fallbackPriceUsd`, `nativeFallbackPriceUsd`
+- The same overrides apply to reserve and status endpoints, enabling dashboards to pivot between assets.
+
 ## API Endpoints
 
 ### Multi-Network Status
-- `GET /api/multi-network-gas/status` - Get status of all enabled networks
-- `GET /api/multi-network-gas/reserve-status` - Get reserve status for all networks
-- `GET /api/multi-network-gas/network/:networkName/status` - Get detailed status for a specific network
+- `GET /api/multi-network-gas/status` - Get status of all enabled networks (optional query overrides: `tokenType`, `tokenSymbol`, `tokenDecimals`, `coingeckoId`, `coingeckoPlatformId`)
+- `GET /api/multi-network-gas/reserve-status` - Get reserve status for all networks (same optional query overrides as above)
+- `GET /api/multi-network-gas/network/:networkName/status` - Get detailed status for a specific network (supports query overrides)
 
 ### Distribution History
 - `GET /api/multi-network-gas/distribution-history` - Get distribution history across all networks
@@ -125,7 +147,7 @@ ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 - `GET /api/multi-network-gas/user/:userId/distribution-history` - Get distribution history for a specific user
 
 ### Manual Operations
-- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution
+- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution (optional JSON body overrides matching the query parameters above)
 
 ## Async Fiber Processing
 
@@ -134,12 +156,12 @@ The system uses async fibers to process distributions in parallel across network
 ```typescript
 // Create async fibers for each network
 const networkPromises = Array.from(networkDistributions.entries()).map(
-  async ([networkName, distributions]) => {
+  async ([networkName, { context, distributions }]) => {
     try {
-      const networkResult = await this.processNetworkDistribution(networkName, distributions);
+      const networkResult = await this.processNetworkDistribution(context, distributions);
       result.networkResults.set(networkName, networkResult);
-      result.totalDistributed += networkResult.distributed;
-      result.totalReserved += networkResult.reserved;
+      result.totalDistributedUsd += networkResult.distributedUsd;
+      result.totalReservedUsd += networkResult.reservedUsd;
     } catch (error) {
       // Handle network-specific errors
     }
@@ -160,11 +182,13 @@ await Promise.all(networkPromises);
 ### 2. Distribution Calculation
 - Calculate user distributions based on GDP share
 - Apply network-specific minimum thresholds
-- Check available balances per network
+- Fetch token prices (CoinGecko with configurable fallbacks)
+- Check available balances per network/token
 
 ### 3. Async Fiber Processing
 - Create parallel processing tasks for each network
 - Process distributions independently
+- Skip transfers where estimated gas exceeds 20% of the transfer value
 - Handle network-specific errors gracefully
 
 ### 4. Result Aggregation
@@ -192,6 +216,11 @@ Different networks have different minimum distribution amounts:
 - Graceful degradation if a network fails
 - Retry logic for failed transactions
 - Comprehensive error logging
+
+### Gas Price Guardrail
+- Estimated gas is fetched per transfer (native or ERC-20)
+- Transfers are deferred when gas cost exceeds 20% of the transfer value
+- Deferred transfers accrue in the per-network/token reserve for future retries
 
 ## Monitoring and Observability
 

@@ -1,11 +1,92 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { MultiNetworkGasTokenDistributionService } from '../services/MultiNetworkGasTokenDistributionService.js';
+import { MultiNetworkGasTokenDistributionService, type TokenDistributionOptions } from '../services/MultiNetworkGasTokenDistributionService.js';
 import { multiNetworkEthereumService } from '../services/MultiNetworkEthereumService.js';
 
 const router = Router();
 const prisma = new PrismaClient();
 const multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(prisma);
+
+const parseNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const num = Number(value);
+  return Number.isNaN(num) ? undefined : num;
+};
+
+const parseTokenDistributionOverrides = (source: any): Partial<TokenDistributionOptions> => {
+  const overrides: Partial<TokenDistributionOptions> = {};
+  if (!source || typeof source !== 'object') {
+    return overrides;
+  }
+
+  const {
+    tokenType,
+    tokenSymbol,
+    tokenDecimals,
+    tokenAddresses,
+    coingeckoId,
+    coingeckoPlatformId,
+    fallbackPriceUsd,
+    nativeFallbackPriceUsd,
+    minimumDistributionUsd
+  } = source;
+
+  if (typeof tokenType === 'string') {
+    const normalized = tokenType.toUpperCase();
+    if (normalized === 'NATIVE' || normalized === 'ERC20') {
+      overrides.tokenType = normalized as TokenDistributionOptions['tokenType'];
+    }
+  }
+
+  if (typeof tokenSymbol === 'string' && tokenSymbol.trim().length > 0) {
+    overrides.tokenSymbol = tokenSymbol.trim();
+  }
+
+  const decimalsNumber = parseNumber(tokenDecimals);
+  if (decimalsNumber !== undefined) {
+    overrides.tokenDecimals = decimalsNumber;
+  }
+
+  if (tokenAddresses) {
+    if (typeof tokenAddresses === 'string') {
+      try {
+        const parsed = JSON.parse(tokenAddresses);
+        if (parsed && typeof parsed === 'object') {
+          overrides.tokenAddresses = parsed;
+        }
+      } catch {
+        // ignore invalid JSON
+      }
+    } else if (typeof tokenAddresses === 'object') {
+      overrides.tokenAddresses = tokenAddresses as Record<string, `0x${string}`>;
+    }
+  }
+
+  if (typeof coingeckoId === 'string' && coingeckoId.trim().length > 0) {
+    overrides.coingeckoId = coingeckoId.trim();
+  }
+
+  if (typeof coingeckoPlatformId === 'string' && coingeckoPlatformId.trim().length > 0) {
+    overrides.coingeckoPlatformId = coingeckoPlatformId.trim();
+  }
+
+  const fallback = parseNumber(fallbackPriceUsd);
+  if (fallback !== undefined) {
+    overrides.fallbackPriceUsd = fallback;
+  }
+
+  const nativeFallback = parseNumber(nativeFallbackPriceUsd);
+  if (nativeFallback !== undefined) {
+    overrides.nativeFallbackPriceUsd = nativeFallback;
+  }
+
+  const minimumUsd = parseNumber(minimumDistributionUsd);
+  if (minimumUsd !== undefined) {
+    overrides.minimumDistributionUsd = minimumUsd;
+  }
+
+  return overrides;
+};
 
 /**
  * GET /api/multi-network-gas/status
@@ -13,13 +94,19 @@ const multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistribu
  */
 router.get('/status', async (req, res) => {
   try {
-    const networkStatus = await multiNetworkGasTokenDistributionService.getNetworkStatus();
+    const overrides = parseTokenDistributionOverrides(req.query);
+    const networkStatus = await multiNetworkGasTokenDistributionService.getNetworkStatus(overrides);
     const enabledNetworks = multiNetworkEthereumService.getEnabledNetworks();
     
     const status = {
       enabledNetworks,
       networks: Object.fromEntries(networkStatus),
-      totalNetworks: enabledNetworks.length
+      totalNetworks: enabledNetworks.length,
+      token: {
+        symbol: overrides.tokenSymbol,
+        type: overrides.tokenType,
+        decimals: overrides.tokenDecimals
+      }
     };
 
     res.json({
@@ -41,11 +128,17 @@ router.get('/status', async (req, res) => {
  */
 router.get('/reserve-status', async (req, res) => {
   try {
-    const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus();
+    const overrides = parseTokenDistributionOverrides(req.query);
+    const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus(overrides);
     
     res.json({
       success: true,
-      data: Object.fromEntries(reserveStatus)
+      data: Object.fromEntries(reserveStatus),
+      token: {
+        symbol: overrides.tokenSymbol,
+        type: overrides.tokenType,
+        decimals: overrides.tokenDecimals
+      }
     });
   } catch (error) {
     console.error('Error getting reserve status:', error);
@@ -98,9 +191,10 @@ router.get('/distribution-history', async (req, res) => {
 router.get('/network/:networkName/status', async (req, res) => {
   try {
     const { networkName } = req.params;
+    const overrides = parseTokenDistributionOverrides(req.query);
     
     const networkInfo = await multiNetworkEthereumService.getNetworkInfo(networkName);
-    const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus();
+    const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus(overrides);
     const networkReserve = reserveStatus.get(networkName);
     
     const status = {
@@ -112,7 +206,12 @@ router.get('/network/:networkName/status', async (req, res) => {
 
     res.json({
       success: true,
-      data: status
+      data: status,
+      token: {
+        symbol: overrides.tokenSymbol ?? networkReserve?.tokenSymbol,
+        type: overrides.tokenType ?? networkReserve?.tokenType,
+        decimals: overrides.tokenDecimals ?? networkReserve?.tokenDecimals
+      }
     });
   } catch (error) {
     console.error(`Error getting status for network ${req.params.networkName}:`, error);
@@ -188,16 +287,25 @@ router.post('/run-distribution', async (req, res) => {
   try {
     console.log('🔄 Manual multi-network gas token distribution triggered via API');
     
-    const result = await multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
+    const overrides = parseTokenDistributionOverrides(req.body);
+    const result = await multiNetworkGasTokenDistributionService.processMultiNetworkDistribution(overrides);
     
     res.json({
       success: result.success,
       data: {
         totalDistributed: result.totalDistributed,
         totalReserved: result.totalReserved,
+        totalDistributedUsd: result.totalDistributedUsd,
+        totalReservedUsd: result.totalReservedUsd,
         networkResults: Object.fromEntries(result.networkResults),
-        errors: result.errors
-      }
+        errors: result.errors,
+        token: {
+          symbol: overrides.tokenSymbol ?? undefined,
+          type: overrides.tokenType ?? undefined,
+          decimals: overrides.tokenDecimals ?? undefined
+        }
+      },
+      overrides
     });
   } catch (error) {
     console.error('Error running multi-network gas token distribution:', error);

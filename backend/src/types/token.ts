@@ -6,9 +6,3 @@ export interface TokenDescriptor {
   tokenDecimals: number;
   tokenAddress?: `0x${string}`;
 }
-
-export interface TokenPriceMetadata extends TokenDescriptor {
-  coingeckoId?: string;
-  coingeckoPlatformId?: string;
-  fallbackPriceUsd?: number;
-}

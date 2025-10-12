@@ -1,1 +1,0 @@
--- This migration is now empty as all KYC fields were already added in the previous migration

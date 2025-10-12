@@ -45,3 +45,6 @@
 - TODO@P3 Allow to enter a blockchain address instead of using a wallet.
 
 - TODO@P2 Logging displayed at `/logs` is excessive.
+
+- TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
+          Subtract gas cost from user.

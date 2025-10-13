@@ -70,7 +70,7 @@
     * MetaCartel - does not yet provide grants
     * Cabin DAO https://creators.mirror.xyz - for nature-lovers
 * Software Grants (in my tree):
-  * gate.io https://www.gate.io/grants - the form does not work (filed a support request 12 Oct 2025)
+  * gate.io https://www.gate.io/grants - submitted 14 Oct 2025.
   * Hedera grants (need to use their blockchain?): - TODO
     * https://hedera.com/ecosystem/grants-accelerators:
     * https://hashgraph-association.com/
@@ -89,4 +89,4 @@
   * https://www.shell.com/what-we-do/technology-and-innovation/innovate-with-shell/share-your-idea.html - submitted 12 Oct 2025
   * https://chainforgood.org - submitted 12 Oct 2025
   * https://app.akindo.io - applied
-  * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIS 17 Sep 2025
+  * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIS 17 Sep 2025 - rejected 14 Oct 2025 "paying attention to experiments in funding and reseource allocation, but are not currently making grants in this area"

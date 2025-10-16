@@ -241,7 +241,7 @@ export class MultiNetworkGasTokenDistributionService {
         dist.amountToken = dist.amountToken + dist.backlogToken;
       }
       distributions = distributions.filter(dist => dist.amountToken > 0);
-      distributions.sort((a, b) => b.amountToken - a.amountToken);
+      distributions.sort((a, b) => b.amountToken - a.amountToken); // TODO: a heavy operation in memory
 
       networkDistributions.set(networkName, { context: tokenContext, distributions });
     }

@@ -17,6 +17,8 @@ export interface DistributionFiber {
   ethereumAddress: string;
   amountToken: number;
   shareInGDP: number;
+  // Amount accumulated from previous deferred distributions on this network/token
+  backlogToken?: number;
 }
 
 export interface NetworkDistributionResult {
@@ -179,14 +181,18 @@ export class MultiNetworkGasTokenDistributionService {
       const walletBalance = Number(multiNetworkEthereumService.formatUnits(walletBalanceRaw, tokenContext.tokenDecimals));
       const currentReserve = await this.getTokenReserve(tokenContext);
 
-      let totalAvailable: number;
+      // Spendable from wallet for the current week (excludes longstanding reserve)
+      let spendableFromWallet: number;
       if (tokenContext.tokenType === 'NATIVE') {
         const networkConfig = multiNetworkEthereumService.getNetworkConfig(networkName);
         const gasReserve = networkConfig?.gasReserve ?? 0;
-        totalAvailable = walletBalance - gasReserve + currentReserve;
+        spendableFromWallet = Math.max(0, walletBalance - gasReserve);
       } else {
-        totalAvailable = walletBalance + currentReserve;
+        spendableFromWallet = walletBalance;
       }
+
+      // Total we can distribute this run (wallet spendable + previously reserved backlog)
+      const totalAvailable = spendableFromWallet + currentReserve;
 
       if (totalAvailable <= 0) {
         console.log(`⚠️  No ${tokenContext.tokenSymbol} funds available for distribution on ${networkName}`);
@@ -194,20 +200,47 @@ export class MultiNetworkGasTokenDistributionService {
         continue;
       }
 
-      const distributions: DistributionFiber[] = users
+      let distributions: DistributionFiber[] = users
         .map(user => {
           const userShare = user.shareInGDP ?? 0;
           const proportion = userShare / totalShare;
-          const amountToken = proportion > 0 ? totalAvailable * proportion : 0;
+          // Weekly earnings portion comes only from current wallet spendable
+          const weeklyPortion = proportion > 0 ? spendableFromWallet * proportion : 0;
 
           return {
             userId: user.id,
             ethereumAddress: user.ethereumAddress!,
-            amountToken,
+            amountToken: weeklyPortion, // temporary; backlog added below
             shareInGDP: userShare
           };
         })
-        .filter(dist => dist.amountToken > 0);
+        ;
+
+      // Compute per-user backlog from previously deferred distributions on this network/token
+      const deferredRows = await this.prisma.gasTokenDistribution.findMany({
+        where: {
+          network: tokenContext.networkName,
+          tokenSymbol: tokenContext.tokenSymbol,
+          tokenType: tokenContext.tokenType,
+          status: 'DEFERRED'
+        },
+        select: {
+          userId: true,
+          amount: true
+        }
+      });
+      const userIdToBacklog = new Map<number, number>();
+      for (const row of deferredRows) {
+        const prev = userIdToBacklog.get(row.userId) ?? 0;
+        userIdToBacklog.set(row.userId, prev + Number(row.amount));
+      }
+
+      // Attach backlog and convert per-user target to (weekly + backlog)
+      for (const dist of distributions) {
+        dist.backlogToken = userIdToBacklog.get(dist.userId) ?? 0;
+        dist.amountToken = dist.amountToken + dist.backlogToken;
+      }
+      distributions = distributions.filter(dist => dist.amountToken > 0);
       distributions.sort((a, b) => b.amountToken - a.amountToken);
 
       networkDistributions.set(networkName, { context: tokenContext, distributions });

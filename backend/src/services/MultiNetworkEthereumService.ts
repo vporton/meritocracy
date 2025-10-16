@@ -112,7 +112,6 @@ export interface NetworkConfig {
     chain: Chain;
     rpcUrl?: string;
     enabled: boolean;
-    gasReserve: number; // ETH amount to keep as gas reserve
     nativeTokenSymbol?: string;
     nativeTokenDecimals?: number;
     nativeTokenCoingeckoId?: string;
@@ -159,7 +158,6 @@ export class MultiNetworkEthereumService {
                 chain: mainnet,
                 rpcUrl: process.env.ETHEREUM_MAINNET_RPC_URL,
                 enabled: process.env.ETHEREUM_MAINNET_ENABLED === 'true',
-                gasReserve: 0.01,
                 nativeTokenSymbol: mainnet.nativeCurrency.symbol,
                 nativeTokenDecimals: mainnet.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
@@ -169,7 +167,6 @@ export class MultiNetworkEthereumService {
                 chain: celo,
                 rpcUrl: process.env.ETHEREUM_CELO_RPC_URL,
                 enabled: process.env.ETHEREUM_CELO_ENABLED === 'true',
-                gasReserve: 0.1,
                 nativeTokenSymbol: celo.nativeCurrency.symbol,
                 nativeTokenDecimals: celo.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'celo'
@@ -179,7 +176,6 @@ export class MultiNetworkEthereumService {
                 chain: polygon,
                 rpcUrl: process.env.ETHEREUM_POLYGON_RPC_URL,
                 enabled: process.env.ETHEREUM_POLYGON_ENABLED === 'true',
-                gasReserve: 0.1, // Higher reserve for Polygon due to lower gas costs
                 nativeTokenSymbol: polygon.nativeCurrency.symbol,
                 nativeTokenDecimals: polygon.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'matic-network'
@@ -189,7 +185,6 @@ export class MultiNetworkEthereumService {
                 chain: arbitrum,
                 rpcUrl: process.env.ETHEREUM_ARBITRUM_RPC_URL,
                 enabled: process.env.ETHEREUM_ARBITRUM_ENABLED === 'true',
-                gasReserve: 0.005,
                 nativeTokenSymbol: arbitrum.nativeCurrency.symbol,
                 nativeTokenDecimals: arbitrum.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
@@ -199,7 +194,6 @@ export class MultiNetworkEthereumService {
                 chain: optimism,
                 rpcUrl: process.env.ETHEREUM_OPTIMISM_RPC_URL,
                 enabled: process.env.ETHEREUM_OPTIMISM_ENABLED === 'true',
-                gasReserve: 0.005,
                 nativeTokenSymbol: optimism.nativeCurrency.symbol,
                 nativeTokenDecimals: optimism.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
@@ -209,7 +203,6 @@ export class MultiNetworkEthereumService {
                 chain: base,
                 rpcUrl: process.env.ETHEREUM_BASE_RPC_URL,
                 enabled: process.env.ETHEREUM_BASE_ENABLED === 'true',
-                gasReserve: 0.005,
                 nativeTokenSymbol: base.nativeCurrency.symbol,
                 nativeTokenDecimals: base.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
@@ -219,7 +212,6 @@ export class MultiNetworkEthereumService {
                 chain: mezo,
                 rpcUrl: process.env.MEZORPC_URL,
                 enabled: process.env.MEZO_ENABLED === 'true',
-                gasReserve: 0.01,
                 nativeTokenSymbol: mezo.nativeCurrency.symbol,
                 nativeTokenDecimals: mezo.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'bitcoin'
@@ -229,7 +221,6 @@ export class MultiNetworkEthereumService {
                 chain: sepolia,
                 rpcUrl: process.env.ETHEREUM_SEPOLIA_RPC_URL,
                 enabled: process.env.ETHEREUM_SEPOLIA_ENABLED === 'true',
-                gasReserve: 0.01,
                 nativeTokenSymbol: sepolia.nativeCurrency.symbol,
                 nativeTokenDecimals: sepolia.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
@@ -239,7 +230,6 @@ export class MultiNetworkEthereumService {
                 chain: mezoTestnet,
                 rpcUrl: process.env.MEZO_TESTNET_RPC_URL,
                 enabled: process.env.MEZO_TESTNET_ENABLED === 'true',
-                gasReserve: 0.01,
                 nativeTokenSymbol: mezoTestnet.nativeCurrency.symbol,
                 nativeTokenDecimals: mezoTestnet.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'bitcoin'
@@ -249,7 +239,6 @@ export class MultiNetworkEthereumService {
                 chain: localhost,
                 rpcUrl: process.env.ETHEREUM_LOCALHOST_RPC_URL || 'http://localhost:8545',
                 enabled: process.env.ETHEREUM_LOCALHOST_ENABLED === 'true',
-                gasReserve: 0.01,
                 nativeTokenSymbol: localhost.nativeCurrency.symbol,
                 nativeTokenDecimals: localhost.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'

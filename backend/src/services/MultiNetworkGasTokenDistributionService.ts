@@ -181,12 +181,14 @@ export class MultiNetworkGasTokenDistributionService {
       const walletBalance = Number(multiNetworkEthereumService.formatUnits(walletBalanceRaw, tokenContext.tokenDecimals));
       const currentReserve = await this.getTokenReserve(tokenContext);
 
-      // Spendable from wallet for the current week (excludes longstanding reserve)
+      // Spendable from wallet for the current week (excludes dynamic gas reserve)
       let spendableFromWallet: number;
       if (tokenContext.tokenType === 'NATIVE') {
-        const networkConfig = multiNetworkEthereumService.getNetworkConfig(networkName);
-        const gasReserve = networkConfig?.gasReserve ?? 0;
-        spendableFromWallet = Math.max(0, walletBalance - gasReserve);
+        // Calculate dynamic gas reserve as at least 0.3x of current gas price
+        const gasPriceWei = await multiNetworkEthereumService.getGasPrice(networkName);
+        const gasPrice = Number(multiNetworkEthereumService.formatUnits(gasPriceWei, tokenContext.tokenDecimals));
+        const dynamicGasReserve = Math.max(0.3 * gasPrice, 0.001); // Minimum 0.001 ETH reserve
+        spendableFromWallet = Math.max(0, walletBalance - dynamicGasReserve);
       } else {
         spendableFromWallet = walletBalance;
       }
@@ -596,8 +598,18 @@ export class MultiNetworkGasTokenDistributionService {
       const walletBalanceRaw = await multiNetworkEthereumService.getTokenBalance(networkName, context);
       const walletBalance = Number(multiNetworkEthereumService.formatUnits(walletBalanceRaw, context.tokenDecimals));
       const reserveAmount = reserve ? Number(reserve.totalReserve) : 0;
-      const networkConfig = multiNetworkEthereumService.getNetworkConfig(networkName);
-      const gasReserve = context.tokenType === 'NATIVE' ? (networkConfig?.gasReserve || 0) : 0;
+      // Calculate dynamic gas reserve for native tokens
+      let gasReserve = 0;
+      if (context.tokenType === 'NATIVE') {
+        try {
+          const gasPriceWei = await multiNetworkEthereumService.getGasPrice(networkName);
+          const gasPrice = Number(multiNetworkEthereumService.formatUnits(gasPriceWei, context.tokenDecimals));
+          gasReserve = Math.max(0.3 * gasPrice, 0.001); // Minimum 0.001 ETH reserve
+        } catch (error) {
+          console.warn(`Failed to get gas price for ${networkName}, using minimum reserve:`, error);
+          gasReserve = 0.001; // Fallback to minimum reserve
+        }
+      }
       const availableForDistribution = context.tokenType === 'NATIVE'
         ? walletBalance - gasReserve + reserveAmount
         : walletBalance + reserveAmount;
@@ -611,7 +623,6 @@ export class MultiNetworkGasTokenDistributionService {
         walletBalance,
         availableForDistribution,
         lastDistribution: reserve?.lastDistribution || null,
-        gasReserve,
       });
     }
 

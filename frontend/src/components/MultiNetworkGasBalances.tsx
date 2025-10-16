@@ -9,7 +9,6 @@ interface NetworkInfo {
   address: string;
   balanceFormatted: string;
   gasPriceFormatted: string;
-  gasReserve: number;
   availableForDistribution: number;
   totalReserve: number;
   lastDistribution?: string;
@@ -27,7 +26,6 @@ interface ReserveStatus {
     walletBalance: number;
     availableForDistribution: number;
     lastDistribution?: string;
-    gasReserve: number;
   };
 }
 

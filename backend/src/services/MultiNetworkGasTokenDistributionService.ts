@@ -160,7 +160,7 @@ export class MultiNetworkGasTokenDistributionService {
       return new Map();
     }
 
-    const totalShare = users.reduce((sum, user) => sum + (user.shareInGDP ?? 0), 0);
+    const totalShare = users.reduce((sum, user) => sum + (user.shareInGDP ?? 0), 0); // TODO: inefficient
     if (totalShare <= 0) {
       console.warn('⚠️  Total share in GDP is zero. Skipping distribution.');
       return new Map();

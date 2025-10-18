@@ -90,3 +90,6 @@
   * https://chainforgood.org - submitted 12 Oct 2025
   * https://app.akindo.io - applied
   * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIS 17 Sep 2025 - rejected 14 Oct 2025 "paying attention to experiments in funding and reseource allocation, but are not currently making grants in this area"
+* A email from ffwd.com
+  * Okta for Good: Nonprofit Technology Fellowship https://www.okta.com/company/okta-for-good/nonprofit-technology-fellows/ - submitted 18 Oct 2025
+  * Open Technology Fund https://www.opentech.fund/funds/internet-freedom-fund/ - submitted 18 Oct 2025

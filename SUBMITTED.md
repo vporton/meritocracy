@@ -94,3 +94,4 @@
 * A email from ffwd.com
   * Okta for Good: Nonprofit Technology Fellowship https://www.okta.com/company/okta-for-good/nonprofit-technology-fellows/ - submitted 18 Oct 2025
   * Open Technology Fund https://www.opentech.fund/funds/internet-freedom-fund/ - submitted 18 Oct 2025
+* breakthroughprize.org - emailed 19 Oct 2025.

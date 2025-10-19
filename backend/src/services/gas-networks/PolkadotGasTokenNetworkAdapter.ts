@@ -91,6 +91,23 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     return signer.address;
   }
 
+  private async resolveWalletAddress(config: PolkadotNetworkConfig): Promise<string | undefined> {
+    if (config.walletAddress) {
+      return config.walletAddress;
+    }
+    if (!config.secretUri) {
+      return undefined;
+    }
+    try {
+      const signer = await this.getSigner(config);
+      return signer.address;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [Polkadot] Failed to resolve wallet address: ${message}`);
+      return undefined;
+    }
+  }
+
   async getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
     const config = readPolkadotConfig();
     if (!config.enabled) {
@@ -107,6 +124,8 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       return [];
     }
 
+    const walletAddress = await this.resolveWalletAddress(config);
+
     return [
       {
         adapterType: this.type,
@@ -116,7 +135,8 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenSymbol: config.nativeSymbol,
         tokenDecimals: config.nativeDecimals,
         nativeTokenSymbol: config.nativeSymbol,
-        nativeTokenDecimals: config.nativeDecimals
+        nativeTokenDecimals: config.nativeDecimals,
+        walletAddress
       }
     ];
   }

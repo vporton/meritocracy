@@ -77,6 +77,16 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     return this.getSigner(config).publicKey;
   }
 
+  private resolveWalletAddress(config: SolanaNetworkConfig): string | undefined {
+    try {
+      return this.getPayerPublicKey(config).toBase58();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [Solana] Failed to resolve wallet address: ${message}`);
+      return config.walletAddress;
+    }
+  }
+
   async getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
     const config = readSolanaConfig();
     if (!config.enabled) {
@@ -102,7 +112,8 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenSymbol: config.nativeSymbol,
         tokenDecimals: config.nativeDecimals,
         nativeTokenSymbol: config.nativeSymbol,
-        nativeTokenDecimals: config.nativeDecimals
+        nativeTokenDecimals: config.nativeDecimals,
+        walletAddress: this.resolveWalletAddress(config)
       }
     ];
   }

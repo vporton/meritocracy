@@ -14,6 +14,14 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   async getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
     const contexts: GasTokenNetworkContext[] = [];
     const enabledNetworks = multiNetworkEthereumService.getEnabledNetworks();
+    let walletAddress: string | undefined;
+
+    try {
+      walletAddress = multiNetworkEthereumService.getAddress();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [EVM] Failed to resolve default wallet address: ${message}`);
+    }
 
     for (const networkName of enabledNetworks) {
       const config = multiNetworkEthereumService.getNetworkConfig(networkName);
@@ -37,7 +45,8 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenSymbol: nativeMetadata.symbol,
         tokenDecimals: nativeMetadata.decimals,
         nativeTokenSymbol: nativeMetadata.symbol,
-        nativeTokenDecimals: nativeMetadata.decimals
+        nativeTokenDecimals: nativeMetadata.decimals,
+        walletAddress
       });
     }
 

@@ -95,6 +95,47 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
   }
 
+  private async resolveWalletAddress(
+    config: BitcoinNetworkConfig,
+    client: Client
+  ): Promise<string | undefined> {
+    const labelsToCheck = new Set<string>();
+    if (config.walletName) {
+      labelsToCheck.add(config.walletName);
+    }
+    labelsToCheck.add('gas-distribution');
+
+    for (const label of labelsToCheck) {
+      try {
+        const addresses = await client.command('getaddressesbylabel', label);
+        if (addresses && typeof addresses === 'object') {
+          const candidates = Object.keys(addresses);
+          if (candidates.length > 0) {
+            return candidates[0];
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('Label not found')) {
+          continue;
+        }
+        console.warn(`⚠️  [Bitcoin] Failed to read address for label "${label}": ${message}`);
+      }
+    }
+
+    try {
+      const defaultAddress = await client.command('getrawchangeaddress');
+      if (typeof defaultAddress === 'string' && defaultAddress.length > 0) {
+        return defaultAddress;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [Bitcoin] Failed to resolve change address: ${message}`);
+    }
+
+    return undefined;
+  }
+
   async getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
     const config = readBitcoinConfig();
     if (!config.enabled) {
@@ -111,6 +152,15 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       return [];
     }
 
+    let walletAddress: string | undefined;
+    try {
+      const client = await this.getClient();
+      walletAddress = await this.resolveWalletAddress(config, client);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [Bitcoin] Failed to resolve wallet address: ${message}`);
+    }
+
     return [
       {
         adapterType: this.type,
@@ -120,7 +170,8 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenSymbol: config.nativeSymbol,
         tokenDecimals: config.nativeDecimals,
         nativeTokenSymbol: config.nativeSymbol,
-        nativeTokenDecimals: config.nativeDecimals
+        nativeTokenDecimals: config.nativeDecimals,
+        walletAddress
       }
     ];
   }

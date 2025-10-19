@@ -75,6 +75,11 @@ type ReserveStatusEntry = {
   gasPriceFormatted?: string;
 };
 
+type AdapterContextEntry = {
+  adapter: GasTokenNetworkAdapter;
+  context: GasTokenNetworkContext;
+};
+
 export class MultiNetworkGasTokenDistributionService {
   private prisma: PrismaClient;
   private readonly GAS_COST_VALUE_MULTIPLIER = 5;
@@ -99,6 +104,29 @@ export class MultiNetworkGasTokenDistributionService {
     this.defaultTokenOptions = {
       tokenType: defaultTokenOptions?.tokenType ?? 'NATIVE'
     };
+  }
+
+  private async collectNetworkAdapterContexts(
+    tokenOptions: TokenDistributionOptions
+  ): Promise<Map<string, AdapterContextEntry>> {
+    const contextEntries = new Map<string, AdapterContextEntry>();
+
+    for (const adapter of this.networkAdapters) {
+      let contexts: GasTokenNetworkContext[] = [];
+      try {
+        contexts = await adapter.getNetworkContexts(tokenOptions);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ Failed to load contexts for adapter ${adapter.type}: ${message}`);
+        continue;
+      }
+
+      for (const context of contexts) {
+        contextEntries.set(context.networkId, { adapter, context });
+      }
+    }
+
+    return contextEntries;
   }
 
   private resolveTokenOptions(overrides?: TokenDistributionOptions): TokenDistributionOptions {
@@ -670,57 +698,49 @@ export class MultiNetworkGasTokenDistributionService {
     });
   }
 
-  async getReserveStatus(overrides?: Partial<TokenDistributionOptions>) {
+  async getReserveStatus(
+    overrides?: Partial<TokenDistributionOptions>,
+    contextEntries?: Map<string, AdapterContextEntry>
+  ) {
     const tokenOptions = this.resolveTokenOptions(overrides);
+    const contexts = contextEntries ?? (await this.collectNetworkAdapterContexts(tokenOptions));
     const reserveStatus = new Map<string, ReserveStatusEntry>();
 
-    for (const adapter of this.networkAdapters) {
-      let contexts: GasTokenNetworkContext[] = [];
+    for (const [networkId, { adapter, context }] of contexts.entries()) {
+      const reserveRow = await this.prisma.gasTokenReserve.findUnique({
+        where: {
+          network_tokenSymbol_tokenType: {
+            network: context.networkId,
+            tokenSymbol: context.tokenSymbol,
+            tokenType: context.tokenType
+          }
+        }
+      });
+      let walletBalance = 0;
       try {
-        contexts = await adapter.getNetworkContexts(tokenOptions);
+        walletBalance = await adapter.getWalletBalance(context);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error(
-          `❌ Failed to load reserve context for adapter ${adapter.type}: ${message}`
+        console.warn(
+          `⚠️  Failed to read wallet balance for reserve status on ${context.networkName}: ${message}`
         );
-        continue;
       }
+      const reserveAmount = reserveRow ? Number(reserveRow.totalReserve) : 0;
+      const availableForDistribution = walletBalance + reserveAmount;
 
-      for (const context of contexts) {
-        const reserveRow = await this.prisma.gasTokenReserve.findUnique({
-          where: {
-            network_tokenSymbol_tokenType: {
-              network: context.networkId,
-              tokenSymbol: context.tokenSymbol,
-              tokenType: context.tokenType
-            }
-          }
-        });
-        let walletBalance = 0;
-        try {
-          walletBalance = await adapter.getWalletBalance(context);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          console.warn(
-            `⚠️  Failed to read wallet balance for reserve status on ${context.networkName}: ${message}`
-          );
-        }
-        const reserveAmount = reserveRow ? Number(reserveRow.totalReserve) : 0;
-        const availableForDistribution = walletBalance + reserveAmount;
-
-        reserveStatus.set(context.networkId, {
-          tokenSymbol: context.tokenSymbol,
-          tokenType: context.tokenType,
-          tokenDecimals: context.tokenDecimals,
-          nativeTokenSymbol: context.nativeTokenSymbol,
-          totalReserve: reserveAmount,
-          walletBalance,
-          availableForDistribution,
-          lastDistribution: reserveRow?.lastDistribution ?? null,
-          adapterType: context.adapterType,
-          networkName: context.networkName
-        });
-      }
+      reserveStatus.set(networkId, {
+        tokenSymbol: context.tokenSymbol,
+        tokenType: context.tokenType,
+        tokenDecimals: context.tokenDecimals,
+        nativeTokenSymbol: context.nativeTokenSymbol,
+        totalReserve: reserveAmount,
+        walletBalance,
+        availableForDistribution,
+        lastDistribution: reserveRow?.lastDistribution ?? null,
+        adapterType: context.adapterType,
+        networkName: context.networkName,
+        address: context.walletAddress
+      });
     }
 
     return reserveStatus;
@@ -755,7 +775,9 @@ export class MultiNetworkGasTokenDistributionService {
   }
 
   async getNetworkStatus(overrides?: Partial<TokenDistributionOptions>) {
-    const status = await this.getReserveStatus(overrides);
+    const tokenOptions = this.resolveTokenOptions(overrides);
+    const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
+    const status = await this.getReserveStatus(overrides, contextEntries);
 
     try {
       const networkInfo = await multiNetworkEthereumService.getAllNetworkInfo();
@@ -787,6 +809,52 @@ export class MultiNetworkGasTokenDistributionService {
       console.error('Failed to get EVM network status:', error);
     }
 
+    for (const [networkId, entryData] of contextEntries.entries()) {
+      const { adapter, context } = entryData;
+      const entry = status.get(networkId);
+
+      if (!entry) {
+        continue;
+      }
+
+      const walletBalance = entry.walletBalance ?? 0;
+      const balanceString =
+        entry.balance ??
+        (Number.isFinite(walletBalance) ? walletBalance.toString() : undefined);
+      const balanceFormatted =
+        entry.balanceFormatted ??
+        (Number.isFinite(walletBalance)
+          ? adapter.formatAmount(context, walletBalance)
+          : undefined);
+
+      let gasPrice = entry.gasPrice;
+      let gasPriceFormatted = entry.gasPriceFormatted;
+      const needsGasEstimate =
+        context.adapterType !== 'EVM' &&
+        (!gasPriceFormatted || gasPriceFormatted === 'N/A' || gasPriceFormatted === undefined);
+
+      if (needsGasEstimate) {
+        const estimatedGasCost = await this.estimateNetworkGasCost(adapter, context);
+        if (estimatedGasCost !== undefined) {
+          gasPrice = estimatedGasCost.toString();
+          gasPriceFormatted = adapter.formatAmount(context, estimatedGasCost);
+        } else {
+          gasPrice ??= 'N/A';
+          gasPriceFormatted ??= 'N/A';
+        }
+      }
+
+      status.set(networkId, {
+        ...entry,
+        name: entry.name ?? context.networkName,
+        address: entry.address ?? context.walletAddress,
+        balance: balanceString,
+        balanceFormatted,
+        gasPrice,
+        gasPriceFormatted
+      });
+    }
+
     for (const [networkId, entry] of status.entries()) {
       const walletBalance = entry.walletBalance ?? 0;
       const decimals = entry.tokenDecimals ?? 0;
@@ -796,22 +864,68 @@ export class MultiNetworkGasTokenDistributionService {
       const fallbackFormatted = Number.isFinite(walletBalance)
         ? walletBalance.toLocaleString('en-US', { maximumFractionDigits: decimals })
         : undefined;
+      const fallbackGasPrice =
+        entry.gasPrice ??
+        (entry.gasPriceFormatted && entry.gasPriceFormatted !== 'N/A'
+          ? entry.gasPriceFormatted
+          : undefined);
+      const fallbackGasPriceFormatted =
+        entry.gasPriceFormatted ?? (fallbackGasPrice ?? 'N/A');
 
       status.set(networkId, {
         ...entry,
         name: (entry as unknown as { name?: string }).name ?? entry.networkName ?? networkId,
         chainId: (entry as unknown as { chainId?: number }).chainId ?? undefined,
-        address: (entry as unknown as { address?: string }).address ?? undefined,
+        address: (entry as unknown as { address?: string }).address ?? entry.address ?? undefined,
         balance: (entry as unknown as { balance?: string }).balance ?? fallbackBalance,
-        gasPrice: (entry as unknown as { gasPrice?: string }).gasPrice ?? undefined,
+        gasPrice: (entry as unknown as { gasPrice?: string }).gasPrice ?? fallbackGasPrice,
         balanceFormatted:
           (entry as unknown as { balanceFormatted?: string | null }).balanceFormatted ??
           fallbackFormatted,
         gasPriceFormatted:
-          (entry as unknown as { gasPriceFormatted?: string }).gasPriceFormatted ?? undefined
+          (entry as unknown as { gasPriceFormatted?: string }).gasPriceFormatted ??
+          fallbackGasPriceFormatted
       });
     }
 
     return status;
+  }
+
+  private async estimateNetworkGasCost(
+    adapter: GasTokenNetworkAdapter,
+    context: GasTokenNetworkContext
+  ): Promise<number | undefined> {
+    const baseAmount = Math.max(1 / 10 ** context.tokenDecimals, Number.EPSILON);
+    const attemptAmounts = [baseAmount, baseAmount * 10];
+    const recipientAddress =
+      context.walletAddress ??
+      (context.adapterType === 'BITCOIN' ? '1BoatSLRHtKNngkdXEeobR76b53LETtpyT' : undefined);
+
+    if (!recipientAddress) {
+      return undefined;
+    }
+
+    for (const amountToken of attemptAmounts) {
+      try {
+        const estimate = await adapter.estimateTransfer(context, recipientAddress, amountToken);
+        if (estimate?.gasCostToken !== undefined) {
+          return estimate.gasCostToken;
+        }
+        if (!estimate?.deferReason) {
+          break;
+        }
+        if (!estimate.deferReason.toLowerCase().includes('too small')) {
+          break;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.warn(
+          `⚠️  Failed to estimate gas cost for ${context.networkName} (${context.adapterType}): ${message}`
+        );
+        break;
+      }
+    }
+
+    return undefined;
   }
 }

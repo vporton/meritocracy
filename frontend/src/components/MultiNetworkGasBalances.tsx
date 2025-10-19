@@ -2,16 +2,22 @@ import { useState, useEffect } from 'react'
 import api from '../services/api'
 
 interface NetworkInfo {
-  name: string;
-  chainId: number;
-  gasPrice: string; // Changed from bigint to string
-  balance: string; // Changed from bigint to string
-  address: string;
-  balanceFormatted: string;
-  gasPriceFormatted: string;
+  name?: string;
+  networkName?: string;
+  adapterType?: string;
+  chainId?: number;
+  tokenSymbol?: string;
+  nativeTokenSymbol?: string;
+  tokenDecimals?: number;
+  gasPrice?: string;
+  balance?: string;
+  address?: string;
+  balanceFormatted?: string;
+  gasPriceFormatted?: string;
   availableForDistribution?: number;
   totalReserve?: number;
   lastDistribution?: string;
+  walletBalance?: number;
 }
 
 interface MultiNetworkStatus {
@@ -152,11 +158,11 @@ function MultiNetworkGasBalances() {
           const reserveInfo = reserveStatus?.[networkName]
           const lastDistribution = networkInfo?.lastDistribution ?? reserveInfo?.lastDistribution
           
-          if (!networkInfo) {
-            return (
-              <div key={networkName} style={{
-                padding: '1rem',
-                background: '#2a1a1a',
+        if (!networkInfo) {
+          return (
+            <div key={networkName} style={{
+              padding: '1rem',
+              background: '#2a1a1a',
                 borderRadius: '8px',
                 border: '1px solid #dc2626'
               }}>
@@ -166,6 +172,23 @@ function MultiNetworkGasBalances() {
               </div>
             )
           }
+
+          const displayName = networkInfo.name ?? networkInfo.networkName ?? networkName
+          const chainBadgeText = typeof networkInfo.chainId === 'number'
+            ? `Chain ${networkInfo.chainId}`
+            : networkInfo.adapterType
+              ? `${networkInfo.adapterType} network`
+              : 'Network'
+          const tokenSymbol = networkInfo.tokenSymbol ?? networkInfo.nativeTokenSymbol ?? 'N/A'
+          const balanceFormatted = networkInfo.balanceFormatted ?? 'N/A'
+          const gasPriceFormatted = networkInfo.gasPriceFormatted ?? 'N/A'
+          const address = networkInfo.address ?? 'N/A'
+          const balanceDisplay = balanceFormatted === 'N/A'
+            ? 'N/A'
+            : `${balanceFormatted} ${tokenSymbol}`
+          const gasPriceDisplay = gasPriceFormatted === 'N/A'
+            ? 'N/A'
+            : `${gasPriceFormatted} ${tokenSymbol}`
 
           return (
             <div key={networkName} style={{
@@ -177,32 +200,35 @@ function MultiNetworkGasBalances() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <h4 style={{ margin: 0, color: '#646cff' }}>
-                  🌐 {networkName.toUpperCase()}
+                  🌐 {displayName}
                 </h4>
-                <span style={{
-                  padding: '0.2rem 0.6rem',
-                  background: '#4caf50',
-                  color: 'white',
-                  borderRadius: '12px',
-                  fontSize: '0.8rem',
-                  fontWeight: '500'
-                }}>
-                  Chain {networkInfo.chainId}
-                </span>
+                {chainBadgeText && (
+                  <span style={{
+                    padding: '0.2rem 0.6rem',
+                    background: '#4caf50',
+                    color: 'white',
+                    borderRadius: '12px',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    textTransform: 'uppercase'
+                  }}>
+                    {chainBadgeText}
+                  </span>
+                )}
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', fontSize: '0.9rem' }}>
                 <div>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Balance:</strong> {networkInfo.balanceFormatted} ETH
+                    <strong>Balance:</strong> {balanceDisplay}
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Gas Price:</strong> {networkInfo.gasPriceFormatted} ETH
+                    <strong>Gas Price:</strong> {gasPriceDisplay}
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Address:</strong> 
+                    <strong>Address:</strong>{" "} 
                     <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
-                      {networkInfo.address}
+                      {address}
                     </span>
                   </p>
                 </div>
@@ -221,7 +247,10 @@ function MultiNetworkGasBalances() {
       {/* Connection Issues Warning */}
       {networkStatus.enabledNetworks.some(networkName => {
         const networkInfo = networkStatus.networks[networkName]
-        return !networkInfo || networkInfo.balanceFormatted === 'N/A' || networkInfo.gasPriceFormatted === 'N/A'
+        if (!networkInfo) return true
+        const balanceFormatted = networkInfo.balanceFormatted ?? 'N/A'
+        const gasPriceFormatted = networkInfo.gasPriceFormatted ?? 'N/A'
+        return balanceFormatted === 'N/A' || gasPriceFormatted === 'N/A'
       }) && (
         <div style={{
           padding: '1rem',

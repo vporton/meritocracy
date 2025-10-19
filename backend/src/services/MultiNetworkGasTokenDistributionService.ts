@@ -230,17 +230,7 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         const currentReserve = await this.getTokenReserve(context);
-        let dynamicGasReserve = 0;
-        try {
-          dynamicGasReserve = await adapter.getDynamicGasReserve(context);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          console.warn(
-            `⚠️  Failed to compute gas reserve for ${context.networkName} (${context.adapterType}): ${message}`
-          );
-        }
-
-        const spendableFromWallet = Math.max(0, walletBalance - dynamicGasReserve);
+        const spendableFromWallet = Math.max(0, walletBalance);
         const totalAvailable = spendableFromWallet + currentReserve;
 
         if (totalAvailable <= 0) {
@@ -355,6 +345,7 @@ export class MultiNetworkGasTokenDistributionService {
         let gasCostToken: number | undefined;
         let estimationError: string | undefined;
         let shouldStopDueToGasCost = false;
+        let totalCostToken = dist.amountToken;
 
         let estimate: GasTransferEstimate | undefined;
         try {
@@ -369,11 +360,28 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
+          const totalRequired = dist.amountToken + gasCostToken;
+          if (totalRequired > remainingAmount + Number.EPSILON) {
+            const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
+            if (adjustedAmount <= 0) {
+              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(
+                6
+              )} ${context.tokenSymbol}`;
+              shouldStopDueToGasCost = true;
+            } else {
+              dist.amountToken = adjustedAmount;
+            }
+          }
+
           const minimumRequired = gasCostToken * this.GAS_COST_VALUE_MULTIPLIER;
-          if (dist.amountToken <= minimumRequired) {
+          if (!estimationError && dist.amountToken <= minimumRequired) {
             estimationError = this.buildGasCostMessage(context, gasCostToken, dist.amountToken);
             shouldStopDueToGasCost = true;
           }
+
+          totalCostToken = dist.amountToken + gasCostToken;
+        } else {
+          totalCostToken = dist.amountToken;
         }
 
         if (estimate?.deferReason) {
@@ -448,7 +456,7 @@ export class MultiNetworkGasTokenDistributionService {
           });
 
           result.distributedAmount += dist.amountToken;
-          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
+          remainingAmount = Math.max(0, remainingAmount - totalCostToken);
 
           const gasInfo =
             gasCostToken !== undefined
@@ -697,17 +705,8 @@ export class MultiNetworkGasTokenDistributionService {
             `⚠️  Failed to read wallet balance for reserve status on ${context.networkName}: ${message}`
           );
         }
-        let gasReserve = 0;
-        try {
-          gasReserve = await adapter.getDynamicGasReserve(context);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          console.warn(
-            `⚠️  Failed to compute gas reserve for ${context.networkName}: ${message}`
-          );
-        }
         const reserveAmount = reserveRow ? Number(reserveRow.totalReserve) : 0;
-        const availableForDistribution = walletBalance - gasReserve + reserveAmount;
+        const availableForDistribution = walletBalance + reserveAmount;
 
         reserveStatus.set(context.networkId, {
           tokenSymbol: context.tokenSymbol,

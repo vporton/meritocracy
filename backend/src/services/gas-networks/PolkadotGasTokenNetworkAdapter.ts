@@ -132,10 +132,6 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     return convertPlanckToUnits(free, context.tokenDecimals);
   }
 
-  async getDynamicGasReserve(_context: GasTokenNetworkContext): Promise<number> {
-    return Number(process.env.POLKADOT_MIN_GAS_RESERVE ?? '0.001'); // FIXME@P2
-  }
-
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string {
     return amountToken.toLocaleString('en-US', {
       useGrouping: false,

@@ -9,8 +9,8 @@ interface NetworkInfo {
   address: string;
   balanceFormatted: string;
   gasPriceFormatted: string;
-  availableForDistribution: number;
-  totalReserve: number;
+  availableForDistribution?: number;
+  totalReserve?: number;
   lastDistribution?: string;
 }
 
@@ -22,9 +22,9 @@ interface MultiNetworkStatus {
 
 interface ReserveStatus {
   [networkName: string]: {
-    totalReserve: number;
-    walletBalance: number;
-    availableForDistribution: number;
+    totalReserve?: number;
+    walletBalance?: number;
+    availableForDistribution?: number;
     lastDistribution?: string;
   };
 }
@@ -150,6 +150,7 @@ function MultiNetworkGasBalances() {
         {networkStatus.enabledNetworks.map((networkName) => {
           const networkInfo = networkStatus.networks[networkName]
           const reserveInfo = reserveStatus?.[networkName]
+          const lastDistribution = networkInfo?.lastDistribution ?? reserveInfo?.lastDistribution
           
           if (!networkInfo) {
             return (
@@ -190,7 +191,7 @@ function MultiNetworkGasBalances() {
                 </span>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', fontSize: '0.9rem' }}>
                 <div>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Balance:</strong> {networkInfo.balanceFormatted} ETH
@@ -205,19 +206,11 @@ function MultiNetworkGasBalances() {
                     </span>
                   </p>
                 </div>
-                <div>
-                  <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Available:</strong> {reserveInfo?.availableForDistribution?.toFixed(6) || 'N/A'} ETH
-                  </p>
-                  <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Reserve:</strong> {reserveInfo?.totalReserve?.toFixed(6) || '0'} ETH
-                  </p>
-                </div>
               </div>
-              
-              {networkInfo.lastDistribution && (
+
+              {lastDistribution && (
                 <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
-                  Last Distribution: {new Date(networkInfo.lastDistribution).toLocaleString()}
+                  Last Distribution: {new Date(lastDistribution).toLocaleString()}
                 </p>
               )}
             </div>

@@ -49,23 +49,6 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     return Number(multiNetworkEthereumService.formatUnits(balanceRaw, context.tokenDecimals));
   }
 
-  async getDynamicGasReserve(context: GasTokenNetworkContext): Promise<number> {
-    if (context.tokenType !== 'NATIVE') {
-      return 0;
-    }
-
-    try {
-      const gasPriceWei = await multiNetworkEthereumService.getGasPrice(context.networkId);
-      const gasPrice = Number(
-        multiNetworkEthereumService.formatUnits(gasPriceWei, context.nativeTokenDecimals)
-      );
-      return 0.3 * gasPrice;
-    } catch (error) {
-      console.warn(`⚠️  [EVM] Failed to get gas price for ${context.networkName}, using minimum reserve.`);
-      return 0.001;
-    }
-  }
-
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string {
     return amountToken.toLocaleString('en-US', {
       useGrouping: false,

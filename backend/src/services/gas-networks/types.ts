@@ -30,7 +30,6 @@ export interface GasTokenNetworkAdapter {
   readonly type: GasTokenNetworkType;
   getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]>;
   getWalletBalance(context: GasTokenNetworkContext): Promise<number>;
-  getDynamicGasReserve(context: GasTokenNetworkContext): Promise<number>;
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string;
   getRecipientAddress(user: User): string | null;
   estimateTransfer(

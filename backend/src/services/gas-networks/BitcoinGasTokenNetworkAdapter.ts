@@ -131,10 +131,6 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     return typeof balance === 'string' ? Number(balance) : balance ?? 0;
   }
 
-  async getDynamicGasReserve(_context: GasTokenNetworkContext): Promise<number> {
-    return Number(process.env.BITCOIN_MIN_GAS_RESERVE ?? '0.0001'); // FIXME@P2
-  }
-
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string {
     return amountToken.toLocaleString('en-US', {
       useGrouping: false,

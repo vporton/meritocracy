@@ -21,6 +21,9 @@ import dotenv from 'dotenv';
 // TODO@P3: duplicate code
 dotenv.config();
 dotenv.config({ path: 'ethereum-keys.secret' });
+dotenv.config({ path: 'solana-keys.secret' });
+dotenv.config({ path: 'bitcoin-keys.secret' });
+dotenv.config({ path: 'polkadot-keys.secret' });
 
 // Get __dirname equivalent for ES modules
 // const __filename = fileURLToPath(import.meta.url);

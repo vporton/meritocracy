@@ -21,6 +21,9 @@ import { TokenDescriptor } from '../types/token.js';
 // Load environment variables
 dotenv.config();
 dotenv.config({ path: 'ethereum-keys.secret' });
+dotenv.config({ path: 'solana-keys.secret' });
+dotenv.config({ path: 'bitcoin-keys.secret' });
+dotenv.config({ path: 'polkadot-keys.secret' });
 
 const ERC20_ABI = [
     {

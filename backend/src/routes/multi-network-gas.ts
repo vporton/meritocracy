@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { MultiNetworkGasTokenDistributionService, type TokenDistributionOptions } from '../services/MultiNetworkGasTokenDistributionService.js';
+import { MultiNetworkGasTokenDistributionService } from '../services/MultiNetworkGasTokenDistributionService.js';
+import type { TokenDistributionOptions } from '../services/gas-networks/types.js';
 import { multiNetworkEthereumService } from '../services/MultiNetworkEthereumService.js';
 
 const router = Router();

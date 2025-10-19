@@ -93,6 +93,37 @@ primary_region = 'ewr'
   MEZO_TESTNET_ENABLED=true
   MEZO_TESTNET_RPC_URL="https://rpc.test.mezo.org"
 
+  # Solana Configuration
+  SOLANA_ENABLED="true"
+  SOLANA_NETWORK_ID="solana-mainnet"
+  SOLANA_NETWORK_NAME="Solana Mainnet"
+  SOLANA_NATIVE_SYMBOL="SOL"
+  SOLANA_NATIVE_DECIMALS="9"
+  SOLANA_MIN_GAS_RESERVE="0.0001"
+  SOLANA_RPC_URL="https://api.mainnet-beta.solana.com"
+  SOLANA_WALLET_ADDRESS=""
+
+  # Bitcoin Configuration
+  BITCOIN_ENABLED="true"
+  BITCOIN_NETWORK_ID="bitcoin-mainnet"
+  BITCOIN_NETWORK_NAME="Bitcoin Mainnet"
+  BITCOIN_NATIVE_SYMBOL="BTC"
+  BITCOIN_NATIVE_DECIMALS="8"
+  BITCOIN_MIN_GAS_RESERVE="0.0001"
+  BITCOIN_RPC_URL="http://localhost:8332"
+  BITCOIN_RPC_USERNAME=""
+  BITCOIN_RPC_PASSWORD=""
+
+  # Polkadot Configuration
+  POLKADOT_ENABLED="true"
+  POLKADOT_NETWORK_ID="polkadot-mainnet"
+  POLKADOT_NETWORK_NAME="Polkadot Mainnet"
+  POLKADOT_NATIVE_SYMBOL="DOT"
+  POLKADOT_NATIVE_DECIMALS="10"
+  POLKADOT_MIN_GAS_RESERVE="0.001"
+  POLKADOT_RPC_URL="https://rpc.polkadot.io"
+  POLKADOT_WALLET_ADDRESS=""
+
 
   # OAuth Provider Configuration
   # GitHub OAuth

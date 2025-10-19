@@ -59,7 +59,7 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       const gasPrice = Number(
         multiNetworkEthereumService.formatUnits(gasPriceWei, context.nativeTokenDecimals)
       );
-      return Math.max(0.3 * gasPrice, 0.001);
+      return 0.3 * gasPrice;
     } catch (error) {
       console.warn(`⚠️  [EVM] Failed to get gas price for ${context.networkName}, using minimum reserve.`);
       return 0.001;

@@ -116,7 +116,7 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   }
 
   async getDynamicGasReserve(_context: GasTokenNetworkContext): Promise<number> {
-    return Number(process.env.SOLANA_MIN_GAS_RESERVE ?? '0.0001');
+    return Number(process.env.SOLANA_MIN_GAS_RESERVE ?? '0.0001'); //FIXME@P2
   }
 
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string {

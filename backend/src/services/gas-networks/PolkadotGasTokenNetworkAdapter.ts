@@ -133,7 +133,7 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   }
 
   async getDynamicGasReserve(_context: GasTokenNetworkContext): Promise<number> {
-    return Number(process.env.POLKADOT_MIN_GAS_RESERVE ?? '0.001');
+    return Number(process.env.POLKADOT_MIN_GAS_RESERVE ?? '0.001'); // FIXME@P2
   }
 
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string {

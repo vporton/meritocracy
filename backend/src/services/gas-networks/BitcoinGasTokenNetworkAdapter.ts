@@ -39,7 +39,7 @@ const readBitcoinConfig = (): BitcoinNetworkConfig => ({
 });
 
 const createClient = (config: BitcoinNetworkConfig): Client => {
-  if (!config.rpcUrl || !config.rpcUsername || !config.rpcPassword) {
+  if (!config.rpcUrl /*|| !config.rpcUsername || !config.rpcPassword*/) {
     throw new Error('[Bitcoin] RPC configuration missing');
   }
   const url = new URL(config.rpcUrl);
@@ -64,22 +64,24 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'BITCOIN';
   private client?: Client;
   private privateKeyImported = false;
+  private privateKeyImportAttempted = false;
 
   private async getClient(): Promise<Client> {
     const config = readBitcoinConfig();
     if (!this.client) {
       this.client = createClient(config);
     }
-    if (!this.privateKeyImported) {
+    if (!this.privateKeyImported && !this.privateKeyImportAttempted) {
       await this.ensureWalletKey(this.client, config);
     }
     return this.client;
   }
 
   private async ensureWalletKey(client: Client, config: BitcoinNetworkConfig): Promise<void> {
-    if (!config.wif || this.privateKeyImported === true) {
+    if (!config.wif || this.privateKeyImported === true || this.privateKeyImportAttempted === true) {
       return;
     }
+    this.privateKeyImportAttempted = true;
     try {
       await client.command('importprivkey', config.wif, config.walletName ?? 'gas-distribution', false);
       this.privateKeyImported = true;
@@ -92,6 +94,9 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         return;
       }
       console.warn(`⚠️  [Bitcoin] Failed to import private key: ${message}`);
+      if (!/auth/i.test(message)) {
+        this.privateKeyImportAttempted = false;
+      }
     }
   }
 
@@ -142,7 +147,7 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       return [];
     }
 
-    if (!config.rpcUrl || !config.rpcUsername || !config.rpcPassword) {
+    if (!config.rpcUrl/* || !config.rpcUsername || !config.rpcPassword*/) {
       console.warn('⚠️  [Bitcoin] Missing RPC configuration, skipping.');
       return [];
     }

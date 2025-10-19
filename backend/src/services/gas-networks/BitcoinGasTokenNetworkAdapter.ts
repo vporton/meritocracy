@@ -31,9 +31,9 @@ const readBitcoinConfig = (): BitcoinNetworkConfig => ({
   rpcUrl: process.env.BITCOIN_RPC_URL,
   rpcUsername: process.env.BITCOIN_RPC_USERNAME,
   rpcPassword: process.env.BITCOIN_RPC_PASSWORD,
-  // headers: {
-  //   "Authorization": "Bearer " + process.env.BITCOIN_RPC_KEY,
-  // },
+  headers: {
+    "Authorization": "Bearer " + process.env.BITCOIN_RPC_KEY,
+  },
   walletName: process.env.BITCOIN_WALLET_NAME,
   wif: process.env.BITCOIN_WIF
 });

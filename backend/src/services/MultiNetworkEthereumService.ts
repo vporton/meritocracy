@@ -245,7 +245,7 @@ export class MultiNetworkEthereumService {
                 nativeTokenSymbol: localhost.nativeCurrency.symbol,
                 nativeTokenDecimals: localhost.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
-            }
+            },
         ];
 
         for (const networkConfig of networkConfigs) {

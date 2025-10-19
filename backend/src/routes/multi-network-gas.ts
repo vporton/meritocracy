@@ -41,11 +41,13 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
 router.get('/status', async (req, res) => {
   try {
     const overrides = parseTokenDistributionOverrides(req.query);
+    const enabledNetworkDetails = await multiNetworkGasTokenDistributionService.getEnabledNetworks(overrides);
     const networkStatus = await multiNetworkGasTokenDistributionService.getNetworkStatus(overrides);
-    const enabledNetworks = multiNetworkEthereumService.getEnabledNetworks();
-    
+    const enabledNetworks = enabledNetworkDetails.map(network => network.networkId);
+
     const status = {
       enabledNetworks,
+      networkDetails: enabledNetworkDetails,
       networks: Object.fromEntries(networkStatus),
       totalNetworks: enabledNetworks.length,
       token: {
@@ -134,19 +136,46 @@ router.get('/network/:networkName/status', async (req, res) => {
   try {
     const { networkName } = req.params;
     const overrides = parseTokenDistributionOverrides(req.query);
-    
-    const networkInfo = await multiNetworkEthereumService.getNetworkInfo(networkName);
     const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus(overrides);
     const networkReserve = reserveStatus.get(networkName);
-    
+
+    let evmInfo: Awaited<ReturnType<typeof multiNetworkEthereumService.getNetworkInfo>> | null = null;
+    try {
+      evmInfo = await multiNetworkEthereumService.getNetworkInfo(networkName);
+    } catch (error) {
+      if (!networkReserve) {
+        return res.status(404).json({
+          success: false,
+          error: `Network ${networkName} not found`
+        });
+      }
+      console.warn(`ℹ️  Network ${networkName} not managed by EVM service:`, error);
+    }
+
+    const walletBalance = networkReserve?.walletBalance ?? 0;
+    const tokenDecimals = networkReserve?.tokenDecimals ?? 0;
+    const fallbackBalance = walletBalance.toString();
+    const fallbackBalanceFormatted = walletBalance.toLocaleString('en-US', {
+      maximumFractionDigits: tokenDecimals
+    });
+
     const status = {
-      ...networkInfo,
-      ...networkReserve,
-      balanceFormatted: multiNetworkEthereumService.formatEther(networkInfo.balance),
-      gasPriceFormatted: multiNetworkEthereumService.formatEther(networkInfo.gasPrice)
+      name: evmInfo?.name ?? networkReserve?.networkName ?? networkName,
+      chainId: evmInfo?.chainId ?? null,
+      address: evmInfo?.address ?? null,
+      balance: evmInfo ? evmInfo.balance.toString() : fallbackBalance,
+      gasPrice: evmInfo ? evmInfo.gasPrice.toString() : null,
+      balanceFormatted: evmInfo
+        ? multiNetworkEthereumService.formatEther(evmInfo.balance)
+        : fallbackBalanceFormatted,
+      gasPriceFormatted: evmInfo
+        ? multiNetworkEthereumService.formatEther(evmInfo.gasPrice)
+        : null,
+      adapterType: networkReserve?.adapterType ?? (evmInfo ? 'EVM' : 'UNKNOWN'),
+      ...networkReserve
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: status,
       token: {
@@ -155,7 +184,7 @@ router.get('/network/:networkName/status', async (req, res) => {
     });
   } catch (error) {
     console.error(`Error getting status for network ${req.params.networkName}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     });

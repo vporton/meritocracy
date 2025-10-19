@@ -727,6 +727,34 @@ export class MultiNetworkGasTokenDistributionService {
     return reserveStatus;
   }
 
+  async getEnabledNetworks(overrides?: Partial<TokenDistributionOptions>) {
+    const tokenOptions = this.resolveTokenOptions(overrides);
+    const networks = new Map<
+      string,
+      { networkId: string; networkName: string; adapterType: string }
+    >();
+
+    for (const adapter of this.networkAdapters) {
+      try {
+        const contexts = await adapter.getNetworkContexts(tokenOptions);
+        for (const context of contexts) {
+          networks.set(context.networkId, {
+            networkId: context.networkId,
+            networkName: context.networkName,
+            adapterType: context.adapterType
+          });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error(
+          `❌ Failed to enumerate networks for adapter ${adapter.type}: ${message}`
+        );
+      }
+    }
+
+    return Array.from(networks.values());
+  }
+
   async getNetworkStatus(overrides?: Partial<TokenDistributionOptions>) {
     const status = await this.getReserveStatus(overrides);
 
@@ -758,6 +786,31 @@ export class MultiNetworkGasTokenDistributionService {
       }
     } catch (error) {
       console.error('Failed to get EVM network status:', error);
+    }
+
+    for (const [networkId, entry] of status.entries()) {
+      const walletBalance = entry.walletBalance ?? 0;
+      const decimals = entry.tokenDecimals ?? 0;
+      const fallbackBalance = Number.isFinite(walletBalance)
+        ? walletBalance.toString()
+        : undefined;
+      const fallbackFormatted = Number.isFinite(walletBalance)
+        ? walletBalance.toLocaleString('en-US', { maximumFractionDigits: decimals })
+        : undefined;
+
+      status.set(networkId, {
+        ...entry,
+        name: (entry as unknown as { name?: string }).name ?? entry.networkName ?? networkId,
+        chainId: (entry as unknown as { chainId?: number }).chainId ?? undefined,
+        address: (entry as unknown as { address?: string }).address ?? undefined,
+        balance: (entry as unknown as { balance?: string }).balance ?? fallbackBalance,
+        gasPrice: (entry as unknown as { gasPrice?: string }).gasPrice ?? undefined,
+        balanceFormatted:
+          (entry as unknown as { balanceFormatted?: string | null }).balanceFormatted ??
+          fallbackFormatted,
+        gasPriceFormatted:
+          (entry as unknown as { gasPriceFormatted?: string }).gasPriceFormatted ?? undefined
+      });
     }
 
     return status;

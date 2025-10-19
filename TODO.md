@@ -55,3 +55,5 @@
 
 - TODO@P1 Check correct entry of non-EVM addresses. If a wrong address is stored, don't stop
           distribution to the rest of users.
+
+- TODO@P1 Debug migrations, they seem to be buggy.

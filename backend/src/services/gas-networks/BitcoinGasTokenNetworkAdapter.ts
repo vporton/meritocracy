@@ -18,6 +18,8 @@ interface BitcoinNetworkConfig {
   rpcUsername?: string;
   rpcPassword?: string;
   walletName?: string;
+  wif?: string;
+  headers?: Record<string, string>;
 }
 
 const readBitcoinConfig = (): BitcoinNetworkConfig => ({
@@ -29,7 +31,11 @@ const readBitcoinConfig = (): BitcoinNetworkConfig => ({
   rpcUrl: process.env.BITCOIN_RPC_URL,
   rpcUsername: process.env.BITCOIN_RPC_USERNAME,
   rpcPassword: process.env.BITCOIN_RPC_PASSWORD,
-  walletName: process.env.BITCOIN_WALLET_NAME
+  // headers: {
+  //   "Authorization": "Bearer " + process.env.BITCOIN_RPC_KEY,
+  // },
+  walletName: process.env.BITCOIN_WALLET_NAME,
+  wif: process.env.BITCOIN_WIF
 });
 
 const createClient = (config: BitcoinNetworkConfig): Client => {
@@ -38,10 +44,11 @@ const createClient = (config: BitcoinNetworkConfig): Client => {
   }
   const url = new URL(config.rpcUrl);
   const options: any = {
-    host: url.hostname,
+    host: url.protocol + "//" + url.hostname + ":" + url.port,
     username: config.rpcUsername,
     password: config.rpcPassword,
-    wallet: config.walletName
+    wallet: config.walletName,
+    headers: config.headers,
   };
   if (url.port) {
     options.port = Number(url.port);
@@ -56,13 +63,36 @@ const createClient = (config: BitcoinNetworkConfig): Client => {
 export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'BITCOIN';
   private client?: Client;
+  private privateKeyImported = false;
 
-  private ensureClient(): Client {
+  private async getClient(): Promise<Client> {
+    const config = readBitcoinConfig();
     if (!this.client) {
-      const config = readBitcoinConfig();
       this.client = createClient(config);
     }
+    if (!this.privateKeyImported) {
+      await this.ensureWalletKey(this.client, config);
+    }
     return this.client;
+  }
+
+  private async ensureWalletKey(client: Client, config: BitcoinNetworkConfig): Promise<void> {
+    if (!config.wif || this.privateKeyImported === true) {
+      return;
+    }
+    try {
+      await client.command('importprivkey', config.wif, config.walletName ?? 'gas-distribution', false);
+      this.privateKeyImported = true;
+      console.log('🔑 [Bitcoin] Private key imported into wallet.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('already there') || message.includes('exists')) {
+        this.privateKeyImported = true;
+        console.log('ℹ️  [Bitcoin] Private key already present in wallet.');
+        return;
+      }
+      console.warn(`⚠️  [Bitcoin] Failed to import private key: ${message}`);
+    }
   }
 
   async getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
@@ -96,7 +126,7 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   }
 
   async getWalletBalance(_context: GasTokenNetworkContext): Promise<number> {
-    const client = this.ensureClient();
+    const client = await this.getClient();
     const balance = await client.command('getbalance');
     return typeof balance === 'string' ? Number(balance) : balance ?? 0;
   }
@@ -122,7 +152,7 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     _amountToken: number
   ): Promise<GasTransferEstimate> {
     try {
-      const client = this.ensureClient();
+      const client = await this.getClient();
       const estimate = await client.command('estimatesmartfee', 6);
       const feerate = typeof estimate?.feerate === 'number' ? estimate.feerate : Number(estimate?.feerate ?? 0);
       return feerate > 0 ? { gasCostToken: feerate } : {};
@@ -140,7 +170,7 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     if (amountToken <= 0) {
       throw new Error('[Bitcoin] Transfer amount must be greater than zero');
     }
-    const client = this.ensureClient();
+    const client = await this.getClient();
     const txId = await client.command('sendtoaddress', recipientAddress, amountToken);
     return { transactionHash: txId };
   }

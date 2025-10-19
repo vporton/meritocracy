@@ -79,7 +79,7 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
     await cryptoWaitReady();
     const keyring = new Keyring({ type: 'sr25519' });
-    this.signer = keyring.addFromUri(config.secretUri);
+    this.signer = keyring.addFromMnemonic(config.secretUri); // keyring.addFromUri(config.secretUri); // TODO@P3: Support both.
     return this.signer;
   }
 

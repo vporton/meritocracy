@@ -24,6 +24,8 @@ CREATE TABLE "users" (
     "personalNumber" TEXT
 );
 
+CREATE INDEX "users_onboarded_shareInGDP_desc_idx" ON "users"("onboarded", "shareInGDP" DESC);
+
 -- CreateTable
 CREATE TABLE "sessions" (
     "id" TEXT NOT NULL PRIMARY KEY,

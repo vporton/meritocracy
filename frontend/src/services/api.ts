@@ -24,6 +24,9 @@ interface User {
   emailVerified?: boolean;
   name?: string;
   ethereumAddress?: string;
+  solanaAddress?: string | null;
+  bitcoinAddress?: string | null;
+  polkadotAddress?: string | null;
   orcidId?: string;
   githubHandle?: string;
   bitbucketHandle?: string;
@@ -65,6 +68,9 @@ interface CreatePostData {
 interface UpdateUserData {
   email?: string;
   name?: string;
+  solanaAddress?: string | null;
+  bitcoinAddress?: string | null;
+  polkadotAddress?: string | null;
 }
 
 interface UpdatePostData {

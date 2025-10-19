@@ -52,3 +52,6 @@
 - TODO@P3 Donation to the system through MetaMask et al.
 
 - Make our AI to summarize each time when it asserts worth and save work and/or go further building on it the next time.
+
+- TODO@P1 Check correct entry of non-EVM addresses. If a wrong address is stored, don't stop
+          distribution to the rest of users.

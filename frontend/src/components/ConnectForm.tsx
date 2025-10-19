@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useConnect, useAccount, useSignMessage, useConnectorClient } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
-import { User, authApi } from '../services/api';
+import { User, authApi, usersApi } from '../services/api';
 import './ConnectForm.css';
 
 interface ConnectStatus {
@@ -55,6 +55,11 @@ const ConnectForm = () => {
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [nonEvmForm, setNonEvmForm] = useState({
+    solanaAddress: '',
+    bitcoinAddress: '',
+    polkadotAddress: '',
+  });
   
   // Handle Ethereum connection flow when address becomes available
   // Note: This useEffect is disabled in favor of manual authentication flow in wallet selection
@@ -72,6 +77,22 @@ const ConnectForm = () => {
     console.log('Automatic authentication disabled - use wallet selection modal instead');
   }, [address, isConnected, signMessageAsync, login, connectors, connector, connectorClient, connectStatus.ethereum]);
   
+  useEffect(() => {
+    if (user) {
+      setNonEvmForm({
+        solanaAddress: user.solanaAddress ?? '',
+        bitcoinAddress: user.bitcoinAddress ?? '',
+        polkadotAddress: user.polkadotAddress ?? '',
+      });
+    } else {
+      setNonEvmForm({
+        solanaAddress: '',
+        bitcoinAddress: '',
+        polkadotAddress: '',
+      });
+    }
+  }, [user]);
+  
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
     if (isAuthenticated && user) {
@@ -79,6 +100,9 @@ const ConnectForm = () => {
       
       // Check which providers are connected
       if (user.ethereumAddress) connectedProviders.push({ name: 'Ethereum', value: user.ethereumAddress });
+      if (user.solanaAddress) connectedProviders.push({ name: 'Solana', value: user.solanaAddress });
+      if (user.bitcoinAddress) connectedProviders.push({ name: 'Bitcoin', value: user.bitcoinAddress });
+      if (user.polkadotAddress) connectedProviders.push({ name: 'Polkadot', value: user.polkadotAddress });
       if (user.orcidId) connectedProviders.push({ name: 'ORCID', value: user.orcidId });
       if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
       if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
@@ -608,6 +632,40 @@ const ConnectForm = () => {
     }
   };
 
+  const handleNonEvmSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!user) {
+      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: 'You must be logged in to save addresses' }));
+      return;
+    }
+
+    try {
+      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'processing', error: undefined }));
+
+      await usersApi.update(user.id, {
+        solanaAddress: nonEvmForm.solanaAddress.trim() || null,
+        bitcoinAddress: nonEvmForm.bitcoinAddress.trim() || null,
+        polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
+      });
+
+      await refreshUser();
+
+      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'success' }));
+
+      setTimeout(() => {
+        setConnectStatus(prev => {
+          const { nonEvmAddresses, ...rest } = prev;
+          return rest;
+        });
+      }, 2000);
+    } catch (error: any) {
+      console.error('Non-EVM address update failed:', error);
+      const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
+      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: errorMessage }));
+    }
+  };
+
   // Helper function to check if a provider is connected
   const isProviderConnected = (provider: string): boolean => {
     if (!user) return false;
@@ -834,6 +892,63 @@ const ConnectForm = () => {
         </button>
       </div>
 
+      <div className="non-evm-addresses">
+        <h3>Non-EVM Addresses</h3>
+        <form onSubmit={handleNonEvmSubmit}>
+          <div className="form-group">
+            <label htmlFor="solanaAddress">Solana Address</label>
+            <input
+              type="text"
+              id="solanaAddress"
+              value={nonEvmForm.solanaAddress}
+              onChange={(e) => setNonEvmForm(prev => ({ ...prev, solanaAddress: e.target.value }))}
+              placeholder="Enter your Solana address"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="bitcoinAddress">Bitcoin Address</label>
+            <input
+              type="text"
+              id="bitcoinAddress"
+              value={nonEvmForm.bitcoinAddress}
+              onChange={(e) => setNonEvmForm(prev => ({ ...prev, bitcoinAddress: e.target.value }))}
+              placeholder="Enter your Bitcoin address"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="polkadotAddress">Polkadot Address</label>
+            <input
+              type="text"
+              id="polkadotAddress"
+              value={nonEvmForm.polkadotAddress}
+              onChange={(e) => setNonEvmForm(prev => ({ ...prev, polkadotAddress: e.target.value }))}
+              placeholder="Enter your Polkadot address"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="submit-button"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            >
+              {connectStatus.nonEvmAddresses === 'processing' ? 'Saving...' : 'Save Addresses'}
+            </button>
+          </div>
+          {connectStatus.nonEvmAddresses === 'success' && (
+            <p className="success-message">Addresses saved successfully.</p>
+          )}
+          {connectStatus.nonEvmAddresses === 'error' && connectStatus.error && (
+            <p className="error-message">{connectStatus.error}</p>
+          )}
+          {!isAuthenticated && (
+            <p className="info-message">Log in or connect an account before saving addresses.</p>
+          )}
+        </form>
+      </div>
+
       {/* Email Form */}
       {showEmailForm && (
         <div className="email-form">
@@ -891,7 +1006,7 @@ const ConnectForm = () => {
 
       {/* Error Display */}
       {Object.entries(connectStatus).map(([provider, status]) => 
-        status === 'error' && (
+        status === 'error' && provider !== 'nonEvmAddresses' && (
           <div key={provider} className="error-message">
             {provider.toUpperCase()} connection failed: {connectStatus.error}
           </div>

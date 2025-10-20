@@ -87,7 +87,7 @@
   * https://accelerator.ou.org/apply - contacted 12 Oct 2025, will consider for the next cohort
   * https://astera.org - sent 12 Oct 2025
   * https://www.openphilanthropy.org - contacted 12 Oct 2025
-  * https://www.shell.com/what-we-do/technology-and-innovation/innovate-with-shell/share-your-idea.html - submitted 12 Oct 2025
+  * https://www.shell.com/what-we-do/technology-and-innovation/innovate-with-shell/share-your-idea.html - submitted 12 Oct 2025 - rejected 20 Oct 2025 "not a potential GameChanger project for us"
   * https://chainforgood.org - submitted 12 Oct 2025
   * https://app.akindo.io - applied
   * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIS 17 Sep 2025 - rejected 14 Oct 2025 "paying attention to experiments in funding and resource allocation, but are not currently making grants in this area"

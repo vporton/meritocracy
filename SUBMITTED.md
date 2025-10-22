@@ -48,7 +48,7 @@
   * https://genaifund.ai/fintech-ai-innovation-grants/ - applied 1 Oct 2025.
   * https://www2.fundsforngos.org/articles-listicles/20-grants-for-ngos-using-ai-for-social-good/
     * AI for social good awards https://research.google/programs-and-events/past-programs/ai-for-social-good-awards/ - not found how to contact.
-    * IBM Watson AI XPRIZE - past competition
+    * IBM Watson AI XPRIZE https://www.xprize.org/ - emailed 22 Oct 2025
     * https://omidyar.com - We do not accept funding requests or proposals. 
     * https://data.org - submitted 2 Oct 2025
     * https://www2.fundsforngos.org - noted
@@ -97,3 +97,4 @@
 * breakthroughprize.org - emailed 19 Oct 2025.
 * https://www.google.com/search?q=charity+for+science
   * Israel Science Foundation (ISF) https://www.isf.org.il (only one application per year, University for participants mandatory) - hard to submit without good Hebrew
+* DFINITY https://dfinity.org/grants/ - submitted 22 Oct 2025.

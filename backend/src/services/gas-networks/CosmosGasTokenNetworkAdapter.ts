@@ -51,6 +51,7 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'COSMOS';
   private walletPromise?: Promise<DirectSecp256k1HdWallet>;
   private clientPromise?: Promise<SigningStargateClient>;
+  private contextLogged = false;
 
   private ensureEnabledConfig(): CosmosNetworkConfig {
     const config = readCosmosConfig();
@@ -61,7 +62,9 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       throw new Error('[Cosmos] COSMOS_RPC_URL not configured');
     }
     if (!config.mnemonic) {
-      throw new Error('[Cosmos] COSMOS_MNEMONIC not configured');
+      throw new Error(
+        '[Cosmos] COSMOS_MNEMONIC not configured. Provide a signing mnemonic to enable ATOM distributions.'
+      );
     }
     return config;
   }
@@ -117,9 +120,14 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     if (!config.enabled) {
       return [];
     }
-    if (!config.rpcUrl || !config.mnemonic) {
-      console.warn('⚠️  [Cosmos] Missing RPC URL or mnemonic, skipping.');
+    if (!config.rpcUrl) {
+      console.warn('⚠️  [Cosmos] Missing RPC URL, skipping.');
       return [];
+    }
+    if (!config.mnemonic && !config.walletAddress) {
+      console.warn(
+        '⚠️  [Cosmos] ATOM wallet is missing! Set COSMOS_MNEMONIC (signing) or COSMOS_WALLET_ADDRESS to enable Cosmos Hub support.'
+      );
     }
     if (tokenOptions.tokenType && tokenOptions.tokenType !== 'NATIVE') {
       console.warn(`⚠️  [Cosmos] Token type ${tokenOptions.tokenType} not supported, skipping.`);
@@ -127,6 +135,13 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
 
     const walletAddress = await this.resolveWalletAddress(config);
+    if (!this.contextLogged) {
+      const statusEmoji = walletAddress ? '✅' : '⚠️';
+      console.log(
+        `${statusEmoji} [Cosmos] Initialized Cosmos Hub network context${walletAddress ? ` (wallet: ${walletAddress})` : ' (no wallet address resolved)'}.`
+      );
+      this.contextLogged = true;
+    }
 
     return [
       {

@@ -106,6 +106,15 @@ export class MultiNetworkGasTokenDistributionService {
     this.defaultTokenOptions = {
       tokenType: defaultTokenOptions?.tokenType ?? 'NATIVE'
     };
+
+    this.warmupAdapters();
+  }
+
+  private warmupAdapters(): void {
+    void this.collectNetworkAdapterContexts(this.defaultTokenOptions).catch(error => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [MultiNetwork] Adapter warmup failed: ${message}`);
+    });
   }
 
   private async collectNetworkAdapterContexts(
@@ -124,6 +133,9 @@ export class MultiNetworkGasTokenDistributionService {
       }
 
       for (const context of contexts) {
+        console.log(
+          `✅ [${adapter.type}] Loaded ${context.networkName} (${context.networkId}) token=${context.tokenSymbol}`
+        );
         contextEntries.set(context.networkId, { adapter, context });
       }
     }

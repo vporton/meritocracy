@@ -48,17 +48,34 @@ function MultiNetworkGasBalances() {
         setError(null)
 
         // Fetch network status
-        const statusResponse = await api.get('/api/multi-network-gas/status')
-        if (statusResponse.data.success) {
-          setNetworkStatus(statusResponse.data.data)
-        } else {
+        const [statusResponse, reserveResponse] = await Promise.all([
+          api.get('/api/multi-network-gas/status'),
+          api.get('/api/multi-network-gas/reserve-status')
+        ])
+
+        if (!statusResponse.data.success) {
           throw new Error(statusResponse.data.error || 'Failed to fetch network status')
         }
 
-        // Fetch reserve status
-        const reserveResponse = await api.get('/api/multi-network-gas/reserve-status')
+        const statusData = statusResponse.data.data as MultiNetworkStatus
+        const reserveData = reserveResponse.data.success ? reserveResponse.data.data as ReserveStatus : {}
+
+        const combinedNetworkNames = Array.from(
+          new Set([
+            ...(statusData.enabledNetworks ?? []),
+            ...Object.keys(statusData.networks ?? {}),
+            ...Object.keys(reserveData ?? {})
+          ])
+        )
+
+        setNetworkStatus({
+          ...statusData,
+          enabledNetworks: combinedNetworkNames,
+          totalNetworks: combinedNetworkNames.length
+        })
+
         if (reserveResponse.data.success) {
-          setReserveStatus(reserveResponse.data.data)
+          setReserveStatus(reserveData)
         }
 
       } catch (err) {
@@ -158,31 +175,19 @@ function MultiNetworkGasBalances() {
       {/* Network Details */}
       <div style={{ display: 'grid', gap: '1rem' }}>
         {networkStatus.enabledNetworks.map((networkName) => {
-          const networkInfo = networkStatus.networks[networkName]
+          const networkInfo = networkStatus.networks[networkName] ?? {}
           const reserveInfo = reserveStatus?.[networkName]
-          const lastDistribution = networkInfo?.lastDistribution ?? reserveInfo?.lastDistribution
-          
-        if (!networkInfo) {
-          return (
-            <div key={networkName} style={{
-              padding: '1rem',
-              background: '#2a1a1a',
-                borderRadius: '8px',
-                border: '1px solid #dc2626'
-              }}>
-                <p style={{ margin: 0, color: '#ff6b6b' }}>
-                  ❌ {networkName}: Connection failed
-                </p>
-              </div>
-            )
-          }
+          const lastDistribution = networkInfo.lastDistribution ?? reserveInfo?.lastDistribution
 
-          const displayName = networkInfo.name ?? networkInfo.networkName ?? networkName
+          const displayName =
+            networkInfo.name ?? networkInfo.networkName ?? reserveInfo?.networkName ?? networkName
           const chainBadgeText = typeof networkInfo.chainId === 'number'
             ? `Chain ${networkInfo.chainId}`
             : networkInfo.adapterType
-              ? `${networkInfo.adapterType} network`
-              : 'Network'
+            ? `${networkInfo.adapterType} network`
+            : reserveInfo?.adapterType
+            ? `${reserveInfo.adapterType} network`
+            : 'Network'
           const tokenSymbol = networkInfo.tokenSymbol ?? networkInfo.nativeTokenSymbol ?? 'N/A'
           const balanceFormatted = networkInfo.balanceFormatted ?? 'N/A'
           const gasPriceFormatted = networkInfo.gasPriceFormatted ?? 'N/A'

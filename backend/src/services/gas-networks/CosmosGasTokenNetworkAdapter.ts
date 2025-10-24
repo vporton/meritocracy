@@ -210,7 +210,7 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         return { deferReason: 'Transfer amount too small' };
       }
       const message = this.buildSendMessage(config, fromAddress, recipientAddress, amount);
-      const gasEstimation = await client.simulate(fromAddress, [message]);
+      const gasEstimation = await client.simulate(fromAddress, [message], undefined);
       const gasPrice = this.getGasPrice(config);
       const adjustedGas = Math.ceil(gasEstimation * config.gasAdjustment);
       const fee = calculateFee(adjustedGas, gasPrice);
@@ -241,7 +241,7 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
     const gasPrice = this.getGasPrice(config);
     const message = this.buildSendMessage(config, fromAddress, recipientAddress, amount);
-    const gasEstimation = await client.simulate(fromAddress, [message]);
+    const gasEstimation = await client.simulate(fromAddress, [message], undefined);
     const adjustedGas = Math.ceil(gasEstimation * config.gasAdjustment);
     const fee = calculateFee(adjustedGas, gasPrice);
 

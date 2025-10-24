@@ -99,5 +99,5 @@
   * Israel Science Foundation (ISF) https://www.isf.org.il (only one application per year, University for participants mandatory) - hard to submit without good Hebrew
 * DFINITY https://dfinity.org/grants/ - submitted 22 Oct 2025.
 * https://chatgpt.com/s/t_68f93226be54819185c1d6c364cc540b
-  * EA Funds https://funds.effectivealtruism.org/funds/far-future - submitted 22 Oct 2025.
+  * EA Funds https://funds.effectivealtruism.org/funds/far-future - submitted 22 Oct 2025 - rejected from "EA Infrastructure Fund" 24 Oct 2025.
   * Patrick J. McGovern Foundation https://www.mcgovern.org - unclean how to apply

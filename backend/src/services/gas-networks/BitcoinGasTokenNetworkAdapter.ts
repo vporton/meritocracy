@@ -376,7 +376,7 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
 
     try {
-      const balance = NaN; // FIXME: await client.command('getbalance') doesn't work on Alchemy.
+      const balance = NaN; // FIXME@P2: await client.command('getbalance') doesn't work on Alchemy.
       return typeof balance === 'string' ? Number(balance) : balance ?? 0;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

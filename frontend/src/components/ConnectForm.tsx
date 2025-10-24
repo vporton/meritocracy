@@ -59,6 +59,7 @@ const ConnectForm = () => {
     solanaAddress: '',
     bitcoinAddress: '',
     polkadotAddress: '',
+    cosmosAddress: '',
   });
   
   // Handle Ethereum connection flow when address becomes available
@@ -83,12 +84,14 @@ const ConnectForm = () => {
         solanaAddress: user.solanaAddress ?? '',
         bitcoinAddress: user.bitcoinAddress ?? '',
         polkadotAddress: user.polkadotAddress ?? '',
+        cosmosAddress: user.cosmosAddress ?? '',
       });
     } else {
       setNonEvmForm({
         solanaAddress: '',
         bitcoinAddress: '',
         polkadotAddress: '',
+        cosmosAddress: '',
       });
     }
   }, [user]);
@@ -103,6 +106,7 @@ const ConnectForm = () => {
       if (user.solanaAddress) connectedProviders.push({ name: 'Solana', value: user.solanaAddress });
       if (user.bitcoinAddress) connectedProviders.push({ name: 'Bitcoin', value: user.bitcoinAddress });
       if (user.polkadotAddress) connectedProviders.push({ name: 'Polkadot', value: user.polkadotAddress });
+      if (user.cosmosAddress) connectedProviders.push({ name: 'Cosmos', value: user.cosmosAddress });
       if (user.orcidId) connectedProviders.push({ name: 'ORCID', value: user.orcidId });
       if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
       if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
@@ -647,6 +651,7 @@ const ConnectForm = () => {
         solanaAddress: nonEvmForm.solanaAddress.trim() || null,
         bitcoinAddress: nonEvmForm.bitcoinAddress.trim() || null,
         polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
+        cosmosAddress: nonEvmForm.cosmosAddress.trim() || null,
       });
 
       await refreshUser();
@@ -925,6 +930,17 @@ const ConnectForm = () => {
               value={nonEvmForm.polkadotAddress}
               onChange={(e) => setNonEvmForm(prev => ({ ...prev, polkadotAddress: e.target.value }))}
               placeholder="Enter your Polkadot address"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="cosmosAddress">Cosmos (ATOM) Address</label>
+            <input
+              type="text"
+              id="cosmosAddress"
+              value={nonEvmForm.cosmosAddress}
+              onChange={(e) => setNonEvmForm(prev => ({ ...prev, cosmosAddress: e.target.value }))}
+              placeholder="Enter your Cosmos Hub address"
               disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
             />
           </div>

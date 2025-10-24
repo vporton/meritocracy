@@ -11,6 +11,7 @@ import type {
 import {
   bitcoinGasTokenNetworkAdapter,
   evmGasTokenNetworkAdapter,
+  cosmosGasTokenNetworkAdapter,
   polkadotGasTokenNetworkAdapter,
   solanaGasTokenNetworkAdapter
 } from './gas-networks/index.js';
@@ -98,6 +99,7 @@ export class MultiNetworkGasTokenDistributionService {
         evmGasTokenNetworkAdapter,
         solanaGasTokenNetworkAdapter,
         bitcoinGasTokenNetworkAdapter,
+        cosmosGasTokenNetworkAdapter,
         polkadotGasTokenNetworkAdapter
       ];
 

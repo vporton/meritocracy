@@ -122,6 +122,10 @@ function MultiNetworkGasBalances() {
             <li>base - Base (Coinbase L2)</li>
             <li>sepolia - Sepolia Testnet</li>
             <li>localhost - Local Development</li>
+            <li>solana-mainnet - Solana (SOL)</li>
+            <li>bitcoin-mainnet - Bitcoin (BTC)</li>
+            <li>polkadot-mainnet - Polkadot (DOT)</li>
+            <li>cosmoshub-mainnet - Cosmos Hub (ATOM)</li>
           </ul>
         </div>
       </div>

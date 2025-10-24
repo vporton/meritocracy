@@ -1,7 +1,7 @@
 import type { User } from '@prisma/client';
 import type { TokenDescriptor, TokenType } from '../../types/token.js';
 
-export type GasTokenNetworkType = 'EVM' | 'SOLANA' | 'BITCOIN' | 'POLKADOT';
+export type GasTokenNetworkType = 'EVM' | 'SOLANA' | 'BITCOIN' | 'POLKADOT' | 'COSMOS';
 
 export interface TokenDistributionOptions {
   tokenType?: TokenType;

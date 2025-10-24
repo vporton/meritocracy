@@ -16,6 +16,7 @@ model User {
   solanaAddress           String?
   bitcoinAddress          String?
   polkadotAddress         String?
+  cosmosAddress           String?
   orcidId                 String?                  @unique
   githubHandle            String?                  @unique
   bitbucketHandle         String?                  @unique
@@ -42,6 +43,7 @@ model User {
   @@index([onboarded, shareInGDP(sort: Desc)])
   @@index([shareInGDP])
   @@index([kycStatus])
+  @@index([cosmosAddress])
   @@unique([issuingState, personalNumber])
   @@map("users")
 }

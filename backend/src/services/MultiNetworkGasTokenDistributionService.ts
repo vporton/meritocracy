@@ -909,6 +909,7 @@ export class MultiNetworkGasTokenDistributionService {
     adapter: GasTokenNetworkAdapter,
     context: GasTokenNetworkContext
   ): Promise<number | undefined> {
+    const defaultGasCost = context.defaultGasCostToken;
     const baseAmount = Math.max(1 / 10 ** context.tokenDecimals, Number.EPSILON);
     const attemptAmounts = [baseAmount, baseAmount * 10];
     const recipientAddress =
@@ -940,6 +941,6 @@ export class MultiNetworkGasTokenDistributionService {
       }
     }
 
-    return undefined;
+    return defaultGasCost;
   }
 }

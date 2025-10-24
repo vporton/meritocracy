@@ -29,6 +29,7 @@ interface CosmosNetworkConfig {
   gasPriceAmount: string;
   gasPriceDenom: string;
   gasAdjustment: number;
+  defaultGasUnits: number;
 }
 
 const readCosmosConfig = (): CosmosNetworkConfig => ({
@@ -44,7 +45,8 @@ const readCosmosConfig = (): CosmosNetworkConfig => ({
   accountPrefix: process.env.COSMOS_ACCOUNT_PREFIX ?? 'cosmos',
   gasPriceAmount: process.env.COSMOS_GAS_PRICE_AMOUNT ?? '0.025',
   gasPriceDenom: process.env.COSMOS_GAS_PRICE_DENOM ?? 'uatom',
-  gasAdjustment: Number(process.env.COSMOS_GAS_ADJUSTMENT ?? '1.2')
+  gasAdjustment: Number(process.env.COSMOS_GAS_ADJUSTMENT ?? '1.2'),
+  defaultGasUnits: Number(process.env.COSMOS_DEFAULT_GAS_UNITS ?? '120000')
 });
 
 export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
@@ -143,6 +145,12 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       this.contextLogged = true;
     }
 
+    const gasPriceAmount = Number(config.gasPriceAmount);
+    const defaultGasCostToken =
+      Number.isFinite(gasPriceAmount) && gasPriceAmount > 0 && config.defaultGasUnits > 0
+        ? (gasPriceAmount * config.defaultGasUnits) / 10 ** config.nativeDecimals
+        : undefined;
+
     return [
       {
         adapterType: this.type,
@@ -153,7 +161,8 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenDecimals: config.nativeDecimals,
         nativeTokenSymbol: config.nativeSymbol,
         nativeTokenDecimals: config.nativeDecimals,
-        walletAddress
+        walletAddress,
+        defaultGasCostToken
       }
     ];
   }

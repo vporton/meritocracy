@@ -9,6 +9,7 @@ interface NetworkInfo {
   tokenSymbol?: string;
   nativeTokenSymbol?: string;
   tokenDecimals?: number;
+  tokenType?: string;
   gasPrice?: string;
   balance?: string;
   address?: string;
@@ -32,6 +33,16 @@ interface ReserveStatus {
     walletBalance?: number;
     availableForDistribution?: number;
     lastDistribution?: string;
+    adapterType?: string;
+    networkName?: string;
+    tokenSymbol?: string;
+    nativeTokenSymbol?: string;
+    tokenDecimals?: number;
+    address?: string;
+    gasPrice?: string;
+    gasPriceFormatted?: string;
+    balance?: string;
+    balanceFormatted?: string;
   };
 }
 
@@ -58,7 +69,7 @@ function MultiNetworkGasBalances() {
         }
 
         const statusData = statusResponse.data.data as MultiNetworkStatus
-        const reserveData = reserveResponse.data.success ? reserveResponse.data.data as ReserveStatus : {}
+        const reserveData = reserveResponse.data.success ? (reserveResponse.data.data as ReserveStatus) : {}
 
         const combinedNetworkNames = Array.from(
           new Set([
@@ -68,10 +79,21 @@ function MultiNetworkGasBalances() {
           ])
         )
 
+        const mergedNetworks: Record<string, NetworkInfo> = { ...statusData.networks }
+        for (const name of combinedNetworkNames) {
+          const base = statusData.networks?.[name] ?? {}
+          const reserve = reserveData?.[name] ?? {}
+          mergedNetworks[name] = {
+            ...reserve,
+            ...base
+          }
+        }
+
         setNetworkStatus({
           ...statusData,
           enabledNetworks: combinedNetworkNames,
-          totalNetworks: combinedNetworkNames.length
+          totalNetworks: combinedNetworkNames.length,
+          networks: mergedNetworks
         })
 
         if (reserveResponse.data.success) {
@@ -188,10 +210,32 @@ function MultiNetworkGasBalances() {
             : reserveInfo?.adapterType
             ? `${reserveInfo.adapterType} network`
             : 'Network'
-          const tokenSymbol = networkInfo.tokenSymbol ?? networkInfo.nativeTokenSymbol ?? 'N/A'
-          const balanceFormatted = networkInfo.balanceFormatted ?? 'N/A'
-          const gasPriceFormatted = networkInfo.gasPriceFormatted ?? 'N/A'
-          const address = networkInfo.address ?? 'N/A'
+          const tokenSymbol =
+            networkInfo.tokenSymbol ??
+            networkInfo.nativeTokenSymbol ??
+            reserveInfo?.tokenSymbol ??
+            reserveInfo?.nativeTokenSymbol ??
+            'N/A'
+          const fallbackDecimals =
+            reserveInfo?.tokenDecimals ??
+            networkInfo.tokenDecimals ??
+            networkInfo.nativeTokenDecimals ??
+            reserveInfo?.nativeTokenDecimals ??
+            6
+          const fallbackWalletBalance = reserveInfo?.walletBalance ?? networkInfo.walletBalance
+          const balanceFormatted =
+            networkInfo.balanceFormatted ??
+            reserveInfo?.balanceFormatted ??
+            (typeof fallbackWalletBalance === 'number'
+              ? fallbackWalletBalance.toLocaleString('en-US', {
+                  maximumFractionDigits: fallbackDecimals
+                })
+              : 'N/A')
+          const gasPriceFormatted =
+            networkInfo.gasPriceFormatted ??
+            reserveInfo?.gasPriceFormatted ??
+            'N/A'
+          const address = networkInfo.address ?? reserveInfo?.address ?? 'N/A'
           const balanceDisplay = balanceFormatted === 'N/A'
             ? 'N/A'
             : `${balanceFormatted} ${tokenSymbol}`

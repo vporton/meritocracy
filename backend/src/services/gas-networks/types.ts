@@ -14,6 +14,7 @@ export interface GasTokenNetworkContext extends TokenDescriptor {
   nativeTokenSymbol: string;
   nativeTokenDecimals: number;
   walletAddress?: string;
+  defaultGasCostToken?: number;
 }
 
 export interface GasTransferEstimate {

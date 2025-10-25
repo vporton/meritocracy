@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
+import { validateNonEvmAddresses } from '../utils/addressValidation.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -170,6 +171,21 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     // Check if user is trying to update their own account
     if (parseInt(id) !== authenticatedUserId) {
       res.status(403).json({ error: 'Forbidden: You can only update your own account' });
+      return;
+    }
+
+    const validationErrors = validateNonEvmAddresses({
+      solanaAddress,
+      bitcoinAddress,
+      polkadotAddress,
+      cosmosAddress
+    });
+
+    if (Object.keys(validationErrors).length > 0) {
+      res.status(400).json({
+        error: 'Invalid address format',
+        details: validationErrors
+      });
       return;
     }
 

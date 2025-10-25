@@ -1,7 +1,8 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useConnect, useAccount, useSignMessage, useConnectorClient } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import { User, authApi, usersApi } from '../services/api';
+import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
 import './ConnectForm.css';
 
 interface ConnectStatus {
@@ -61,6 +62,7 @@ const ConnectForm = () => {
     polkadotAddress: '',
     cosmosAddress: '',
   });
+  const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
   
   // Handle Ethereum connection flow when address becomes available
   // Note: This useEffect is disabled in favor of manual authentication flow in wallet selection
@@ -94,6 +96,7 @@ const ConnectForm = () => {
         cosmosAddress: '',
       });
     }
+    setNonEvmErrors({});
   }, [user]);
   
   // Show connected status and allow connecting more accounts
@@ -636,6 +639,18 @@ const ConnectForm = () => {
     }
   };
 
+  const handleNonEvmChange = (field: keyof typeof nonEvmForm) => (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    setNonEvmForm(prev => ({ ...prev, [field]: value }));
+    setNonEvmErrors(prev => {
+      if (!prev[field]) {
+        return prev;
+      }
+      const { [field]: _removed, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const handleNonEvmSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -645,6 +660,15 @@ const ConnectForm = () => {
     }
 
     try {
+      const validationErrors = validateNonEvmAddresses(nonEvmForm);
+      if (Object.keys(validationErrors).length > 0) {
+        const firstError = Object.values(validationErrors)[0];
+        setNonEvmErrors(validationErrors);
+        setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: firstError || 'Please check the address formats.' }));
+        return;
+      }
+
+      setNonEvmErrors({});
       setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'processing', error: undefined }));
 
       await usersApi.update(user.id, {
@@ -656,7 +680,10 @@ const ConnectForm = () => {
 
       await refreshUser();
 
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'success' }));
+      setConnectStatus(prev => {
+        const { error, ...rest } = prev;
+        return { ...rest, nonEvmAddresses: 'success' };
+      });
 
       setTimeout(() => {
         setConnectStatus(prev => {
@@ -667,6 +694,18 @@ const ConnectForm = () => {
     } catch (error: any) {
       console.error('Non-EVM address update failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
+      const detailErrors = error?.response?.data?.details;
+      if (detailErrors && typeof detailErrors === 'object') {
+        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'polkadotAddress', 'cosmosAddress'] as const;
+        const mappedErrors: NonEvmAddressErrors = {};
+        for (const key of recognizedKeys) {
+          const value = (detailErrors as Record<string, unknown>)[key];
+          if (typeof value === 'string') {
+            mappedErrors[key] = value;
+          }
+        }
+        setNonEvmErrors(mappedErrors);
+      }
       setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: errorMessage }));
     }
   };
@@ -906,10 +945,13 @@ const ConnectForm = () => {
               type="text"
               id="solanaAddress"
               value={nonEvmForm.solanaAddress}
-              onChange={(e) => setNonEvmForm(prev => ({ ...prev, solanaAddress: e.target.value }))}
+              onChange={handleNonEvmChange('solanaAddress')}
               placeholder="Enter your Solana address"
               disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
             />
+            {nonEvmErrors.solanaAddress && (
+              <p className="error-message">{nonEvmErrors.solanaAddress}</p>
+            )}
           </div>
           <div className="form-group">
             <label htmlFor="bitcoinAddress">Bitcoin Address</label>
@@ -917,10 +959,13 @@ const ConnectForm = () => {
               type="text"
               id="bitcoinAddress"
               value={nonEvmForm.bitcoinAddress}
-              onChange={(e) => setNonEvmForm(prev => ({ ...prev, bitcoinAddress: e.target.value }))}
+              onChange={handleNonEvmChange('bitcoinAddress')}
               placeholder="Enter your Bitcoin address"
               disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
             />
+            {nonEvmErrors.bitcoinAddress && (
+              <p className="error-message">{nonEvmErrors.bitcoinAddress}</p>
+            )}
           </div>
           <div className="form-group">
             <label htmlFor="polkadotAddress">Polkadot Address</label>
@@ -928,10 +973,13 @@ const ConnectForm = () => {
               type="text"
               id="polkadotAddress"
               value={nonEvmForm.polkadotAddress}
-              onChange={(e) => setNonEvmForm(prev => ({ ...prev, polkadotAddress: e.target.value }))}
+              onChange={handleNonEvmChange('polkadotAddress')}
               placeholder="Enter your Polkadot address"
               disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
             />
+            {nonEvmErrors.polkadotAddress && (
+              <p className="error-message">{nonEvmErrors.polkadotAddress}</p>
+            )}
           </div>
           <div className="form-group">
             <label htmlFor="cosmosAddress">Cosmos (ATOM) Address</label>
@@ -939,10 +987,13 @@ const ConnectForm = () => {
               type="text"
               id="cosmosAddress"
               value={nonEvmForm.cosmosAddress}
-              onChange={(e) => setNonEvmForm(prev => ({ ...prev, cosmosAddress: e.target.value }))}
+              onChange={handleNonEvmChange('cosmosAddress')}
               placeholder="Enter your Cosmos Hub address"
               disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
             />
+            {nonEvmErrors.cosmosAddress && (
+              <p className="error-message">{nonEvmErrors.cosmosAddress}</p>
+            )}
           </div>
           <div className="form-actions">
             <button

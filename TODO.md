@@ -54,3 +54,7 @@
 - Make our AI to summarize each time when it asserts worth and save work and/or go further building on it the next time.
 
 - TODO@P1 Debug migrations, they seem to be buggy.
+
+- TODO@P2 User email should be passed to AI.
+
+- TODO@P3 Allow the user to pass to AI more than one email.

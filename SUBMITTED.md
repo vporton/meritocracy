@@ -103,3 +103,4 @@
     * Effective Altruism Infrastructure - submitted 22 Oct 2025 - rejected from "EA Infrastructure Fund" 24 Oct 2025.
     * Long-Term Future- submitted 25 Oct 2025
   * Patrick J. McGovern Foundation https://www.mcgovern.org - unclean how to apply
+* Activate AI https://challenge.data.org - 

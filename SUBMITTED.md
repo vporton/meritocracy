@@ -100,7 +100,7 @@
 * DFINITY https://dfinity.org/grants/ - submitted 22 Oct 2025.
 * https://chatgpt.com/s/t_68f93226be54819185c1d6c364cc540b
   * EA Funds https://funds.effectivealtruism.org/funds/far-future
-    * Effective Altruism Infrastructure - submitted 22 Oct 2025 - rejected from "EA Infrastructure Fund" 24 Oct 2025.
-    * Long-Term Future- submitted 25 Oct 2025
+    * Effective Altruism Infrastructure - submitted 22 Oct 2025 - rejected 24 Oct 2025.
+    * Long-Term Future- submitted 25 Oct 2025 - rejected 29 Oct 2025.
   * Patrick J. McGovern Foundation https://www.mcgovern.org - unclean how to apply
 * Activate AI https://challenge.data.org - 

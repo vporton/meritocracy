@@ -1,4 +1,3 @@
-* https://ethereum.org/community/grants/
   * https://airtable.com/app19BOc2TF5bAstw/shr86elKgWTSCP4AY/tbld93rVIguyQLORG
     * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU The site does not work 26 Sep.
     * https://open.harmony.one/300m-on-bounties-grants-daos/apply-for-grants-or-dao - paused  
@@ -41,7 +40,7 @@
 * OpenAI:
   * https://openai.com/index/people-first-ai-fund/ - request no more than 10% of annual operating budget.
   * https://openai.com/form/researcher-access-program/ ($1000 in credits) - applied 1 Oct 2025.
-  * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025.
+  * https://openai.com/form/cybersecurity-grant-program/ - applied 1 Oct 2025, rejected 1 Nov 2025 "large number of strong submissions".
 * https://www.google.com/search?q=ai+grants
   * https://aigrant.org / https://aigrant.com - applied 1 Oct 2025.
   * https://grantsfinder.portkey.ai - empty list

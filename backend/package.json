@@ -47,6 +47,7 @@
     "passport-gitlab2": "^5.0.0",
     "passport-local": "^1.0.0",
     "passport-oauth2": "^1.8.0",
+    "stellar-sdk": "^12.3.0",
     "uuid": "^11.1.0",
     "viem": "^2.21.0"
   },

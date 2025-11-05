@@ -28,6 +28,7 @@ interface User {
   bitcoinAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
+  stellarAddress?: string | null;
   orcidId?: string;
   githubHandle?: string;
   bitbucketHandle?: string;
@@ -73,6 +74,7 @@ interface UpdateUserData {
   bitcoinAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
+  stellarAddress?: string | null;
 }
 
 interface UpdatePostData {

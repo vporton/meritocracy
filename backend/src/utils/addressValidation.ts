@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import bs58 from 'bs58';
 import { decodeAddress } from '@polkadot/util-crypto';
 import { fromBech32 } from '@cosmjs/encoding';
+import { StrKey } from 'stellar-sdk';
 
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
 
@@ -130,6 +131,7 @@ export type NonEvmAddressInput = {
   bitcoinAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
+  stellarAddress?: string | null;
 };
 
 export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, string>>;
@@ -137,7 +139,7 @@ export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, strin
 export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAddressErrors => {
   const errors: NonEvmAddressErrors = {};
 
-  const { solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress } = addresses;
+  const { solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress, stellarAddress } = addresses;
 
   if (solanaAddress && solanaAddress.trim() && !isValidSolanaAddress(solanaAddress)) {
     errors.solanaAddress = 'Invalid Solana address format.';
@@ -153,6 +155,13 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
 
   if (cosmosAddress && cosmosAddress.trim() && !isValidCosmosAddress(cosmosAddress)) {
     errors.cosmosAddress = 'Invalid Cosmos address format.';
+  }
+
+  if (stellarAddress && stellarAddress.trim()) {
+    const trimmed = stellarAddress.trim();
+    if (!/^G[A-Z2-7]{55}$/.test(trimmed) || !StrKey.isValidEd25519PublicKey(trimmed)) {
+      errors.stellarAddress = 'Invalid Stellar address format.';
+    }
   }
 
   return errors;

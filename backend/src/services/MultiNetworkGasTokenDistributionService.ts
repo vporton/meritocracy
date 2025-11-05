@@ -13,7 +13,8 @@ import {
   evmGasTokenNetworkAdapter,
   cosmosGasTokenNetworkAdapter,
   polkadotGasTokenNetworkAdapter,
-  solanaGasTokenNetworkAdapter
+  solanaGasTokenNetworkAdapter,
+  stellarGasTokenNetworkAdapter
 } from './gas-networks/index.js';
 
 export interface DistributionFiber {
@@ -100,7 +101,8 @@ export class MultiNetworkGasTokenDistributionService {
         solanaGasTokenNetworkAdapter,
         bitcoinGasTokenNetworkAdapter,
         cosmosGasTokenNetworkAdapter,
-        polkadotGasTokenNetworkAdapter
+        polkadotGasTokenNetworkAdapter,
+        stellarGasTokenNetworkAdapter
       ];
 
     this.defaultTokenOptions = {

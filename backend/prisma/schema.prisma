@@ -17,6 +17,7 @@ model User {
   bitcoinAddress          String?
   polkadotAddress         String?
   cosmosAddress           String?
+  stellarAddress          String?
   orcidId                 String?                  @unique
   githubHandle            String?                  @unique
   bitbucketHandle         String?                  @unique

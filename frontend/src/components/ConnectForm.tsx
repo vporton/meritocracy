@@ -61,6 +61,7 @@ const ConnectForm = () => {
     bitcoinAddress: '',
     polkadotAddress: '',
     cosmosAddress: '',
+    stellarAddress: '',
   });
   const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
   
@@ -87,6 +88,7 @@ const ConnectForm = () => {
         bitcoinAddress: user.bitcoinAddress ?? '',
         polkadotAddress: user.polkadotAddress ?? '',
         cosmosAddress: user.cosmosAddress ?? '',
+        stellarAddress: user.stellarAddress ?? '',
       });
     } else {
       setNonEvmForm({
@@ -94,6 +96,7 @@ const ConnectForm = () => {
         bitcoinAddress: '',
         polkadotAddress: '',
         cosmosAddress: '',
+        stellarAddress: '',
       });
     }
     setNonEvmErrors({});
@@ -110,6 +113,7 @@ const ConnectForm = () => {
       if (user.bitcoinAddress) connectedProviders.push({ name: 'Bitcoin', value: user.bitcoinAddress });
       if (user.polkadotAddress) connectedProviders.push({ name: 'Polkadot', value: user.polkadotAddress });
       if (user.cosmosAddress) connectedProviders.push({ name: 'Cosmos', value: user.cosmosAddress });
+      if (user.stellarAddress) connectedProviders.push({ name: 'Stellar', value: user.stellarAddress });
       if (user.orcidId) connectedProviders.push({ name: 'ORCID', value: user.orcidId });
       if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
       if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
@@ -676,6 +680,7 @@ const ConnectForm = () => {
         bitcoinAddress: nonEvmForm.bitcoinAddress.trim() || null,
         polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
         cosmosAddress: nonEvmForm.cosmosAddress.trim() || null,
+        stellarAddress: nonEvmForm.stellarAddress.trim() || null,
       });
 
       await refreshUser();
@@ -696,7 +701,7 @@ const ConnectForm = () => {
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
       const detailErrors = error?.response?.data?.details;
       if (detailErrors && typeof detailErrors === 'object') {
-        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'polkadotAddress', 'cosmosAddress'] as const;
+        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress'] as const;
         const mappedErrors: NonEvmAddressErrors = {};
         for (const key of recognizedKeys) {
           const value = (detailErrors as Record<string, unknown>)[key];
@@ -993,6 +998,20 @@ const ConnectForm = () => {
             />
             {nonEvmErrors.cosmosAddress && (
               <p className="error-message">{nonEvmErrors.cosmosAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="stellarAddress">Stellar Address</label>
+            <input
+              type="text"
+              id="stellarAddress"
+              value={nonEvmForm.stellarAddress}
+              onChange={handleNonEvmChange('stellarAddress')}
+              placeholder="Enter your Stellar public key (starts with G)"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+            {nonEvmErrors.stellarAddress && (
+              <p className="error-message">{nonEvmErrors.stellarAddress}</p>
             )}
           </div>
           <div className="form-actions">

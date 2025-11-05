@@ -165,7 +165,15 @@ router.post('/', async (req, res): Promise<void> => {
 router.put('/:id', requireAuth, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
-    const { email, name, solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress } = req.body;
+    const {
+      email,
+      name,
+      solanaAddress,
+      bitcoinAddress,
+      polkadotAddress,
+      cosmosAddress,
+      stellarAddress
+    } = req.body;
     const authenticatedUserId = (req as any).userId;
 
     // Check if user is trying to update their own account
@@ -178,7 +186,8 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       solanaAddress,
       bitcoinAddress,
       polkadotAddress,
-      cosmosAddress
+      cosmosAddress,
+      stellarAddress
     });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -198,6 +207,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
         ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
         ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
+        ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null })
       },
     });
 

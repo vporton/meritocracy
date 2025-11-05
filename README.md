@@ -29,6 +29,16 @@ It is a full-stack application built with Node.js, React, and Prisma ORM.
 - **Axios** - Promise-based HTTP client
 - **Modern CSS** with dark/light theme support
 
+## 🌐 Supported Gas Token Networks
+
+The automated distribution service currently supports native gas tokens on:
+- Ethereum family networks (Mainnet, Polygon, Arbitrum, Optimism, Base, Celo, Sepolia, Localhost)
+- Solana (SOL)
+- Bitcoin (BTC)
+- Polkadot (DOT)
+- Cosmos Hub (ATOM)
+- Stellar (XLM)
+
 ## 📁 Project Structure
 
 ```

@@ -1,5 +1,7 @@
 const BASE58_REGEX = /^[1-9A-HJ-NP-Za-km-z]+$/;
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
+const STELLAR_ADDRESS_REGEX = /^G[A-Z2-7]{55}$/;
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 const hasBech32Prefix = (value: string, prefixes: string[]): boolean => {
   const normalized = value.toLowerCase();
@@ -64,11 +66,69 @@ export const isValidCosmosAddress = (value: string): boolean => {
   return hasBech32Prefix(trimmed, ['cosmos']);
 };
 
+const decodeBase32 = (value: string): Uint8Array => {
+  const normalized = value.replace(/=+$/, '').toUpperCase();
+  let buffer = 0;
+  let bits = 0;
+  const output: number[] = [];
+
+  for (const char of normalized) {
+    const index = BASE32_ALPHABET.indexOf(char);
+    if (index === -1) {
+      throw new Error('Invalid base32 character');
+    }
+    buffer = (buffer << 5) | index;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      output.push((buffer >> bits) & 0xff);
+    }
+  }
+
+  return new Uint8Array(output);
+};
+
+const crc16Xmodem = (data: Uint8Array): number => {
+  let crc = 0x0000;
+  for (const byte of data) {
+    crc ^= byte << 8;
+    for (let i = 0; i < 8; i += 1) {
+      if ((crc & 0x8000) !== 0) {
+        crc = ((crc << 1) ^ 0x1021) & 0xffff;
+      } else {
+        crc = (crc << 1) & 0xffff;
+      }
+    }
+  }
+  return crc & 0xffff;
+};
+
+export const isValidStellarAddress = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!STELLAR_ADDRESS_REGEX.test(trimmed)) {
+    return false;
+  }
+  try {
+    const decoded = decodeBase32(trimmed);
+    if (decoded.length !== 35) {
+      return false;
+    }
+    const payload = decoded.subarray(0, decoded.length - 2);
+    const checksum = decoded.subarray(decoded.length - 2);
+    const expected = crc16Xmodem(payload);
+    const actual = checksum[0] | (checksum[1] << 8);
+    return expected === actual;
+  } catch {
+    return false;
+  }
+};
+
 export type NonEvmAddressInput = {
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
+  stellarAddress?: string | null;
 };
 
 export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, string>>;
@@ -76,7 +136,7 @@ export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, strin
 export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAddressErrors => {
   const errors: NonEvmAddressErrors = {};
 
-  const { solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress } = addresses;
+  const { solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress, stellarAddress } = addresses;
 
   if (solanaAddress && solanaAddress.trim() && !isValidSolanaAddress(solanaAddress)) {
     errors.solanaAddress = 'Invalid Solana address format.';
@@ -92,6 +152,10 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
 
   if (cosmosAddress && cosmosAddress.trim() && !isValidCosmosAddress(cosmosAddress)) {
     errors.cosmosAddress = 'Invalid Cosmos address format.';
+  }
+
+  if (stellarAddress && stellarAddress.trim() && !isValidStellarAddress(stellarAddress)) {
+    errors.stellarAddress = 'Invalid Stellar address format.';
   }
 
   return errors;

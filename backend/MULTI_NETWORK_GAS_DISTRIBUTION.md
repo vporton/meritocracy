@@ -12,6 +12,7 @@ The multi-network distribution system extends the original single-network system
 - **Network-Specific Configuration**: Different gas reserves and minimum distribution thresholds per network
 - **Gas Cost Guardrail**: Stop once transfers would be less than 5× the estimated gas cost
 - **Comprehensive Monitoring**: Per-network status, reserves, and distribution history
+- **Cross-Chain Adapters**: Native distribution adapters for Solana (SOL), Bitcoin (BTC), Polkadot (DOT), Cosmos (ATOM), and Stellar (XLM)
 
 ## Architecture
 

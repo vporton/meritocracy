@@ -137,10 +137,9 @@ primary_region = 'ewr'
   COSMOS_DEFAULT_GAS_UNITS="120000"
 
   STELLAR_ENABLED=true
-  STELLAR_NETWORK_ID=stellar-public
-  STELLAR_HORIZON_URL=https://horizon.stellar.org
+  STELLAR_NETWORK_ID="stellar-public"
+  STELLAR_HORIZON_URL="https://horizon.stellar.org"
   STELLAR_NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
-
 
   # OAuth Provider Configuration
   # GitHub OAuth

@@ -13,7 +13,7 @@ import {
     type Chain,
     defineChain
 } from 'viem';
-import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost, celo } from 'viem/chains';
+import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost, celo, hedera } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
 import { TokenDescriptor } from '../types/token.js';
@@ -227,6 +227,15 @@ export class MultiNetworkEthereumService {
                 nativeTokenSymbol: sepolia.nativeCurrency.symbol,
                 nativeTokenDecimals: sepolia.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'ethereum'
+            },
+            {
+                name: 'hedera',
+                chain: hedera,
+                rpcUrl: process.env.HEDERA_RPC_URL,
+                enabled: process.env.HEDERA_ENABLED === 'true',
+                nativeTokenSymbol: hedera.nativeCurrency.symbol,
+                nativeTokenDecimals: hedera.nativeCurrency.decimals,
+                nativeTokenCoingeckoId: 'hedera'
             },
             {
                 name: 'mezoTestnet',

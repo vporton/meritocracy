@@ -93,6 +93,9 @@ primary_region = 'ewr'
   MEZO_TESTNET_ENABLED=true
   MEZO_TESTNET_RPC_URL="https://rpc.test.mezo.org"
 
+  HEDERA_ENABLED=true
+  HEDERA_RPC_URL="https://mainnet.hashio.io/api"
+
   # Solana Configuration
   SOLANA_ENABLED="true"
   SOLANA_NETWORK_ID="solana-mainnet"

@@ -23,9 +23,15 @@ interface StellarNetworkConfig {
   walletAddress?: string;
   secretKey?: string;
   networkPassphrase: string;
+  baseFeeStroops: number;
 }
 
-const readStellarConfig = (): StellarNetworkConfig => ({
+const readStellarConfig = (): StellarNetworkConfig => {
+  const rawBaseFee = Number(process.env.STELLAR_BASE_FEE_STROOPS ?? '100');
+  const baseFeeStroops =
+    Number.isFinite(rawBaseFee) && rawBaseFee > 0 ? Math.floor(rawBaseFee) : 100;
+
+  return {
   enabled: process.env.STELLAR_ENABLED === 'true',
   networkId: process.env.STELLAR_NETWORK_ID ?? 'stellar-public',
   networkName: process.env.STELLAR_NETWORK_NAME ?? 'Stellar Public Network',
@@ -34,8 +40,10 @@ const readStellarConfig = (): StellarNetworkConfig => ({
   horizonUrl: process.env.STELLAR_HORIZON_URL,
   walletAddress: process.env.STELLAR_WALLET_ADDRESS,
   secretKey: process.env.STELLAR_SECRET_KEY,
-  networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.PUBLIC
-});
+  networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.PUBLIC,
+    baseFeeStroops
+  };
+};
 
 const stroopsToToken = (stroops: number, decimals: number): number => stroops / 10 ** decimals;
 
@@ -129,7 +137,8 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenDecimals: config.nativeDecimals,
         nativeTokenSymbol: config.nativeSymbol,
         nativeTokenDecimals: config.nativeDecimals,
-        walletAddress
+        walletAddress,
+        defaultGasCostToken: stroopsToToken(config.baseFeeStroops, config.nativeDecimals)
       }
     ];
   }
@@ -163,6 +172,19 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     return (user as User & { stellarAddress?: string | null }).stellarAddress ?? null;
   }
 
+  private async resolveBaseFee(server: HorizonServer, config: StellarNetworkConfig): Promise<number> {
+    try {
+      const fee = await server.fetchBaseFee();
+      if (typeof fee === 'number' && fee > 0) {
+        return fee;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [Stellar] Falling back to configured base fee: ${message}`);
+    }
+    return config.baseFeeStroops;
+  }
+
   async estimateTransfer(
     context: GasTokenNetworkContext,
     recipientAddress: string,
@@ -175,7 +197,7 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
       const config = this.ensureEnabledConfig();
       const server = this.getServer(config);
-      const baseFee = await server.fetchBaseFee();
+      const baseFee = await this.resolveBaseFee(server, config);
       const gasCostToken = stroopsToToken(baseFee, context.nativeTokenDecimals);
 
       if (amountToken <= gasCostToken) {
@@ -201,7 +223,7 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const server = this.getServer(config);
     const signer = this.getSigner(config);
     const sourceAccount = await server.loadAccount(signer.publicKey());
-    const baseFee = await server.fetchBaseFee();
+    const baseFee = await this.resolveBaseFee(server, config);
 
     const amount = toPaymentAmount(amountToken, context.tokenDecimals);
     const transaction = new TransactionBuilder(sourceAccount, {

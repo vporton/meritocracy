@@ -92,7 +92,7 @@
   * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIS 17 Sep 2025 - rejected 14 Oct 2025 "paying attention to experiments in funding and resource allocation, but are not currently making grants in this area"
 * A email from ffwd.com
   * Okta for Good: Nonprofit Technology Fellowship https://www.okta.com/company/okta-for-good/nonprofit-technology-fellows/ - submitted 18 Oct 2025
-  * Open Technology Fund https://www.opentech.fund/funds/internet-freedom-fund/ - submitted 18 Oct 2025
+  * Open Technology Fund https://www.opentech.fund/funds/internet-freedom-fund/ - submitted 18 Oct 2025, rejected 12 Nov 2025 "not clearly fit within OTF’s remit"
 * breakthroughprize.org - emailed 19 Oct 2025.
 * https://www.google.com/search?q=charity+for+science
   * Israel Science Foundation (ISF) https://www.isf.org.il (only one application per year, University for participants mandatory) - hard to submit without good Hebrew

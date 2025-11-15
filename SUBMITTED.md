@@ -104,4 +104,6 @@
   * Patrick J. McGovern Foundation https://www.mcgovern.org - unclear how to apply
 * Activate AI https://challenge.data.org - submitted 1 Nov 2025.
 * https://ffwdorg.notion.site/funder-database?v=548b116633be41d5a4da86921bea3a02
+  * 2xchallenge.org - emailed a question 15 Nov 2025
+  * 100x Impact Accelerator - not for early stage
   * TODO

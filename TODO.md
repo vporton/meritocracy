@@ -64,3 +64,5 @@
 - TODO@P2 Deleting use data.
 
 - TODO@P2 Do KYC/AML only after the user is assigned a salary, to minimize the amount of money spent on KYC.
+
+- FIXME@P2 `[Bitcoin] Failed to import private key:`.

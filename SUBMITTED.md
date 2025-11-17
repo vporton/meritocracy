@@ -100,7 +100,7 @@
 * https://chatgpt.com/s/t_68f93226be54819185c1d6c364cc540b
   * EA Funds https://funds.effectivealtruism.org/funds/far-future
     * Effective Altruism Infrastructure - submitted 22 Oct 2025 - rejected 24 Oct 2025.
-    * Long-Term Future- submitted 25 Oct 2025 - rejected 29 Oct 2025.
+    * Long-Term Future - submitted 25 Oct 2025 - rejected 29 Oct 2025.
   * Patrick J. McGovern Foundation https://www.mcgovern.org - unclear how to apply
 * Activate AI https://challenge.data.org - submitted 1 Nov 2025.
 * https://ffwdorg.notion.site/funder-database?v=548b116633be41d5a4da86921bea3a02

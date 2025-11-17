@@ -1,0 +1,194 @@
+country,portal_url,contact_url,contact_link_text,status
+Afghanistan,,,,no_portal_found
+Albania,https://kryeministria.al/en,,,no_contact_link_found
+Algeria,https://www.el-mouradia.dz/,mailto:contact@el-mouradia.dz,: contact@el-mouradia.dz,mailto_only
+Andorra,https://www.govern.ad/,https://www.govern.ad/ca/adreces-i-telefons,Contactes,ok
+Angola,http://www.governo.gov.ao/,,,fetch_failed
+Antigua and Barbuda,https://ab.gov.ag,,,no_contact_link_found
+Argentina,https://www.argentina.gob.ar/,,,no_contact_link_found
+Armenia,https://www.gov.am/en/,,,no_contact_link_found
+Australia,https://australia.gov.au/,https://australia.gov.au/content/mygov/en/about/feedback,Share feedback,ok
+Austria,https://www.federal-chancellery.gv.at/,https://www.federal-chancellery.gv.at/en/contact.html,Contact,ok
+Azerbaijan,https://en.president.az/?locale=en,https://en.president.az/en/pages/view/administration/contacts,Contacts,ok
+Bahamas,http://www.bahamas.gov.bs/,,,fetch_failed
+Bahrain,https://bahrain.bh,https://services.bahrain.bh/wps/portal/ar/BSP/GSX-UI-MultipleEntitiesByEService/GSX-UI-EServicesByEntity?entityID=14,وزارة المواصلات والاتصالات,ok
+Bangladesh,,,,no_portal_found
+Barbados,https://www.gov.bb/,,,fetch_failed
+Belarus,https://www.belarus.by/en/,https://www.belarus.by/en/feedback,Feedback,ok
+Belgium,https://www.belgium.be/en/,https://www.belgium.be/en/contactinfo_en_sites,Addresses and websites,ok
+Belize,,,,no_portal_found
+Benin,https://www.gouv.bj/,,,no_contact_link_found
+Bhutan,,,,no_portal_found
+Bolivia,https://www.mingobierno.gob.bo/,https://web.mingobierno.gob.bo/?cat=1,Contacto,ok
+Bosnia and Herzegovina,https://fbihvlada.gov.ba/,,,no_contact_link_found
+Botswana,,,,no_portal_found
+Brazil,https://www.gov.br/planalto/en,https://www.gov.br/planalto/en/service_channels/contact-info,Contact Us,ok
+Brunei,https://www.pmo.gov.bn/,https://www.pmo.gov.bn/SitePages/Contact-Us.aspx,Contact Us,ok
+Bulgaria,,,,no_portal_found
+Burkina Faso,https://www.gouvernement.gov.bf/,https://gouvernement.gov.bf/contact/,Contact,ok
+Burundi,https://www.presidence.gov.bi/,,,no_contact_link_found
+Cabo Verde,https://www.governo.cv/,,,no_contact_link_found
+Cambodia,,,,no_portal_found
+Cameroon,https://www.spm.gov.cm/site/?q=en,https://www.spm.gov.cm/site/?q=en/contact,Contact Your Prime Minister,ok
+Canada,https://www.canada.ca/en.html,https://www.canada.ca/en/contact.html,All contacts,ok
+Central African Republic,,,,no_portal_found
+Chad,,,,no_portal_found
+Chile,https://www.gob.cl/en/,,,fetch_failed
+China,https://english.www.gov.cn/,mailto:english@mail.gov.cn,Contact us,mailto_only
+Colombia,,,,no_portal_found
+Comoros,,,,no_portal_found
+Congo,,,,no_portal_found
+Costa Rica,https://presidencia.go.cr/,https://presidencia.go.cr/contactenos,Contacto,ok
+Croatia,https://vlada.gov.hr/en,https://vlada.gov.hr/contact-us/15099,Contact us,ok
+Cuba,http://cuba.cu/,,,no_contact_link_found
+Cyprus,http://www.cyprus.gov.cy/portal/portal.nsf/citizen_en?OpenForm&access=0&SectionId=citizen&CategoryId=none&SelectionId=home&print=0&lang=en,,,fetch_failed
+Czechia,,,,no_portal_found
+Côte d'Ivoire,,,,no_portal_found
+Democratic People's Republic of Korea,,,,no_portal_found
+Democratic Republic of the Congo,https://presidence.cg/,https://presidence.cg/contact/,Nous contacter,ok
+Denmark[b],https://denmark.dk/,https://denmark.dk/contact,Contact us,ok
+Djibouti,https://www.presidence.dj/,,,no_contact_link_found
+Dominica,https://www.dominica.gov.dm/,https://www.dominica.gov.dm/contact-us,Contact Us,ok
+Dominican Republic,https://minpre.gob.do,https://minpre.gob.do/contacto,Realimentación Realimentación,ok
+Ecuador,https://www.presidencia.gob.ec/,,,fetch_failed
+Egypt,https://opengov.unescwa.org/node/1212,https://opengov.unescwa.org/contact,Contact us,ok
+El Salvador,,,,no_portal_found
+Equatorial Guinea,https://www.guineaecuatorialpress.com/?lang=en,https://www.guineaecuatorialpress.com/contacto,contacto,ok
+Eritrea,http://www.shabait.com/,https://shabait.com/contact-us/,Contact us,ok
+Estonia,https://www.valitsus.ee/en,https://www.valitsus.ee/en,News and contacts,ok
+Eswatini,https://www.gov.sz/,,,no_contact_link_found
+Ethiopia,,,,no_portal_found
+Fiji,https://www.fiji.gov.fj/Home,,,fetch_failed
+Finland,,,,no_portal_found
+France,https://www.gouvernement.fr/en/news,,,fetch_failed
+Gabon,https://www.gouvernement.ga/,http://gouvernement.ga/contacts/,Contacts,ok
+Gambia (Republic of The),https://op.gov.gm/,https://op.gov.gm/index.php/contact,Contact,ok
+Georgia,,,,no_portal_found
+Germany,https://www.bundesregierung.de/breg-en,https://www.bundesregierung.de/breg-en/service/contact,Contact,ok
+Ghana,https://www.ghana.gov.gh/,https://www.ghana.gov.gh/category/1315409a74/,"police, justice and safety Contact the Police or start a legal case or contact security services",ok
+Greece,https://primeminister.gr/en/home,,,fetch_failed
+Grenada,https://www.gov.gd/,https://www.gov.gd/index.php/mps,Contact Your MP,ok
+Guatemala,https://www.presidencia.gob.gt/,,,no_contact_link_found
+Guinea,,,,no_portal_found
+Guinea Bissau,,,,no_portal_found
+Guyana,https://dpi.gov.gy/tag/gina-guyana/,https://dpi.gov.gy/contact-us/,Contact Us,ok
+Haiti,https://www.leparlementhaitien.info/,,,no_contact_link_found
+Honduras,https://presidencia.gob.hn/,,,no_contact_link_found
+Hungary,https://kormany.hu/,,,no_contact_link_found
+Iceland,https://www.government.is/,https://www.government.is/,Contact us,ok
+India,https://www.india.gov.in/,,,fetch_failed
+Indonesia,https://indonesia.go.id/,,,fetch_failed
+Iran (Islamic Republic of),https://www.president.ir/en/,,,no_contact_link_found
+Iraq,https://mofa.gov.iq/en/,,,no_contact_link_found
+Ireland,https://www.gov.ie/en/,,,no_contact_link_found
+Israel,https://www.gov.il/en,,,fetch_failed
+Italy,,,,no_portal_found
+Jamaica,https://jis.gov.jm/government/,,,fetch_failed
+Japan,https://www.japan.go.jp/,,,no_contact_link_found
+Jordan,,,,no_portal_found
+Kazakhstan,https://egov.kz/cms/en,http://1414.egov.kz/en,Feedback,ok
+Kenya,https://www.president.go.ke/,,,no_contact_link_found
+Kiribati,http://www.president.gov.ki/,http://www.president.gov.ki/,Contact Us,ok
+Kuwait,https://www.e.gov.kw/sites/kgoEnglish/Pages/HomePage.aspx,,,fetch_failed
+Kyrgyzstan,,,,no_portal_found
+Lao People's Democratic Republic,,,,no_portal_found
+Latvia,https://www.president.lv/lv,https://www.president.lv/lv/kontakti,Kontakti,ok
+Lebanon,,,,no_portal_found
+Lesotho,https://www.gov.ls/,mailto:pr.office@gov.ls,contact.centre@gov.ls,mailto_only
+Liberia,https://www.emansion.gov.lr/,https://www.emansion.gov.lr/contact,Contact,ok
+Libya,,,,no_portal_found
+Liechtenstein,https://www.liechtenstein.li/en/,https://www.liechtenstein.li/en#kontakt_medien,Contact & Media,ok
+Lithuania,https://www.lrv.lt/en,,,fetch_failed
+Luxembourg,https://gouvernement.lu/en.html,https://gouvernement.lu/en/support/contact.html,Contact,ok
+Madagascar,https://www.presidence.gov.mg/,,,no_contact_link_found
+Malawi,,,,no_portal_found
+Malaysia,,,,no_portal_found
+Maldives,https://presidency.gov.mv/,https://presidency.gov.mv/Home/Contact/6,Contact Us,ok
+Mali,https://www.somalia.gov.so/,,,no_contact_link_found
+Malta,https://www.gov.mt/en/Pages/home.aspx,,,fetch_failed
+Marshall Islands,https://rmiparliament.org/cms/,https://rmiparliament.org/cms/contacts.html,Contacts,ok
+Mauritania,https://www.primature.gov.mr/index.php,https://www.primature.gov.mr/index.php/ar/nous-contacter,اتصل بنا,ok
+Mauritius,https://govmu.org/EN/Pages/default.aspx,https://govmu.org/EN/Pages/Contact.aspx,Contact Us,ok
+Mexico,https://www.gob.mx/,,,no_contact_link_found
+Micronesia (Federated States of),https://www.fsmgov.org/,,,no_contact_link_found
+Monaco,https://en.gouv.mc/,https://contacts.gouv.mc/en/contact-administration?source=https://en.gouv.mc/content/view/full/3306,Contact,ok
+Mongolia,https://mongolia.gov.mn/,,,no_contact_link_found
+Montenegro,https://www.gov.me/en/,https://psc.gov.me/en,Point of Single Contact,ok
+Morocco,https://www.maroc.ma/en,,,no_contact_link_found
+Mozambique,,,,no_portal_found
+Myanmar,,,,no_portal_found
+Namibia,https://www.gov.na/,https://gcs2.gov.na/CommController,Feedback,ok
+Nauru,http://www.nauru.gov.nr/government.aspx,http://www.nauru.gov.nr/contact-us.aspx,Contact Us,ok
+Nepal,,,,no_portal_found
+Netherlands (Kingdom of the)[b],https://www.government.nl/,https://www.government.nl/contact,Questions? Contact the Public Information Service,ok
+New Zealand[b],,,,no_portal_found
+Nicaragua,,,,no_portal_found
+Niger,,,,no_portal_found
+Nigeria,https://nigeria.gov.ng/,,,no_contact_link_found
+North Macedonia,https://vlada.mk/?language=en-gb&ln=en-gb,https://vlada.mk/mk-MK/kontakt,Контакт,ok
+Norway,https://www.regjeringen.no/en/id4/,https://www.regjeringen.no/en/contact/id224637/,Contact information,ok
+Oman,,,,no_portal_found
+Pakistan,https://mofa.gov.pk/gateway-to-pakistan,,,fetch_failed
+Palau,https://www.palaugov.pw/,,,no_contact_link_found
+Panama,,,,no_portal_found
+Papua New Guinea,https://www.parliament.gov.pg/,,,no_contact_link_found
+Paraguay,https://www.paraguay.gov.py/,,,no_contact_link_found
+Peru,https://www.gob.pe/,,,no_contact_link_found
+Philippines,https://www.officialgazette.gov.ph/,,,fetch_failed
+Poland,https://www.premier.gov.pl/en.html,https://www.premier.gov.pl/en.html#footer-contact,Przejdź do sekcji Kontakt,ok
+Portugal,https://www.portugal.gov.pt/en.aspx,,,no_contact_link_found
+Qatar,https://portal.www.gov.qa/wps/portal,,,fetch_failed
+Republic of Korea,,,,no_portal_found
+Republic of Moldova,https://www.moldova.md/en,,,fetch_failed
+Romania,https://www.gov.ro/en/,mailto:pm@gov.ro,Contact the Prime Minister,mailto_only
+Russian Federation,http://www.government.ru/en/,http://www.government.ru/en/,Вконтакте,ok
+Rwanda,https://www.gov.rw/,https://www.gov.rw/contact,Contact Us,ok
+Saint Kitts and Nevis,https://www.gov.kn/,,,no_contact_link_found
+Saint Lucia,https://www.govt.lc/,https://www.govt.lc/feedback,Feedback,ok
+Saint Vincent and the Grenadines,https://www.gov.vc/,,,no_contact_link_found
+Samoa,https://www.samoagovt.ws/,https://www.samoagovt.ws/contact/,Contact,ok
+San Marino,,,,no_portal_found
+Sao Tome and Principe,http://www.parlamento.st/,,,no_contact_link_found
+Saudi Arabia,https://my.gov.sa/en,,,fetch_failed
+Senegal,https://www.sec.gouv.sn/,https://www.sec.gouv.sn/form/contact,Contact,ok
+Serbia,,,,no_portal_found
+Seychelles,https://www.egov.sc/,https://www.egov.sc/GeneralInfo/Home/feedback.ASPX,,ok
+Sierra Leone,https://statehouse.gov.sl/,https://statehouse.gov.sl/contact/,Contact,ok
+Singapore,https://www.gov.sg/,https://www.gov.sg/contact-us/,Contact,ok
+Slovakia,https://www.vlada.gov.sk/vlada-sr/predseda-vlady/,https://www.vlada.gov.sk/vlada-sr/predseda-vlady/,Kontakty,ok
+Slovenia,https://www.gov.si/en/state-authorities/government/,,,no_contact_link_found
+Solomon Islands,,,,no_portal_found
+Somalia,,,,no_portal_found
+South Africa,,,,no_portal_found
+South Sudan,,,,no_portal_found
+Spain,https://www.lamoncloa.gob.es/lang/en/Paginas/index.aspx,,,no_contact_link_found
+Sri Lanka,https://www.gov.lk/index.php,https://www.gov.lk/index.php/sri-lanka/contactus,Contact us,ok
+Sudan,,,,no_portal_found
+Suriname,http://www.gov.sr/,https://gov.sr/contact/,Contact,ok
+Sweden,https://www.government.se/,,,fetch_failed
+Switzerland,https://www.admin.ch/gov/en/start.html,,,no_contact_link_found
+Syrian Arab Republic,,,,no_portal_found
+Tajikistan,http://www.prezident.tj/en,,,fetch_failed
+Thailand,https://www.thaigov.go.th/,,,fetch_failed
+Timor-Leste,http://timor-leste.gov.tl/?lang=en,,,no_contact_link_found
+Togo,https://www.republicoftogo.com/,https://www.republicoftogo.com/liens-premier-niveau/contactez-nous,Contactez-nous,ok
+Tonga,,,,no_portal_found
+Trinidad and Tobago,,,,no_portal_found
+Tunisia,https://pm.gov.tn/en,https://pm.gov.tn/en/contact-general-authority-0,Contact the General Authority,ok
+Turkmenistan,https://turkmenistan.gov.tm/tk,,,no_contact_link_found
+Tuvalu,,,,no_portal_found
+Türkiye,,,,no_portal_found
+Uganda,,,,no_portal_found
+Ukraine,,,,no_portal_found
+United Arab Emirates,https://u.ae/en,https://u.ae/en/Help/Contact-Us,Contact Us,ok
+United Kingdom of Great Britain and Northern Ireland,https://www.gov.uk/,https://www.gov.uk/contact,Contact,ok
+United Republic of Tanzania,https://www.tanzania.go.tz/,https://www.tanzania.go.tz/contact-us,Wasiliana Nasi,ok
+United States of America,https://www.usa.gov/,https://www.usa.gov/complaints,Complaints,ok
+Uruguay,https://www.presidencia.gub.uy/,https://www.presidencia.gub.uy/presidencia/institucional/contacto,Contacto,ok
+Uzbekistan,https://gov.uz/en/,https://gov.uz/en/feedback,Write a message,ok
+Vanuatu,,,,no_portal_found
+Venezuela (Bolivarian Republic of),http://www.presidencia.gob.ve/Site/Web/Principal/paginas/classIndex.php,,,fetch_failed
+Vietnam,https://vietnam.gov.vn/,https://vietnam.gov.vn/#contact-ads,Citizen protection,ok
+Yemen,,,,no_portal_found
+Zambia,,,,no_portal_found
+Zimbabwe,,,,no_portal_found

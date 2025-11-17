@@ -222,7 +222,7 @@ const ConnectForm = () => {
         setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
         
         // Proceed with authentication directly
-        const message = `Connect to Socialism platform with address: ${address}`;
+        const message = `Connect to Meritocracy platform with address: ${address}`;
         console.log('Attempting to sign message...');
         
         const signature = await signMessageAsync({ message });
@@ -278,7 +278,7 @@ const ConnectForm = () => {
           setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
           
           // Proceed with authentication
-          const message = `Connect to Socialism platform with address: ${address}`;
+          const message = `Connect to Meritocracy platform with address: ${address}`;
           console.log('Attempting to sign message...');
           
           const signature = await signMessageAsync({ message });
@@ -323,7 +323,7 @@ const ConnectForm = () => {
             const currentAddress = address || await selectedConnector.getAccount?.();
             if (currentAddress) {
               console.log('Found address from connector, proceeding with authentication...');
-              const message = `Connect to Socialism platform with address: ${currentAddress}`;
+              const message = `Connect to Meritocracy platform with address: ${currentAddress}`;
               
               const signature = await signMessageAsync({ message });
               if (!signature) {
@@ -846,7 +846,7 @@ const ConnectForm = () => {
 
   return (
     <div className="connect-form">
-      <h2>Connect to Socialism Platform</h2>
+      <h2>Connect to Meritocracy Platform</h2>
       
       {renderConnectedStatus()}
       

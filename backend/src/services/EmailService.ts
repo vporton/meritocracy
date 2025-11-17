@@ -82,12 +82,12 @@ class EmailService {
       const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
       
       const mailOptions = {
-        from: `"Socialism Platform" <${senderEmail}>`,
+        from: `"Meritocracy Platform" <${senderEmail}>`,
         to: email,
-        subject: 'Verify Your Email Address - Socialism Platform',
+        subject: 'Verify Your Email Address - Meritocracy Platform',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Welcome to Socialism Platform!</h2>
+            <h2 style="color: #333;">Welcome to Meritocracy Platform!</h2>
             <p>Thank you for connecting your email address. To complete the verification process, please click the button below:</p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -106,12 +106,12 @@ class EmailService {
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #999; font-size: 12px;">
-              This email was sent from Socialism Platform. If you have any questions, please contact our support team.
+              This email was sent from Meritocracy Platform. If you have any questions, please contact our support team.
             </p>
           </div>
         `,
         text: `
-          Welcome to Socialism Platform!
+          Welcome to Meritocracy Platform!
           
           Thank you for connecting your email address. To complete the verification process, please visit the following link:
           
@@ -120,7 +120,7 @@ class EmailService {
           This verification link will expire in 24 hours. If you didn't request this verification, you can safely ignore this email.
           
           Best regards,
-          Socialism Platform Team
+          Meritocracy Platform Team
         `
       };
 

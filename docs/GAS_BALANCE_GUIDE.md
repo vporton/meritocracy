@@ -1,10 +1,10 @@
 # Gas Token Balance Guide
 
-This guide explains how to view gas token balances for all supported networks in the Socialism app.
+This guide explains how to view gas token balances for all supported networks in the Meritocracy app.
 
 ## Overview
 
-The Socialism app supports multiple Ethereum networks for gas token distribution. You can view balances across all enabled networks using the provided tools and API endpoints.
+The Meritocracy app supports multiple Ethereum networks for gas token distribution. You can view balances across all enabled networks using the provided tools and API endpoints.
 
 ## Supported Networks
 

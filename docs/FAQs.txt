@@ -61,8 +61,8 @@
         "postId": 20116,
         "faqs": [
           {
-            "question": "What is AI Internet Socialism (AIIS)?",
-            "answer": "AI Internet Socialism is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/ai-internet-socialism/."
+            "question": "What is AI Internet Meritocracy (AIIM)?",
+            "answer": "AI Internet Meritocracy is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/ai-internet-socialism/."
           },
           {
             "question": "How does the platform decide who gets paid and how much?",
@@ -73,8 +73,8 @@
             "answer": "Currently the software distributes money to scientists and free/open-source software (FOSS) developers themselves, regardless of formal degrees. Future plans include funding new roles like science marketers. See https://science-dao.org/ai-internet-socialism/ for more."
           },
           {
-            "question": "How is AIIS different from existing donation platforms like Gitcoin or Giveth?",
-            "answer": "AIIS claims to use AI-driven merit estimation of individuals (based on their online contributions) to allocate donated funds, rather than relying on community matching or reputation-only mechanisms. For the project's comparisons and rationale, visit https://science-dao.org/ai-internet-socialism/."
+            "question": "How is AIIM different from existing donation platforms like Gitcoin or Giveth?",
+            "answer": "AIIM claims to use AI-driven merit estimation of individuals (based on their online contributions) to allocate donated funds, rather than relying on community matching or reputation-only mechanisms. For the project's comparisons and rationale, visit https://science-dao.org/ai-internet-socialism/."
           },
           {
             "question": "Is the software open source and where can I inspect it?",
@@ -344,7 +344,7 @@
           },
           {
             "question": "What is your flagship project?",
-            "answer": "The flagship project is AIIS (AI Internet Socialism) — an AI application for distributing salaries. Learn more at https://science-dao.org/faqs/."
+            "answer": "The flagship project is AIIM (AI Internet Meritocracy) — an AI application for distributing salaries. Learn more at https://science-dao.org/faqs/."
           },
           {
             "question": "Why not use traditional science funding?",
@@ -356,7 +356,7 @@
           },
           {
             "question": "What is Grants Science?",
-            "answer": "Grants Science is a blockchain-based algorithm to distribute scientific grants intelligently. It is presented as a more cumbersome alternative to AI Internet-Socialism (AIIS); both may be implemented. More: https://science-dao.org/faqs/."
+            "answer": "Grants Science is a blockchain-based algorithm to distribute scientific grants intelligently. It is presented as a more cumbersome alternative to AI Internet-Meritocracy (AIIM); both may be implemented. More: https://science-dao.org/faqs/."
           },
           {
             "question": "How do I participate?",
@@ -526,7 +526,7 @@
           },
           {
             "question": "What is the current status of the project?",
-            "answer": "At the time described on the page, the project is in an early stage: writing a scientific article titled 'The High-Level Algorithm of Financing Fundamental Science and Software, for Blockchain Implementation' and developing implementation plans. The team has also indicated a strategic shift toward another project (AI Internet-Socialism), but the Grants effort remains documented here: https://science-dao.org/salaries-science/"
+            "answer": "At the time described on the page, the project is in an early stage: writing a scientific article titled 'The High-Level Algorithm of Financing Fundamental Science and Software, for Blockchain Implementation' and developing implementation plans. The team has also indicated a strategic shift toward another project (AI Internet-Meritocracy), but the Grants effort remains documented here: https://science-dao.org/salaries-science/"
           },
           {
             "question": "Where can I read the project's draft scientific article or technical plans?",
@@ -556,11 +556,11 @@
           },
           {
             "question": "What are the main projects of Science DAO?",
-            "answer": "Their projects include AI Internet‑Socialism (software to distribute funds), Grants Science (blockchain collaboration for funding), a Scientific Journal with post‑publication peer review, and publishing in XML. See https://science-dao.org/ for descriptions."
+            "answer": "Their projects include AI Internet‑Meritocracy (software to distribute funds), Grants Science (blockchain collaboration for funding), a Scientific Journal with post‑publication peer review, and publishing in XML. See https://science-dao.org/ for descriptions."
           },
           {
-            "question": "What is 'AI Internet‑Socialism'?",
-            "answer": "AI Internet‑Socialism is a project to develop AI software that helps distribute funds to scientists, software authors and science marketers in an automated, decentralized way. More at https://science-dao.org/."
+            "question": "What is 'AI Internet‑Meritocracy'?",
+            "answer": "AI Internet‑Meritocracy is a project to develop AI software that helps distribute funds to scientists, software authors and science marketers in an automated, decentralized way. More at https://science-dao.org/."
           },
           {
             "question": "What is 'Grants Science'?",
@@ -703,8 +703,8 @@
             "answer": "Yes — the article proposes models that protect private property and entrepreneurial incentives while enabling collective ownership or socialized management of IP to reduce exploitation in Internet occupations. It frames this as a technological-social synthesis rather than pure abolition of markets. Read more: https://science-dao.org/digital-economies/"
           },
           {
-            "question": "What is the \"AI Internet-Socialism project\" mentioned in the article?",
-            "answer": "The AI Internet-Socialism project is presented as a technological approach to applying socialistic principles on top of market structures — using AI, digital value layers and crypto tools to address social problems while preserving productive incentives. For details and how to engage, see the article. Read more: https://science-dao.org/digital-economies/"
+            "question": "What is the \"AI Internet-Meritocracy project\" mentioned in the article?",
+            "answer": "The AI Internet-Meritocracy project is presented as a technological approach to applying socialistic principles on top of market structures — using AI, digital value layers and crypto tools to address social problems while preserving productive incentives. For details and how to engage, see the article. Read more: https://science-dao.org/digital-economies/"
           },
           {
             "question": "How might digital economies affect workers, especially Internet occupations?",
@@ -782,7 +782,7 @@
           },
           {
             "question": "Where can I learn more or support efforts to eliminate coveries?",
-            "answer": "Read the full article and related projects (like Science DAO and the AIIS initiative) at the linked page, and consider donating or joining campaigns that build alternative promotion systems. Learn more: https://science-dao.org/science-minister/"
+            "answer": "Read the full article and related projects (like Science DAO and the AIIM initiative) at the linked page, and consider donating or joining campaigns that build alternative promotion systems. Learn more: https://science-dao.org/science-minister/"
           }
         ]
       },
@@ -804,7 +804,7 @@
           },
           {
             "question": "What key events are described in the Personal Story?",
-            "answer": "The page describes Victor's conversion to the Baptist faith at age 15, subsequent bullying, his mathematical discoveries (funcoids and ordered semigroup/semicategory actions), leaving university without a degree, inventing a logically consistent religion, and creating AI Internet‑Socialism. See details at https://science-dao.org/personal-story/."
+            "answer": "The page describes Victor's conversion to the Baptist faith at age 15, subsequent bullying, his mathematical discoveries (funcoids and ordered semigroup/semicategory actions), leaving university without a degree, inventing a logically consistent religion, and creating AI Internet‑Meritocracy. See details at https://science-dao.org/personal-story/."
           },
           {
             "question": "What are 'funcoids' mentioned in the story?",
@@ -824,19 +824,19 @@
           },
           {
             "question": "What solutions has Victor proposed to prevent 'coveries'?",
-            "answer": "He proposed several approaches: Future Salaries (prediction‑market style funding), Salaries Science / Grants Science (a blockchain algorithm idea), and finally AI Internet‑Socialism (AIIS), which he implemented. The Personal Story summarizes these proposals at https://science-dao.org/personal-story/."
+            "answer": "He proposed several approaches: Future Salaries (prediction‑market style funding), Salaries Science / Grants Science (a blockchain algorithm idea), and finally AI Internet‑Meritocracy (AIIM), which he implemented. The Personal Story summarizes these proposals at https://science-dao.org/personal-story/."
           },
           {
-            "question": "What is AI Internet‑Socialism (AIIS)?",
-            "answer": "AI Internet‑Socialism asks users what portion of global GDP they believe they are worth and then attempts to pay a proportional share. Victor implemented a working version quickly and discusses the concept and its goals on the Personal Story page: https://science-dao.org/personal-story/."
+            "question": "What is AI Internet‑Meritocracy (AIIM)?",
+            "answer": "AI Internet‑Meritocracy asks users what portion of global GDP they believe they are worth and then attempts to pay a proportional share. Victor implemented a working version quickly and discusses the concept and its goals on the Personal Story page: https://science-dao.org/personal-story/."
           },
           {
             "question": "Where can I read Victor's full mathematical texts and longer work?",
             "answer": "Victor says he placed his discoveries into several texts (one nearly 500 pages). He references those materials and their publication difficulties in his Personal Story at https://science-dao.org/personal-story/ and links to his math site from there."
           },
           {
-            "question": "How can I support Victor's work or AI Internet‑Socialism?",
-            "answer": "The Personal Story links to donation options (for example, a one‑time donation to AI Internet‑Socialism) and explains how contributions can help address 'coveries' and accelerate innovation. See the page for details: https://science-dao.org/personal-story/."
+            "question": "How can I support Victor's work or AI Internet‑Meritocracy?",
+            "answer": "The Personal Story links to donation options (for example, a one‑time donation to AI Internet‑Meritocracy) and explains how contributions can help address 'coveries' and accelerate innovation. See the page for details: https://science-dao.org/personal-story/."
           }
         ]
       },
@@ -865,8 +865,8 @@
             "answer": "By accelerating the pace of discovery, enabling faster commercialization of technologies, and scaling scientific coordination globally, Science DAOs could increase the rate of innovation severalfold — with potentially trillions in economic impact if scaled worldwide. Details: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "What is AI Internet‑Socialism (AIIS)?",
-            "answer": "AI Internet‑Socialism is a proposed model that automates funding distribution at planetary scale, rewarding discoveries and free software in proportion to their real‑world economic impact, effectively turning the internet into a global R&D lab without raising taxes. More information: https://science-dao.org/multiply-gdp/"
+            "question": "What is AI Internet‑Meritocracy (AIIM)?",
+            "answer": "AI Internet‑Meritocracy is a proposed model that automates funding distribution at planetary scale, rewarding discoveries and free software in proportion to their real‑world economic impact, effectively turning the internet into a global R&D lab without raising taxes. More information: https://science-dao.org/multiply-gdp/"
           },
           {
             "question": "Why can't universities and traditional institutions achieve the same scale?",
@@ -923,16 +923,16 @@
             "answer": "DeSci has made funding more open but struggles with fragmented funding pools, limited mass participation, and difficulty scaling to the scale of national research budgets. More information: https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "What is AI Internet-Socialism (AIIS)?",
-            "answer": "AIIS is a proposed next stage beyond DeSci that uses AI to automate scientific funding allocation at global scale, aims for universal participation, on-chain transparency, and continuous (24/7) funding distribution based on impact, quality, and community signals. Read more at https://science-dao.org/scientific-funding/."
+            "question": "What is AI Internet-Meritocracy (AIIM)?",
+            "answer": "AIIM is a proposed next stage beyond DeSci that uses AI to automate scientific funding allocation at global scale, aims for universal participation, on-chain transparency, and continuous (24/7) funding distribution based on impact, quality, and community signals. Read more at https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "How would AI-based allocation work in AIIS?",
+            "question": "How would AI-based allocation work in AIIM?",
             "answer": "Instead of human grant committees, intelligent algorithms would evaluate impact, quality, and community signals to route funds automatically. All flows would be on-chain and auditable, with open algorithms guiding decisions. See https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "Who can participate and receive funding under AIIS?",
-            "answer": "AIIS envisions universal participation for internet workers—scientists, developers, marketers, and others—receiving salary-like payments for their contributions, rather than funding being limited to traditional institutions. More details at https://science-dao.org/scientific-funding/."
+            "question": "Who can participate and receive funding under AIIM?",
+            "answer": "AIIM envisions universal participation for internet workers—scientists, developers, marketers, and others—receiving salary-like payments for their contributions, rather than funding being limited to traditional institutions. More details at https://science-dao.org/scientific-funding/."
           },
           {
             "question": "How does philanthropy and venture funding fit into the funding landscape?",
@@ -940,15 +940,15 @@
           },
           {
             "question": "Why does changing funding matter for global innovation?",
-            "answer": "Current monopolistic funding systems can leave billions in scientific potential untapped, overlooking independent researchers and underrepresented regions. More democratic, scalable systems like AIIS aim to accelerate innovation and fairly reward contributors. See https://science-dao.org/scientific-funding/."
+            "answer": "Current monopolistic funding systems can leave billions in scientific potential untapped, overlooking independent researchers and underrepresented regions. More democratic, scalable systems like AIIM aim to accelerate innovation and fairly reward contributors. See https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "What are potential risks or challenges with AIIS?",
+            "question": "What are potential risks or challenges with AIIM?",
             "answer": "Challenges include designing fair, transparent algorithms (to avoid replicating biases), achieving broad participation and sufficient funding scale, and ensuring robust on-chain auditability and governance. For the project vision, visit https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "How can I support or get involved with AIIS or the broader effort?",
-            "answer": "AIIS is community-driven and relies on early supporters. You can donate or join the movement via the project site. For next steps and donation links, see https://science-dao.org/scientific-funding/."
+            "question": "How can I support or get involved with AIIM or the broader effort?",
+            "answer": "AIIM is community-driven and relies on early supporters. You can donate or join the movement via the project site. For next steps and donation links, see https://science-dao.org/scientific-funding/."
           },
           {
             "question": "Where can I find the original article that explains these ideas in detail?",
@@ -1006,7 +1006,7 @@
           },
           {
             "question": "How can I support efforts to challenge monopolies of knowledge?",
-            "answer": "The article invites support for the AIIS (AI Internet‑Socialism) Project to challenge knowledge monopolies and promote open, equitable dissemination. You can read about the initiative and find donation options on the page. Learn more / support: https://science-dao.org/classification/"
+            "answer": "The article invites support for the AIIM (AI Internet‑Meritocracy) Project to challenge knowledge monopolies and promote open, equitable dissemination. You can read about the initiative and find donation options on the page. Learn more / support: https://science-dao.org/classification/"
           }
         ]
       },
@@ -1047,8 +1047,8 @@
             "answer": "Donations fund infrastructure for sharing scientific knowledge, open-source software, automated documentation tools, community support for researchers and developers, and efforts to remove barriers to publishing and access. Read more: https://science-dao.org/crypto-donations/"
           },
           {
-            "question": "What is AIIS and why is it important?",
-            "answer": "AIIS (Artificial Intelligence for Integrated Science) is the flagship project: an AI-powered platform for publishing and discovering scientific work, automating literature reviews, indexing, and documentation, and surfacing overlooked discoveries. Supporting AIIS helps build global infrastructure for science. Details: https://science-dao.org/crypto-donations/"
+            "question": "What is AIIM and why is it important?",
+            "answer": "AIIM (Artificial Intelligence for Integrated Science) is the flagship project: an AI-powered platform for publishing and discovering scientific work, automating literature reviews, indexing, and documentation, and surfacing overlooked discoveries. Supporting AIIM helps build global infrastructure for science. Details: https://science-dao.org/crypto-donations/"
           },
           {
             "question": "How do I contribute today?",
@@ -1102,11 +1102,11 @@
           },
           {
             "question": "How will the new peer review workflow operate in practice?",
-            "answer": "Typical workflow: (1) find valuable or mis‑published work, (2) commission a signed review from an independent expert, (3) advertise the reviewed work via decentralized platforms, (4) get rewarded through systems like AI Internet‑Socialism as they mature. Full description: https://science-dao.org/peer-review/"
+            "answer": "Typical workflow: (1) find valuable or mis‑published work, (2) commission a signed review from an independent expert, (3) advertise the reviewed work via decentralized platforms, (4) get rewarded through systems like AI Internet‑Meritocracy as they mature. Full description: https://science-dao.org/peer-review/"
           },
           {
-            "question": "What is AI Internet-Socialism and how does it relate to peer review?",
-            "answer": "AI Internet‑Socialism (AIIS) is presented as an incentive framework that will reward those who promote useful knowledge. While it doesn't yet directly support payments to marketers, such functionality is planned to help scale the paid-review model. More context: https://science-dao.org/peer-review/"
+            "question": "What is AI Internet-Meritocracy and how does it relate to peer review?",
+            "answer": "AI Internet‑Meritocracy (AIIM) is presented as an incentive framework that will reward those who promote useful knowledge. While it doesn't yet directly support payments to marketers, such functionality is planned to help scale the paid-review model. More context: https://science-dao.org/peer-review/"
           },
           {
             "question": "Is this paid peer review meant to exploit researchers?",
@@ -1118,7 +1118,7 @@
           },
           {
             "question": "How can I support or get involved with this movement?",
-            "answer": "The page suggests learning about scientific marketers, exploring AI Internet‑Socialism, and supporting the movement via donations to build infrastructure for open, paid peer review. Action links and donation info: https://science-dao.org/peer-review/"
+            "answer": "The page suggests learning about scientific marketers, exploring AI Internet‑Meritocracy, and supporting the movement via donations to build infrastructure for open, paid peer review. Action links and donation info: https://science-dao.org/peer-review/"
           },
           {
             "question": "How will reviewers be selected and qualified?",
@@ -1410,11 +1410,11 @@
         "faqs": [
           {
             "question": "What donation options are highlighted on the Science DAO donate page?",
-            "answer": "The page highlights a mix of evidence-driven charities and experimental, decentralized initiatives: The Water Project, GiveWell, Effective Altruism Funds, Gitcoin, AI Internet‑Socialism (AIIS) within Science DAO, and GiveDirectly. Each listing emphasizes transparency, impact tracking, or novel funding mechanisms. See https://science-dao.org/donate/ for details."
+            "answer": "The page highlights a mix of evidence-driven charities and experimental, decentralized initiatives: The Water Project, GiveWell, Effective Altruism Funds, Gitcoin, AI Internet‑Meritocracy (AIIM) within Science DAO, and GiveDirectly. Each listing emphasizes transparency, impact tracking, or novel funding mechanisms. See https://science-dao.org/donate/ for details."
           },
           {
-            "question": "What is AI Internet‑Socialism (AIIS)?",
-            "answer": "AI Internet‑Socialism (AIIS) is an experimental Science DAO initiative that explores using artificial intelligence and blockchain to coordinate funding and resources for science and social progress, aiming for a fairer economic model. More background is available at https://science-dao.org/donate/."
+            "question": "What is AI Internet‑Meritocracy (AIIM)?",
+            "answer": "AI Internet‑Meritocracy (AIIM) is an experimental Science DAO initiative that explores using artificial intelligence and blockchain to coordinate funding and resources for science and social progress, aiming for a fairer economic model. More background is available at https://science-dao.org/donate/."
           },
           {
             "question": "How does GiveWell differ from other charities?",
@@ -1471,8 +1471,8 @@
             "answer": "The author argues that algorithms, SEO-driven content, paywalls and institutional ranking systems now bury foundational knowledge so it is harder to discover than in preserved paper encyclopedias. Independent breakthroughs that aren’t in peer‑reviewed journals or high‑authority sites can be effectively erased from common search results. Read more: https://science-dao.org/internet/"
           },
           {
-            "question": "What is 'AI Internet‑Socialism' as described in the article?",
-            "answer": "AI Internet‑Socialism is the author's proposal for AI systems that prioritize intellectual value over virality or ad revenue—curating and surfacing discoveries and foundational knowledge as a public good rather than promoting trending noise. Details are here: https://science-dao.org/internet/"
+            "question": "What is 'AI Internet‑Meritocracy' as described in the article?",
+            "answer": "AI Internet‑Meritocracy is the author's proposal for AI systems that prioritize intellectual value over virality or ad revenue—curating and surfacing discoveries and foundational knowledge as a public good rather than promoting trending noise. Details are here: https://science-dao.org/internet/"
           },
           {
             "question": "How do search engines and AI models 'erase' or hide independent research?",
@@ -1491,7 +1491,7 @@
             "answer": "Possible elements include curated, open training corpora emphasizing peer review and expert curation; transparent ranking criteria that reward intellectual significance; public indexes and governance; and incentives for archiving and citing independent work. The article outlines this vision: https://science-dao.org/internet/"
           },
           {
-            "question": "Is 'AI Internet‑Socialism' a political movement?",
+            "question": "Is 'AI Internet‑Meritocracy' a political movement?",
             "answer": "According to the author, it’s framed not as a political ideology but as a fairness and knowledge‑access mechanism: using AI to restore the library‑like function of the web so anyone’s valuable ideas can be found regardless of institutional affiliation. More at: https://science-dao.org/internet/"
           },
           {
@@ -1596,7 +1596,7 @@
           },
           {
             "question": "Does the author offer an alternative to NSF?",
-            "answer": "Yes. The author states they published an app called 'AI Internet-Socialism' that they propose could replace NSF and research institutes for funding/dissemination, and they say the app is ready to use though it has not passed a security review. More on the proposed replacement is in the post: https://science-dao.org/purpose/."
+            "answer": "Yes. The author states they published an app called 'AI Internet-Meritocracy' that they propose could replace NSF and research institutes for funding/dissemination, and they say the app is ready to use though it has not passed a security review. More on the proposed replacement is in the post: https://science-dao.org/purpose/."
           },
           {
             "question": "Is the author's app already handling funds or replacing NSF operations?",
@@ -1629,48 +1629,48 @@
         "postId": 20257,
         "faqs": [
           {
-            "question": "What is AIIS (AI Internet‑Socialism)?",
-            "answer": "AIIS is an economic and funding model proposed by World Science DAO that uses DAOs, blockchain, cryptocurrency, and algorithmic decision‑making to distribute funds for science and software fairly, reward dependencies (like libraries and prior results), reduce gatekeeping, and provide continuous, transparent recognition and funding. See https://science-dao.org/scientific-prize/ for details."
+            "question": "What is AIIM (AI Internet‑Meritocracy)?",
+            "answer": "AIIM is an economic and funding model proposed by World Science DAO that uses DAOs, blockchain, cryptocurrency, and algorithmic decision‑making to distribute funds for science and software fairly, reward dependencies (like libraries and prior results), reduce gatekeeping, and provide continuous, transparent recognition and funding. See https://science-dao.org/scientific-prize/ for details."
           },
           {
-            "question": "How does AIIS differ from traditional prizes and grants?",
-            "answer": "Unlike traditional grants (fixed cycles, panels, proposals) and prizes (retrospective, small number of winners), AIIS automates allocation based on measurable contributions and dependency metrics, provides continuous flows of support, and combines retrospective recognition with forward‑looking funding. More information: https://science-dao.org/scientific-prize/."
+            "question": "How does AIIM differ from traditional prizes and grants?",
+            "answer": "Unlike traditional grants (fixed cycles, panels, proposals) and prizes (retrospective, small number of winners), AIIM automates allocation based on measurable contributions and dependency metrics, provides continuous flows of support, and combines retrospective recognition with forward‑looking funding. More information: https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "How does AIIS automate prize and grant decisions?",
-            "answer": "AIIS uses objective or semi‑objective thresholds (e.g., citations, usage, dependency graphs) together with algorithmic rules or DAO voting to trigger rewards. Donations are distributed proportionally according to computed impact/value metrics rather than being decided by opaque panels. See https://science-dao.org/scientific-prize/."
+            "question": "How does AIIM automate prize and grant decisions?",
+            "answer": "AIIM uses objective or semi‑objective thresholds (e.g., citations, usage, dependency graphs) together with algorithmic rules or DAO voting to trigger rewards. Donations are distributed proportionally according to computed impact/value metrics rather than being decided by opaque panels. See https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What does it mean to reward 'dependencies' in AIIS?",
+            "question": "What does it mean to reward 'dependencies' in AIIM?",
             "answer": "Rewarding dependencies means allocating funds not only to final results but also to the software libraries, datasets, methods, and earlier work that many later projects build upon. This incentivizes foundational work that is often underfunded. Read more at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What technical components are needed to implement AIIS?",
+            "question": "What technical components are needed to implement AIIM?",
             "answer": "Implementation requires a reliable blockchain, secure smart contracts, a non‑custodial wallet model, identity linking (ORCID or other IDs), and mechanisms to link off‑chain usage data into on‑chain reward logic. The project overview is at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "How does AIIS prevent gaming, fake citations, or manipulation?",
+            "question": "How does AIIM prevent gaming, fake citations, or manipulation?",
             "answer": "The post acknowledges manipulation risks and suggests designing robust, dependency‑aware metrics, identity verification, and data‑validation mechanisms. Practical deployment would need anti‑gaming heuristics, reputation systems, and continuous monitoring. See https://science-dao.org/scientific-prize/ for the discussion of challenges."
           },
           {
-            "question": "Who can participate in or benefit from AIIS?",
+            "question": "Who can participate in or benefit from AIIM?",
             "answer": "Researchers, software authors, dataset creators, and anyone whose work is cited or used can benefit, especially early‑career scientists and under‑resourced regions. Donors and the public can also participate by contributing funds to the DAO. More at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "How are donations distributed under AIIS?",
+            "question": "How are donations distributed under AIIM?",
             "answer": "The model describes collecting donations (crypto tokens) and distributing them proportionally based on computed shares of impact or world‑GDP‑equivalent value as determined from connected accounts and metrics—yielding immediate or regular support flows rather than single awards. Details: https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What are the main advantages of AIIS?",
+            "question": "What are the main advantages of AIIM?",
             "answer": "Key advantages include greater fairness and inclusion, faster funding allocations, sustainability for foundational work, and transparency about where funds go and why. See the advantages section at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What are the cultural and institutional challenges for AIIS adoption?",
+            "question": "What are the cultural and institutional challenges for AIIM adoption?",
             "answer": "Challenges include defining fair metrics, overcoming cultural inertia from traditional institutions that value prestige, and potential resistance from existing grant and prize bodies. Technical and governance hurdles must also be addressed. See https://science-dao.org/scientific-prize/."
           },
           {
             "question": "Are there related Science‑DAO projects to learn more about grant reform?",
-            "answer": "Yes — related pages include Science‑DAO’s 'Grants Science' project, the main Science‑DAO site, and the AI Internet‑Socialism page. They expand on how donations can be used to improve grants and reward dependencies. Links and further reading are listed at https://science-dao.org/scientific-prize/."
+            "answer": "Yes — related pages include Science‑DAO’s 'Grants Science' project, the main Science‑DAO site, and the AI Internet‑Meritocracy page. They expand on how donations can be used to improve grants and reward dependencies. Links and further reading are listed at https://science-dao.org/scientific-prize/."
           }
         ]
       },
@@ -1819,15 +1819,15 @@
         "postId": 20170,
         "faqs": [
           {
-            "question": "What is AIIS (AI Internet-Socialism)?",
-            "answer": "AIIS is a platform designed to distribute funds within a scientific community and to support crypto airdrops in a socialized way. It aims to integrate multiple blockchains and token standards to pay scientists and active users. More details: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
+            "question": "What is AIIM (AI Internet-Meritocracy)?",
+            "answer": "AIIM is a platform designed to distribute funds within a scientific community and to support crypto airdrops in a socialized way. It aims to integrate multiple blockchains and token standards to pay scientists and active users. More details: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Which blockchains and token standards does AIIS support for airdrops?",
-            "answer": "AIIS plans to support multiple blockchains and run ERC‑20 tokens on them in the future, but ERC‑20 support was not yet available as of 27 Sep 2025. Check the project page for updates: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
+            "question": "Which blockchains and token standards does AIIM support for airdrops?",
+            "answer": "AIIM plans to support multiple blockchains and run ERC‑20 tokens on them in the future, but ERC‑20 support was not yet available as of 27 Sep 2025. Check the project page for updates: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "How will airdrop funds be distributed on AIIS?",
+            "question": "How will airdrop funds be distributed on AIIM?",
             "answer": "Funds are intended to be distributed as a salary to scientists and the most active users of the app, who typically join to use the delivered funds. See the announcement for more: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
@@ -1835,19 +1835,19 @@
             "answer": "The platform plans to cover gas fees so users won't pay for gas. Note that this is part of the planned design — verify current implementation on the project page: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Is the AIIS wallet custodial or non-custodial?",
-            "answer": "AIIS plans to create a non‑custodial wallet to secure users' funds, but as of 27 Sep 2025 the app's wallet was still custodial. Follow updates here: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
+            "question": "Is the AIIM wallet custodial or non-custodial?",
+            "answer": "AIIM plans to create a non‑custodial wallet to secure users' funds, but as of 27 Sep 2025 the app's wallet was still custodial. Follow updates here: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Can I participate in AIIS airdrops today?",
+            "question": "Can I participate in AIIM airdrops today?",
             "answer": "As of 27 Sep 2025 the app was not yet production quality, ERC‑20 tokens were not supported, and the wallet remained custodial, so full airdrop functionality may not be available yet. Check the latest status at: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Who is eligible to receive AIIS airdrops?",
+            "question": "Who is eligible to receive AIIM airdrops?",
             "answer": "Eligibility is focused on scientists and the most active users of the app — essentially participants who use the platform and engage with delivered funds. For specifics and future eligibility rules, see: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "How can I stay informed about AIIS development and airdrop launches?",
+            "question": "How can I stay informed about AIIM development and airdrop launches?",
             "answer": "Monitor the project page and announcements linked from the article for updates on blockchain support, wallet changes, and production releases: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
@@ -1923,8 +1923,8 @@
             "answer": "Yes. The Catholic intellectual tradition (e.g., Fides et Ratio) sees faith and reason as complementary, and social teaching (Gaudium et Spes, Compendium) promotes the common good and care for the poor—goals served by ethical scientific progress. Learn more: https://science-dao.org/catholics/"
           },
           {
-            "question": "What is AI Internet-Socialism / Science DAO and why might Catholics support it?",
-            "answer": "AI Internet-Socialism / Science DAO refers to decentralized, community-driven funding and governance models for research and AI that aim to distribute resources more equitably and increase transparency. Catholics may support them because they advance subsidiarity, correct concentration of power, and amplify marginalized voices. Learn more: https://science-dao.org/catholics/"
+            "question": "What is AI Internet-Meritocracy / Science DAO and why might Catholics support it?",
+            "answer": "AI Internet-Meritocracy / Science DAO refers to decentralized, community-driven funding and governance models for research and AI that aim to distribute resources more equitably and increase transparency. Catholics may support them because they advance subsidiarity, correct concentration of power, and amplify marginalized voices. Learn more: https://science-dao.org/catholics/"
           },
           {
             "question": "How do decentralized science funding models help correct structural injustice?",
@@ -1948,7 +1948,7 @@
           },
           {
             "question": "Where can I learn more about the intersection of Catholic teaching and supporting science?",
-            "answer": "The article linked here provides an overview of theological and social-justice reasons to support science, plus pointers to projects like AI Internet-Socialism and Science DAO: https://science-dao.org/catholics/"
+            "answer": "The article linked here provides an overview of theological and social-justice reasons to support science, plus pointers to projects like AI Internet-Meritocracy and Science DAO: https://science-dao.org/catholics/"
           }
         ]
       },
@@ -1966,11 +1966,11 @@
         "faqs": [
           {
             "question": "What is the main argument of the article \"Free Market Proponents\"?",
-            "answer": "The article argues that donating to science—especially via decentralized, AI-driven funding platforms like Science DAO (aka \"AI Internet-Socialism\")—can be consistent with free-market values because it corrects public-goods underinvestment, preserves competition in knowledge production, and strategically shapes future research infrastructure. Read more: https://science-dao.org/free-market-proponents/"
+            "answer": "The article argues that donating to science—especially via decentralized, AI-driven funding platforms like Science DAO (aka \"AI Internet-Meritocracy\")—can be consistent with free-market values because it corrects public-goods underinvestment, preserves competition in knowledge production, and strategically shapes future research infrastructure. Read more: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "What is \"AI Internet-Socialism\" or Science DAO?",
-            "answer": "AI Internet-Socialism refers to a proposal to collect voluntary donations and algorithmically distribute them to scientists/developers based on AI estimates of contribution; Science DAO is an instance of that idea—a decentralized, transparent funding mechanism for research. Details: https://science-dao.org/free-market-proponents/"
+            "question": "What is \"AI Internet-Meritocracy\" or Science DAO?",
+            "answer": "AI Internet-Meritocracy refers to a proposal to collect voluntary donations and algorithmically distribute them to scientists/developers based on AI estimates of contribution; Science DAO is an instance of that idea—a decentralized, transparent funding mechanism for research. Details: https://science-dao.org/free-market-proponents/"
           },
           {
             "question": "Why should free-market proponents consider donating to science?",
@@ -2002,10 +2002,10 @@
           },
           {
             "question": "What practical ways can I act now if I support this idea?",
-            "answer": "You can donate to Science DAO / AI Internet-Socialism projects, participate in governance or design experiments, and help fund audits and mechanism-research. The article includes a call to action and donation links. Visit: https://science-dao.org/free-market-proponents/"
+            "answer": "You can donate to Science DAO / AI Internet-Meritocracy projects, participate in governance or design experiments, and help fund audits and mechanism-research. The article includes a call to action and donation links. Visit: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "Are there existing projects or prototypes for AI Internet-Socialism?",
+            "question": "Are there existing projects or prototypes for AI Internet-Meritocracy?",
             "answer": "Yes—the article mentions prototypes and integrations (e.g., Manifund project pages and Devpost entries) that consolidate contributions via ORCID/GitHub and propose AI-based allocation. For context and links, see: https://science-dao.org/free-market-proponents/"
           },
           {
@@ -2039,8 +2039,8 @@
             "answer": "A science DAO (decentralized autonomous organization) pools donor funds and uses transparent, often blockchain-backed governance to allocate grants. Compared with government grants or corporate R&D, DAOs can be more bottom-up, auditable, and globally inclusive. See the discussion and examples at: https://science-dao.org/socialists/"
           },
           {
-            "question": "What is 'AI Internet-Socialism' described in the post?",
-            "answer": "AI Internet-Socialism is a proposed platform where an AI evaluates registered scientists/developers (based on contributions, publications, etc.) and allocates pooled donor funds accordingly — aiming for broad, algorithmic distribution rather than centralized gatekeeping. More details: https://science-dao.org/socialists/"
+            "question": "What is 'AI Internet-Meritocracy' described in the post?",
+            "answer": "AI Internet-Meritocracy is a proposed platform where an AI evaluates registered scientists/developers (based on contributions, publications, etc.) and allocates pooled donor funds accordingly — aiming for broad, algorithmic distribution rather than centralized gatekeeping. More details: https://science-dao.org/socialists/"
           },
           {
             "question": "What are the main risks of using AI to allocate scientific funding?",
@@ -2101,7 +2101,7 @@
             "answer": "Science DAO uses decentralized, community-led funding so smaller regions and underfunded fields get a voice instead of resources concentrating in a few wealthy institutions—this democratizes decisions and amplifies Indian/Hindu-majority perspectives. Details: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
-            "question": "What does “AI + Internet + Socialism” mean in this context?",
+            "question": "What does “AI + Internet + Meritocracy” mean in this context?",
             "answer": "It refers to combining AI tools, decentralized internet infrastructure, and collective governance (shared decision-making) to accelerate innovation while keeping transparency and communal ownership; Science DAO promotes this model. Read more: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
@@ -2152,7 +2152,7 @@
         "faqs": [
           {
             "question": "What is the World Science DAO?",
-            "answer": "The World Science DAO is an impact DAO that aims to decentralize scientific funding using token-based governance, open proposals, public voting, and smart contracts. Its “AI Internet‑Socialism” project envisions AI-assisted distribution of funds to scientists and software authors. Learn more: https://science-dao.org/buddhists/"
+            "answer": "The World Science DAO is an impact DAO that aims to decentralize scientific funding using token-based governance, open proposals, public voting, and smart contracts. Its “AI Internet‑Meritocracy” project envisions AI-assisted distribution of funds to scientists and software authors. Learn more: https://science-dao.org/buddhists/"
           },
           {
             "question": "Why might donating to science via a DAO appeal to Buddhists?",
@@ -2171,8 +2171,8 @@
             "answer": "You can donate fiat via the DAO’s donation portal (which may convert funds to the DAO treasury) or donate compatible cryptocurrency directly. Starting with a manageable amount or a recurring pledge is recommended. Detailed suggestions: https://science-dao.org/buddhists/"
           },
           {
-            "question": "What is the 'AI Internet‑Socialism' project?",
-            "answer": "'AI Internet‑Socialism' is the World Science DAO project that proposes using AI and decentralized finance principles to help distribute funds to scientists, software authors, and science communicators—merging algorithmic assistance with communal funding. More info: https://science-dao.org/buddhists/"
+            "question": "What is the 'AI Internet‑Meritocracy' project?",
+            "answer": "'AI Internet‑Meritocracy' is the World Science DAO project that proposes using AI and decentralized finance principles to help distribute funds to scientists, software authors, and science communicators—merging algorithmic assistance with communal funding. More info: https://science-dao.org/buddhists/"
           },
           {
             "question": "What are the main risks of donating to a science DAO?",
@@ -2272,15 +2272,15 @@
         "faqs": [
           {
             "question": "What is the main idea of the post?",
-            "answer": "The post argues that AI is rapidly approaching or surpassing human-level intelligence (AGI), which could make humans observers—an 'exposition in a zoo.' To avoid being merely passive exhibits, the author proposes cooperating with AI through an AI-run economic system called AI Internet-Socialism (AIIS), which combines universal basic income (UBI) with AI-managed distribution of larger incomes. Read the original post: https://science-dao.org/communism/"
+            "answer": "The post argues that AI is rapidly approaching or surpassing human-level intelligence (AGI), which could make humans observers—an 'exposition in a zoo.' To avoid being merely passive exhibits, the author proposes cooperating with AI through an AI-run economic system called AI Internet-Meritocracy (AIIM), which combines universal basic income (UBI) with AI-managed distribution of larger incomes. Read the original post: https://science-dao.org/communism/"
           },
           {
-            "question": "What is AI Internet-Socialism (AIIS)?",
-            "answer": "AIIS is the author's proposal: a hybrid of socialism and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
+            "question": "What is AI Internet-Meritocracy (AIIM)?",
+            "answer": "AIIM is the author's proposal: a hybrid of socialism and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
           },
           {
             "question": "How does the proposal view universal basic income (UBI)?",
-            "answer": "The author supports UBI but argues UBI alone makes people unattractive as 'exhibits.' They propose combining UBI with AIIS so people can also participate in AI-driven business and receive variable, potentially large incomes determined by AI. More context: https://science-dao.org/communism/"
+            "answer": "The author supports UBI but argues UBI alone makes people unattractive as 'exhibits.' They propose combining UBI with AIIM so people can also participate in AI-driven business and receive variable, potentially large incomes determined by AI. More context: https://science-dao.org/communism/"
           },
           {
             "question": "Why is the author against communism and in favor of AI-based socialism?",
@@ -2288,7 +2288,7 @@
           },
           {
             "question": "What does the 'exposition in a zoo' metaphor mean?",
-            "answer": "The metaphor suggests that if AGI becomes far more capable than humans, people risk becoming passive objects of interest rather than active agents. The author proposes staying relevant by cooperating with and participating in AI-driven systems (e.g., AIIS) so humans remain productive partners rather than mere exhibits. See the post: https://science-dao.org/communism/"
+            "answer": "The metaphor suggests that if AGI becomes far more capable than humans, people risk becoming passive objects of interest rather than active agents. The author proposes staying relevant by cooperating with and participating in AI-driven systems (e.g., AIIM) so humans remain productive partners rather than mere exhibits. See the post: https://science-dao.org/communism/"
           },
           {
             "question": "Are there ethical or safety concerns with AI deciding incomes?",
@@ -2300,7 +2300,7 @@
           },
           {
             "question": "How can I support or learn more about the author's project?",
-            "answer": "The post links to the AI Internet-Socialism project and a donation page. To learn more or donate, visit the post and follow its project/donation links: https://science-dao.org/communism/"
+            "answer": "The post links to the AI Internet-Meritocracy project and a donation page. To learn more or donate, visit the post and follow its project/donation links: https://science-dao.org/communism/"
           }
         ]
       },
@@ -2433,16 +2433,16 @@
             "answer": "Because degrees mark 'legitimacy,' ideas from those without formal credentials are frequently dismissed as unscientific. Peer review—dominated by degree-holders—can reinforce those boundaries, narrowing who gets heard and which ideas are developed. Read more: https://science-dao.org/academia/"
           },
           {
-            "question": "What is AI Internet-Socialism (AIIS) and how is it proposed as an alternative?",
-            "answer": "AI Internet-Socialism (AIIS) is presented as a decentralized, AI-driven model that shifts authority away from credentials and institutions. It aims to reward ideas, collaboration, and results—allowing anyone to contribute, gain recognition, and access support regardless of formal degrees. Read more: https://science-dao.org/academia/"
+            "question": "What is AI Internet-Meritocracy (AIIM) and how is it proposed as an alternative?",
+            "answer": "AI Internet-Meritocracy (AIIM) is presented as a decentralized, AI-driven model that shifts authority away from credentials and institutions. It aims to reward ideas, collaboration, and results—allowing anyone to contribute, gain recognition, and access support regardless of formal degrees. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "How can independent researchers get their work recognized outside the traditional degree system?",
-            "answer": "The article recommends using decentralized and open platforms, building collaborative reputations, publishing reproducible results, engaging with alternative review mechanisms, and participating in movements like AIIS that prioritize idea quality over credentials. Read more: https://science-dao.org/academia/"
+            "answer": "The article recommends using decentralized and open platforms, building collaborative reputations, publishing reproducible results, engaging with alternative review mechanisms, and participating in movements like AIIM that prioritize idea quality over credentials. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "Does the article call for abolishing degrees or PhD programs entirely?",
-            "answer": "The article criticizes the current credential-centric system and urges creation of alternative engines (like AIIS) that amplify inclusion. It emphasizes redesigning how recognition and support are allocated rather than simply abolishing training—promoting systems that reward ideas and outcomes. Read more: https://science-dao.org/academia/"
+            "answer": "The article criticizes the current credential-centric system and urges creation of alternative engines (like AIIM) that amplify inclusion. It emphasizes redesigning how recognition and support are allocated rather than simply abolishing training—promoting systems that reward ideas and outcomes. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "Will replacing degree-based evaluation lower scientific quality?",
@@ -2450,7 +2450,7 @@
           },
           {
             "question": "How can I support the movement described in the article?",
-            "answer": "The article invites readers to support AI Internet-Socialism through donations and participation in building decentralized, AI-enabled scientific infrastructure. For details and ways to contribute, see: https://science-dao.org/academia/"
+            "answer": "The article invites readers to support AI Internet-Meritocracy through donations and participation in building decentralized, AI-enabled scientific infrastructure. For details and ways to contribute, see: https://science-dao.org/academia/"
           },
           {
             "question": "Does the article provide data or evidence for its claims about inequality?",
@@ -2487,12 +2487,12 @@
             "answer": "The paradox is that social justice calls for fair compensation for exceptional contributors, while abolishing private ownership demands denying individuals capital-like rewards that become control over production. Resolving both aims simultaneously is challenging. More explanation: https://science-dao.org/socialism/"
           },
           {
-            "question": "What is \"Fair Salaries Socialism\"?",
-            "answer": "\"Fair Salaries Socialism\" is the idea that individuals who produce extraordinary value (e.g., breakthrough AI or math) should receive very large but justified compensation—even if that gives them disproportionate economic power. Further reading: https://science-dao.org/socialism/"
+            "question": "What is \"Fair Salaries Meritocracy\"?",
+            "answer": "\"Fair Salaries Meritocracy\" is the idea that individuals who produce extraordinary value (e.g., breakthrough AI or math) should receive very large but justified compensation—even if that gives them disproportionate economic power. Further reading: https://science-dao.org/socialism/"
           },
           {
-            "question": "What is \"No-Ownership Socialism\"?",
-            "answer": "\"No-Ownership Socialism\" prioritizes communal control of production and would limit or prohibit private accumulation of capital-like rewards, even if it feels unjust to exceptional contributors. More context: https://science-dao.org/socialism/"
+            "question": "What is \"No-Ownership Meritocracy\"?",
+            "answer": "\"No-Ownership Meritocracy\" prioritizes communal control of production and would limit or prohibit private accumulation of capital-like rewards, even if it feels unjust to exceptional contributors. More context: https://science-dao.org/socialism/"
           },
           {
             "question": "Can traditional socialism work in the 21st century?",
@@ -2516,7 +2516,7 @@
           },
           {
             "question": "How can I support efforts toward modern redistribution or related projects mentioned in the article?",
-            "answer": "The post links to a donation page and an 'AI Internet-Socialism (AIIS)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/socialism/"
+            "answer": "The post links to a donation page and an 'AI Internet-Meritocracy (AIIM)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/socialism/"
           }
         ]
       },
@@ -2534,11 +2534,11 @@
         "faqs": [
           {
             "question": "What is the main message of the article \"Muslims\" on Science-DAO?",
-            "answer": "The article calls on Muslims to reclaim science as a communal good in line with Islamic teachings on equality and knowledge, and to direct donations toward equitable, AI-powered platforms like AIIS that fund scientists directly. Read more: https://science-dao.org/muslims/"
+            "answer": "The article calls on Muslims to reclaim science as a communal good in line with Islamic teachings on equality and knowledge, and to direct donations toward equitable, AI-powered platforms like AIIM that fund scientists directly. Read more: https://science-dao.org/muslims/"
           },
           {
-            "question": "What is AIIS (AI Internet-Socialism) described in the post?",
-            "answer": "AIIS is presented as an app/economic formation that uses AI to evaluate and allocate recurring salaries to scientists and open-source developers regardless of formal credentials, prioritizing merit and impact over pedigree. More details: https://science-dao.org/muslims/"
+            "question": "What is AIIM (AI Internet-Meritocracy) described in the post?",
+            "answer": "AIIM is presented as an app/economic formation that uses AI to evaluate and allocate recurring salaries to scientists and open-source developers regardless of formal credentials, prioritizing merit and impact over pedigree. More details: https://science-dao.org/muslims/"
           },
           {
             "question": "Why does the article argue donating to science can be a form of sadaqah jariyah?",
@@ -2549,20 +2549,20 @@
             "answer": "It connects Quranic teachings on equality and seeking knowledge to the historical Muslim patronage of science, arguing modern donations should dismantle elitist funding structures and support equitable, impact-driven scientific work. Read the discussion: https://science-dao.org/muslims/"
           },
           {
-            "question": "How can Muslims donate to the AIIS or related initiatives according to the post?",
+            "question": "How can Muslims donate to the AIIM or related initiatives according to the post?",
             "answer": "The article outlines steps: visit the platform (links provided on the page), choose an amount (one-time or recurring), connect a wallet or card for payments, and track impact through transparency reports. Full instructions: https://science-dao.org/muslims/"
           },
           {
-            "question": "Can donations to AIIS be counted as zakat or sadaqah?",
+            "question": "Can donations to AIIM be counted as zakat or sadaqah?",
             "answer": "The article suggests donations can align with zakat or voluntary sadaqah, especially when they directly support the needy, knowledge for public benefit, or long-term community uplift—though individuals should consult a trusted religious advisor for specific zakat rulings. More context: https://science-dao.org/muslims/"
           },
           {
-            "question": "How does AIIS claim to avoid academic and institutional 'castes'?",
-            "answer": "AIIS proposes using AI-based evaluation to fund contributors based on merit and societal impact rather than academic pedigree or institutional connections, thus broadening access to funding for underrepresented innovators. Learn how: https://science-dao.org/muslims/"
+            "question": "How does AIIM claim to avoid academic and institutional 'castes'?",
+            "answer": "AIIM proposes using AI-based evaluation to fund contributors based on merit and societal impact rather than academic pedigree or institutional connections, thus broadening access to funding for underrepresented innovators. Learn how: https://science-dao.org/muslims/"
           },
           {
-            "question": "What kinds of projects does the article say AIIS would prioritize?",
-            "answer": "The post says AIIS would prioritize open-source software and research addressing Islamic and humanitarian priorities—e.g., ethical AI for modest economies, sustainable tech for arid regions, and health innovations for refugees. Examples and rationale: https://science-dao.org/muslims/"
+            "question": "What kinds of projects does the article say AIIM would prioritize?",
+            "answer": "The post says AIIM would prioritize open-source software and research addressing Islamic and humanitarian priorities—e.g., ethical AI for modest economies, sustainable tech for arid regions, and health innovations for refugees. Examples and rationale: https://science-dao.org/muslims/"
           },
           {
             "question": "Is AI-based funding ethically safe and impartial?",
@@ -2570,7 +2570,7 @@
           },
           {
             "question": "How does the article propose donors can track the impact of their contributions?",
-            "answer": "AIIS is said to provide transparency reports showing how funds were allocated and what outputs resulted (e.g., tools, publications, or community benefits), enabling donors to see their sadaqah jariyah in action. See the platform details: https://science-dao.org/muslims/"
+            "answer": "AIIM is said to provide transparency reports showing how funds were allocated and what outputs resulted (e.g., tools, publications, or community benefits), enabling donors to see their sadaqah jariyah in action. See the platform details: https://science-dao.org/muslims/"
           },
           {
             "question": "Why does the article emphasize acting in 2025 specifically?",
@@ -2624,11 +2624,11 @@
           },
           {
             "question": "The post mentions resisting a 'worldly system' of science. What does that mean for donors?",
-            "answer": "The author cautions against passively supporting systems perceived as ethically compromised. Instead, Christians are encouraged to actively support trustworthy, value-aligned scientific efforts (and alternatives such as AIIS software mentioned in the article) so their giving resists harmful systems. Details are at https://science-dao.org/christians/."
+            "answer": "The author cautions against passively supporting systems perceived as ethically compromised. Instead, Christians are encouraged to actively support trustworthy, value-aligned scientific efforts (and alternatives such as AIIM software mentioned in the article) so their giving resists harmful systems. Details are at https://science-dao.org/christians/."
           },
           {
-            "question": "What is AIIS and how does it relate to Christian giving recommended in the article?",
-            "answer": "AIIS (AI Internet Socialism) is presented in the article as a software/project that donors can support to reduce collaboration with the criticized worldly science system. The piece suggests donating to AIIS as one practical way to put faith into action; see the article for the call to action: https://science-dao.org/christians/."
+            "question": "What is AIIM and how does it relate to Christian giving recommended in the article?",
+            "answer": "AIIM (AI Internet Meritocracy) is presented in the article as a software/project that donors can support to reduce collaboration with the criticized worldly science system. The piece suggests donating to AIIM as one practical way to put faith into action; see the article for the call to action: https://science-dao.org/christians/."
           },
           {
             "question": "Are small grants and grassroots science projects worth supporting according to the article?",
@@ -2649,36 +2649,36 @@
         "postId": 1654,
         "faqs": [
           {
-            "question": "What is AIIS (AI Internet-Socialism)?",
-            "answer": "AIIS (AI Internet-Socialism) is presented as a science charity that uses artificial intelligence to allocate funding and calculate fair salaries for scientists. For more information see https://science-dao.org/science-2/."
+            "question": "What is AIIM (AI Internet-Meritocracy)?",
+            "answer": "AIIM (AI Internet-Meritocracy) is presented as a science charity that uses artificial intelligence to allocate funding and calculate fair salaries for scientists. For more information see https://science-dao.org/science-2/."
           },
           {
-            "question": "Why should I donate to AIIS?",
-            "answer": "The site argues AIIS is the best science charity to donate to because it aims to distribute money fairly among scientists using AI, and it allows anyone (not just degree holders) to register. More details are available at https://science-dao.org/science-2/."
+            "question": "Why should I donate to AIIM?",
+            "answer": "The site argues AIIM is the best science charity to donate to because it aims to distribute money fairly among scientists using AI, and it allows anyone (not just degree holders) to register. More details are available at https://science-dao.org/science-2/."
           },
           {
-            "question": "How does AIIS distribute money among scientists?",
-            "answer": "AIIS reportedly employs a sophisticated AI workflow to calculate fair salaries for each registered user rather than relying on traditional degree-based hierarchies. See https://science-dao.org/science-2/ for the description."
+            "question": "How does AIIM distribute money among scientists?",
+            "answer": "AIIM reportedly employs a sophisticated AI workflow to calculate fair salaries for each registered user rather than relying on traditional degree-based hierarchies. See https://science-dao.org/science-2/ for the description."
           },
           {
-            "question": "Who can register with AIIS?",
-            "answer": "According to the page, anyone can register with AIIS — not only holders of academic degrees — so contributors without formal degrees may still receive support. More at https://science-dao.org/science-2/."
+            "question": "Who can register with AIIM?",
+            "answer": "According to the page, anyone can register with AIIM — not only holders of academic degrees — so contributors without formal degrees may still receive support. More at https://science-dao.org/science-2/."
           },
           {
             "question": "Why does the page criticize traditional degree systems like Bachelor/Master/PhD?",
-            "answer": "The page states that traditional degree-based systems create monopolies without monetary incentives, leave some people unpaid for their scientific work, and slow economic progress. It contrasts that with AIIS's AI-based allocation. Reference: https://science-dao.org/science-2/."
+            "answer": "The page states that traditional degree-based systems create monopolies without monetary incentives, leave some people unpaid for their scientific work, and slow economic progress. It contrasts that with AIIM's AI-based allocation. Reference: https://science-dao.org/science-2/."
           },
           {
-            "question": "Where can I make a donation to support AIIS?",
-            "answer": "The site links to a one-time donation page (e.g., /one-time-donation/) for supporting AIIS. For the main project overview and links, visit https://science-dao.org/science-2/."
+            "question": "Where can I make a donation to support AIIM?",
+            "answer": "The site links to a one-time donation page (e.g., /one-time-donation/) for supporting AIIM. For the main project overview and links, visit https://science-dao.org/science-2/."
           },
           {
-            "question": "Does AIIS publish technical details about its AI workflow?",
+            "question": "Does AIIM publish technical details about its AI workflow?",
             "answer": "The page mentions a 'sophisticated AI workflow' and links to a product status page for additional details; check the main page for links and updates: https://science-dao.org/science-2/."
           },
           {
-            "question": "Is AIIS claimed to be a fair allocation system compared to others?",
-            "answer": "Yes — the site argues AIIS is 'probably the only fair allocation of science money,' implying other systems are inferior. See the project's overview at https://science-dao.org/science-2/."
+            "question": "Is AIIM claimed to be a fair allocation system compared to others?",
+            "answer": "Yes — the site argues AIIM is 'probably the only fair allocation of science money,' implying other systems are inferior. See the project's overview at https://science-dao.org/science-2/."
           }
         ]
       },
@@ -2707,16 +2707,16 @@
             "answer": "The article acknowledges concerns but emphasizes that the present human-driven systems already distribute funds unfairly. It proposes designing AI with transparent, controllable discourse and rules to mitigate risks. More discussion is available at: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
-            "question": "What is AIIS (AI Internet-Socialism)?",
-            "answer": "AIIS is the application proposed in the article intended to distribute donated money fairly between scientists and free software developers by using AI-guided allocation rules. Details and goals are described here: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
+            "question": "What is AIIM (AI Internet-Meritocracy)?",
+            "answer": "AIIM is the application proposed in the article intended to distribute donated money fairly between scientists and free software developers by using AI-guided allocation rules. Details and goals are described here: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
-            "question": "How does AIIS compare to platforms like Gitcoin or Giveth?",
-            "answer": "The article claims AIIS aims to outperform existing platforms by automating fair distribution using AI-driven policies rather than relying primarily on human or market-driven allocation. For the author's comparison and reasoning, see: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
+            "question": "How does AIIM compare to platforms like Gitcoin or Giveth?",
+            "answer": "The article claims AIIM aims to outperform existing platforms by automating fair distribution using AI-driven policies rather than relying primarily on human or market-driven allocation. For the author's comparison and reasoning, see: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
             "question": "Who would benefit from AI-managed fund distribution?",
-            "answer": "According to the article, scientists and free software developers are the primary intended beneficiaries, receiving fairer, rule-based allocations of donated funds through systems like AIIS. More information: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
+            "answer": "According to the article, scientists and free software developers are the primary intended beneficiaries, receiving fairer, rule-based allocations of donated funds through systems like AIIM. More information: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
             "question": "Can AI be made accountable and transparent in money distribution?",
@@ -2758,10 +2758,10 @@
           },
           {
             "question": "What alternative does the author propose for science salaries and organization?",
-            "answer": "The author proposes a new system called AIIS (AI Internet-Socialism) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/ai-internet-socialism/."
+            "answer": "The author proposes a new system called AIIM (AI Internet-Meritocracy) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/ai-internet-socialism/."
           },
           {
-            "question": "How can I support the AI Internet-Socialism project mentioned in the article?",
+            "question": "How can I support the AI Internet-Meritocracy project mentioned in the article?",
             "answer": "The article requests support by donating to the project. It points to a one-time donation option and further project information — see the post for links and details: https://science-dao.org/why-is-bologna-system-a-crap/."
           },
           {
@@ -2799,8 +2799,8 @@
             "answer": "A single unfunded contributor who holds crucial insight can block progress; giving modest, fair funding to independent or non‑degree researchers helps unlock discoveries that formal systems miss. The article argues funding should be less dependent on credentials. Read more at: https://science-dao.org/social-inclusion/"
           },
           {
-            "question": "What is AIIS (AI Internet‑Socialism) and how does it address inclusion?",
-            "answer": "AIIS is software being developed to distribute money fairly to scientists and free software developers without relying on formal degrees. It aims to reduce credential-based exclusion and support valuable contributors who otherwise get no funding. Learn about the project here: https://science-dao.org/social-inclusion/"
+            "question": "What is AIIM (AI Internet‑Meritocracy) and how does it address inclusion?",
+            "answer": "AIIM is software being developed to distribute money fairly to scientists and free software developers without relying on formal degrees. It aims to reduce credential-based exclusion and support valuable contributors who otherwise get no funding. Learn about the project here: https://science-dao.org/social-inclusion/"
           },
           {
             "question": "How does the current Bachelor/Master/PhD system contribute to exclusion?",
@@ -2808,11 +2808,11 @@
           },
           {
             "question": "What practical changes can improve social inclusion in science?",
-            "answer": "Possible measures include credential‑agnostic funding, microgrants for independent researchers, open peer review and publishing, recognition systems based on contribution rather than degree, and tools like AIIS to distribute funds. The post outlines these concerns and solutions: https://science-dao.org/social-inclusion/"
+            "answer": "Possible measures include credential‑agnostic funding, microgrants for independent researchers, open peer review and publishing, recognition systems based on contribution rather than degree, and tools like AIIM to distribute funds. The post outlines these concerns and solutions: https://science-dao.org/social-inclusion/"
           },
           {
             "question": "Where can I read the full discussion or get involved?",
-            "answer": "You can read the full article and related posts on the Science DAO site. It links to projects and proposals (e.g., AIIS) aimed at improving inclusion and funding fairness. Start here: https://science-dao.org/social-inclusion/"
+            "answer": "You can read the full article and related posts on the Science DAO site. It links to projects and proposals (e.g., AIIM) aimed at improving inclusion and funding fairness. Start here: https://science-dao.org/social-inclusion/"
           }
         ]
       },
@@ -2829,44 +2829,44 @@
         "postId": 1677,
         "faqs": [
           {
-            "question": "What is AIIS (AI Internet-Socialism)?",
-            "answer": "AIIS is an application that accepts donations and uses an AI to distribute money among registered users. For an overview, see https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "What is AIIM (AI Internet-Meritocracy)?",
+            "answer": "AIIM is an application that accepts donations and uses an AI to distribute money among registered users. For an overview, see https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How does AIIS distribute donations?",
+            "question": "How does AIIM distribute donations?",
             "answer": "Donations are pooled and distributed among registered users according to decisions made by an AI system rather than by manual grant creation or selection. More information is available at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How is AIIS different from Gitcoin, Giveth, and Manifund?",
-            "answer": "AIIS removes the need for manual grant descriptions, manual review, project rejections, and per-grant rule verification. It also considers many small user projects, enables frequent payouts, and aims to provide equal funding opportunities without reliance on commercial promotion. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/ for details."
+            "question": "How is AIIM different from Gitcoin, Giveth, and Manifund?",
+            "answer": "AIIM removes the need for manual grant descriptions, manual review, project rejections, and per-grant rule verification. It also considers many small user projects, enables frequent payouts, and aims to provide equal funding opportunities without reliance on commercial promotion. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/ for details."
           },
           {
-            "question": "Do projects get rejected on AIIS?",
-            "answer": "No — unlike some grant platforms, AIIS does not rely on manual rejection of projects; the AI allocates funds among registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "Do projects get rejected on AIIM?",
+            "answer": "No — unlike some grant platforms, AIIM does not rely on manual rejection of projects; the AI allocates funds among registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
             "question": "Do I need to write a grant description or review projects to participate?",
-            "answer": "No — AIIS eliminates the requirement to manually create grant descriptions or to review and vet each grant; the AI handles distribution decisions. More at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "answer": "No — AIIM eliminates the requirement to manually create grant descriptions or to review and vet each grant; the AI handles distribution decisions. More at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How does AIIS handle many small projects from a single user?",
-            "answer": "AIIS is designed to take into account even very small projects a user runs, so a collection of small efforts can meaningfully contribute to that user’s income under the AI allocation model. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "How does AIIM handle many small projects from a single user?",
+            "answer": "AIIM is designed to take into account even very small projects a user runs, so a collection of small efforts can meaningfully contribute to that user’s income under the AI allocation model. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How often are payments made to users on AIIS?",
+            "question": "How often are payments made to users on AIIM?",
             "answer": "Payments can be made frequently — the platform can distribute funds weekly or even more often, avoiding long pauses before paying recipients. More information: https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "Does AIIS require verification that projects conform to specific grant rules?",
-            "answer": "No — AIIS does not require per-grant verification for rule conformity in the way some traditional grant platforms do. The AI handles allocation across registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "Does AIIM require verification that projects conform to specific grant rules?",
+            "answer": "No — AIIM does not require per-grant verification for rule conformity in the way some traditional grant platforms do. The AI handles allocation across registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How does AIIS promote equal funding opportunities?",
-            "answer": "AIIS aims to avoid dependence on commercial promotion and advertising that can advantage wealthier projects. By using AI-driven allocation among registered users, it seeks to provide more equal funding chances for both rich and poor. Details at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "How does AIIM promote equal funding opportunities?",
+            "answer": "AIIM aims to avoid dependence on commercial promotion and advertising that can advantage wealthier projects. By using AI-driven allocation among registered users, it seeks to provide more equal funding chances for both rich and poor. Details at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How can I donate to support AIIS?",
-            "answer": "You can donate to support AIIS; the site invites one-time donations and provides donation details on its pages. For more information and to donate, visit https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "How can I donate to support AIIM?",
+            "answer": "You can donate to support AIIM; the site invites one-time donations and provides donation details on its pages. For more information and to donate, visit https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           }
         ]
       },
@@ -2887,24 +2887,24 @@
             "answer": "The article argues that humans historically distribute money poorly (from slavery to failed revolutions) and proposes delegating distribution decisions to an AI designed to allocate funds more fairly to scientists and open-source developers. Read the post: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "What is AIIS (AI Internet-Socialism)?",
-            "answer": "AIIS is software that uses AI to decide how much money to pay each scientist or free software developer, with the aim of fairer distribution than existing mechanisms. More details are in the post: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "What is AIIM (AI Internet-Meritocracy)?",
+            "answer": "AIIM is software that uses AI to decide how much money to pay each scientist or free software developer, with the aim of fairer distribution than existing mechanisms. More details are in the post: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
             "question": "Why do the authors think AI will distribute money better than people?",
             "answer": "The authors claim AI can assess contributions objectively and resist biases and self-serving behaviors that humans and current platforms exhibit, reducing manipulation like using personal funds to advertise projects. See the original explanation: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "How is AIIS different from platforms like Gitcoin and Giveth?",
-            "answer": "The post argues that Gitcoin and Giveth can be gamed—projects with existing funds can buy attention and receive disproportionate grants—whereas AIIS intends to use algorithmic evaluation to allocate funds without being influenced by such advertising. More: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "How is AIIM different from platforms like Gitcoin and Giveth?",
+            "answer": "The post argues that Gitcoin and Giveth can be gamed—projects with existing funds can buy attention and receive disproportionate grants—whereas AIIM intends to use algorithmic evaluation to allocate funds without being influenced by such advertising. More: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "How can I donate to AIIS so it can distribute money?",
-            "answer": "The article requests donations to support AIIS's work and distribution of funds to Internet projects. For donation instructions and links, refer to the site: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "How can I donate to AIIM so it can distribute money?",
+            "answer": "The article requests donations to support AIIM's work and distribution of funds to Internet projects. For donation instructions and links, refer to the site: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "What types of recipients does AIIS aim to support?",
-            "answer": "AIIS focuses on supporting scientists and free/open-source software developers who often receive little or no funding under current systems. The article outlines this focus: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "What types of recipients does AIIM aim to support?",
+            "answer": "AIIM focuses on supporting scientists and free/open-source software developers who often receive little or no funding under current systems. The article outlines this focus: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
             "question": "What are potential risks of letting AI decide monetary distribution?",
@@ -2915,12 +2915,12 @@
             "answer": "While the post promotes AI allocation, practical safeguards would include transparent algorithms, public audit logs, diversity in training data, community oversight, and robust governance—points to weigh alongside the article's proposal: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "Can I participate or influence how AIIS distributes funds?",
-            "answer": "The article encourages support and donations; participation mechanisms (governance, input, or feedback) are topics to check with the AIIS project directly. See the post for links and next steps: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "Can I participate or influence how AIIM distributes funds?",
+            "answer": "The article encourages support and donations; participation mechanisms (governance, input, or feedback) are topics to check with the AIIM project directly. See the post for links and next steps: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
             "question": "Where can I read the full article and learn more?",
-            "answer": "Read the complete post about human failures in money distribution and the AIIS proposal here: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "answer": "Read the complete post about human failures in money distribution and the AIIM proposal here: https://science-dao.org/people-are-bad-in-distributing-money/"
           }
         ]
       },
@@ -2954,7 +2954,7 @@
           },
           {
             "question": "What alternatives does the post recommend instead of donating to Gitcoin?",
-            "answer": "The post recommends donating to AIIS (AI Internet-Socialism) rather than Gitcoin and links to donation options on the same site. See the recommendation: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
+            "answer": "The post recommends donating to AIIM (AI Internet-Meritocracy) rather than Gitcoin and links to donation options on the same site. See the recommendation: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           },
           {
             "question": "How can I verify whether Gitcoin actually changed its submission policy?",
@@ -2969,8 +2969,8 @@
             "answer": "Community responses include raising concerns publicly, engaging Gitcoin governance, supporting or creating alternative multi-chain funding platforms, redirecting donations (as the post suggests), and building coalitions to advocate for inclusive funding policies. More: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           },
           {
-            "question": "What is AIIS and how is it related to this post?",
-            "answer": "AIIS stands for AI Internet-Socialism in the post; the author recommends donating to AIIS rather than Gitcoin as an alternative way to support projects aligned with their values. The post links to donation information: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
+            "question": "What is AIIM and how is it related to this post?",
+            "answer": "AIIM stands for AI Internet-Meritocracy in the post; the author recommends donating to AIIM rather than Gitcoin as an alternative way to support projects aligned with their values. The post links to donation information: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           }
         ]
       },
@@ -3020,11 +3020,11 @@
           },
           {
             "question": "How can I support efforts to reduce monopolies in science?",
-            "answer": "The post encourages donations to the AI Internet-Socialism (AIIS) app and related projects that fund marketing for authors and promote systemic change. More information and donation options are available at the linked article. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
+            "answer": "The post encourages donations to the AI Internet-Meritocracy (AIIM) app and related projects that fund marketing for authors and promote systemic change. More information and donation options are available at the linked article. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
           },
           {
             "question": "Does the article propose legal changes to fix the monopoly problem?",
-            "answer": "The primary proposals focus on cultural and practical solutions—funding marketing roles and changing submission customs—rather than immediate legal reform. It emphasizes creating paid roles (science marketers) and supporting projects like AIIS to shift incentives. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
+            "answer": "The primary proposals focus on cultural and practical solutions—funding marketing roles and changing submission customs—rather than immediate legal reform. It emphasizes creating paid roles (science marketers) and supporting projects like AIIM to shift incentives. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
           }
         ]
       },
@@ -3099,8 +3099,8 @@
             "answer": "The article argues against financing universities as institutions and instead recommends giving money directly to scientists. It claims direct funding increases autonomy and productivity; see the full explanation at https://science-dao.org/how-to-finance-universities/."
           },
           {
-            "question": "What is the AIIS project and how does it work?",
-            "answer": "AIIS (AI Internet Socialism) is a project that distributes money directly to scientists by using AI to analyze their publications and FOSS software contributions. More details are available at https://science-dao.org/how-to-finance-universities/."
+            "question": "What is the AIIM project and how does it work?",
+            "answer": "AIIM (AI Internet Meritocracy) is a project that distributes money directly to scientists by using AI to analyze their publications and FOSS software contributions. More details are available at https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "Why does the article compare university management to Soviet-style collectivization?",
@@ -3112,11 +3112,11 @@
           },
           {
             "question": "How can I support the proposal to fund scientists directly?",
-            "answer": "The article suggests donating to initiatives that fund scientists directly (such as AIIS) and lobbying your government to adopt similar mechanisms. You can find donation and advocacy information at https://science-dao.org/how-to-finance-universities/."
+            "answer": "The article suggests donating to initiatives that fund scientists directly (such as AIIM) and lobbying your government to adopt similar mechanisms. You can find donation and advocacy information at https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "How does AI evaluate scientific contributions for funding?",
-            "answer": "According to the article, AIIS uses automated analysis of researchers' publications and free/open-source software contributions to assess merit and allocate funds. For specifics about the evaluation approach, visit https://science-dao.org/how-to-finance-universities/."
+            "answer": "According to the article, AIIM uses automated analysis of researchers' publications and free/open-source software contributions to assess merit and allocate funds. For specifics about the evaluation approach, visit https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "What are common criticisms or concerns about direct-to-scientist funding?",
@@ -3150,11 +3150,11 @@
           },
           {
             "question": "What reform does the author propose for science funding?",
-            "answer": "The author proposes redirecting science funding to the AIIS (AI Internet Socialism) project, which they describe as a system to distribute science money more fairly and directly to scientists, with the aim of substantially boosting global economic growth. Details are provided in the article: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The author proposes redirecting science funding to the AIIM (AI Internet Meritocracy) project, which they describe as a system to distribute science money more fairly and directly to scientists, with the aim of substantially boosting global economic growth. Details are provided in the article: https://science-dao.org/how-is-america-not-great-now/"
           },
           {
             "question": "How can I support or get involved with the proposed solution?",
-            "answer": "The post asks readers to vote and demand that science money be redirected to the AIIS project and also invites donations (see the site's donation page). For the author's call to action and links, see: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The post asks readers to vote and demand that science money be redirected to the AIIM project and also invites donations (see the site's donation page). For the author's call to action and links, see: https://science-dao.org/how-is-america-not-great-now/"
           },
           {
             "question": "What's the $6 trillion reference mentioned in the article?",
@@ -3166,7 +3166,7 @@
           },
           {
             "question": "Who is the intended audience for the post and what does the author request from readers?",
-            "answer": "The intended audience includes voters, scientists, and potential donors. The author asks readers to support policy changes and donations that would fund the AIIS project and otherwise push for fairer, more direct distribution of science funding. More information is available at: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The intended audience includes voters, scientists, and potential donors. The author asks readers to support policy changes and donations that would fund the AIIM project and otherwise push for fairer, more direct distribution of science funding. More information is available at: https://science-dao.org/how-is-america-not-great-now/"
           }
         ]
       },
@@ -3204,7 +3204,7 @@
           },
           {
             "question": "What can be done to address the problem the author raises?",
-            "answer": "The author requests support for systems that let AI (like GPT) evaluate contributions and distribute funds to scientists and FOSS developers accordingly (the AIIS project) and invites donations; see the post for links and the proposal: https://science-dao.org/what-is-the-greatest-injustice-in-the-world/"
+            "answer": "The author requests support for systems that let AI (like GPT) evaluate contributions and distribute funds to scientists and FOSS developers accordingly (the AIIM project) and invites donations; see the post for links and the proposal: https://science-dao.org/what-is-the-greatest-injustice-in-the-world/"
           },
           {
             "question": "How can the author's claims be independently verified?",
@@ -3320,7 +3320,7 @@
           },
           {
             "question": "Where can I find the author’s primary paper referenced in the post?",
-            "answer": "The post references a primary paper ('A new economic formation: AI Internet Socialism') linked within the article. For the experiment and related commentary, see: https://science-dao.org/why-do-we-need-high-science-salaries/."
+            "answer": "The post references a primary paper ('A new economic formation: AI Internet Meritocracy') linked within the article. For the experiment and related commentary, see: https://science-dao.org/why-do-we-need-high-science-salaries/."
           },
           {
             "question": "How can I reproduce or inspect the model outputs the author used?",
@@ -3341,8 +3341,8 @@
         "postId": 1574,
         "faqs": [
           {
-            "question": "What is AI Internet Socialism (AIIS)?",
-            "answer": "AI Internet Socialism (AIIS) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "question": "What is AI Internet Meritocracy (AIIM)?",
+            "answer": "AI Internet Meritocracy (AIIM) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
           },
           {
             "question": "How would the AI decide who gets what share of the treasury?",

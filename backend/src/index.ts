@@ -73,7 +73,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.get('/', (req, res) => {
   res.json({
-    message: 'Socialism API Server',
+    message: 'Meritocracy API Server',
     version: '0.0.1',
     status: 'running',
   });

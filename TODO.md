@@ -59,7 +59,7 @@
 
 - TODO@P3 Allow the user to pass to AI more than one email.
 
-- TODO@P3 Option to donate back to AIIS automatically.
+- TODO@P3 Option to donate back to AIIM automatically.
 
 - TODO@P2 Deleting use data.
 

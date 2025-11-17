@@ -1,6 +1,6 @@
 The problem to be solved: Many scientists don't receive adequate funding for their research and publication and discoveries remain unpublished or mis-published. This holds back science and economy by times. The same applied to FOSS developers. I want to give crypto to every scientist and FOSS developer. I am also going to create a new occupation - scientific marketers, to offload marketing of scientific works and free software to professional marketers.
 
-AI Internet-Socialism (AIIS) is a Web app, that asks an AI, how big portion of world GDP a registered user is worth, and gives him the proportional share of donated funds.
+AI Internet-Meritocracy (AIIM) is a Web app, that asks an AI, how big portion of world GDP a registered user is worth, and gives him the proportional share of donated funds.
 
 Now it is written in Node.js and has a custodial wallet, but I am going to rewrite it as an ICP blockchain fully-onchain dapp (with multiple other blockchains connected), with a non-custodial wallet. I did Node.js app in 23 days, and hope to do the ICP version quickly, too.
 

@@ -1,8 +1,8 @@
-# Socialism App
+# Meritocracy App
 
 (For the most functioning version, you may see the `stable` branch.)
 
-"Socialism" (in full: "AI Internet-Socialism", or AIIS) is an app that gathers crypto donations and distributes them among scientists and free software developers.
+"Meritocracy" (in full: "AI Internet-Meritocracy", or AIIM) is an app that gathers crypto donations and distributes them among scientists and free software developers.
 
 See [the site](https://social.vporton.name) for more information.
 

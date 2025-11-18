@@ -40,4 +40,5 @@
 * Monaco
 * Montenegro - no suitable contact
 * Namibia - can't open the site
-* last submitted Nauru - contacted Parliament Clerk - undeliverable
+* Nauru - contacted Parliament Clerk - undeliverable
+* last submitted Netherlands

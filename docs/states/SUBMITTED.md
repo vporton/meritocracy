@@ -61,7 +61,8 @@
 * UAE - form doesn't work
 * UK -https://www.gov.uk/government/organisations/department-for-science-innovation-and-technology (Contact: General enquiries) - no authorization
 * Tanzania
-* last submitted US - contacted Vice-President
+* US - contacted Vice-President
+* last submitted Uruguay
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

@@ -1,3 +1,4 @@
+Sent to all countries that were possible to send:
 * all `mailto:` contacts
 * Australia - contact form not found
 * Austria - refused my IP
@@ -62,7 +63,9 @@
 * UK -https://www.gov.uk/government/organisations/department-for-science-innovation-and-technology (Contact: General enquiries) - no authorization
 * Tanzania
 * US - contacted Vice-President
-* last submitted Uruguay
+* Uruguay
+* Uzbekistan
+* Vietnam
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

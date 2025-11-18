@@ -7,4 +7,5 @@
 * Bolivia
 * Brazil
 * Brunei
-* last submitted Burkina Faso (by email)
+* Burkina Faso (by email)
+* last submitted Cameroon

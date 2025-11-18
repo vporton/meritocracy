@@ -20,4 +20,4 @@
 * Equatorial Guinea
 * Eritrea
 * Estonia - Rasmus Ruuda rasmus.ruuda@riigikantselei.ee - By mistake also sent to kateriin.pajumagi@riigikantselei.ee
-* last submitted Gabon
+* last submitted Gabon by email

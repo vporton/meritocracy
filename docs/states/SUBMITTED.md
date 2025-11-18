@@ -13,7 +13,8 @@
 * Costa Rica
 * Croatia
 * Democratic Republic of the Congo
-* Ministry of Foreign Affairs of Denmark
+* Denmark - Ministry of Foreign Affairs
 * Dominica
 * Dominican Republic
-* last submitted Egypt
+* Egypt
+* last submitted Equatorial Guinea

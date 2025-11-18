@@ -6,4 +6,5 @@
 * Belgium https://prevot.belgium.be/nl/contact
 * Bolivia
 * Brazil
-* last submitted Brunei
+* Brunei
+* last submitted Burkina Faso (by email)

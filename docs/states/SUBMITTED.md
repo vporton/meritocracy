@@ -51,8 +51,9 @@
 * Samoa
 * Senegal
 * Seychelles - doesn't work
-* last submitted Sierra Leone
+* Sierra Leone
 * Singapore - no email
+* last submitted Slovakia premier@vlada.gov.sk
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

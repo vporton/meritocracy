@@ -56,7 +56,11 @@
 * Slovakia premier@vlada.gov.sk
 * Sri Lanka - no email
 * Suriname - email doesn't work
-* last submitted Togo
+* Togo
+* Tunisia - by email
+* UAE - form doesn't work
+* UK -https://www.gov.uk/government/organisations/department-for-science-innovation-and-technology (Contact: General enquiries) - no authorization
+* last submitted Tanzania
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

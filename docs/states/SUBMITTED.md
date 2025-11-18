@@ -3,4 +3,5 @@
 * Austria - refused my IP
 * Bahrain - case 2520510048 [Ministry of Education: not relevant to the Ministry of Education Services] [`bahrain.bh/tawasul_en` is buggy]
 * Belarus [to the Web master]
-* last submitted to Belgium https://prevot.belgium.be/nl/contact
+* to Belgium https://prevot.belgium.be/nl/contact
+* last submitted Bolivia

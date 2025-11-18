@@ -30,4 +30,5 @@
 * Kazakhstan - site does not work
 * Kiribati
 * Latvia
-* last submitted Liberia
+* Liberia
+* last submitted Liechtenstein

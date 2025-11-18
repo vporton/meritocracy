@@ -37,5 +37,7 @@
 * Marshall Islands - forms don't work
 * Mauritania - contact page empty
 * Mauritius
-* last submitted Monaco
+* Monaco
 * Montenegro - no suitable contact
+* Namibia - can't open the site
+* last submitted Nauru - contacted Parliament Clerk

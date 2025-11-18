@@ -14,4 +14,5 @@
 * Croatia
 * Democratic Republic of the Congo
 * Ministry of Foreign Affairs of Denmark
-* last submitted Dominica
+* Dominica
+* last submitted Dominican Republic

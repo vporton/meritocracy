@@ -35,3 +35,4 @@
 * Luxembourg
 * last submitted Maldives
 * Marshall Islands - forms don't work
+* Mauritania - contact page empty

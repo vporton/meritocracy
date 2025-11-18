@@ -52,6 +52,7 @@
 * Senegal
 * Seychelles - doesn't work
 * last submitted Sierra Leone
+* Singapore - no email
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

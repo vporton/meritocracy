@@ -29,4 +29,5 @@
 * Iceland - site does not work
 * Kazakhstan - site does not work
 * Kiribati
-* last submitted Latvia
+* Latvia
+* last submitted Liberia

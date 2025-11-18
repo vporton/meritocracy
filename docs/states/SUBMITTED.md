@@ -55,7 +55,8 @@
 * Singapore - no email
 * Slovakia premier@vlada.gov.sk
 * Sri Lanka - no email
-* last submitted Suriname
+* Suriname - email doesn't work
+* last submitted Togo
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

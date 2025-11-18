@@ -8,4 +8,6 @@
 * Brazil
 * Brunei
 * Burkina Faso (by email)
-* last submitted Cameroon
+* Cameroon
+* Canada [Science and technology](https://ised-isde.canada.ca/site/ised/en/contact-ised-online-form?numsf=247) require a Canadian phone number
+* last submitted Costa Rica

@@ -33,6 +33,7 @@
 * Liberia
 * Liechtenstein
 * Luxembourg
-* last submitted Maldives
+* Maldives
 * Marshall Islands - forms don't work
 * Mauritania - contact page empty
+* last submitted Mauritius

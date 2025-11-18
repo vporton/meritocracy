@@ -26,4 +26,6 @@
 * Ghana info@mfa.gov.gh
 * Grenada - site does not work
 * Guyana
-* last submitted Iceland - site does not work
+* Iceland - site does not work
+* Kazakhstan - site does not work
+* last submitted Kiribati

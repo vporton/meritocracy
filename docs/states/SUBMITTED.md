@@ -50,7 +50,8 @@
 * Saint Lucia - Server Error
 * Samoa
 * Senegal
-* last submitted Seychelles - doesn't work
+* Seychelles - doesn't work
+* last submitted Sierra Leone
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

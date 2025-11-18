@@ -17,4 +17,5 @@
 * Dominica
 * Dominican Republic
 * Egypt
-* last submitted Equatorial Guinea
+* Equatorial Guinea
+* last submitted Eritrea

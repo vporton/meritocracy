@@ -38,3 +38,4 @@
 * Mauritania - contact page empty
 * Mauritius
 * last submitted Monaco
+* Montenegro - no suitable contact

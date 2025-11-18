@@ -32,4 +32,5 @@
 * Latvia
 * Liberia
 * Liechtenstein
-* last submitted Luxembourg
+* Luxembourg
+* last submitted Maldives

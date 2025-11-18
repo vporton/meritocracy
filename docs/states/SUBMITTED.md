@@ -60,7 +60,8 @@
 * Tunisia - by email
 * UAE - form doesn't work
 * UK -https://www.gov.uk/government/organisations/department-for-science-innovation-and-technology (Contact: General enquiries) - no authorization
-* last submitted Tanzania
+* Tanzania
+* last submitted US - contacted Vice-President
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

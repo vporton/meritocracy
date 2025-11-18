@@ -23,4 +23,6 @@
 * Gabon by email
 * Gambia - "encountered an unexpected error"
 * Germany
-* last submitted Ghana info@mfa.gov.gh
+* Ghana info@mfa.gov.gh
+* Grenada - site does not work
+* last submitted Guyana

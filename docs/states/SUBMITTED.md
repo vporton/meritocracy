@@ -25,4 +25,5 @@
 * Germany
 * Ghana info@mfa.gov.gh
 * Grenada - site does not work
-* last submitted Guyana
+* Guyana
+* last submitted Iceland - site does not work

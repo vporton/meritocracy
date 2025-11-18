@@ -43,9 +43,10 @@
 * Nauru - contacted Parliament Clerk - undeliverable
 * Netherlands
 * North Macedonia
-* last submitted Norway - Ministry of Foreign Affairs
+* Norway - Ministry of Foreign Affairs
 * Poland - not found contact form
 * Russian Federation - sent to President (in Russian)
+* last submitted Rwanda
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

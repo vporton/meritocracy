@@ -31,4 +31,5 @@
 * Kiribati
 * Latvia
 * Liberia
-* last submitted Liechtenstein
+* Liechtenstein
+* last submitted Luxembourg

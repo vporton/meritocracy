@@ -42,7 +42,8 @@
 * Namibia - can't open the site
 * Nauru - contacted Parliament Clerk - undeliverable
 * Netherlands
-* last submitted North Macedonia
+* North Macedonia
+* last submitted Norway - Ministry of Foreign Affairs
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

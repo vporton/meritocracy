@@ -28,4 +28,5 @@
 * Guyana
 * Iceland - site does not work
 * Kazakhstan - site does not work
-* last submitted Kiribati
+* Kiribati
+* last submitted Latvia

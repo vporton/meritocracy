@@ -36,4 +36,5 @@
 * Maldives
 * Marshall Islands - forms don't work
 * Mauritania - contact page empty
-* last submitted Mauritius
+* Mauritius
+* last submitted Monaco

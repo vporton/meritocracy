@@ -42,3 +42,7 @@
 * Namibia - can't open the site
 * Nauru - contacted Parliament Clerk - undeliverable
 * last submitted Netherlands
+
+Also sent to:
+* Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il
+* EU

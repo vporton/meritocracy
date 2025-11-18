@@ -48,7 +48,8 @@
 * Russian Federation - sent to President (in Russian)
 * Rwanda
 * Saint Lucia - Server Error
-* last submitted Samoa
+* Samoa
+* last submitted Senegal
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il

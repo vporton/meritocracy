@@ -22,4 +22,5 @@
 * Estonia - Rasmus Ruuda rasmus.ruuda@riigikantselei.ee - By mistake also sent to kateriin.pajumagi@riigikantselei.ee
 * Gabon by email
 * Gambia - "encountered an unexpected error"
-* last submitted Germany
+* Germany
+* last submitted Ghana info@mfa.gov.gh

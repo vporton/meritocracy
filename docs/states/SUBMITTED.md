@@ -4,7 +4,7 @@
 * Bahrain - case 2520510048 [Ministry of Education: not relevant to the Ministry of Education Services] [`bahrain.bh/tawasul_en` is buggy]
 * Belarus [to the Web master]
 * Belgium https://prevot.belgium.be/nl/contact
-* Bolivia
+* Bolivia - email returned: `info@mingobierno.gob.bo`
 * Brazil
 * Brunei
 * Burkina Faso (by email)
@@ -19,4 +19,5 @@
 * Egypt
 * Equatorial Guinea
 * Eritrea
-* last submitted Estonia - Rasmus Ruuda rasmus.ruuda@riigikantselei.ee - By mistake also sent to kateriin.pajumagi@riigikantselei.ee
+* Estonia - Rasmus Ruuda rasmus.ruuda@riigikantselei.ee - By mistake also sent to kateriin.pajumagi@riigikantselei.ee
+* last submitted Gabon

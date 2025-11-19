@@ -69,4 +69,4 @@ Sent to all countries that were possible to send:
 
 Also sent to:
 * Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il
-* EU
+* EU - by data protection rules can't read external links, don't have a document upload

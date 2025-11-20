@@ -66,3 +66,5 @@
 - TODO@P2 Do KYC/AML only after the user is assigned a salary, to minimize the amount of money spent on KYC.
 
 - FIXME@P2 `[Bitcoin] Failed to import private key:`.
+
+- TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.

@@ -68,3 +68,5 @@
 - FIXME@P2 `[Bitcoin] Failed to import private key:`.
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
+
+- TODO@P3 https://DonateHelper.com for requesting donations from Russia.

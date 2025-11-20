@@ -42,7 +42,7 @@ Sent to all countries that were possible to send:
 * Montenegro - no suitable contact
 * Namibia - can't open the site
 * Nauru - contacted Parliament Clerk - undeliverable
-* Netherlands
+* Netherlands - "The Ministry does not appreciate any commercial mediation and will therefore not pursue your proposal(s)." - sent a reply 20 Nov 2025
 * North Macedonia
 * Norway - Ministry of Foreign Affairs
 * Poland - not found contact form

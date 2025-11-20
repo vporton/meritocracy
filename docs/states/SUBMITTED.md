@@ -68,5 +68,5 @@ Sent to all countries that were possible to send:
 * Vietnam
 
 Also sent to:
-* Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il and Premier is also informed.
+* Israel - Ministry of Innovation, Science and Technology pniyot_m@most.gov.il and Premier (correspondence #4619) is also informed.
 * EU - by data protection rules can't read external links, don't have a document upload, but I succeeded to send to epdublin@europarl.europa.eu, eplondon@europarl.europa.eu

@@ -70,3 +70,5 @@
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
 - TODO@P3 https://DonateHelper.com for requesting donations from Russia.
+
+- TODO@P1 Don't show a hint, if KYC/AML didn't pass.

@@ -1,6 +1,6 @@
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 
-- TODO@P3 ICP blockchain, Solana, Bitcoin, BCH payments.
+- TODO@P3 ICP blockchain, Solana, Bitcoin, BCH, GLRM payments.
 
 - TODO@P3 Connect with BitBucket and GitLab doesn't work.
 

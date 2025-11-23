@@ -72,3 +72,5 @@
 - TODO@P3 https://DonateHelper.com for requesting donations from Russia.
 
 - TODO@P1 Don't show a hint, if KYC/AML didn't pass.
+
+- TODO@P3 Funds for individual countries, disbursed, when the user migrates.

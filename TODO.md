@@ -4,14 +4,11 @@
 
 - TODO@P3 Connect with BitBucket and GitLab doesn't work.
 
-- TODO@P2 Require to log-in every 2 months, to avoid dead users.
-  Even better let AI or KYC check whether the user is active.
+- TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 
 - FIXME@P2 After failed login, the button text is "Try again". Thus the name of the button is not shown.
 
 - TODO@P3 Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.
-
-- TODO@P2 Protect against prompt injections by inserting random strings before and after answers.
 
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
 

@@ -1,10 +1,10 @@
-import { 
-    createPublicClient, 
-    createWalletClient, 
+import {
+    createPublicClient,
+    createWalletClient,
     formatEther,
     formatUnits,
-    http, 
-    parseEther, 
+    http,
+    parseEther,
     parseUnits,
     type PublicClient,
     type WalletClient,
@@ -67,19 +67,19 @@ export const mezoTestnet = /*#__PURE__*/ defineChain({
     id: 31611,
     name: 'Mezo Testnet',
     nativeCurrency: {
-      decimals: 8,
-      name: 'Bitcoin',
-      symbol: 'BTC',
+        decimals: 8,
+        name: 'Bitcoin',
+        symbol: 'BTC',
     },
     rpcUrls: {
-      default: { http: ['https://mezo-node-0.test.mezo.org'] },
+        default: { http: ['https://mezo-node-0.test.mezo.org'] },
     },
     blockExplorers: {
-      default: {
-        name: 'Block explorer app',
-        url: 'https://explorer.test.mezo.org',
-        apiUrl: undefined,
-      },
+        default: {
+            name: 'Block explorer app',
+            url: 'https://explorer.test.mezo.org',
+            apiUrl: undefined,
+        },
     },
     contracts: {
     },
@@ -91,19 +91,19 @@ export const mezo = /*#__PURE__*/ defineChain({
     id: 31612,
     name: 'Mezo',
     nativeCurrency: {
-      decimals: 8,
-      name: 'Bitcoin',
-      symbol: 'BTC',
+        decimals: 8,
+        name: 'Bitcoin',
+        symbol: 'BTC',
     },
     rpcUrls: {
-      default: { http: ['https://rpc-internal.mezo.org'] },
+        default: { http: ['https://rpc-internal.mezo.org'] },
     },
     blockExplorers: {
-      default: {
-        name: 'Block explorer app',
-        url: 'https://explorer.mezo.org',
-        apiUrl: undefined,
-      },
+        default: {
+            name: 'Block explorer app',
+            url: 'https://explorer.mezo.org',
+            apiUrl: undefined,
+        },
     },
     contracts: {
     },
@@ -149,12 +149,11 @@ export class MultiNetworkEthereumService {
             privateKey: process.env.ETHEREUM_PRIVATE_KEY,
             mnemonic: process.env.ETHEREUM_MNEMONIC
         };
-        
+
         this.initializeNetworks();
     }
 
     private initializeNetworks(): void {
-        // TODO@P2: Set sensible values.
         const networkConfigs: NetworkConfig[] = [
             {
                 name: 'mainnet',
@@ -440,7 +439,7 @@ export class MultiNetworkEthereumService {
      */
     public async getAllBalances(): Promise<Map<string, bigint>> {
         const balances = new Map<string, bigint>();
-        
+
         const balancePromises = Array.from(this.networks.keys()).map(async (networkName) => {
             try {
                 const balance = await this.getBalance(networkName);
@@ -459,9 +458,9 @@ export class MultiNetworkEthereumService {
      * Send transaction on a specific network
      */
     public async sendTransaction(
-        networkName: string, 
-        to: Address, 
-        value: string, 
+        networkName: string,
+        to: Address,
+        value: string,
         data?: `0x${string}`
     ): Promise<Hash> {
         const client = this.networks.get(networkName);
@@ -563,7 +562,7 @@ export class MultiNetworkEthereumService {
         address: Address;
     }>> {
         const networkInfo = new Map();
-        
+
         const infoPromises = Array.from(this.networks.keys()).map(async (networkName) => {
             try {
                 const info = await this.getNetworkInfo(networkName);

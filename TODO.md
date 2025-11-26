@@ -66,6 +66,8 @@
 - TODO@P2 Do KYC/AML only after the user is assigned a salary, to minimize the amount of money spent on KYC.
 
 - FIXME@P2 `[Bitcoin] Failed to import private key:`.
+  This  is a part of a bigger problem: Bitcoin integration should not use Wallet API.
+  See also https://chatgpt.com/s/t_69264d948c548191bf2db7cc41c1dfbf
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 

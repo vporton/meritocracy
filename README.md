@@ -4,7 +4,7 @@
 
 "Meritocracy" (in full: "AI Internet-Meritocracy", or AIIM) is an app that gathers crypto donations and distributes them among scientists and free software developers.
 
-See [the site](https://social.vporton.name) for more information.
+See [the site](https://science-dao.org/meritocracy/) for more information.
 
 The app decides how much to pay each employee (registered user) simply by asking an AI (not by, for example, quadratic voting of users).
 
@@ -81,10 +81,10 @@ cd socialism
 # Set NPM version
 nvm use v22.1.0
 
-# Install all dependencies (backend + frontend)
-npm run install-all
+# Install base dependencies
+npm run install
 
-# Or install separately:
+# And this:
 npm run install-backend
 npm run install-frontend
 ```

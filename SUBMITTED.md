@@ -108,5 +108,5 @@
   * 100x Impact Accelerator - not for early stage
   * TODO
 * https://bizthon.com/builder-grants
-  * Web3 Foundation Grants - TODO
+  * Web3 Foundation Grants
   * TODO

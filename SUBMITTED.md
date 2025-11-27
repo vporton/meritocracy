@@ -110,3 +110,4 @@
 * https://bizthon.com/builder-grants
   * Web3 Foundation Grants
   * TODO
+* SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."

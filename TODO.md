@@ -75,3 +75,5 @@
 - TODO@P3 Less info on homepage.
 
 - TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.
+
+- TODO@P2 Use a defense pattern similar to that in the 2025 paper Robustness via Referencing: ask the LLM to tag which part of its output corresponds to which instruction, then reject outputs that reference instructions not issued by your system.

@@ -112,6 +112,7 @@
   * Polkadot Open Source Grants - only for community having expressed interest in the project
   * Atom Accelerator DAO Grants - "Identification of the use of Cosmos Interchain ecosystem or infrastructure."
   * BNB Chain Builder Grant https://www.bnbchain.org/en/grants - submitted 1 Dec 2025
-  * Stellar Community Fund - TODO
+  * Stellar Community Fund https://communityfund.stellar.org/ - currenlty not accepting
+  * EOS Network Foundation Grants - TODO
   * TODO
 * SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."

@@ -108,6 +108,6 @@
   * 100x Impact Accelerator - not for early stage
   * TODO
 * https://bizthon.com/builder-grants
-  * Web3 Foundation Grants - submitted 28 Nov 2025 - rejected 1 Dec 2025 "are largely unrelated to both Polkadot..."
+  * Web3 Foundation Grants (Polkadot) - submitted 28 Nov 2025 - rejected 1 Dec 2025 "are largely unrelated to both Polkadot..."
   * TODO
 * SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."

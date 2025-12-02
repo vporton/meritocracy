@@ -96,7 +96,7 @@
 * breakthroughprize.org - emailed 19 Oct 2025.
 * https://www.google.com/search?q=charity+for+science
   * Israel Science Foundation (ISF) https://www.isf.org.il (only one application per year, University for participants mandatory) - hard to submit without good Hebrew
-* DFINITY https://dfinity.org/grants/ - submitted 22 Oct 2025.
+* DFINITY https://dfinity.org/grants/ - submitted 22 Oct 2025 - rejected 2 Dec 2025.
 * https://chatgpt.com/s/t_68f93226be54819185c1d6c364cc540b
   * EA Funds https://funds.effectivealtruism.org/funds/far-future
     * Effective Altruism Infrastructure - submitted 22 Oct 2025 - rejected 24 Oct 2025.

@@ -114,5 +114,10 @@
   * BNB Chain Builder Grant https://www.bnbchain.org/en/grants - submitted 1 Dec 2025
   * Stellar Community Fund https://communityfund.stellar.org/ - currenlty not accepting
   * EOS Network Foundation Grants - not explicitly supported by chain fusion
+  * NEAR https://www.near.org/funding
+    * Protocol Rewards https://www.nearprotocolrewards.com - Applications for this cohort are now closed
+    * Devhub Grants https://nearn.io/devhub/ - as of 6 Dec 2025 no suitable grants
+    * https://app.potlock.org (crowdfunding)- TODO
+    * TODO
   * TODO
 * SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."

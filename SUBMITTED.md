@@ -118,6 +118,6 @@
     * Protocol Rewards https://www.nearprotocolrewards.com - Applications for this cohort are now closed
     * Devhub Grants https://nearn.io/devhub/ - as of 6 Dec 2025 no suitable grants
     * https://app.potlock.org (crowdfunding) - started 6 Dec 2025 (both a Project and a Campaign)
-  * Optimism - TODO
+  * Optimism https://atlas.optimism.io/ - TODO
   * TODO
 * SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."

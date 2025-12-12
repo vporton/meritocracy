@@ -78,7 +78,7 @@
     * https://docs.google.com/forms/d/e/1FAIpQLSckvx0yITNlHhs3v1FYy0M6v_4bqh-dcFtN8k3mEX0XajJJCQ/viewform
     * https://www.f6s.com/lumoslabs.co/about
   * https://futo.org/fellows/ - applied 8 Sep 2025
-  * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025
+  * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025 - rejected 8 Dec 2025
   * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025
   * https://techforgood.zendesk.com - submitted 12 Oct 2025
   * www.globalgiving.org (they require me to provide annual reports, brochures, newsletters, or news reports)
@@ -111,7 +111,7 @@
   * Web3 Foundation Grants (Polkadot) - submitted 28 Nov 2025 - rejected 1 Dec 2025 "are largely unrelated to both Polkadot..."
   * Polkadot Open Source Grants - only for community having expressed interest in the project
   * Atom Accelerator DAO Grants - "Identification of the use of Cosmos Interchain ecosystem or infrastructure."
-  * BNB Chain Builder Grant https://www.bnbchain.org/en/grants - submitted 1 Dec 2025
+  * BNB Chain Builder Grant https://www.bnbchain.org/en/grants - submitted 1 Dec 2025 - rejected 12 Dec 2025 "due to the high volume of submissions", "encouraged to re-apply for the program in the future application rounds"
   * Stellar Community Fund https://communityfund.stellar.org/ - currenlty not accepting
   * EOS Network Foundation Grants - not explicitly supported by chain fusion
   * NEAR https://www.near.org/funding

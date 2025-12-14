@@ -121,3 +121,4 @@
   * Optimism https://atlas.optimism.io/ - TODO
   * TODO
 * SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."
+* Clay Math - emailed 14 Dec 2025

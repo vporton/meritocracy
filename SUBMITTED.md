@@ -3,7 +3,7 @@
     * https://open.harmony.one/300m-on-bounties-grants-daos/apply-for-grants-or-dao - paused  
     * https://algorand.co/ - seem to have ended grants program.
     * https://solana.org/grants-funding - submitted 27 Sep 2025 - rejected 15 Oct 2025 "didn't see a sufficient public good for the Solana ecosystem".
-      * Participating in Cypherpunk hackaton - TODO: videos
+      * Participating in Cypherpunk hackaton - TODO: videos - rejected 15 Dec 2025
     * Polygon - does not accept applications now
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction

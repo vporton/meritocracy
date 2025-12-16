@@ -64,23 +64,23 @@ const ConnectForm = () => {
     stellarAddress: '',
   });
   const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
-  
+
   // Handle Ethereum connection flow when address becomes available
   // Note: This useEffect is disabled in favor of manual authentication flow in wallet selection
   useEffect(() => {
-    console.log('useEffect triggered with:', { 
-      address: !!address, 
-      isConnected, 
-      connector: !!connector, 
-      connectorClient: !!connectorClient, 
+    console.log('useEffect triggered with:', {
+      address: !!address,
+      isConnected,
+      connector: !!connector,
+      connectorClient: !!connectorClient,
       isProviderConnected: isProviderConnected('ethereum'),
       currentStatus: connectStatus.ethereum
     });
-    
+
     // Disabled automatic authentication - now handled manually in wallet selection
     console.log('Automatic authentication disabled - use wallet selection modal instead');
   }, [address, isConnected, signMessageAsync, login, connectors, connector, connectorClient, connectStatus.ethereum]);
-  
+
   useEffect(() => {
     if (user) {
       setNonEvmForm({
@@ -101,12 +101,12 @@ const ConnectForm = () => {
     }
     setNonEvmErrors({});
   }, [user]);
-  
+
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
     if (isAuthenticated && user) {
       const connectedProviders = [];
-      
+
       // Check which providers are connected
       if (user.ethereumAddress) connectedProviders.push({ name: 'Ethereum', value: user.ethereumAddress });
       if (user.solanaAddress) connectedProviders.push({ name: 'Solana', value: user.solanaAddress });
@@ -123,12 +123,12 @@ const ConnectForm = () => {
         connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
       }
       if (user.kycStatus) {
-        const kycStatusIcon = user.kycStatus === 'APPROVED' ? '✓' : 
-                              user.kycStatus === 'REJECTED' ? '❌' : 
-                              user.kycStatus === 'PENDING' ? '⏳' : '❓';
+        const kycStatusIcon = user.kycStatus === 'APPROVED' ? '✓' :
+          user.kycStatus === 'REJECTED' ? '❌' :
+            user.kycStatus === 'PENDING' ? '⏳' : '❓';
         connectedProviders.push({ name: 'KYC', value: `${user.kycStatus} ${kycStatusIcon}` });
       }
-      
+
       return (
         <div className="connected-status">
           <h3>✅ Connected Accounts</h3>
@@ -165,7 +165,7 @@ const ConnectForm = () => {
   const handleDisconnect = async (provider: string) => {
     try {
       setConnectStatus(prev => ({ ...prev, [provider]: 'disconnecting' }));
-      
+
       // Call backend to disconnect/unlink the provider
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/disconnect/${provider}`, {
         method: 'POST',
@@ -174,7 +174,7 @@ const ConnectForm = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         await response.json();
         // Update the user context with the updated user data
@@ -196,13 +196,13 @@ const ConnectForm = () => {
   const handleEthereumConnect = async () => {
     console.log('Ethereum connect button clicked!');
     console.log('Current state:', { isConnected, isProviderConnected: isProviderConnected('ethereum'), connectors: connectors.length });
-    
+
     // Check if already connected to our platform and user wants to disconnect
     if (isProviderConnected('ethereum')) {
       console.log('Already connected to platform, disconnecting...');
       return handleDisconnect('ethereum');
     }
-    
+
     // Always show wallet selection modal first, regardless of current connection state
     console.log('Showing wallet selection modal...');
     setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
@@ -215,27 +215,27 @@ const ConnectForm = () => {
       console.log('Connecting to wallet:', selectedConnector.name);
       console.log('Connector details:', selectedConnector);
       console.log('Current connection state:', { isConnected, connector: connector?.name });
-      
+
       // If already connected to this connector, proceed with authentication
       if (isConnected && selectedConnector.name === connector?.name) {
         console.log('Already connected to this wallet, proceeding with authentication...');
         setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-        
+
         // Proceed with authentication directly
         const message = `Connect to Meritocracy platform with address: ${address}`;
         console.log('Attempting to sign message...');
-        
+
         const signature = await signMessageAsync({ message });
         console.log('Signature result:', signature ? 'received' : 'null/undefined');
-        
+
         if (!signature) {
           throw new Error('Signature was cancelled');
         }
-        
+
         // Now authenticate with backend
         console.log('Setting status to authenticating');
         setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-        
+
         console.log('Calling backend login API...');
         const authResult = await login({
           ethereumAddress: address,
@@ -243,7 +243,7 @@ const ConnectForm = () => {
           message
         }, 'ethereum');
         console.log('Backend login result:', authResult);
-        
+
         if (authResult.success) {
           console.log('Connect successful! Setting status to success');
           setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
@@ -261,37 +261,37 @@ const ConnectForm = () => {
         console.log('Attempting to connect to wallet...');
         await connect({ connector: selectedConnector });
         console.log('Wallet connection initiated successfully');
-        
+
         // Wait for the connection to be established with timeout
         let connectionAttempts = 0;
         const maxAttempts = 10;
-        
+
         while (connectionAttempts < maxAttempts && (!isConnected || !address)) {
           console.log(`Waiting for connection... attempt ${connectionAttempts + 1}/${maxAttempts}`);
           await new Promise(resolve => setTimeout(resolve, 1000));
           connectionAttempts++;
         }
-        
+
         // Check if connection was successful
         if (isConnected && address) {
           console.log('Connection successful, proceeding with authentication...');
           setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-          
+
           // Proceed with authentication
           const message = `Connect to Meritocracy platform with address: ${address}`;
           console.log('Attempting to sign message...');
-          
+
           const signature = await signMessageAsync({ message });
           console.log('Signature result:', signature ? 'received' : 'null/undefined');
-          
+
           if (!signature) {
             throw new Error('Signature was cancelled');
           }
-          
+
           // Now authenticate with backend
           console.log('Setting status to authenticating');
           setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-          
+
           console.log('Calling backend login API...');
           const authResult = await login({
             ethereumAddress: address,
@@ -299,7 +299,7 @@ const ConnectForm = () => {
             message
           }, 'ethereum');
           console.log('Backend login result:', authResult);
-          
+
           if (authResult.success) {
             console.log('Connect successful! Setting status to success');
             setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
@@ -318,25 +318,25 @@ const ConnectForm = () => {
           // This handles cases where the hooks don't update immediately
           try {
             setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-            
+
             // Try to get the address from the connector directly
             const currentAddress = address || await selectedConnector.getAccount?.();
             if (currentAddress) {
               console.log('Found address from connector, proceeding with authentication...');
               const message = `Connect to Meritocracy platform with address: ${currentAddress}`;
-              
+
               const signature = await signMessageAsync({ message });
               if (!signature) {
                 throw new Error('Signature was cancelled');
               }
-              
+
               setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
               const authResult = await login({
                 ethereumAddress: currentAddress,
                 signature,
                 message
               }, 'ethereum');
-              
+
               if (authResult.success) {
                 setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
                 setTimeout(() => setConnectStatus(prev => {
@@ -372,16 +372,16 @@ const ConnectForm = () => {
       return handleDisconnect(provider);
     }
     const clientIds: OAuthClientIds = {
-      github: import.meta.env.VITE_GITHUB_CLIENT_ID,
-      orcid: import.meta.env.VITE_ORCID_CLIENT_ID,
-      bitbucket: import.meta.env.VITE_BITBUCKET_CLIENT_ID,
-      gitlab: import.meta.env.VITE_GITLAB_CLIENT_ID,
+      github: (import.meta.env.VITE_GITHUB_CLIENT_ID || '').trim(),
+      orcid: (import.meta.env.VITE_ORCID_CLIENT_ID || '').trim(),
+      bitbucket: (import.meta.env.VITE_BITBUCKET_CLIENT_ID || '').trim(),
+      gitlab: (import.meta.env.VITE_GITLAB_CLIENT_ID || '').trim(),
     };
 
     // Get current user's token to include in OAuth state parameter for user linking
     const currentToken = localStorage.getItem('authToken');
     const stateParam = currentToken ? encodeURIComponent(currentToken) : '';
-    
+
     console.log(`${provider} OAuth: currentToken ${currentToken ? 'present' : 'missing'}, stateParam: ${stateParam ? 'included' : 'not included'}`);
 
     const redirectUris: OAuthRedirectUris = {
@@ -395,7 +395,7 @@ const ConnectForm = () => {
       github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=&state=${stateParam}`,
       orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=/authenticate&redirect_uri=${encodeURIComponent(redirectUris.orcid)}&state=${stateParam}`,
       bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}&state=${stateParam}`,
-      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=openid profile read_user&state=${stateParam}`,
+      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=${encodeURIComponent('openid profile email')}&state=${stateParam}`,
     };
 
     if (!clientIds[provider as keyof OAuthClientIds]) {
@@ -439,7 +439,7 @@ const ConnectForm = () => {
         data: event.data,
         hasType: event.data?.type
       });
-      
+
       if (event.origin !== window.location.origin) {
         console.log(`XXX Message origin mismatch for ${provider}, ignoring`);
         return;
@@ -450,24 +450,24 @@ const ConnectForm = () => {
         console.log(`XXX Message has no type for ${provider}, ignoring`);
         return;
       }
-      
+
       // Only log actual OAuth messages
       if (event.data.type === 'OAUTH_SUCCESS' || event.data.type === 'OAUTH_ERROR') {
         console.log(`XXX OAuth message received for ${provider}:`, event.data);
       }
-      
+
       if (event.data.type === 'OAUTH_SUCCESS' && event.data.provider === provider) {
         hasReceivedResponse = true;
         clearInterval(checkClosed);
         // Don't close popup here - let the popup close itself
-        
+
         try {
           console.log(`OAuth success for ${provider}:`, event.data);
           setConnectStatus(prev => ({ ...prev, [provider]: 'success' }));
-          
+
           // The backend already handled authentication, just update the frontend state
           const { user, session } = event.data.authData!;
-          
+
           console.log(`Updating auth data for ${provider}:`, {
             user: {
               id: user.id,
@@ -479,12 +479,12 @@ const ConnectForm = () => {
             },
             sessionToken: session.token ? 'present' : 'missing'
           });
-          
+
           // Update AuthContext with the new user and session
           updateAuthData(user, session.token);
-          
+
           console.log(`Auth data updated for ${provider}, clearing status in 2 seconds`);
-          
+
           // Reset status after a short delay to allow connecting more accounts
           // Use a longer delay to ensure React state has updated
           setTimeout(() => {
@@ -498,7 +498,7 @@ const ConnectForm = () => {
           console.error(`Error in OAuth success handler for ${provider}:`, error);
           setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.message }));
         }
-        
+
         window.removeEventListener('message', handleMessage as any);
       } else if (event.data.type === 'OAUTH_ERROR' && event.data.provider === provider) {
         hasReceivedResponse = true;
@@ -521,14 +521,14 @@ const ConnectForm = () => {
 
     try {
       setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
-      
+
       const response = await authApi.initiateKyc();
       const data = response.data;
-      
+
       // Check if KYC was skipped
       if (data.skipped) {
         console.log('KYC was skipped - automatically verified');
-        
+
         // If we got a session back (for unauthenticated users), update auth context
         if (data.session && data.user) {
           console.log('KYC created new session for unauthenticated user');
@@ -537,9 +537,9 @@ const ConnectForm = () => {
           // Refresh user data to get updated KYC status
           await refreshUser();
         }
-        
+
         setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
-        
+
         // Reset status after a delay
         setTimeout(() => {
           setConnectStatus(prev => {
@@ -553,11 +553,11 @@ const ConnectForm = () => {
           console.log('KYC created new session for unauthenticated user');
           updateAuthData(data.user, data.session.token);
         }
-        
+
         // Open KYC URL in new tab
         window.open(data.url, '_blank');
         setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
-        
+
         // Reset status after a delay
         setTimeout(() => {
           setConnectStatus(prev => {
@@ -571,7 +571,7 @@ const ConnectForm = () => {
     } catch (error: any) {
       console.error('KYC connection error:', error);
       setConnectStatus(prev => ({ ...prev, kyc: 'error', error: error.message }));
-      
+
       // Reset status after a delay
       setTimeout(() => {
         setConnectStatus(prev => {
@@ -601,21 +601,21 @@ const ConnectForm = () => {
 
     try {
       setConnectStatus(prev => ({ ...prev, email: 'connecting' }));
-      
+
       const result = await registerEmail(emailForm.email.trim(), emailForm.name.trim() || undefined);
-      
+
       if (result.success) {
         // Log the success message to console for debugging
         if (result.message) {
           console.log('Email registration success:', result.message);
         }
-        
+
         if (result.requiresVerification) {
           // Show "verification sent" status instead of success
           setConnectStatus(prev => ({ ...prev, email: 'verification-sent' }));
           setEmailForm({ email: '', name: '' });
           setShowEmailForm(false);
-          
+
           // Reset status after a longer delay to give user time to read the message
           setTimeout(() => {
             setConnectStatus(prev => {
@@ -628,7 +628,7 @@ const ConnectForm = () => {
           setConnectStatus(prev => ({ ...prev, email: 'success' }));
           setEmailForm({ email: '', name: '' });
           setShowEmailForm(false);
-          
+
           setTimeout(() => setConnectStatus(prev => {
             const { email, ...rest } = prev;
             return rest;
@@ -718,34 +718,34 @@ const ConnectForm = () => {
   // Helper function to check if a provider is connected
   const isProviderConnected = (provider: string): boolean => {
     if (!user) return false;
-    
+
     const providerFields: Record<string, keyof User> = {
       ethereum: 'ethereumAddress',
-      orcid: 'orcidId', 
+      orcid: 'orcidId',
       github: 'githubHandle',
       bitbucket: 'bitbucketHandle',
       gitlab: 'gitlabHandle',
       email: 'email',
       kyc: 'kycStatus'
     };
-    
+
     const field = providerFields[provider];
     if (provider === 'kyc') {
       // KYC is connected if status is APPROVED
       return user.kycStatus === 'APPROVED';
     }
-    
+
     const isConnected = field && user[field] != null && user[field] !== '';
-    
+
     return isConnected;
   };
 
   const getButtonText = (provider: string): string => {
     const status = connectStatus[provider];
     const isConnected = isProviderConnected(provider);
-    
+
     console.log(`Button text for ${provider}:`, { status, isConnected });
-    
+
     // Map provider names to display names
     const providerDisplayNames: Record<string, string> = {
       ethereum: 'Ethereum',
@@ -756,9 +756,9 @@ const ConnectForm = () => {
       email: 'Email',
       kyc: 'KYC'
     };
-    
+
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
-    
+
     // Special handling for email: check verification status
     if (provider === 'email' && isConnected && !status) {
       if (user?.email && !user?.emailVerified) {
@@ -766,7 +766,7 @@ const ConnectForm = () => {
       }
       return `Disconnect ${displayName}`;
     }
-    
+
     // Special handling for KYC: show status
     if (provider === 'kyc' && !status) {
       if (user?.kycStatus === 'APPROVED') {
@@ -777,12 +777,12 @@ const ConnectForm = () => {
         return 'KYC Rejected - Try Again';
       }
     }
-    
+
     // If connected and no temporary status, show disconnect option
     if (isConnected && !status) {
       return `Disconnect ${displayName}`;
     }
-    
+
     switch (status) {
       case 'selecting':
         return 'Select Wallet...';
@@ -813,14 +813,14 @@ const ConnectForm = () => {
     const status = connectStatus[provider];
     const isConnected = isProviderConnected(provider);
     let className = `connect-button ${provider}-button`;
-    
+
     if (status === 'selecting' || status === 'connecting' || status === 'signing' || status === 'authenticating' || status === 'processing' || status === 'disconnecting') {
       className += ' loading';
     }
     if (status === 'success') className += ' success';
     if (status === 'verification-sent') className += ' verification-sent';
     if (status === 'error') className += ' error';
-    
+
     // Special handling for email verification status
     if (provider === 'email' && isConnected && !status) {
       if (user?.email && !user?.emailVerified) {
@@ -840,22 +840,22 @@ const ConnectForm = () => {
     } else if (isConnected && !status) {
       className += ' connected';
     }
-    
+
     return className;
   };
 
   return (
     <div className="connect-form">
       <h2>Connect to Meritocracy Platform</h2>
-      
+
       {renderConnectedStatus()}
-      
+
       <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas). KYC is mandatory.</p>
 
       <p>The Ethereum address will also be used for payments to you.</p>
 
       <p style={{ color: 'red' }}>GitLab and BitBucket are not supported yet.</p>
-      
+
       <div className="connect-options">
         {/* Ethereum Connect */}
         <button
@@ -871,7 +871,7 @@ const ConnectForm = () => {
             handleEthereumConnect();
           }}
           disabled={isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting'}
-          style={{ 
+          style={{
             backgroundColor: (isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting') ? 'gray' : 'blue',
             cursor: (isLoading || connectStatus.ethereum === 'connecting' || connectStatus.ethereum === 'signing' || connectStatus.ethereum === 'authenticating' || connectStatus.ethereum === 'disconnecting') ? 'not-allowed' : 'pointer'
           }}
@@ -1091,7 +1091,7 @@ const ConnectForm = () => {
       )}
 
       {/* Error Display */}
-      {Object.entries(connectStatus).map(([provider, status]) => 
+      {Object.entries(connectStatus).map(([provider, status]) =>
         status === 'error' && provider !== 'nonEvmAddresses' && (
           <div key={provider} className="error-message">
             {provider.toUpperCase()} connection failed: {connectStatus.error}
@@ -1104,7 +1104,7 @@ const ConnectForm = () => {
           <strong>Note:</strong> If you have accounts on multiple platforms, they will be automatically merged into one account.
         </p>
       </div>
-      
+
       {/* Wallet Selection Modal */}
       {connectStatus.ethereum === 'selecting' && (
         <div className="wallet-selection-modal">

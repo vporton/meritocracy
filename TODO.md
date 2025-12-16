@@ -2,7 +2,7 @@
 
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH, GLRM payments.
 
-- TODO@P3 Connect with BitBucket and GitLab doesn't work.
+
 
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 

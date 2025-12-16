@@ -22,11 +22,11 @@ function verifyEthereumSignature(address: string, message: string, signature: st
   try {
     // Recover the address from the signature
     const recoveredAddress = ethers.verifyMessage(message, signature);
-    
+
     // Normalize addresses to lowercase for comparison
     const normalizedAddress = address.toLowerCase();
     const normalizedRecovered = recoveredAddress.toLowerCase();
-    
+
     return normalizedAddress === normalizedRecovered;
   } catch (error) {
     console.error('Error verifying Ethereum signature:', error);
@@ -85,11 +85,11 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       const currentUser = await prisma.user.findUnique({
         where: { id: currentUserId }
       });
-      
+
       if (!currentUser) {
         throw new Error('Current user not found');
       }
-      
+
       return await prisma.user.update({
         where: { id: currentUserId },
         data: {
@@ -117,7 +117,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (email) createData.email = email;
       if (issuingState) createData.issuingState = issuingState;
       if (personalNumber) createData.personalNumber = personalNumber;
-      
+
       return await prisma.user.create({
         data: createData
       });
@@ -129,25 +129,25 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       const currentUser = await prisma.user.findUnique({
         where: { id: currentUserId }
       });
-      
+
       if (!currentUser) {
         throw new Error('Current user not found');
       }
-      
+
       // Check if users have different (issuingState, personalNumber) - don't allow merge
-      const existingKycData = existingUser.issuingState && existingUser.personalNumber 
+      const existingKycData = existingUser.issuingState && existingUser.personalNumber
         ? { issuingState: existingUser.issuingState, personalNumber: existingUser.personalNumber }
         : null;
-      const currentKycData = currentUser.issuingState && currentUser.personalNumber 
+      const currentKycData = currentUser.issuingState && currentUser.personalNumber
         ? { issuingState: currentUser.issuingState, personalNumber: currentUser.personalNumber }
         : null;
-      
-      if (existingKycData && currentKycData && 
-          (existingKycData.issuingState !== currentKycData.issuingState || 
-           existingKycData.personalNumber !== currentKycData.personalNumber)) {
+
+      if (existingKycData && currentKycData &&
+        (existingKycData.issuingState !== currentKycData.issuingState ||
+          existingKycData.personalNumber !== currentKycData.personalNumber)) {
         throw new Error('Cannot merge users with different KYC data (issuingState, personalNumber)');
       }
-      
+
       const updateData: any = {};
       if (email || existingUser.email) updateData.email = email || existingUser.email;
       if (name || existingUser.name) updateData.name = name || existingUser.name;
@@ -158,47 +158,47 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
       if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
       if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
-      
+
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user.
       return await prisma.$transaction(async (tx) => {
         // Handle bannedTill - use the more restrictive ban (later date)
         if (existingUser.bannedTill && currentUser.bannedTill) {
-          updateData.bannedTill = existingUser.bannedTill > currentUser.bannedTill 
-            ? existingUser.bannedTill 
+          updateData.bannedTill = existingUser.bannedTill > currentUser.bannedTill
+            ? existingUser.bannedTill
             : currentUser.bannedTill;
         } else if (existingUser.bannedTill) {
           updateData.bannedTill = existingUser.bannedTill;
         }
-        
+
         // Transfer related data from existing user to current user
         // Transfer sessions
         await tx.session.updateMany({
           where: { userId: existingUser.id },
           data: { userId: currentUserId }
         });
-        
+
         // Transfer gas token distributions
         await tx.gasTokenDistribution.updateMany({
           where: { userId: existingUser.id },
           data: { userId: currentUserId }
         });
-        
+
         // Transfer OpenAI logs
         await tx.openAILog.updateMany({
           where: { userId: existingUser.id },
           data: { userId: currentUserId }
         });
-        
+
         // Transfer email verification tokens
         await tx.emailVerificationToken.updateMany({
           where: { userId: existingUser.id },
           data: { userId: currentUserId }
         });
-        
+
         // Delete the existing user (this will cascade delete any remaining related data)
-        await tx.user.delete({where: {id: existingUser.id}});
-        
+        await tx.user.delete({ where: { id: existingUser.id } });
+
         // Update the current user with merged data
         return await tx.user.update({
           where: { id: currentUserId },
@@ -217,7 +217,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
       if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
       if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
-      
+
       return await prisma.user.update({
         where: { id: existingUser.id },
         data: updateData
@@ -228,13 +228,13 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
 
 // Helper function to create session
 async function createSession(userId: number) {
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret', { 
-    expiresIn: '7d' 
+  const token = jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret', {
+    expiresIn: '7d'
   });
-  
+
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-  
+
   const session = await prisma.session.create({
     data: {
       userId,
@@ -242,7 +242,7 @@ async function createSession(userId: number) {
       expiresAt
     }
   });
-  
+
   return session;
 }
 
@@ -250,7 +250,7 @@ async function createSession(userId: number) {
 router.post('/login/ethereum', async (req, res): Promise<void> => {
   try {
     const { ethereumAddress, signature, message, name } = req.body;
-    
+
     if (!ethereumAddress) {
       res.status(400).json({ error: 'Ethereum address is required' });
       return;
@@ -271,16 +271,16 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
       res.status(401).json({ error: 'Invalid signature' });
       return;
     }
-    
+
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);
-    
+
     const user = await findOrCreateUser({
       ethereumAddress,
     }, currentUserId);
-    
+
     const session = await createSession(user.id);
-    
+
     res.json({
       user,
       session: {
@@ -298,7 +298,7 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
 router.post('/login/orcid', async (req, res): Promise<void> => {
   try {
     const { orcidId, accessToken, name, email } = req.body;
-    
+
     if (!orcidId) {
       res.status(400).json({ error: 'ORCID ID is required' });
       return;
@@ -306,13 +306,13 @@ router.post('/login/orcid', async (req, res): Promise<void> => {
 
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);
-    
+
     const user = await findOrCreateUser({
       orcidId,
     }, currentUserId);
-    
+
     const session = await createSession(user.id);
-    
+
     res.json({
       user,
       session: {
@@ -330,7 +330,7 @@ router.post('/login/orcid', async (req, res): Promise<void> => {
 router.post('/login/github', async (req, res): Promise<void> => {
   try {
     const { githubHandle, accessToken, name, email } = req.body;
-    
+
     if (!githubHandle) {
       res.status(400).json({ error: 'GitHub handle is required' });
       return;
@@ -338,13 +338,13 @@ router.post('/login/github', async (req, res): Promise<void> => {
 
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);
-    
+
     const user = await findOrCreateUser({
       githubHandle,
     }, currentUserId);
-    
+
     const session = await createSession(user.id);
-    
+
     res.json({
       user,
       session: {
@@ -362,7 +362,7 @@ router.post('/login/github', async (req, res): Promise<void> => {
 router.post('/login/bitbucket', async (req, res): Promise<void> => {
   try {
     const { bitbucketHandle, accessToken, name, email } = req.body;
-    
+
     if (!bitbucketHandle) {
       res.status(400).json({ error: 'BitBucket handle is required' });
       return;
@@ -370,13 +370,13 @@ router.post('/login/bitbucket', async (req, res): Promise<void> => {
 
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);
-    
+
     const user = await findOrCreateUser({
       bitbucketHandle,
     }, currentUserId);
-    
+
     const session = await createSession(user.id);
-    
+
     res.json({
       user,
       session: {
@@ -394,7 +394,7 @@ router.post('/login/bitbucket', async (req, res): Promise<void> => {
 router.post('/login/gitlab', async (req, res): Promise<void> => {
   try {
     const { gitlabHandle, accessToken, name, email } = req.body;
-    
+
     if (!gitlabHandle) {
       res.status(400).json({ error: 'GitLab handle is required' });
       return;
@@ -402,13 +402,13 @@ router.post('/login/gitlab', async (req, res): Promise<void> => {
 
     // Get current user ID from token if present
     const currentUserId = await getCurrentUserFromToken(req);
-    
+
     const user = await findOrCreateUser({
       gitlabHandle,
     }, currentUserId);
-    
+
     const session = await createSession(user.id);
-    
+
     res.json({
       user,
       session: {
@@ -426,7 +426,7 @@ router.post('/login/gitlab', async (req, res): Promise<void> => {
 router.post('/register/email', async (req, res): Promise<void> => {
   try {
     const { email, name } = req.body;
-    
+
     if (!email) {
       res.status(400).json({ error: 'Email is required' });
       return;
@@ -435,10 +435,10 @@ router.post('/register/email', async (req, res): Promise<void> => {
     // Validate email format
     // In development mode, allow @localhost emails for testing
     const isDevelopment = process.env.NODE_ENV === 'development';
-    const emailRegex = isDevelopment 
+    const emailRegex = isDevelopment
       ? /^[^\s@]+@(localhost|127\.0\.0\.1|[\w.-]+\.[\w.-]+)$/
       : /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!emailRegex.test(email)) {
       res.status(400).json({ error: 'Invalid email format' });
       return;
@@ -446,7 +446,7 @@ router.post('/register/email', async (req, res): Promise<void> => {
 
     // Get current user ID from token if present (for connecting additional accounts)
     const currentUserId = await getCurrentUserFromToken(req);
-    
+
     // Check if email is already taken by another user (only if verified)
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -488,7 +488,7 @@ router.post('/register/email', async (req, res): Promise<void> => {
     // If user is already authenticated, return success immediately
     if (currentUserId) {
       const responseMessage = 'Verification email sent successfully';
-      
+
       res.json({
         message: responseMessage,
         user: {
@@ -501,9 +501,9 @@ router.post('/register/email', async (req, res): Promise<void> => {
 
     // For new users, create a temporary session that requires email verification
     const session = await createSession(user.id);
-    
+
     const responseMessage = 'Registration successful. Please check your email to verify your account.';
-    
+
     res.json({
       message: responseMessage,
       user: {
@@ -526,14 +526,14 @@ router.post('/register/email', async (req, res): Promise<void> => {
 router.post('/verify/email', async (req, res): Promise<void> => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       res.status(400).json({ error: 'Verification token is required' });
       return;
     }
 
     const result = await EmailService.verifyEmailToken(token);
-    
+
     if (!result.success) {
       res.status(400).json({ error: result.error });
       return;
@@ -564,20 +564,20 @@ router.post('/resend-verification', async (req, res): Promise<void> => {
     }
 
     const token = authHeader.substring(7);
-    
+
     // Find session and get user
     const session = await prisma.session.findUnique({
       where: { token },
       include: { user: true }
     });
-    
+
     if (!session || session.expiresAt < new Date()) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
 
     const user = session.user;
-    
+
     if (!user.email) {
       res.status(400).json({ error: 'No email address associated with this account' });
       return;
@@ -616,12 +616,12 @@ router.post('/logout', async (req, res): Promise<void> => {
     }
 
     const token = authHeader.substring(7);
-    
+
     // Delete the session
     await prisma.session.deleteMany({
       where: { token }
     });
-    
+
     res.json({ message: 'Logged out successfully' });
   } catch (error: any) {
     console.error('Logout error:', error);
@@ -639,18 +639,18 @@ router.get('/me', async (req, res): Promise<void> => {
     }
 
     const token = authHeader.substring(7);
-    
+
     // Find session
     const session = await prisma.session.findUnique({
       where: { token },
       include: { user: true }
     });
-    
+
     if (!session || session.expiresAt < new Date()) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
-    
+
     res.json({ user: session.user });
   } catch (error: any) {
     console.error('Get current user error:', error);
@@ -668,20 +668,20 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
     }
 
     const token = authHeader.substring(7);
-    
+
     // Find session
     const session = await prisma.session.findUnique({
       where: { token },
       include: { user: true }
     });
-    
+
     if (!session || session.expiresAt < new Date()) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
-    
+
     const user = session.user;
-    
+
     res.json({
       kycStatus: user.kycStatus,
       kycVerifiedAt: user.kycVerifiedAt,
@@ -701,7 +701,7 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
 // GET route for OAuth provider redirects
 router.get('/:provider/callback', async (req, res): Promise<void> => {
   const { provider } = req.params;
-  const { code, state } = req.query as unknown as {code: string, state?: string};
+  const { code, state } = req.query as unknown as { code: string, state?: string };
 
   try {
     console.log(`=== OAuth Callback for ${provider} ===`);
@@ -720,7 +720,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
         authorization: req.headers.authorization ? 'present' : 'missing'
       }
     });
-    
+
     if (!code) {
       console.error('No authorization code provided');
       res.status(400).json({ error: 'Authorization code is required' });
@@ -729,7 +729,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
 
     // Check for duplicate requests and cached results
     const requestKey = `${provider}:${code}`;
-    
+
     // First check if we have a cached result for this exact request
     if (oauthResultCache.has(requestKey)) {
       console.log('Returning cached OAuth result for duplicate request:', requestKey);
@@ -737,17 +737,17 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       res.json(cachedResult);
       return;
     }
-    
+
     // Check if the same request is currently in progress
     if (ongoingOAuthRequests.has(requestKey)) {
       console.log('Duplicate OAuth request detected, rejecting to avoid API errors:', requestKey);
       res.status(429).json({ error: 'OAuth request already processing, please wait' });
       return;
     }
-    
+
     // Mark request as ongoing
     ongoingOAuthRequests.set(requestKey, Date.now());
-    
+
     // Clean up the request tracking after completion (with timeout)
     const cleanup = () => {
       ongoingOAuthRequests.delete(requestKey);
@@ -759,7 +759,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     setTimeout(cleanup, 30000); // Cleanup after 30 seconds regardless
 
     let userData: UserData;
-    
+
     switch (provider) {
       case 'github':
         console.log('Calling GitHub OAuth handler...');
@@ -808,10 +808,10 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       // Fallback to authorization header
       currentUserId = await getCurrentUserFromToken(req);
     }
-    
+
     // Use the existing login logic
     const user = await findOrCreateUser(userData, currentUserId);
-    
+
     // If user was already authenticated, don't create a new session
     let session;
     if (currentUserId !== null) {
@@ -829,9 +829,9 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       // New user, create a new session
       session = await createSession(user.id);
     }
-    
+
     console.log('User created/found and session created successfully');
-    
+
     // Prepare the response
     const response = {
       user,
@@ -840,13 +840,13 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
         expiresAt: session.expiresAt
       }
     };
-    
+
     // Cache the successful result
     oauthResultCache.set(requestKey, response);
-    
+
     // Clean up request tracking on success
     cleanup();
-    
+
     // Redirect to frontend with success message
     const frontendUrl = `${process.env.FRONTEND_URL}/auth/${provider}/callback?code=${code}`;
     res.redirect(frontendUrl);
@@ -857,16 +857,16 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       stack: error.stack,
       name: error.name
     });
-    
+
     // Clean up request tracking on error
     if (code) {
       const requestKey = `${req.params.provider}:${code}`;
       ongoingOAuthRequests.delete(requestKey);
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: `Failed to authenticate with ${req.params.provider}`,
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -879,14 +879,14 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
     codeLength: code ? code.length : 0,
     fullCode: code // Log full code for debugging
   });
-  
+
   const requestBody = {
     client_id: process.env.GITHUB_CLIENT_ID!,
     client_secret: process.env.GITHUB_CLIENT_SECRET!,
     code: code,
     redirect_uri: `${process.env.API_URL}/api/auth/github/callback`,
   };
-  
+
   console.log('GitHub token exchange request:', {
     url: 'https://github.com/login/oauth/access_token',
     client_id: requestBody.client_id,
@@ -929,7 +929,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
     console.error('Failed to parse GitHub token response as JSON:', parseError);
     throw new Error(`Invalid JSON response from GitHub: ${responseText}`);
   }
-  
+
   if (tokenData.error) {
     console.error('GitHub OAuth token error:', tokenData);
     throw new Error(`GitHub OAuth error: ${tokenData.error_description || tokenData.error}`);
@@ -966,7 +966,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
   }
 
   const userData: any = await userResponse.json();
-  
+
   return {
     githubHandle: userData.login,
     // name: userData.name,
@@ -985,7 +985,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
   // Use sandbox domain for development/testing
   const orcidDomain = process.env.ORCID_DOMAIN || 'orcid.org';
   const tokenUrl = `https://${orcidDomain}/oauth/token`;
-  
+
   const requestBody = {
     client_id: process.env.ORCID_CLIENT_ID!,
     client_secret: process.env.ORCID_CLIENT_SECRET!,
@@ -993,7 +993,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
     code: code,
     redirect_uri: `${process.env.API_URL}/api/auth/orcid/callback`,
   };
-  
+
   console.log('ORCID token exchange request:', {
     url: tokenUrl,
     client_id: requestBody.client_id,
@@ -1036,7 +1036,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
     console.error('Failed to parse ORCID token response as JSON:', parseError);
     throw new Error(`Invalid JSON response from ORCID: ${responseText}`);
   }
-  
+
   if (tokenData.error) {
     console.error('ORCID OAuth token error:', tokenData);
     throw new Error(`ORCID OAuth error: ${tokenData.error_description || tokenData.error}`);
@@ -1082,7 +1082,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
   //   name_given: userData?.name?.['given-names']?.value || 'not provided',
   //   name_family: userData?.name?.['family-name']?.value || 'not provided'
   // });
-  
+
   return {
     orcidId: tokenData.orcid,
     // name: userData?.name ? `${userData.name['given-names']?.value || ''} ${userData.name['family-name']?.value || ''}`.trim() : undefined,
@@ -1101,6 +1101,7 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
       code: code,
       client_id: process.env.BITBUCKET_CLIENT_ID!,
       client_secret: process.env.BITBUCKET_CLIENT_SECRET!,
+      redirect_uri: `${process.env.API_URL}/api/auth/bitbucket/callback`,
     }),
   });
 
@@ -1109,7 +1110,7 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
   }
 
   const tokenData: any = await tokenResponse.json();
-  
+
   if (tokenData.error) {
     throw new Error(`BitBucket OAuth error: ${tokenData.error_description || tokenData.error}`);
   }
@@ -1126,9 +1127,9 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
   }
 
   const userData: any = await userResponse.json();
-  
+
   return {
-    bitbucketHandle: userData.username,
+    bitbucketHandle: userData.nickname || userData.username,
     // name: userData.display_name,
     // email: userData.email,
   };
@@ -1141,7 +1142,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     codeLength: code ? code.length : 0,
     fullCode: code // Log full code for debugging
   });
-  
+
   const requestBody = {
     client_id: process.env.GITLAB_CLIENT_ID!,
     client_secret: process.env.GITLAB_CLIENT_SECRET!,
@@ -1149,7 +1150,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     grant_type: 'authorization_code',
     redirect_uri: `${process.env.API_URL}/api/auth/gitlab/callback`,
   };
-  
+
   console.log('GitLab token exchange request:', {
     url: 'https://gitlab.com/oauth/token',
     client_id: requestBody.client_id,
@@ -1190,7 +1191,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     console.error('Failed to parse GitLab token response as JSON:', parseError);
     throw new Error(`Invalid JSON response from GitLab: ${responseText}`);
   }
-  
+
   if (tokenData.error) {
     console.error('GitLab OAuth token error:', tokenData);
     throw new Error(`GitLab OAuth error: ${tokenData.error_description || tokenData.error}`);
@@ -1234,9 +1235,9 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     name: userData.name,
     email: userData.email ? 'present' : 'not provided'
   });
-  
+
   return {
-    gitlabHandle: userData.username,
+    gitlabHandle: userData.nickname || userData.username,
     // name: userData.name,
     // email: userData.email,
   };
@@ -1253,27 +1254,27 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
 
     const token = authHeader.substring(7);
     const { provider } = req.params;
-    
+
     // Find session and get user
     const session = await prisma.session.findUnique({
       where: { token },
       include: { user: true }
     });
-    
+
     if (!session || session.expiresAt < new Date()) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
 
     const user = session.user;
-    
+
     // Handle KYC disconnection specially
     if (provider === 'kyc') {
       if (user.kycStatus !== 'APPROVED') {
         res.status(400).json({ error: 'KYC not verified' });
         return;
       }
-      
+
       // Clear all KYC-related fields
       const updateData = {
         kycStatus: null,
@@ -1283,15 +1284,15 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
         issuingState: null,
         personalNumber: null
       };
-      
+
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: updateData
       });
-      
-      res.json({ 
+
+      res.json({
         message: 'KYC disconnected successfully',
-        user: updatedUser 
+        user: updatedUser
       });
       return;
     }
@@ -1300,7 +1301,7 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
     const providerFields: Record<string, string> = {
       ethereum: 'ethereumAddress',
       orcid: 'orcidId',
-      github: 'githubHandle', 
+      github: 'githubHandle',
       bitbucket: 'bitbucketHandle',
       gitlab: 'gitlabHandle',
       email: 'email'
@@ -1322,20 +1323,20 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
     const updateData: any = {
       [fieldToClear]: null
     };
-    
+
     // If disconnecting email, also clear emailVerified
     if (provider === 'email') {
       updateData.emailVerified = false;
     }
-    
+
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: updateData
     });
-    
-    res.json({ 
+
+    res.json({
       message: `${provider} disconnected successfully`,
-      user: updatedUser 
+      user: updatedUser
     });
   } catch (error: any) {
     console.error('Disconnect error:', error);
@@ -1349,19 +1350,19 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     // Get the raw request body for signature verification
     const rawBody = req.body;
     const rawBodyString = (req as any).rawBody;
-    
+
     // Get headers for signature verification
     const signature = req.get('X-Signature');
     const timestamp = req.get('X-Timestamp');
     const webhookSecretKey = process.env.DIDIT_WEBHOOK_KEY;
-    
+
     // Ensure all required data is present
     if (!signature || !timestamp || !webhookSecretKey) {
       console.error('Missing required webhook verification data');
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
-    
+
     // Validate the timestamp to ensure the request is fresh (within 5 minutes)
     const currentTime = Math.floor(Date.now() / 1000);
     const incomingTime = parseInt(timestamp, 10);
@@ -1370,15 +1371,15 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       res.status(401).json({ message: 'Request timestamp is stale.' });
       return;
     }
-    
+
     // Generate an HMAC from the raw body using the shared secret
     const hmac = crypto.createHmac('sha256', webhookSecretKey);
     const expectedSignature = hmac.update(rawBodyString).digest('hex');
-    
+
     // Compare using timingSafeEqual for security
     const expectedSignatureBuffer = Buffer.from(expectedSignature, 'utf8');
     const providedSignatureBuffer = Buffer.from(signature, 'utf8');
-    
+
     if (
       expectedSignatureBuffer.length !== providedSignatureBuffer.length ||
       !crypto.timingSafeEqual(expectedSignatureBuffer, providedSignatureBuffer)
@@ -1389,26 +1390,26 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       });
       return;
     }
-    
+
     // Signature is valid, proceed with processing
     console.log('Didit KYC callback received and verified:', rawBody);
-    
+
     const { session_id, status, webhook_type, vendor_data, decision, aml } = rawBody;
-    
+
     if (!session_id) {
       console.error('No session_id in Didit callback');
       res.status(400).json({ error: 'session_id is required' });
       return;
     }
-    
+
     // Find the session by session_id from metadata (vendor_data is INSTALLATION_UID)
     let session;
     let user;
-    
+
     // The session_id should be in the metadata from the Didit callback
     const metadata = rawBody.metadata;
     const sessionId = metadata?.session_id;
-    
+
     if (sessionId) {
       // Find the session by session ID
       session = await prisma.session.findUnique({
@@ -1419,7 +1420,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         user = session.user;
       }
     }
-    
+
     if (!user) {
       console.log('Session not found, creating new user for KYC webhook:', {
         session_id,
@@ -1428,12 +1429,12 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         webhook_type,
         status
       });
-      
+
       // Create a new user for this KYC session
       const kycData = decision?.id_verification;
       let userName = 'KYC User';
       let userEmail = null;
-      
+
       // Extract user information from KYC data if available
       if (kycData) {
         if (kycData.first_name && kycData.last_name) {
@@ -1443,12 +1444,12 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         } else if (kycData.last_name) {
           userName = kycData.last_name;
         }
-        
+
         if (kycData.email) {
           userEmail = kycData.email;
         }
       }
-      
+
       // Create new user
       user = await prisma.user.create({
         data: {
@@ -1463,10 +1464,10 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           kycStatus: 'PENDING'
         } as any
       });
-      
+
       // Create a new session for this user
       session = await createSession(user.id);
-      
+
       console.log('Created new user and session for KYC webhook:', {
         userId: user.id,
         sessionId: session.id,
@@ -1475,22 +1476,22 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         userEmail
       });
     }
-    
+
     // Update user KYC status based on Didit response
     const updateData: any = {
       kycStatus: status?.toUpperCase() || 'UNKNOWN'
     };
-    
+
     // Handle different statuses according to Didit webhook format
     if (status === 'Approved' && aml?.status === 'Approved') {
       updateData.kycVerifiedAt = new Date();
       updateData.kycRejectedAt = null;
       updateData.kycRejectionReason = null;
-      
+
       // Store additional verification data if available
       if (decision && decision.id_verification) {
         const idData = decision.id_verification;
-        
+
         // Store user name from KYC verification data
         if (idData.first_name && idData.last_name) {
           updateData.name = `${idData.first_name} ${idData.last_name}`.trim();
@@ -1499,13 +1500,13 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         } else if (idData.last_name) {
           updateData.name = idData.last_name;
         }
-        
+
         // Extract and store KYC fields for user identification
         if (idData.issuing_state && idData.document_number) {
           updateData.issuingState = idData.issuing_state;
           updateData.personalNumber = idData.document_number;
         }
-        
+
         updateData.kycData = JSON.stringify({
           documentType: idData.document_type,
           documentNumber: idData.document_number,
@@ -1521,7 +1522,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       updateData.kycRejectedAt = new Date();
       updateData.kycRejectionReason = 'Verification declined by Didit';
       updateData.kycVerifiedAt = null;
-      
+
       // Store rejection details if available
       let rejectionReason = 'Verification declined by Didit';
       if (decision && decision.reviews && decision.reviews.length > 0) {
@@ -1529,7 +1530,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         rejectionReason = review.comment || 'Verification declined by Didit';
         updateData.kycRejectionReason = rejectionReason;
       }
-      
+
       // Send OFAC report only for AML rejections (sanctions screening)
       if (aml?.status === 'Rejected') {
         try {
@@ -1543,7 +1544,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
             issuingState: decision.id_verification.issuing_state,
             personalNumber: decision.id_verification.document_number
           } : null;
-          
+
           const emailSent = await EmailService.sendOFACReport(user, kycData, aml, rejectionReason);
           if (emailSent) {
             console.log('OFAC report sent successfully for AML rejection - user:', user.id);
@@ -1560,7 +1561,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     } else if (status === 'Abandoned') {
       updateData.kycStatus = 'ABANDONED';
     }
-    
+
     // Update user KYC status
     let updatedUser;
     try {
@@ -1576,7 +1577,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           issuingState: updateData.issuingState,
           personalNumber: updateData.personalNumber
         });
-        res.status(409).json({ 
+        res.status(409).json({
           error: 'This KYC combination is already associated with another user',
           kycStatus: 'DUPLICATE'
         });
@@ -1584,7 +1585,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
       throw error; // Re-throw if it's a different error
     }
-    
+
     console.log('KYC status updated for user:', {
       userId: user.id,
       kycStatus: updateData.kycStatus,
@@ -1594,7 +1595,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       newUserCreated: !sessionId || session?.id !== sessionId,
       originalSessionId: sessionId
     });
-    
+
     res.json({
       success: true,
       message: 'KYC status updated successfully',
@@ -1612,22 +1613,22 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
   try {
     let session;
     let user;
-    
+
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       // User is authenticated, use existing session
       const token = authHeader.substring(7);
-      
+
       session = await prisma.session.findUnique({
         where: { token },
         include: { user: true }
       });
-      
+
       if (!session || session.expiresAt < new Date()) {
         res.status(401).json({ error: 'Invalid or expired token' });
         return;
       }
-      
+
       user = session.user;
     } else {
       // User is not authenticated, create a temporary user and session for KYC
@@ -1645,24 +1646,24 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
           kycStatus: 'PENDING'
         } as any
       });
-      
+
       // Create a session for this temporary user with extended expiration for KYC
       session = await createSession(user.id);
-      
+
       // Extend session expiration for KYC process (30 days instead of 7)
       const extendedExpiresAt = new Date();
       extendedExpiresAt.setDate(extendedExpiresAt.getDate() + 30);
-      
+
       session = await prisma.session.update({
         where: { id: session.id },
         data: { expiresAt: extendedExpiresAt }
       });
     }
-    
+
     // Check if KYC should be skipped
     if (process.env.SKIP_KYC === 'true') {
       console.log('SKIP_KYC is enabled - setting KYC as passed for user:', user.id);
-      
+
       // Update user KYC status to VERIFIED
       await prisma.user.update({
         where: { id: user.id },
@@ -1681,7 +1682,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         skipped: true,
         message: 'KYC skipped - status set to VERIFIED'
       };
-      
+
       // If user was not authenticated, include session token for frontend
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         response.session = {
@@ -1690,11 +1691,11 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         };
         response.user = user;
       }
-      
+
       res.json(response);
       return;
     }
-    
+
     // Check environment variables
     if (!process.env.DIDIT_WORKFLOW_ID || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
       res.status(500).json({ error: 'KYC service configuration missing' });
@@ -1708,13 +1709,13 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         'Content-Type': 'application/json',
         'x-api-key': process.env.DIDIT_API_KEY
       },
-        body: JSON.stringify({
-          workflow_id: process.env.DIDIT_WORKFLOW_ID,
-          vendor_data: process.env.INSTALLATION_UID,
-          metadata: {
-            session_id: session.id
-          },
-        })
+      body: JSON.stringify({
+        workflow_id: process.env.DIDIT_WORKFLOW_ID,
+        vendor_data: process.env.INSTALLATION_UID,
+        metadata: {
+          session_id: session.id
+        },
+      })
     });
 
     if (!diditResponse.ok) {
@@ -1729,7 +1730,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
     }
 
     const diditData: any = await diditResponse.json();
-    
+
     if (!diditData.url) {
       console.error('Didit API response missing URL:', diditData);
       res.status(500).json({ error: 'Invalid response from KYC service' });
@@ -1748,7 +1749,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       url: diditData.url,
       sessionId: diditData.session_id || null
     };
-    
+
     // If user was not authenticated, include session token for frontend
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       response.session = {
@@ -1757,7 +1758,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       };
       response.user = user;
     }
-    
+
     res.json(response);
   } catch (error: any) {
     console.error('KYC initiation error:', error);
@@ -1775,10 +1776,10 @@ router.delete('/sessions/cleanup', async (req, res) => {
         }
       }
     });
-    
-    res.json({ 
-      message: 'Expired sessions cleaned up', 
-      deletedCount: deletedSessions.count 
+
+    res.json({
+      message: 'Expired sessions cleaned up',
+      deletedCount: deletedSessions.count
     });
   } catch (error: any) {
     console.error('Session cleanup error:', error);

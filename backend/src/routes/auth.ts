@@ -1203,9 +1203,9 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     scope: tokenData.scope
   });
 
-  // Get user data from GitLab API
-  console.log('Fetching user data from GitLab API...');
-  const userResponse = await fetch('https://gitlab.com/oauth/userinfo', {
+  // Get user data from GitLab API (using V4 API instead of OIDC userinfo)
+  console.log('Fetching user data from GitLab V4 API...');
+  const userResponse = await fetch('https://gitlab.com/api/v4/user', {
     headers: {
       'Authorization': `Bearer ${tokenData.access_token}`,
     },
@@ -1230,14 +1230,14 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
 
   const userData: any = await userResponse.json();
   console.log('GitLab user data received:', {
-    id: userData.sub,
-    username: userData.nickname,
+    id: userData.id,
+    username: userData.username,
     name: userData.name,
     email: userData.email ? 'present' : 'not provided'
   });
 
   return {
-    gitlabHandle: userData.nickname || userData.username,
+    gitlabHandle: userData.username,
     // name: userData.name,
     // email: userData.email,
   };

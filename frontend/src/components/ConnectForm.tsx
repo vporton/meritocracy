@@ -395,7 +395,7 @@ const ConnectForm = () => {
       github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=&state=${stateParam}`,
       orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=/authenticate&redirect_uri=${encodeURIComponent(redirectUris.orcid)}&state=${stateParam}`,
       bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}&state=${stateParam}`,
-      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=${encodeURIComponent('openid profile email')}&state=${stateParam}`,
+      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=${encodeURIComponent('read_user openid')}&state=${stateParam}`,
     };
 
     if (!clientIds[provider as keyof OAuthClientIds]) {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Task, TaskDependency } from '@prisma/client';
 import { TaskStatus, TaskRunnerRegistry } from '../types/task.js';
 import { TaskExecutor } from './TaskExecutor.js';
 
@@ -11,27 +11,13 @@ export class TaskManager {
 
   /**
    * Run a task with a given taskId only if all tasks on which it depends are COMPLETED
-   * @param taskId - The ID of the task to run
+   * @param task - The task object with dependencies
    * @returns Promise<boolean> - True if the task was successfully run, false otherwise
    */
-  private async runTaskWithDependencies(taskId: number): Promise<boolean> {
+  private async runTaskWithDependencies(task: Task & { dependencies: (TaskDependency & { dependency: Task })[] }): Promise<boolean> {
     try {
-      // Get the task with its dependencies
-      const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          dependencies: {
-            include: {
-              dependency: true,
-            },
-          },
-        },
-      });
+      const taskId = task.id;
 
-      if (!task) {
-        console.error(`Task with ID ${taskId} not found`);
-        return false;
-      }
 
       // Check if task is already completed or in progress
       if (task.status === TaskStatus.COMPLETED) {
@@ -69,7 +55,7 @@ export class TaskManager {
       // Update task status to INITIATED
       await this.prisma.task.update({
         where: { id: taskId },
-        data: { 
+        data: {
           status: TaskStatus.INITIATED,
           updatedAt: new Date()
         },
@@ -82,9 +68,9 @@ export class TaskManager {
       return success; // What does the return value of this function mean?
     } catch (error) {
       console.error(`❌ Error running task ${taskId}:`, error);
-      
+
       TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
-      
+
       return false;
     }
   }
@@ -110,7 +96,7 @@ export class TaskManager {
 
         // Build a list of tasks that depend only on COMPLETED or CANCELLED tasks
         const runnableTasks = await this.prisma.task.findMany({
-          where: { 
+          where: {
             status: {
               in: [TaskStatus.NOT_STARTED, TaskStatus.INITIATED]
             },
@@ -145,14 +131,14 @@ export class TaskManager {
         // Process all tasks in the current batch
         for (const task of runnableTasks) {
           console.log(`Processing task ${task.id} (status: ${task.status})...`);
-          
+
           let taskStatusChanged = false;
-          
+
           if (task.status === TaskStatus.NOT_STARTED) {
             // If the task is PENDING (NOT_STARTED), initiate it
-            const success = await this.runTaskWithDependencies(task.id);
+            const success = await this.runTaskWithDependencies(task);
             taskStatusChanged = success;
-            
+
             if (success) {
               executed++;
               console.log(`Task ${task.id} initiated successfully`);
@@ -178,7 +164,7 @@ export class TaskManager {
             // If the status is INITIATED, check task output
             // const outputChecked = await this.checkTaskOutput(task.id);
             // taskStatusChanged = outputChecked;
-            
+
             // Execute non-batch mode tasks if applicable
             const taskExecutor = new TaskExecutor(this.prisma);
             const executedNonBatch = await taskExecutor.executeNonBatchMode(task.id);
@@ -201,7 +187,7 @@ export class TaskManager {
               }
             }
           }
-          
+
           // Track if any task status changed in this iteration
           if (taskStatusChanged) {
             statusChanged = true;
@@ -245,7 +231,7 @@ export class TaskManager {
         console.error(`Task ${taskId} has no runner class specified during output check`);
         await this.prisma.task.update({
           where: { id: taskId },
-          data: { 
+          data: {
             status: TaskStatus.CANCELLED,
             updatedAt: new Date()
           },
@@ -266,7 +252,7 @@ export class TaskManager {
         console.error(`Failed to parse runner data for task ${taskId}:`, error);
         await this.prisma.task.update({
           where: { id: taskId },
-          data: { 
+          data: {
             status: TaskStatus.CANCELLED,
             updatedAt: new Date()
           },
@@ -277,18 +263,18 @@ export class TaskManager {
       // Check if the task has a customId and storeId (indicating it made an OpenAI request)
       if (runnerData.customId && task.storeId) {
         console.log(`Checking output for task ${taskId} with customId: ${runnerData.customId}`);
-        
+
         // Create a temporary runner instance to check the output
         const { TaskRunnerRegistry } = await import('../types/task.js');
-        
+
         // Get the runner class and create an instance
         const RunnerClass = TaskRunnerRegistry.getRunnerClass(task.runnerClassName);
         const runnerInstance = new RunnerClass(runnerData, taskId);
-        
+
         try {
           // Check if the output is available and process it
           const output = await (runnerInstance as any).getOutput(runnerData.customId);
-          
+
           if (output !== undefined) {
             console.log(`✅ Task ${taskId} output retrieved and processed successfully`);
             return true; // Status was changed by the runner's onOutput method
@@ -304,7 +290,7 @@ export class TaskManager {
       } else {
         // Task doesn't have OpenAI request data, check if it's a utility runner that should be completed
         console.log(`Task ${taskId} appears to be a utility runner without OpenAI request data`);
-        
+
         // For utility runners, if they're in INITIATED state and have runner data,
         // they should have been completed by their executeTask method
         // Check if they have completion data
@@ -312,7 +298,7 @@ export class TaskManager {
           console.log(`Task ${taskId} already has completion data, updating status`);
           await this.prisma.task.update({
             where: { id: taskId },
-            data: { 
+            data: {
               status: TaskStatus.COMPLETED,
               completedAt: new Date(),
               updatedAt: new Date()
@@ -320,19 +306,19 @@ export class TaskManager {
           });
           return true;
         }
-        
+
         console.log(`Task ${taskId} is still processing, no output check needed yet`);
         return false;
       }
 
     } catch (error) {
       console.error(`❌ Error checking task output for task ${taskId}:`, error);
-      
+
       // Mark task as cancelled due to error
       try {
         await this.prisma.task.update({
           where: { id: taskId },
-          data: { 
+          data: {
             status: TaskStatus.CANCELLED,
             updatedAt: new Date()
           },

@@ -146,7 +146,8 @@ export class MultiNetworkEthereumService {
     private balancePromises: Map<string, Promise<bigint>> = new Map();
 
     private readonly GAS_PRICE_TTL = 60 * 1000; // 1 minute
-    private readonly BALANCE_TTL = 30 * 1000;   // 30 seconds
+    private readonly BALANCE_TTL = 60 * 1000;   // 1 minute (increased from 30s)
+    private readonly ERROR_CACHE_TTL = 5 * 1000; // 5 seconds focus on preventing "error storms"
 
     constructor() {
         this.config = {
@@ -354,6 +355,12 @@ export class MultiNetworkEthereumService {
                 return balance;
             } catch (error) {
                 console.error(`Failed to get balance for ${networkName}:`, error);
+
+                // Cache error as 0 for a short time to avoid hitting the node repeatedly when it's failing
+                if (!cached) {
+                    this.balanceCache.set(networkName, { value: 0n, timestamp: Date.now() - (this.BALANCE_TTL - this.ERROR_CACHE_TTL) });
+                }
+
                 // Return cached value even if expired if we fail to fetch new one
                 if (cached) return cached.value;
                 return 0n;
@@ -565,6 +572,12 @@ export class MultiNetworkEthereumService {
                 return gasPrice;
             } catch (error) {
                 console.error(`Failed to get gas price for ${networkName}:`, error);
+
+                // Cache error as 0 for a short time to avoid hitting the node repeatedly when it's failing
+                if (!cached) {
+                    this.gasPriceCache.set(networkName, { value: 0n, timestamp: Date.now() - (this.GAS_PRICE_TTL - this.ERROR_CACHE_TTL) });
+                }
+
                 // Return cached value even if expired if we fail to fetch new one
                 if (cached) return cached.value;
                 return 0n;

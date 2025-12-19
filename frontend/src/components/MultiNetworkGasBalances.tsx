@@ -5,6 +5,8 @@ interface NetworkInfo {
   name?: string;
   networkName?: string;
   adapterType?: string;
+  networkId?: string;
+  walletAddress?: string;
   chainId?: number;
   tokenSymbol?: string;
   nativeTokenSymbol?: string;
@@ -25,6 +27,8 @@ interface MultiNetworkStatus {
   enabledNetworks: string[];
   networks: Record<string, NetworkInfo>;
   totalNetworks: number;
+  totalAvailable?: number;
+  totalReserve?: number;
 }
 
 function MultiNetworkGasBalances() {
@@ -39,67 +43,85 @@ function MultiNetworkGasBalances() {
         setLoading(true)
         setError(null)
 
-        // 1. Fetch network list quickly
+        // 1. Fetch initial list of networks (fast)
         const listResponse = await api.get('/api/multi-network-gas/list')
-
         if (listResponse.data.success) {
           const listData = listResponse.data.data
+          const networks = listData.networkDetails || []
           const initialNetworks: Record<string, NetworkInfo> = {}
           const initialLoading: Record<string, boolean> = {}
 
-          if (listData.networkDetails) {
-            listData.networkDetails.forEach((net: any) => {
-              initialNetworks[net.networkId] = {
-                name: net.networkName,
-                adapterType: net.adapterType,
-                networkName: net.networkName
-              }
-              initialLoading[net.networkId] = true
-            })
-          }
+          networks.forEach((net: any) => {
+            initialNetworks[net.networkId] = {
+              networkName: net.networkName,
+              adapterType: net.adapterType,
+              walletAddress: net.walletAddress,
+              tokenSymbol: '...',
+              totalReserve: 0,
+              walletBalance: 0,
+              availableForDistribution: 0,
+              balanceFormatted: 'Loading...',
+              gasPriceFormatted: 'Loading...'
+            }
+            initialLoading[net.networkId] = true
+          })
 
           const enabledNetworks = listData.enabledNetworks || []
           setNetworkStatus({
             enabledNetworks,
             networks: initialNetworks,
-            totalNetworks: listData.totalNetworks || 0
+            totalNetworks: listData.totalNetworks || 0,
+            totalAvailable: 0,
+            totalReserve: 0
           })
           setLoadingNetworks(initialLoading)
           setLoading(false)
 
-          // 2. Fetch each network's status individually in parallel
-          enabledNetworks.forEach(async (networkName: string) => {
+          // 2. Fetch each network's status individualy in parallel (backend will coalesce and cache)
+          enabledNetworks.forEach(async (networkId: string) => {
             try {
-              const response = await api.get(`/api/multi-network-gas/network/${networkName}/status`)
+              const response = await api.get(`/api/multi-network-gas/network/${networkId}/status`)
               if (response.data.success) {
                 const data = response.data.data
                 setNetworkStatus(prev => {
-                  if (!prev) return prev
+                  if (!prev) return prev;
+                  const updatedNetworks = {
+                    ...prev.networks,
+                    [networkId]: {
+                      ...prev.networks[networkId],
+                      ...data
+                    }
+                  }
+
+                  // Recalculate totals
+                  let totalAvailable = 0
+                  let totalReserve = 0
+                  Object.values(updatedNetworks).forEach(net => {
+                    totalAvailable += net.availableForDistribution || 0
+                    totalReserve += net.totalReserve || 0
+                  })
+
                   return {
                     ...prev,
-                    networks: {
-                      ...prev.networks,
-                      [networkName]: {
-                        ...prev.networks[networkName],
-                        ...data
-                      }
-                    }
+                    networks: updatedNetworks,
+                    totalAvailable,
+                    totalReserve
                   }
                 })
               }
             } catch (err) {
-              console.error(`Failed to fetch status for network ${networkName}:`, err)
+              console.error(`Failed to fetch status for ${networkId}:`, err)
             } finally {
-              setLoadingNetworks(prev => ({ ...prev, [networkName]: false }))
+              setLoadingNetworks(prev => ({
+                ...prev,
+                [networkId]: false
+              }))
             }
           })
         }
-
       } catch (err) {
         console.error('Failed to fetch multi-network status:', err)
-        if (!networkStatus) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch network status')
-        }
+        setError('Failed to load network balances. Please try again later.')
       } finally {
         setLoading(false)
       }

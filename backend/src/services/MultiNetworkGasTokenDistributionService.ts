@@ -91,6 +91,11 @@ export class MultiNetworkGasTokenDistributionService {
   private contextPromises: Map<string, Promise<Map<string, AdapterContextEntry>>> = new Map();
   private readonly CONTEXT_TTL = 5 * 60 * 1000; // 5 minutes
 
+  // Cache for network status to coalesce parallel requests from frontend
+  private statusCache: Map<string, { entry: ReserveStatusEntry; timestamp: number }> = new Map();
+  private statusPromises: Map<string, Promise<ReserveStatusEntry | undefined>> = new Map();
+  private readonly STATUS_TTL = 10 * 1000; // 10 seconds
+
   constructor(
     prisma: PrismaClient,
     adapters?: GasTokenNetworkAdapter[],
@@ -798,19 +803,81 @@ export class MultiNetworkGasTokenDistributionService {
     networkId: string,
     overrides?: Partial<TokenDistributionOptions>
   ): Promise<ReserveStatusEntry | undefined> {
+    const cacheKey = `${networkId}:${JSON.stringify(overrides || {})}`;
+    const now = Date.now();
+    const cached = this.statusCache.get(cacheKey);
+
+    if (cached && (now - cached.timestamp < this.STATUS_TTL)) {
+      return cached.entry;
+    }
+
+    const inProgress = this.statusPromises.get(cacheKey);
+    if (inProgress) {
+      return inProgress;
+    }
+
+    const promise = (async () => {
+      try {
+        const result = await this.fetchSingleNetworkStatusDirectly(networkId, overrides);
+        if (result) {
+          this.statusCache.set(cacheKey, { entry: result, timestamp: Date.now() });
+        }
+        return result;
+      } finally {
+        this.statusPromises.delete(cacheKey);
+      }
+    })();
+
+    this.statusPromises.set(cacheKey, promise);
+    return promise;
+  }
+
+  private async fetchSingleNetworkStatusDirectly(
+    networkId: string,
+    overrides?: Partial<TokenDistributionOptions>
+  ): Promise<ReserveStatusEntry | undefined> {
     const tokenOptions = this.resolveTokenOptions(overrides);
     const contexts = await this.collectNetworkAdapterContexts(tokenOptions);
     const entry = contexts.get(networkId);
     if (!entry) return undefined;
 
-    const reserve = await this.getSingleNetworkReserveStatus(networkId, entry);
-    let status = { ...reserve };
+    const { adapter, context } = entry;
 
-    // Supplement with EVM info if possible
-    if (entry.adapter.type === 'EVM') {
+    // 1. Get info from DB
+    const reserveRow = await this.prisma.gasTokenReserve.findUnique({
+      where: {
+        network_tokenSymbol_tokenType: {
+          network: context.networkId,
+          tokenSymbol: context.tokenSymbol,
+          tokenType: context.tokenType
+        }
+      }
+    });
+
+    const reserveAmount = reserveRow ? Number(reserveRow.totalReserve) : 0;
+    const lastDistribution = reserveRow?.lastDistribution ?? null;
+
+    // 2. Initial status state
+    let status: ReserveStatusEntry = {
+      tokenSymbol: context.tokenSymbol,
+      tokenType: context.tokenType,
+      tokenDecimals: context.tokenDecimals,
+      nativeTokenSymbol: context.nativeTokenSymbol,
+      totalReserve: reserveAmount,
+      walletBalance: 0,
+      availableForDistribution: reserveAmount,
+      lastDistribution,
+      adapterType: context.adapterType,
+      networkName: context.networkName,
+      address: context.walletAddress
+    };
+
+    // 3. Supplement with live blockchain info (One batch of calls if possible)
+    if (adapter.type === 'EVM') {
       try {
         const info = await multiNetworkEthereumService.getNetworkInfo(networkId);
         if (info) {
+          const walletBalanceEth = Number(multiNetworkEthereumService.formatUnits(info.balance, context.tokenDecimals));
           status = {
             ...status,
             name: info.name,
@@ -818,23 +885,31 @@ export class MultiNetworkGasTokenDistributionService {
             address: info.address,
             balance: info.balance.toString(),
             gasPrice: info.gasPrice.toString(),
+            walletBalance: walletBalanceEth,
+            availableForDistribution: reserveAmount + walletBalanceEth,
             balanceFormatted: multiNetworkEthereumService.formatEther(info.balance),
             gasPriceFormatted: multiNetworkEthereumService.formatEther(info.gasPrice)
           };
         }
       } catch (error) {
-        console.error(`Failed to get status for EVM network ${networkId}:`, error);
+        console.error(`Failed to get live EVM info for ${networkId}:`, error);
+      }
+    } else {
+      // Non-EVM adapters
+      try {
+        const walletBalance = await adapter.getWalletBalance(context);
+        status.walletBalance = walletBalance;
+        status.availableForDistribution = reserveAmount + walletBalance;
+      } catch (error) {
+        console.warn(`⚠️  Failed to read wallet balance for ${context.networkName}:`, error);
       }
     }
 
-    // Apply formatting and gas estimates if needed
-    const { adapter, context } = entry;
-    const walletBalance = status.walletBalance ?? 0;
-
+    // 4. Apply formatting and gas estimates if still missing
     if (!status.balanceFormatted) {
-      status.balanceFormatted = Number.isFinite(walletBalance)
-        ? adapter.formatAmount(context, walletBalance)
-        : undefined;
+      status.balanceFormatted = Number.isFinite(status.walletBalance)
+        ? adapter.formatAmount(context, status.walletBalance)
+        : 'N/A';
     }
 
     if (!status.gasPriceFormatted || status.gasPriceFormatted === 'N/A') {
@@ -883,23 +958,19 @@ export class MultiNetworkGasTokenDistributionService {
   async getNetworkStatus(overrides?: Partial<TokenDistributionOptions>) {
     const tokenOptions = this.resolveTokenOptions(overrides);
     const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
+
+    // Get reserve info for all networks
     const status = await this.getReserveStatus(overrides, contextEntries);
 
+    // Supplementary info from EVM (Batch fetch)
     try {
       const networkInfo = await multiNetworkEthereumService.getAllNetworkInfo();
       for (const [networkId, info] of networkInfo) {
-        const reserve = status.get(networkId) ?? {
-          tokenSymbol: '',
-          tokenType: 'NATIVE' as TokenType,
-          tokenDecimals: 18,
-          nativeTokenSymbol: '',
-          totalReserve: 0,
-          walletBalance: 0,
-          availableForDistribution: 0,
-          lastDistribution: null,
-          adapterType: 'EVM',
-          networkName: info.name
-        };
+        const reserve = status.get(networkId);
+        if (!reserve) continue;
+
+        const walletBalanceEth = Number(multiNetworkEthereumService.formatUnits(info.balance, reserve.tokenDecimals));
+
         status.set(networkId, {
           ...reserve,
           name: info.name,
@@ -907,6 +978,8 @@ export class MultiNetworkGasTokenDistributionService {
           address: info.address,
           balance: info.balance.toString(),
           gasPrice: info.gasPrice.toString(),
+          walletBalance: walletBalanceEth,
+          availableForDistribution: reserve.totalReserve + walletBalanceEth,
           balanceFormatted: multiNetworkEthereumService.formatEther(info.balance),
           gasPriceFormatted: multiNetworkEthereumService.formatEther(info.gasPrice)
         });
@@ -915,26 +988,24 @@ export class MultiNetworkGasTokenDistributionService {
       console.error('Failed to get EVM network status:', error);
     }
 
+    // Now fill in non-EVM or missing data
     for (const [networkId, entryData] of contextEntries.entries()) {
       const { adapter, context } = entryData;
-      const entry = status.get(networkId);
+      let entry = status.get(networkId);
 
       if (!entry) {
         continue;
       }
 
-      const walletBalance = entry.walletBalance ?? 0;
-      const balanceString =
-        entry.balance ??
-        (Number.isFinite(walletBalance) ? walletBalance.toString() : undefined);
-      const balanceFormatted =
-        entry.balanceFormatted ??
-        (Number.isFinite(walletBalance)
-          ? adapter.formatAmount(context, walletBalance)
-          : undefined);
+      // If it's not EVM, and we don't have a wallet balance yet (getReserveStatus already hit WALLET balancer for non-EVM?)
+      // Wait, let's check getReserveStatus. It calls getSingleNetworkReserveStatus.
+      // And getSingleNetworkReserveStatus calls adapter.getWalletBalance.
+      // So for non-EVM, it's ALREADY populated.
+      // For EVM, we just updated it above with the batch info from getAllNetworkInfo.
 
       let gasPrice = entry.gasPrice;
       let gasPriceFormatted = entry.gasPriceFormatted;
+
       const needsGasEstimate =
         context.adapterType !== 'EVM' &&
         (!gasPriceFormatted || gasPriceFormatted === 'N/A' || gasPriceFormatted === undefined);
@@ -954,8 +1025,6 @@ export class MultiNetworkGasTokenDistributionService {
         ...entry,
         name: entry.name ?? context.networkName,
         address: entry.address ?? context.walletAddress,
-        balance: balanceString,
-        balanceFormatted,
         gasPrice,
         gasPriceFormatted
       });

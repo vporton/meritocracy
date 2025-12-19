@@ -74,11 +74,20 @@ router.get('/status', async (req, res) => {
     const networkStatus = await multiNetworkGasTokenDistributionService.getNetworkStatus(overrides);
     const enabledNetworks = enabledNetworkDetails.map(network => network.networkId);
 
+    let totalAvailable = 0;
+    let totalReserve = 0;
+    for (const entry of networkStatus.values()) {
+      totalAvailable += entry.availableForDistribution;
+      totalReserve += entry.totalReserve;
+    }
+
     const status = {
       enabledNetworks,
       networkDetails: enabledNetworkDetails,
       networks: Object.fromEntries(networkStatus),
       totalNetworks: enabledNetworks.length,
+      totalAvailable,
+      totalReserve,
       token: {
         type: overrides.tokenType ?? 'NATIVE',
       }

@@ -122,11 +122,8 @@ const ConnectForm = () => {
         const emailStatus = user.emailVerified ? '✓' : '⚠️';
         connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
       }
-      if (user.kycStatus) {
-        const kycStatusIcon = user.kycStatus === 'APPROVED' ? '✓' :
-          user.kycStatus === 'REJECTED' ? '❌' :
-            user.kycStatus === 'PENDING' ? '⏳' : '❓';
-        connectedProviders.push({ name: 'KYC', value: `${user.kycStatus} ${kycStatusIcon}` });
+      if (user.kycStatus === 'APPROVED' || user.kycStatus === 'PENDING') {
+        connectedProviders.push({ name: 'KYC', value: `APPROVED ✓` });
       }
 
       return (
@@ -774,7 +771,7 @@ const ConnectForm = () => {
       } else if (user?.kycStatus === 'PENDING') {
         return 'KYC Pending...';
       } else if (user?.kycStatus === 'REJECTED') {
-        return 'KYC Rejected - Try Again';
+        return 'KYC Rejected';
       }
     }
 

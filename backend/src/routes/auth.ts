@@ -1478,12 +1478,11 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     }
 
     // Update user KYC status based on Didit response
-    const updateData: any = {
-      kycStatus: status?.toUpperCase() || 'UNKNOWN'
-    };
+    const updateData: any = {};
 
     // Handle different statuses according to Didit webhook format
     if (status === 'Approved' && aml?.status === 'Approved') {
+      updateData.kycStatus = 'APPROVED';
       updateData.kycVerifiedAt = new Date();
       updateData.kycRejectedAt = null;
       updateData.kycRejectionReason = null;
@@ -1518,7 +1517,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           expirationDate: idData.expiration_date
         });
       }
-    } else if (status === 'Declined' || aml.status === 'Rejected') {
+    } else if (status === 'Declined' || aml?.status === 'Rejected') {
+      updateData.kycStatus = 'REJECTED';
       updateData.kycRejectedAt = new Date();
       updateData.kycRejectionReason = 'Verification declined by Didit';
       updateData.kycVerifiedAt = null;

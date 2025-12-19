@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api, { usersApi } from '../services/api'
-import { ethers } from 'ethers'
 import Leaderboard from '../components/Leaderboard'
 import MultiNetworkGasBalances from '../components/MultiNetworkGasBalances'
 import { useAuth } from '../contexts/AuthContext'
@@ -69,7 +68,7 @@ function Home() {
           }
         }
       } catch (error) {
-        console.log('Failed to fetch network address:', fallbackError)
+        console.log('Failed to fetch network address:', error)
       }
     }
 
@@ -213,7 +212,7 @@ function Home() {
         )}
       </div>
       <MultiNetworkGasBalances />
-      
+
       <div className="card">
         <h3>🌍 World Economy</h3>
         {worldGdp ? (
@@ -234,8 +233,8 @@ function Home() {
           {userGdpShare.shareInGDP !== null ? (
             <div>
               <p>🎯 <strong>Your GDP Share:</strong>{" "}
-              {userGdpShare.shareInGDP.toString()}{" = "}
-              ${(worldGdp ? userGdpShare.shareInGDP * worldGdp!.worldGdp : "").toLocaleString()}</p>
+                {userGdpShare.shareInGDP.toString()}{" = "}
+                ${(worldGdp ? userGdpShare.shareInGDP * worldGdp!.worldGdp : "").toLocaleString()}</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
                 This represents your calculated portion of the world economy based on your contributions
               </p>
@@ -252,7 +251,7 @@ function Home() {
       )}
 
       <Leaderboard limit={100} showTop={10} />
-      
+
       {/* Onboarding Section */}
       {isAuthenticated && user && (
         <div className="card">
@@ -286,7 +285,7 @@ function Home() {
                   ⚠️ <strong>IMPORTANT: Connect ALL Your Accounts First!</strong>
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  If you start onboarding without connecting all your accounts (GitHub, ORCID, BitBucket, GitLab, etc.), 
+                  If you start onboarding without connecting all your accounts (GitHub, ORCID, BitBucket, GitLab, etc.),
                   your salary calculation may be delayed by up to <strong>two months</strong>!
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
@@ -348,7 +347,7 @@ function Home() {
                 <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
                   Please go to the <a href="/connect" style={{ color: '#b45309', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> and complete your KYC verification.
                 </p>
-                {user.kycStatus && (
+                {user.kycStatus === 'PENDING' && (
                   <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
                     Current KYC Status: <strong>{user.kycStatus}</strong>
                   </p>
@@ -364,7 +363,7 @@ function Home() {
             <div>
               <p>⚠️ <strong>Please connect all your accounts first!</strong></p>
               <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
-                You need to connect your accounts (GitHub, ORCID, BitBucket, GitLab, etc.) before starting the evaluation process. 
+                You need to connect your accounts (GitHub, ORCID, BitBucket, GitLab, etc.) before starting the evaluation process.
                 This allows our AI to analyze your contributions and calculate your fair share of the world economy.
               </p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
@@ -374,15 +373,15 @@ function Home() {
           )}
         </div>
       )}
-      
+
       {primaryNetworkAddress && (
         <div className="card">
           <h3>💖 Support This Project</h3>
           <p>Help support the development of this open-source project by donating Ethereum or other gas token (ERC-20 is yet not supported):</p>
-          <div style={{ 
-            background: '#2a2a2a', 
-            padding: '1rem', 
-            borderRadius: '8px', 
+          <div style={{
+            background: '#2a2a2a',
+            padding: '1rem',
+            borderRadius: '8px',
             border: '1px solid #333',
             margin: '1rem 0',
             fontFamily: 'monospace',
@@ -396,7 +395,7 @@ function Home() {
             <span style={{ flex: 1, color: '#ffffff' }}>
               {primaryNetworkAddress}
             </span>
-            <button 
+            <button
               onClick={() => copyToClipboard(primaryNetworkAddress)}
               style={{
                 background: copySuccess ? '#4caf50' : '#646cff',
@@ -455,7 +454,7 @@ function Home() {
                 <strong>IMPORTANT REMINDER:</strong>
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                Have you connected ALL your accounts (GitHub, ORCID, BitBucket, GitLab, etc.)? 
+                Have you connected ALL your accounts (GitHub, ORCID, BitBucket, GitLab, etc.)?
                 If not, your salary calculation may be delayed by up to <strong>two months</strong>!
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
@@ -463,7 +462,7 @@ function Home() {
               </p>
             </div>
             <p style={{ margin: '0 0 1.5rem 0', color: '#666' }}>
-              Are you sure you want to start the evaluation process now? 
+              Are you sure you want to start the evaluation process now?
               You can still connect additional accounts later, but it may delay your salary calculation.
             </p>
             <div style={{

@@ -34,30 +34,7 @@ export class SystemSecretService {
     public async initialize(): Promise<void> {
         if (this.initialized) return;
 
-        // 1. Try to migrate from .secret files if they exist
-        const secretFiles = [
-            { path: 'ethereum-keys.secret' },
-            { path: 'solana-keys.secret' },
-            { path: 'bitcoin-keys.secret' },
-            { path: 'polkadot-keys.secret' },
-            { path: 'near-keys.secret' }
-        ];
-
-        for (const file of secretFiles) {
-            if (fs.existsSync(file.path)) {
-                try {
-                    const config = dotenv.parse(fs.readFileSync(file.path));
-                    for (const [key, value] of Object.entries(config)) {
-                        await this.ensureSecret(key, value);
-                    }
-                    console.log(`✅ Migrated secrets from ${file.path}`);
-                } catch (error) {
-                    console.error(`❌ Failed to migrate secrets from ${file.path}:`, error);
-                }
-            }
-        }
-
-        // 2. Ensure essential secrets exist (generate if missing)
+        // Ensure essential secrets exist (generate if missing)
         const essentialSecrets = [
             'ETHEREUM_PRIVATE_KEY',
             'SOLANA_SECRET_KEY_BASE58',
@@ -70,7 +47,7 @@ export class SystemSecretService {
             await this.ensureSecret(name);
         }
 
-        // 3. Load all secrets from DB into process.env for backward compatibility
+        // Load all secrets from DB into process.env for backward compatibility
         const allSecrets = await (prisma as any).systemSecret.findMany();
         for (const secret of allSecrets) {
             if (!process.env[secret.name]) {

@@ -166,50 +166,20 @@ router.get('/network/:networkName/status', async (req, res) => {
   try {
     const { networkName } = req.params;
     const overrides = parseTokenDistributionOverrides(req.query);
-    const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus(overrides);
-    const networkReserve = reserveStatus.get(networkName);
+    const status = await multiNetworkGasTokenDistributionService.getSingleNetworkStatus(networkName, overrides);
 
-    let evmInfo: Awaited<ReturnType<typeof multiNetworkEthereumService.getNetworkInfo>> | null = null;
-    try {
-      evmInfo = await multiNetworkEthereumService.getNetworkInfo(networkName);
-    } catch (error) {
-      if (!networkReserve) {
-        return res.status(404).json({
-          success: false,
-          error: `Network ${networkName} not found`
-        });
-      }
-      console.warn(`ℹ️  Network ${networkName} not managed by EVM service:`, error);
+    if (!status) {
+      return res.status(404).json({
+        success: false,
+        error: `Network ${networkName} not found`
+      });
     }
-
-    const walletBalance = networkReserve?.walletBalance ?? 0;
-    const tokenDecimals = networkReserve?.tokenDecimals ?? 0;
-    const fallbackBalance = walletBalance.toString();
-    const fallbackBalanceFormatted = walletBalance.toLocaleString('en-US', {
-      maximumFractionDigits: tokenDecimals
-    });
-
-    const status = {
-      name: evmInfo?.name ?? networkReserve?.networkName ?? networkName,
-      chainId: evmInfo?.chainId ?? null,
-      address: evmInfo?.address ?? null,
-      balance: evmInfo ? evmInfo.balance.toString() : fallbackBalance,
-      gasPrice: evmInfo ? evmInfo.gasPrice.toString() : null,
-      balanceFormatted: evmInfo
-        ? multiNetworkEthereumService.formatEther(evmInfo.balance)
-        : fallbackBalanceFormatted,
-      gasPriceFormatted: evmInfo
-        ? multiNetworkEthereumService.formatEther(evmInfo.gasPrice)
-        : null,
-      adapterType: networkReserve?.adapterType ?? (evmInfo ? 'EVM' : 'UNKNOWN'),
-      ...networkReserve
-    };
 
     return res.json({
       success: true,
       data: status,
       token: {
-        type: overrides.tokenType ?? networkReserve?.tokenType ?? 'NATIVE',
+        type: overrides.tokenType ?? status.tokenType ?? 'NATIVE',
       }
     });
   } catch (error) {

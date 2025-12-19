@@ -27,29 +27,10 @@ interface MultiNetworkStatus {
   totalNetworks: number;
 }
 
-interface ReserveStatus {
-  [networkName: string]: {
-    totalReserve?: number;
-    walletBalance?: number;
-    availableForDistribution?: number;
-    lastDistribution?: string;
-    adapterType?: string;
-    networkName?: string;
-    tokenSymbol?: string;
-    nativeTokenSymbol?: string;
-    tokenDecimals?: number;
-    address?: string;
-    gasPrice?: string;
-    gasPriceFormatted?: string;
-    balance?: string;
-    balanceFormatted?: string;
-  };
-}
-
 function MultiNetworkGasBalances() {
   const [networkStatus, setNetworkStatus] = useState<MultiNetworkStatus | null>(null)
-  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -64,6 +45,7 @@ function MultiNetworkGasBalances() {
         if (listResponse.data.success) {
           const listData = listResponse.data.data
           const initialNetworks: Record<string, NetworkInfo> = {}
+          const initialLoading: Record<string, boolean> = {}
 
           if (listData.networkDetails) {
             listData.networkDetails.forEach((net: any) => {
@@ -72,65 +54,49 @@ function MultiNetworkGasBalances() {
                 adapterType: net.adapterType,
                 networkName: net.networkName
               }
+              initialLoading[net.networkId] = true
             })
           }
 
+          const enabledNetworks = listData.enabledNetworks || []
           setNetworkStatus({
-            enabledNetworks: listData.enabledNetworks || [],
+            enabledNetworks,
             networks: initialNetworks,
             totalNetworks: listData.totalNetworks || 0
           })
+          setLoadingNetworks(initialLoading)
           setLoading(false)
-        }
 
-        // 2. Fetch full status and reserve data in the background
-        const [statusResponse, reserveResponse] = await Promise.all([
-          api.get('/api/multi-network-gas/status'),
-          api.get('/api/multi-network-gas/reserve-status')
-        ])
-
-        if (!statusResponse.data.success) {
-          // If the list fetch already succeeded, we don't want to throw and show an error page
-          // but we might want to log it
-          console.error('Failed to fetch full network status:', statusResponse.data.error)
-          return
-        }
-
-        const statusData = statusResponse.data.data as MultiNetworkStatus
-        const reserveData = reserveResponse.data.success ? (reserveResponse.data.data as ReserveStatus) : {}
-
-        const combinedNetworkNames = Array.from(
-          new Set([
-            ...(statusData.enabledNetworks ?? []),
-            ...Object.keys(statusData.networks ?? {}),
-            ...Object.keys(reserveData ?? {})
-          ])
-        )
-
-        const mergedNetworks: Record<string, NetworkInfo> = { ...statusData.networks }
-        for (const name of combinedNetworkNames) {
-          const base = statusData.networks?.[name] ?? {}
-          const reserve = reserveData?.[name] ?? {}
-          mergedNetworks[name] = {
-            ...reserve,
-            ...base
-          }
-        }
-
-        setNetworkStatus({
-          ...statusData,
-          enabledNetworks: combinedNetworkNames,
-          totalNetworks: combinedNetworkNames.length,
-          networks: mergedNetworks
-        })
-
-        if (reserveResponse.data.success) {
-          setReserveStatus(reserveData)
+          // 2. Fetch each network's status individually in parallel
+          enabledNetworks.forEach(async (networkName: string) => {
+            try {
+              const response = await api.get(`/api/multi-network-gas/network/${networkName}/status`)
+              if (response.data.success) {
+                const data = response.data.data
+                setNetworkStatus(prev => {
+                  if (!prev) return prev
+                  return {
+                    ...prev,
+                    networks: {
+                      ...prev.networks,
+                      [networkName]: {
+                        ...prev.networks[networkName],
+                        ...data
+                      }
+                    }
+                  }
+                })
+              }
+            } catch (err) {
+              console.error(`Failed to fetch status for network ${networkName}:`, err)
+            } finally {
+              setLoadingNetworks(prev => ({ ...prev, [networkName]: false }))
+            }
+          })
         }
 
       } catch (err) {
         console.error('Failed to fetch multi-network status:', err)
-        // Only set error if we haven't managed to load the list yet
         if (!networkStatus) {
           setError(err instanceof Error ? err.message : 'Failed to fetch network status')
         }
@@ -229,32 +195,26 @@ function MultiNetworkGasBalances() {
       <div style={{ display: 'grid', gap: '1rem' }}>
         {networkStatus.enabledNetworks.map((networkName) => {
           const networkInfo = networkStatus.networks[networkName] ?? {}
-          const reserveInfo = reserveStatus?.[networkName]
-          const lastDistribution = networkInfo.lastDistribution ?? reserveInfo?.lastDistribution
+          const isNetworkLoading = loadingNetworks[networkName]
+          const lastDistribution = networkInfo.lastDistribution
 
           const displayName =
-            networkInfo.name ?? networkInfo.networkName ?? reserveInfo?.networkName ?? networkName
+            networkInfo.name ?? networkInfo.networkName ?? networkName
           const chainBadgeText = typeof networkInfo.chainId === 'number'
             ? `Chain ${networkInfo.chainId}`
             : networkInfo.adapterType
               ? `${networkInfo.adapterType} network`
-              : reserveInfo?.adapterType
-                ? `${reserveInfo.adapterType} network`
-                : 'Network'
+              : 'Network'
           const tokenSymbol =
             networkInfo.tokenSymbol ??
             networkInfo.nativeTokenSymbol ??
-            reserveInfo?.tokenSymbol ??
-            reserveInfo?.nativeTokenSymbol ??
             'N/A'
           const fallbackDecimals =
-            reserveInfo?.tokenDecimals ??
             networkInfo.tokenDecimals ??
             6
-          const fallbackWalletBalance = reserveInfo?.walletBalance ?? networkInfo.walletBalance
+          const fallbackWalletBalance = networkInfo.walletBalance
           const balanceFormatted =
             networkInfo.balanceFormatted ??
-            reserveInfo?.balanceFormatted ??
             (typeof fallbackWalletBalance === 'number'
               ? fallbackWalletBalance.toLocaleString('en-US', {
                 maximumFractionDigits: fallbackDecimals
@@ -262,14 +222,13 @@ function MultiNetworkGasBalances() {
               : 'N/A')
           const gasPriceFormatted =
             networkInfo.gasPriceFormatted ??
-            reserveInfo?.gasPriceFormatted ??
             'N/A'
-          const address = networkInfo.address ?? reserveInfo?.address ?? 'N/A'
+          const address = networkInfo.address ?? 'N/A'
           const balanceDisplay = balanceFormatted === 'N/A'
-            ? 'N/A'
+            ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${balanceFormatted} ${tokenSymbol}`
           const gasPriceDisplay = gasPriceFormatted === 'N/A'
-            ? 'N/A'
+            ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${gasPriceFormatted} ${tokenSymbol}`
 
           return (
@@ -278,25 +237,34 @@ function MultiNetworkGasBalances() {
               background: '#1a1a1a',
               borderRadius: '8px',
               border: '1px solid #333',
-              textAlign: 'left'
+              textAlign: 'left',
+              opacity: isNetworkLoading ? 0.7 : 1,
+              transition: 'opacity 0.3s ease'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <h4 style={{ margin: 0, color: '#646cff' }}>
                   🌐 {displayName}
                 </h4>
-                {chainBadgeText && (
-                  <span style={{
-                    padding: '0.2rem 0.6rem',
-                    background: '#4caf50',
-                    color: 'white',
-                    borderRadius: '12px',
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                    textTransform: 'uppercase'
-                  }}>
-                    {chainBadgeText}
-                  </span>
-                )}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {isNetworkLoading && (
+                    <span className="loading-spinner" style={{ fontSize: '0.8rem', color: '#888' }}>
+                      ⏳
+                    </span>
+                  )}
+                  {chainBadgeText && (
+                    <span style={{
+                      padding: '0.2rem 0.6rem',
+                      background: '#4caf50',
+                      color: 'white',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: '500',
+                      textTransform: 'uppercase'
+                    }}>
+                      {chainBadgeText}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', fontSize: '0.9rem' }}>

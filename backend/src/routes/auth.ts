@@ -44,6 +44,7 @@ interface UserData {
   gitlabHandle?: string;
   issuingState?: string;
   personalNumber?: string;
+  residenceCountry?: string;
 }
 
 // Helper function to find or create user based on provided data.
@@ -55,7 +56,7 @@ interface UserData {
 // and set B1 to A1. Then we need to deal only with two users, because A1!=B1.
 // We delete that user that had been previously set to our data!
 async function findOrCreateUser(userData: UserData, currentUserId: number | null = null) {
-  const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle, issuingState, personalNumber } = userData;
+  const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle, issuingState, personalNumber, residenceCountry } = userData;
   // First, check for exact matches using unique fields
   const searchConditions: UserData[] = [];
   if (email) searchConditions.push({ email });
@@ -103,6 +104,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
           gitlabHandle: gitlabHandle || currentUser.gitlabHandle,
           issuingState: issuingState || currentUser.issuingState,
           personalNumber: personalNumber || currentUser.personalNumber,
+          residenceCountry: residenceCountry || currentUser.residenceCountry,
         }
       });
     } else {
@@ -117,6 +119,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (email) createData.email = email;
       if (issuingState) createData.issuingState = issuingState;
       if (personalNumber) createData.personalNumber = personalNumber;
+      if (residenceCountry) createData.residenceCountry = residenceCountry;
 
       return await prisma.user.create({
         data: createData
@@ -158,6 +161,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
       if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
       if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
+      if (residenceCountry || existingUser.residenceCountry) updateData.residenceCountry = residenceCountry || existingUser.residenceCountry;
 
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user.
@@ -217,6 +221,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
       if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
       if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
+      if (residenceCountry || existingUser.residenceCountry) updateData.residenceCountry = residenceCountry || existingUser.residenceCountry;
 
       return await prisma.user.update({
         where: { id: existingUser.id },
@@ -688,7 +693,8 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
       kycRejectedAt: user.kycRejectedAt,
       kycRejectionReason: user.kycRejectionReason,
       issuingState: user.issuingState,
-      personalNumber: user.personalNumber
+      personalNumber: user.personalNumber,
+      residenceCountry: user.residenceCountry
     });
   } catch (error: any) {
     console.error('Get KYC status error:', error);
@@ -1282,7 +1288,8 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
         kycRejectedAt: null,
         kycRejectionReason: null,
         issuingState: null,
-        personalNumber: null
+        personalNumber: null,
+        residenceCountry: null
       };
 
       const updatedUser = await prisma.user.update({
@@ -1506,6 +1513,10 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           updateData.personalNumber = idData.document_number;
         }
 
+        if (idData.residence) {
+          updateData.residenceCountry = idData.residence;
+        }
+
         updateData.kycData = JSON.stringify({
           documentType: idData.document_type,
           documentNumber: idData.document_number,
@@ -1514,6 +1525,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           dateOfBirth: idData.date_of_birth,
           nationality: idData.nationality,
           issuingState: idData.issuing_state,
+          residence: idData.residence,
           expirationDate: idData.expiration_date
         });
       }

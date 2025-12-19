@@ -35,6 +35,7 @@ model User {
   kycData                 String?
   issuingState            String?
   personalNumber          String?
+  residenceCountry        String?
   emailVerificationTokens EmailVerificationToken[]
   gasTokenDistributions   GasTokenDistribution[]
   openaiLogs              OpenAILog[]

@@ -232,3 +232,13 @@ model EmailVerificationToken {
   @@index([used])
   @@map("email_verification_tokens")
 }
+
+model SystemSecret {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_secrets")
+}

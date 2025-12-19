@@ -18,12 +18,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
 import { TokenDescriptor } from '../types/token.js';
 
-// Load environment variables
-dotenv.config();
-dotenv.config({ path: 'ethereum-keys.secret' });
-dotenv.config({ path: 'solana-keys.secret' });
-dotenv.config({ path: 'bitcoin-keys.secret' });
-dotenv.config({ path: 'polkadot-keys.secret' });
+import '../db-secrets.js';
 
 const ERC20_ABI = [
     {

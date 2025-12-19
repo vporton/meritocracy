@@ -1,8 +1,8 @@
-import { 
-    createPublicClient, 
-    createWalletClient, 
-    http, 
-    parseEther, 
+import {
+    createPublicClient,
+    createWalletClient,
+    http,
+    parseEther,
     formatEther,
     getContract,
     type PublicClient,
@@ -18,12 +18,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-// TODO@P3: duplicate code
-dotenv.config();
-dotenv.config({ path: 'ethereum-keys.secret' });
-dotenv.config({ path: 'solana-keys.secret' });
-dotenv.config({ path: 'bitcoin-keys.secret' });
-dotenv.config({ path: 'polkadot-keys.secret' });
+import '../db-secrets.js';
 
 // Get __dirname equivalent for ES modules
 // const __filename = fileURLToPath(import.meta.url);
@@ -43,7 +38,7 @@ class EthereumService {
     private publicClient!: PublicClient;
     private walletClient!: WalletClient;
     private account!: ReturnType<typeof privateKeyToAccount>;
-    private config: ReturnType<typeof loadEthereumConfig>;
+    private config!: ReturnType<typeof loadEthereumConfig>;
 
     constructor() {
         this.config = loadEthereumConfig();
@@ -67,7 +62,7 @@ class EthereumService {
 
     private initializeClients(): void {
         const chain = this.getChain();
-        
+
         // Initialize public client for read operations
         this.publicClient = createPublicClient({
             chain,
@@ -117,7 +112,7 @@ class EthereumService {
         return await this.publicClient.getBalance({ address: this.account.address });
     }
 
-    public async getNetwork(): Promise<Chain> {
+    public getNetwork(): Chain {
         return this.publicClient.chain!;
     }
 

@@ -1,0 +1,146 @@
+import { PrismaClient } from '@prisma/client';
+import { generatePrivateKey } from 'viem/accounts';
+import { Keypair as SolanaKeypair } from '@solana/web3.js';
+import { Keypair as StellarKeypair } from 'stellar-sdk';
+import { mnemonicGenerate } from '@polkadot/util-crypto';
+import { ECPairFactory } from 'ecpair';
+import * as tinysecp from 'tiny-secp256k1';
+import bs58 from 'bs58';
+import { webcrypto } from 'node:crypto';
+import process from 'process';
+import dotenv from 'dotenv';
+import fs from 'fs';
+
+const prisma = new PrismaClient();
+const ECPair = ECPairFactory(tinysecp as any);
+
+export class SystemSecretService {
+    private static instance: SystemSecretService;
+    private initialized = false;
+
+    private constructor() { }
+
+    public static getInstance(): SystemSecretService {
+        if (!SystemSecretService.instance) {
+            SystemSecretService.instance = new SystemSecretService();
+        }
+        return SystemSecretService.instance;
+    }
+
+    /**
+     * Initialize secrets from .secret files if they are not already in the DB.
+     * This handles migration for existing setups.
+     */
+    public async initialize(): Promise<void> {
+        if (this.initialized) return;
+
+        // 1. Try to migrate from .secret files if they exist
+        const secretFiles = [
+            { path: 'ethereum-keys.secret' },
+            { path: 'solana-keys.secret' },
+            { path: 'bitcoin-keys.secret' },
+            { path: 'polkadot-keys.secret' },
+            { path: 'near-keys.secret' }
+        ];
+
+        for (const file of secretFiles) {
+            if (fs.existsSync(file.path)) {
+                try {
+                    const config = dotenv.parse(fs.readFileSync(file.path));
+                    for (const [key, value] of Object.entries(config)) {
+                        await this.ensureSecret(key, value);
+                    }
+                    console.log(`✅ Migrated secrets from ${file.path}`);
+                } catch (error) {
+                    console.error(`❌ Failed to migrate secrets from ${file.path}:`, error);
+                }
+            }
+        }
+
+        // 2. Ensure essential secrets exist (generate if missing)
+        const essentialSecrets = [
+            'ETHEREUM_PRIVATE_KEY',
+            'SOLANA_SECRET_KEY_BASE58',
+            'STELLAR_SECRET_KEY',
+            'POLKADOT_SECRET_URI',
+            'BITCOIN_WIF'
+        ];
+
+        for (const name of essentialSecrets) {
+            await this.ensureSecret(name);
+        }
+
+        // 3. Load all secrets from DB into process.env for backward compatibility
+        const allSecrets = await (prisma as any).systemSecret.findMany();
+        for (const secret of allSecrets) {
+            if (!process.env[secret.name]) {
+                process.env[secret.name] = secret.value;
+            }
+        }
+
+        this.initialized = true;
+        console.log('✅ SystemSecretService initialized');
+    }
+
+    public async getSecret(name: string): Promise<string | null> {
+        const secret = await (prisma as any).systemSecret.findUnique({
+            where: { name }
+        });
+
+        if (secret) {
+            return secret.value;
+        }
+
+        // fallback to process.env if not in DB (for transition)
+        return process.env[name] || null;
+    }
+
+    public async ensureSecret(name: string, defaultValue?: string): Promise<string> {
+        const existing = await this.getSecret(name);
+        if (existing) return existing;
+
+        const value = defaultValue || this.generateSecretForName(name);
+
+        await (prisma as any).systemSecret.upsert({
+            where: { name },
+            update: { value },
+            create: { name, value }
+        });
+
+        return value;
+    }
+
+    private generateSecretForName(name: string): string {
+        if (name === 'ETHEREUM_PRIVATE_KEY') {
+            return generatePrivateKey();
+        }
+        if (name === 'SOLANA_SECRET_KEY_BASE58') {
+            const keypair = SolanaKeypair.generate();
+            return bs58.encode(Buffer.from(keypair.secretKey));
+        }
+        if (name === 'STELLAR_SECRET_KEY') {
+            const keypair = StellarKeypair.random();
+            return keypair.secret();
+        }
+        if (name === 'POLKADOT_SECRET_URI') {
+            return mnemonicGenerate();
+        }
+        if (name === 'BITCOIN_WIF') {
+            const keyPair = ECPair.makeRandom();
+            return keyPair.toWIF();
+        }
+
+        // Generic fallback: random hex
+        return Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString('hex');
+    }
+
+    public async setSecret(name: string, value: string): Promise<void> {
+        await (prisma as any).systemSecret.upsert({
+            where: { name },
+            update: { value },
+            create: { name, value }
+        });
+    }
+}
+
+export const systemSecretService = SystemSecretService.getInstance();

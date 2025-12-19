@@ -8,14 +8,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-
-// TODO@P3: duplicate code
-dotenv.config();
-dotenv.config({ path: 'ethereum-keys.secret' });
-dotenv.config({ path: 'solana-keys.secret' });
-dotenv.config({ path: 'bitcoin-keys.secret' });
-dotenv.config({ path: 'polkadot-keys.secret' });
+import './db-secrets.js';
 
 import userRoutes from './routes/users.js';
 import authRoutes from './routes/auth.js';

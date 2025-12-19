@@ -84,7 +84,8 @@ You need to create OAuth applications for each provider:
 1. Go to GitLab Applications settings
 2. Create a new application
 3. Set redirect URI to: `http://localhost:5173/auth/gitlab/callback`
-4. Copy the Application ID and Secret to your `.env` file
+4. Select the **api** scope in the Scopes section (this includes read_user and avoids permission errors)
+5. Copy the Application ID and Secret to your `.env` file
 
 ## Frontend Setup
 

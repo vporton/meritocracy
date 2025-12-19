@@ -4,6 +4,7 @@ import { createECDH, createHash } from 'crypto';
 import * as bitcoin from 'bitcoinjs-lib';
 import { ECPairFactory } from 'ecpair';
 import * as tinysecp from 'tiny-secp256k1';
+import fetch from 'node-fetch';
 import type { User } from '@prisma/client';
 import type {
   GasTokenNetworkAdapter,
@@ -113,6 +114,21 @@ const deriveP2PKHAddressFromWif = (wif: string): string => {
   return bs58.encode(Buffer.concat([addressPayload, addressChecksum]));
 };
 
+const getExternalFeeRate = async (networkId: string): Promise<number | undefined> => {
+  const isTestnet = networkId.includes('testnet');
+  const baseUrl = isTestnet ? 'https://mempool.space/testnet/api' : 'https://mempool.space/api';
+  try {
+    const response = await fetch(`${baseUrl}/v1/fees/recommended`);
+    if (!response.ok) return undefined;
+    const data = await response.json() as any;
+    // halfHourFee is usually a good balance for background distributions
+    return typeof data.halfHourFee === 'number' ? data.halfHourFee : data.fastestFee;
+  } catch (error) {
+    console.warn(`⚠️ [Bitcoin] Failed to fetch fee from external API: ${error}`);
+    return undefined;
+  }
+};
+
 export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'BITCOIN';
   private client?: Client;
@@ -158,6 +174,25 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     _client: Client
   ): Promise<string | undefined> {
     return this.ensureStaticWalletAddress(config);
+  }
+
+  private async getFeeRate(config: BitcoinNetworkConfig, client: Client): Promise<number> {
+    const externalSatPerByte = await getExternalFeeRate(config.networkId);
+    if (externalSatPerByte !== undefined) {
+      return externalSatPerByte;
+    }
+
+    try {
+      const estimate = await client.command('estimatesmartfee', 6);
+      const feerateBTCperKB = typeof estimate?.feerate === 'number' ? estimate.feerate : Number(estimate?.feerate ?? 0);
+      if (feerateBTCperKB > 0) {
+        return Math.ceil((feerateBTCperKB * 1e8) / 1000);
+      }
+    } catch (error) {
+      console.warn(`⚠️ [Bitcoin] Failed to estimate fee via RPC: ${error}`);
+    }
+
+    return 2; // Default fallback to a safe minimum
   }
 
   private async tryWalletlessBalanceLookup(
@@ -261,10 +296,15 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     _amountToken: number
   ): Promise<GasTransferEstimate> {
     try {
+      const config = readBitcoinConfig();
       const client = await this.getClient();
-      const estimate = await client.command('estimatesmartfee', 6);
-      const feerate = typeof estimate?.feerate === 'number' ? estimate.feerate : Number(estimate?.feerate ?? 0);
-      return feerate > 0 ? { gasCostToken: feerate } : {};
+      const satPerByte = await this.getFeeRate(config, client);
+
+      // A typical P2PKH transaction with 1 input and 2 outputs (recipient + change) is ~250 bytes.
+      const typicalSize = 250;
+      const gasCostToken = (satPerByte * typicalSize) / 1e8;
+
+      return { gasCostToken };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown Bitcoin estimation error';
       return { deferReason: message };
@@ -306,14 +346,7 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
 
     // 2. Estimate fee rate
-    let satPerByte = 1;
-    try {
-      const estimate = await client.command('estimatesmartfee', 6);
-      const feerateBTCperKB = typeof estimate?.feerate === 'number' ? estimate.feerate : Number(estimate?.feerate ?? 0.0001);
-      satPerByte = Math.ceil((feerateBTCperKB * 1e8) / 1000) || 1;
-    } catch {
-      console.warn('[Bitcoin] Failed to estimate fee, falling back to 1 sat/byte');
-    }
+    const satPerByte = await this.getFeeRate(config, client);
 
     // 3. Build transaction locally
     const amountSat = Math.round(amountToken * 1e8);

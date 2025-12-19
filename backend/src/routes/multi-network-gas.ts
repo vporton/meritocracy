@@ -6,7 +6,7 @@ import { multiNetworkEthereumService } from '../services/MultiNetworkEthereumSer
 
 const router = Router();
 const prisma = new PrismaClient();
-const multiNetworkGasTokenDistributionService = MultiNetworkGasTokenDistributionService.getInstance(prisma);
+const multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(prisma);
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') return undefined;
@@ -76,7 +76,7 @@ router.get('/reserve-status', async (req, res) => {
   try {
     const overrides = parseTokenDistributionOverrides(req.query);
     const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus(overrides);
-
+    
     res.json({
       success: true,
       data: Object.fromEntries(reserveStatus),
@@ -100,7 +100,7 @@ router.get('/reserve-status', async (req, res) => {
 router.get('/distribution-history', async (req, res) => {
   try {
     const { network, userId, limit = 100 } = req.query;
-
+    
     let distributions;
     if (network && typeof network === 'string') {
       distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(network);
@@ -199,7 +199,7 @@ router.get('/network/:networkName/distribution-history', async (req, res) => {
   try {
     const { networkName } = req.params;
     const { limit = 100 } = req.query;
-
+    
     const distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(networkName);
     const limitedDistributions = distributions.slice(0, parseInt(limit as string));
 
@@ -227,7 +227,7 @@ router.get('/user/:userId/distribution-history', async (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 100 } = req.query;
-
+    
     const distributions = await multiNetworkGasTokenDistributionService.getUserDistributionHistory(parseInt(userId));
     const limitedDistributions = distributions.slice(0, parseInt(limit as string));
 
@@ -255,10 +255,10 @@ router.get('/user/:userId/distribution-history', async (req, res) => {
 router.post('/run-distribution', async (req, res) => {
   try {
     console.log('🔄 Manual multi-network gas token distribution triggered via API');
-
+    
     const overrides = parseTokenDistributionOverrides(req.body);
     const result = await multiNetworkGasTokenDistributionService.processMultiNetworkDistribution(overrides);
-
+    
     res.json({
       success: result.success,
       data: {

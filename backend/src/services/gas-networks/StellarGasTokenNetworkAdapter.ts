@@ -6,10 +6,9 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
-import StellarSdk from 'stellar-sdk';
+import { Asset, Keypair, Networks, Operation, Horizon, StrKey, TransactionBuilder } from 'stellar-sdk';
+const { Server } = Horizon;
 import { withRetry } from '../../utils/retry.js';
-
-const { Asset, Keypair, Networks, Operation, Server, StrKey, TransactionBuilder } = StellarSdk;
 
 type HorizonServer = InstanceType<typeof Server>;
 type HorizonKeypair = InstanceType<typeof Keypair>;
@@ -160,6 +159,16 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       }
       return parseFloat(nativeBalance.balance);
     } catch (error) {
+      const isNotFound =
+        error instanceof Error &&
+        (error.name === 'NotFoundError' ||
+          (error as any).response?.status === 404 ||
+          error.message.includes('Not Found'));
+
+      if (isNotFound) {
+        return 0;
+      }
+
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`[Stellar] Failed to fetch balance: ${message}`);
     }

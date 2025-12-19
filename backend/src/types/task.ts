@@ -1,4 +1,6 @@
 // Task status enum for type safety
+import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
+
 export enum TaskStatus {
   NOT_STARTED = 'NOT_STARTED', // task create in the DB but not yet initiated.
   INITIATED = 'INITIATED', // `initiateTask` has been called.
@@ -107,7 +109,7 @@ export class TaskRunnerRegistry {
    * This method integrates with the database to fetch task information
    */
   static async runByTaskId(
-    prisma: any, 
+    prisma: any,
     taskId: number
   ): Promise<boolean> {
     try {
@@ -185,6 +187,8 @@ export class TaskRunnerRegistry {
       }
     });
 
+    await deleteTaskIfOrphaned(prisma, taskId);
+
     console.log(`✅ Task ${taskId} marked as COMPLETED`);
     return true;
   }
@@ -207,6 +211,8 @@ export class TaskRunnerRegistry {
           updatedAt: new Date()
         }
       });
+
+      await deleteTaskIfOrphaned(prisma, taskId);
 
       console.log(`❌ Task ${taskId} marked as CANCELLED`);
       return true;

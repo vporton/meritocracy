@@ -2,6 +2,7 @@ import { PrismaClient, Task, } from '@prisma/client';
 import { TaskStatus, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
 import { createAIBatchStore, createAIOutputter, createAIRunner } from './openai.js';
 import { BaseOpenAIRunner } from '@/runners/OpenAIRunners.js';
+import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 
 export class TaskExecutor {
   private prisma: PrismaClient;
@@ -98,6 +99,8 @@ export class TaskExecutor {
           },
         });
 
+        await deleteTaskIfOrphaned(this.prisma, taskId);
+
         console.log(`✅ Task ${taskId} completed successfully`);
         return true;
 
@@ -170,7 +173,7 @@ export class TaskExecutor {
       return false;
     }
 
-    return task.dependencies.every((dep: any) => 
+    return task.dependencies.every((dep: any) =>
       dep.dependency.status !== TaskStatus.NOT_STARTED
     );
   }
@@ -183,6 +186,7 @@ export class TaskExecutor {
       where: { id: taskId },
       data: { status: TaskStatus.CANCELLED },
     });
+    await deleteTaskIfOrphaned(this.prisma, taskId);
   }
 
   /**
@@ -192,7 +196,7 @@ export class TaskExecutor {
    */
   async executeNonBatchMode(taskId: number): Promise<boolean> {
     const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
-    
+
     if (openAIFlexMode !== 'nonbatch') {
       console.log(`📋 OPENAI_FLEX_MODE is batch, tasks queued for batch processing`);
       return false;

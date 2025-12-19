@@ -7,6 +7,7 @@ import { ResponseCreateParams, ResponseCreateParamsNonStreaming, ResponseTextCon
 import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 import { isConfigValueTrue } from '../services/utils.js';
+import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -31,7 +32,7 @@ function generateUserPrompt(userData: any): string {
   }
 
   const accountInfo: string[] = [];
-  
+
   // I provide full URLs for all accounts, not just account names, because
   /// gpt-5-mini once said:
   // "Only a GitHub username (vporton) was provided. Without reviewing the user's profile, repositories, contributions, or any publication/affiliation information I cannot verify that they are an active scientist or FOSS developer. Please provide a profile link or additional details (repo list, affiliation, publications) so I can re-check."
@@ -40,32 +41,32 @@ function generateUserPrompt(userData: any): string {
   if (userData.orcidId) {
     accountInfo.push(`ORCID: https://orcid.org/${userData.orcidId}`);
   }
-  
+
   // Add GitHub if connected
   if (userData.githubHandle) {
     accountInfo.push(`GitHub: https://github.com/${userData.githubHandle}`);
   }
-  
+
   // Add BitBucket if connected
   if (userData.bitbucketHandle) {
     accountInfo.push(`BitBucket: https://bitbucket.org/${userData.bitbucketHandle}`);
   }
-  
+
   // Add GitLab if connected
   if (userData.gitlabHandle) {
     accountInfo.push(`GitLab: https://gitlab.com/${userData.gitlabHandle}`);
   }
-  
+
   // Add Ethereum address if connected
   if (userData.ethereumAddress) {
     accountInfo.push(`Ethereum: ${userData.ethereumAddress}`);
   }
-  
+
   // Add name if available
   if (userData.name) {
     accountInfo.push(`Name: ${userData.name}`);
   }
-  
+
   // Add email if available and verified
   if (userData.email && userData.emailVerified) {
     accountInfo.push(`Email: ${userData.email}`);
@@ -199,9 +200,9 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         }
       });
     } catch (error) {
-      this.log('error', `Failed to log OpenAI request`, { 
-        customId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.log('error', `Failed to log OpenAI request`, {
+        customId,
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -227,9 +228,9 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         }
       });
     } catch (error) {
-      this.log('error', `Failed to log OpenAI response`, { 
-        customId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.log('error', `Failed to log OpenAI response`, {
+        customId,
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -258,14 +259,14 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       data: { storeId }
     });
     const runner = await createAIRunner(store);
-    
-    const requestBody = <ResponseCreateParamsNonStreaming | {max_tool_calls: number}>{
+
+    const requestBody = <ResponseCreateParamsNonStreaming | { max_tool_calls: number }>{
       instructions: prompt, // system/developer message.
       input: input, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
       ...(/gpt-5-mini/.test(options?.model ?? DEFAULT_MODEL)
-        ? {/* temperature not supported */} : options?.temperature === undefined
-        ? { temperature: options.temperature } : {temperature: DEFAULT_TEMPERATURE}),
+        ? {/* temperature not supported */ } : options?.temperature === undefined
+          ? { temperature: options.temperature } : { temperature: DEFAULT_TEMPERATURE }),
       // include: ['web_search_call.action.sources'], // TODO@P3: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
@@ -281,21 +282,21 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         verbosity: 'medium'
       }
     };
-    
+
     // Add the request to the runner
     await runner.addItem({
       custom_id: customId,
       method: "POST",
       body: requestBody
     });
-    
+
     // Flush to execute the request
     await runner.flush();
-    
-    
+
+
     // Log the request to the database
     await this.logOpenAIRequest(customId, storeId, requestBody, taskId);
-    
+
     // Return the store ID for later result retrieval
     return { storeId };
   }
@@ -307,8 +308,8 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
    * @param additionalData - Additional data to include in runner data
    */
   protected async updateTaskWithRequestData(
-    task: TaskWithDependencies, 
-    customId: string, 
+    task: TaskWithDependencies,
+    customId: string,
     additionalData: Record<string, any> = {}
   ): Promise<void> {
     // Need set something except `customId`?
@@ -344,14 +345,14 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     const customId = uuidv4();
     // Update database first to ensure consistent state
     await this.updateTaskWithRequestData(task, customId, additionalData);
-    
-   
+
+
     // Check if fake mode is enabled
     if (OPEN_AI_FAKE) {
       await this.handleFakeModeResponse(task, customId, additionalData);
       return;
     } else {
-    // Then initiate the OpenAI request
+      // Then initiate the OpenAI request
       await this.makeOpenAIRequest(prompt, input, schema, customId, options, task.id);
     }
   }
@@ -421,7 +422,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     //     }
     //   }]
     // };
-    
+
     // Only store if we have a non-batch store (which has storeResponseByCustomId method)
     if ('storeResponseByCustomId' in store) {
       await (store as any).storeResponseByCustomId({
@@ -456,10 +457,10 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
    * @returns The dependency result or null if not found
    */
   protected async getDependencyResult( // TODO@P3: This function is suspected, because we may need to get data from several dependencies.
-    task: TaskWithDependencies, 
+    task: TaskWithDependencies,
     runnerClassName: string
   ): Promise<any> {
-    const dependency = task.dependencies.find(dep => 
+    const dependency = task.dependencies.find(dep =>
       dep.dependency.runnerClassName === runnerClassName
     );
 
@@ -482,9 +483,9 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       throw new DependencyError(`${runnerClassName} dependency missing storeId`, depTask.id, task.id, this.constructor.name);
     }
 
-    return await this.getOpenAIResult({ 
-      customId: depData.customId, 
-      storeId: depTask.storeId 
+    return await this.getOpenAIResult({
+      customId: depData.customId,
+      storeId: depTask.storeId
     });
   }
 }
@@ -506,11 +507,11 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
     if (!response) {
       throw new DependencyError('RandomizePromptRunner dependency returned no response', undefined, task.id, this.constructor.name);
     }
-    
+
     if (!response.randomizedPrompt) {
       throw new DependencyError('RandomizePromptRunner dependency response missing randomizedPrompt field', undefined, task.id, this.constructor.name);
     }
-    
+
     return response.randomizedPrompt;
   }
 
@@ -532,7 +533,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
-    
+
     // In fake mode, use the original prompt directly instead of getting randomized prompt
     let promptToUse: string;
     if (OPEN_AI_FAKE) {
@@ -541,9 +542,9 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
       // Get randomized prompt from dependency (randomizePrompt task)
       promptToUse = await this.getRandomizedPromptFromDependency(task);
     }
-    
+
     const userPrompt: string = generateUserPrompt(userData);
-    
+
     await this.initiateOpenAIRequest(task, promptToUse, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 
@@ -577,7 +578,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
     const userPrompt: string = generateUserPrompt(userData);
-    
+
     await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
 
@@ -623,13 +624,13 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
     // Get the full response to extract sources
     const fullResponse = await this.getFullOpenAIResponse(customId);
     const sources = this.extractSourcesFromResponse(fullResponse);
-    
+
     // Store the output with sources
     const outputWithSources = {
       ...output,
       sources: sources
     };
-    
+
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, outputWithSources);
   }
 
@@ -641,10 +642,10 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
     if (!task.storeId) {
       throw new Error('No storeId found for task');
     }
-    
+
     const store = await createAIBatchStore(task.storeId, this.taskId);
     const outputter = await createAIOutputter(store);
-    
+
     try {
       const response = (await outputter.getOutput(customId))!;
       return response;
@@ -663,7 +664,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
     }
 
     const sources: string[] = [];
-    
+
     // Look through all output messages for web search results
     for (const message of response.output) {
       if (message && message.content) {
@@ -675,7 +676,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
               sources.push(...urlMatches);
             }
           }
-          
+
           // Look for web search sources in the content
           if (content.sources && Array.isArray(content.sources)) {
             for (const source of content.sources) {
@@ -686,7 +687,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
           }
         }
       }
-      
+
       // Look for web search calls in the message
       if (message.web_search_call && message.web_search_call.action && message.web_search_call.action.sources) {
         for (const source of message.web_search_call.action.sources) {
@@ -696,7 +697,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
         }
       }
     }
-    
+
     // Remove duplicates
     return [...new Set(sources)];
   }
@@ -724,7 +725,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     if (!originalPrompt) { // Should not happen.
       throw new TaskRunnerError('Original prompt is required for randomization', task.id, this.constructor.name);
     }
-    
+
     await this.initiateOpenAIRequest(task, randomizePrompt, originalPrompt, randomizedPromptSchema, this.getModelOptions());
   }
 
@@ -798,9 +799,11 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
       }
     });
 
-    this.log('info', `🚫 Prompt injection detected - user banned and task cancelled`, { 
+    await deleteTaskIfOrphaned(this.prisma, task.id);
+
+    this.log('info', `🚫 Prompt injection detected - user banned and task cancelled`, {
       taskId: task.id,
-      userId, 
+      userId,
       bannedUntil: banUntil.toISOString(),
       reason
     });
@@ -812,13 +815,13 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const userData = this.data.userData || {};
-    
+
     // Get randomized prompt from dependency (randomizePrompt task)
     let randomizedPrompt = await this.getRandomizedPromptFromDependency(task);
-    
+
     // Collect URLs from all worth assessment dependencies
     const urlsFromWorthAssessments = await this.collectUrlsFromWorthAssessments(task);
-    
+
     // If we have URLs from worth assessments, modify the prompt to include them
     const sourcesList = urlsFromWorthAssessments.length > 0 ?
       urlsFromWorthAssessments.map(url => `- ${url}`).join('\n') : 'No sources available from worth assessments.';
@@ -826,7 +829,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
     // Prompt injection detector should list URLs in the user prompt, not system one,
     // to avoid depending on URLs containing injections.
     const userPrompt: string = generateUserPrompt(userData) + '\n\n' + `URLs to check:\n${sourcesList}`; // TODO@P3: Refactor.
-    
+
     await this.initiateOpenAIRequest(task, randomizedPrompt, userPrompt, this.getResponseSchema(), this.getModelOptions());
   }
 
@@ -837,22 +840,22 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    */
   private async collectUrlsFromWorthAssessments(task: TaskWithDependencies): Promise<string[]> {
     const allUrls: string[] = [];
-    
+
     // Look for worth assessment tasks in the dependency chain
     for (const dep of task.dependencies) {
       // Check if this dependency is a worth assessment task
-      if (dep.dependency.runnerClassName === 'WorthAssessmentRunner' && 
-          dep.dependency.status === 'COMPLETED' && 
-          dep.dependency.runnerData) {
-        
+      if (dep.dependency.runnerClassName === 'WorthAssessmentRunner' &&
+        dep.dependency.status === 'COMPLETED' &&
+        dep.dependency.runnerData) {
+
         try {
           const depData = JSON.parse(dep.dependency.runnerData);
-          
+
           // Check if the worth assessment has sources
           if (depData.sources && Array.isArray(depData.sources)) {
             allUrls.push(...depData.sources);
           }
-          
+
           // Also try to get sources from the OpenAI response if available
           if (depData.customId && dep.dependency.storeId) {
             try {
@@ -860,7 +863,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
                 customId: depData.customId,
                 storeId: dep.dependency.storeId
               });
-              
+
               if (response && response.sources && Array.isArray(response.sources)) {
                 allUrls.push(...response.sources);
               }
@@ -879,7 +882,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
         }
       }
     }
-    
+
     // Remove duplicates and return
     return [...new Set(allUrls)];
   }
@@ -914,7 +917,7 @@ export function registerOpenAIRunners(): void {
 export function registerAllRunners(): void {
   // Register OpenAI runners
   registerOpenAIRunners();
-  
+
   // Register utility runners
   registerUtilityRunners();
 }

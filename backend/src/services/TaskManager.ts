@@ -1,6 +1,7 @@
 import { PrismaClient, Task, TaskDependency } from '@prisma/client';
 import { TaskStatus, TaskRunnerRegistry } from '../types/task.js';
 import { TaskExecutor } from './TaskExecutor.js';
+import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 
 export class TaskManager {
   private prisma: PrismaClient;
@@ -304,6 +305,7 @@ export class TaskManager {
               updatedAt: new Date()
             },
           });
+          await deleteTaskIfOrphaned(this.prisma, taskId);
           return true;
         }
 

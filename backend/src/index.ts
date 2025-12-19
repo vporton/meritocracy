@@ -52,7 +52,7 @@ app.use(helmet({
       upgradeInsecureRequests: [],
     },
   },
-  crossOriginOpenerPolicy: {policy: "unsafe-none"},
+  crossOriginOpenerPolicy: { policy: "unsafe-none" },
 }));
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -110,7 +110,7 @@ async function initializeApp() {
   try {
     console.log('🔄 Initializing global data...');
     await GlobalDataService.initializeGlobalData();
-    
+
     // Set up monthly GDP update check
     setInterval(async () => {
       try {
@@ -123,25 +123,25 @@ async function initializeApp() {
         console.error('Error in scheduled GDP update:', error);
       }
     }, 24 * 60 * 60 * 1000); // Check daily (24 hours)
-    
+
     console.log('✅ Global data initialization complete');
-    
+
     // Initialize cron service
     console.log('🔄 Initializing cron service...');
     const prisma = new PrismaClient();
     const cronService = new CronService(prisma);
-    
+
     // Start the bi-monthly evaluation cron job
     cronService.startBiMonthlyEvaluationCron();
-    
+
     // Start the weekly gas token distribution cron job
     cronService.startWeeklyGasDistributionCron();
-    
+
     // Start the monthly disconnected account cleanup cron job
     cronService.startMonthlyCleanupCron();
-    
+
     console.log('✅ Cron service initialization complete');
-    
+
     // Graceful shutdown handling
     process.on('SIGINT', () => {
       console.log('🛑 Shutting down gracefully...');
@@ -149,14 +149,14 @@ async function initializeApp() {
       prisma.$disconnect();
       process.exit(0);
     });
-    
+
     process.on('SIGTERM', () => {
       console.log('🛑 Shutting down gracefully...');
       cronService.destroy();
       prisma.$disconnect();
       process.exit(0);
     });
-    
+
   } catch (error) {
     console.error('❌ Error initializing app:', error);
   }
@@ -166,6 +166,15 @@ async function initializeApp() {
 await initializeApp();
 console.log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
 
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
+
+server.on('error', (error: any) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Error: Port ${PORT} is already in use. Please kill the process using it and try again.`);
+  } else {
+    console.error('❌ Error starting server:', error);
+  }
+  process.exit(1);
 });

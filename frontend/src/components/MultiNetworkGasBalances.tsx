@@ -58,14 +58,42 @@ function MultiNetworkGasBalances() {
         setLoading(true)
         setError(null)
 
-        // Fetch network status
+        // 1. Fetch network list quickly
+        const listResponse = await api.get('/api/multi-network-gas/list')
+
+        if (listResponse.data.success) {
+          const listData = listResponse.data.data
+          const initialNetworks: Record<string, NetworkInfo> = {}
+
+          if (listData.networkDetails) {
+            listData.networkDetails.forEach((net: any) => {
+              initialNetworks[net.networkId] = {
+                name: net.networkName,
+                adapterType: net.adapterType,
+                networkName: net.networkName
+              }
+            })
+          }
+
+          setNetworkStatus({
+            enabledNetworks: listData.enabledNetworks || [],
+            networks: initialNetworks,
+            totalNetworks: listData.totalNetworks || 0
+          })
+          setLoading(false)
+        }
+
+        // 2. Fetch full status and reserve data in the background
         const [statusResponse, reserveResponse] = await Promise.all([
           api.get('/api/multi-network-gas/status'),
           api.get('/api/multi-network-gas/reserve-status')
         ])
 
         if (!statusResponse.data.success) {
-          throw new Error(statusResponse.data.error || 'Failed to fetch network status')
+          // If the list fetch already succeeded, we don't want to throw and show an error page
+          // but we might want to log it
+          console.error('Failed to fetch full network status:', statusResponse.data.error)
+          return
         }
 
         const statusData = statusResponse.data.data as MultiNetworkStatus
@@ -102,7 +130,10 @@ function MultiNetworkGasBalances() {
 
       } catch (err) {
         console.error('Failed to fetch multi-network status:', err)
-        setError(err instanceof Error ? err.message : 'Failed to fetch network status')
+        // Only set error if we haven't managed to load the list yet
+        if (!networkStatus) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch network status')
+        }
       } finally {
         setLoading(false)
       }
@@ -177,7 +208,7 @@ function MultiNetworkGasBalances() {
   return (
     <div className="card">
       <h3>🌐 Multi-Network Gas Balances</h3>
-      
+
       {/* Summary */}
       <div style={{
         padding: '1rem',
@@ -206,10 +237,10 @@ function MultiNetworkGasBalances() {
           const chainBadgeText = typeof networkInfo.chainId === 'number'
             ? `Chain ${networkInfo.chainId}`
             : networkInfo.adapterType
-            ? `${networkInfo.adapterType} network`
-            : reserveInfo?.adapterType
-            ? `${reserveInfo.adapterType} network`
-            : 'Network'
+              ? `${networkInfo.adapterType} network`
+              : reserveInfo?.adapterType
+                ? `${reserveInfo.adapterType} network`
+                : 'Network'
           const tokenSymbol =
             networkInfo.tokenSymbol ??
             networkInfo.nativeTokenSymbol ??
@@ -219,8 +250,6 @@ function MultiNetworkGasBalances() {
           const fallbackDecimals =
             reserveInfo?.tokenDecimals ??
             networkInfo.tokenDecimals ??
-            networkInfo.nativeTokenDecimals ??
-            reserveInfo?.nativeTokenDecimals ??
             6
           const fallbackWalletBalance = reserveInfo?.walletBalance ?? networkInfo.walletBalance
           const balanceFormatted =
@@ -228,8 +257,8 @@ function MultiNetworkGasBalances() {
             reserveInfo?.balanceFormatted ??
             (typeof fallbackWalletBalance === 'number'
               ? fallbackWalletBalance.toLocaleString('en-US', {
-                  maximumFractionDigits: fallbackDecimals
-                })
+                maximumFractionDigits: fallbackDecimals
+              })
               : 'N/A')
           const gasPriceFormatted =
             networkInfo.gasPriceFormatted ??
@@ -269,7 +298,7 @@ function MultiNetworkGasBalances() {
                   </span>
                 )}
               </div>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', fontSize: '0.9rem' }}>
                 <div>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
@@ -279,7 +308,7 @@ function MultiNetworkGasBalances() {
                     <strong>Gas Price:</strong> {gasPriceDisplay}
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Address:</strong>{" "} 
+                    <strong>Address:</strong>{" "}
                     <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
                       {address}
                     </span>
@@ -305,21 +334,21 @@ function MultiNetworkGasBalances() {
         const gasPriceFormatted = networkInfo.gasPriceFormatted ?? 'N/A'
         return balanceFormatted === 'N/A' || gasPriceFormatted === 'N/A'
       }) && (
-        <div style={{
-          padding: '1rem',
-          background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
-          borderRadius: '8px',
-          borderLeft: '4px solid #ef4444',
-          marginTop: '1rem'
-        }}>
-          <p style={{ margin: 0, color: '#dc2626', fontWeight: '600' }}>
-            ⚠️ <strong>Connection Issues Detected</strong>
-          </p>
-          <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-            Some networks are showing connection issues. Check your RPC URL configuration and network connectivity.
-          </p>
-        </div>
-      )}
+          <div style={{
+            padding: '1rem',
+            background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+            borderRadius: '8px',
+            borderLeft: '4px solid #ef4444',
+            marginTop: '1rem'
+          }}>
+            <p style={{ margin: 0, color: '#dc2626', fontWeight: '600' }}>
+              ⚠️ <strong>Connection Issues Detected</strong>
+            </p>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
+              Some networks are showing connection issues. Check your RPC URL configuration and network connectivity.
+            </p>
+          </div>
+        )}
     </div>
   )
 }

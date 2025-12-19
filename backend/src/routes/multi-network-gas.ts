@@ -35,6 +35,36 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
 };
 
 /**
+ * GET /api/multi-network-gas/list
+ * Get list of all enabled networks (fast, no balances)
+ */
+router.get('/list', async (req, res) => {
+  try {
+    const overrides = parseTokenDistributionOverrides(req.query);
+    const enabledNetworkDetails = await multiNetworkGasTokenDistributionService.getEnabledNetworks(overrides);
+    const enabledNetworks = enabledNetworkDetails.map(network => network.networkId);
+
+    res.json({
+      success: true,
+      data: {
+        enabledNetworks,
+        networkDetails: enabledNetworkDetails,
+        totalNetworks: enabledNetworks.length,
+        token: {
+          type: overrides.tokenType ?? 'NATIVE',
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error getting multi-network list:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
  * GET /api/multi-network-gas/status
  * Get status of all enabled networks
  */
@@ -76,7 +106,7 @@ router.get('/reserve-status', async (req, res) => {
   try {
     const overrides = parseTokenDistributionOverrides(req.query);
     const reserveStatus = await multiNetworkGasTokenDistributionService.getReserveStatus(overrides);
-    
+
     res.json({
       success: true,
       data: Object.fromEntries(reserveStatus),
@@ -100,7 +130,7 @@ router.get('/reserve-status', async (req, res) => {
 router.get('/distribution-history', async (req, res) => {
   try {
     const { network, userId, limit = 100 } = req.query;
-    
+
     let distributions;
     if (network && typeof network === 'string') {
       distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(network);
@@ -199,7 +229,7 @@ router.get('/network/:networkName/distribution-history', async (req, res) => {
   try {
     const { networkName } = req.params;
     const { limit = 100 } = req.query;
-    
+
     const distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(networkName);
     const limitedDistributions = distributions.slice(0, parseInt(limit as string));
 
@@ -227,7 +257,7 @@ router.get('/user/:userId/distribution-history', async (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 100 } = req.query;
-    
+
     const distributions = await multiNetworkGasTokenDistributionService.getUserDistributionHistory(parseInt(userId));
     const limitedDistributions = distributions.slice(0, parseInt(limit as string));
 
@@ -255,10 +285,10 @@ router.get('/user/:userId/distribution-history', async (req, res) => {
 router.post('/run-distribution', async (req, res) => {
   try {
     console.log('🔄 Manual multi-network gas token distribution triggered via API');
-    
+
     const overrides = parseTokenDistributionOverrides(req.body);
     const result = await multiNetworkGasTokenDistributionService.processMultiNetworkDistribution(overrides);
-    
+
     res.json({
       success: result.success,
       data: {

@@ -17,6 +17,7 @@ import { mainnet, sepolia, polygon, arbitrum, optimism, base, localhost, celo, h
 import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
 import { TokenDescriptor } from '../types/token.js';
+import { withRetry } from '../utils/retry.js';
 
 import '../db-secrets.js';
 
@@ -280,16 +281,28 @@ export class MultiNetworkEthereumService {
                 throw new Error('No private key or mnemonic found in configuration');
             }
 
-            // Initialize public client
+            // Initialize public client with robust retry settings
             const publicClient = createPublicClient({
                 chain: networkConfig.chain,
-                transport: networkConfig.rpcUrl ? http(networkConfig.rpcUrl) : http()
+                transport: networkConfig.rpcUrl ? http(networkConfig.rpcUrl, {
+                    retryCount: 5,
+                    retryDelay: 1000,
+                }) : http(undefined, {
+                    retryCount: 5,
+                    retryDelay: 1000,
+                })
             });
 
-            // Initialize wallet client
+            // Initialize wallet client with robust retry settings
             const walletClient = createWalletClient({
                 chain: networkConfig.chain,
-                transport: networkConfig.rpcUrl ? http(networkConfig.rpcUrl) : http()
+                transport: networkConfig.rpcUrl ? http(networkConfig.rpcUrl, {
+                    retryCount: 5,
+                    retryDelay: 1000,
+                }) : http(undefined, {
+                    retryCount: 5,
+                    retryDelay: 1000,
+                })
             });
 
             const networkClient: NetworkClient = {
@@ -350,7 +363,10 @@ export class MultiNetworkEthereumService {
 
         const promise = (async () => {
             try {
-                const balance = await client.publicClient.getBalance({ address: client.account.address });
+                const balance = await withRetry(
+                    () => client.publicClient.getBalance({ address: client.account.address }),
+                    { taskName: `getBalance ${networkName}` }
+                );
                 this.balanceCache.set(networkName, { value: balance, timestamp: Date.now() });
                 return balance;
             } catch (error) {
@@ -390,12 +406,15 @@ export class MultiNetworkEthereumService {
             throw new Error(`Network ${networkName} not found or not enabled`);
         }
 
-        return await client.publicClient.readContract({
-            address: token.tokenAddress,
-            abi: ERC20_ABI,
-            functionName: 'balanceOf',
-            args: [client.account.address]
-        });
+        return await withRetry(
+            () => client.publicClient.readContract({
+                address: token.tokenAddress!,
+                abi: ERC20_ABI,
+                functionName: 'balanceOf',
+                args: [client.account.address]
+            }),
+            { taskName: `getTokenBalance ${token.tokenSymbol} on ${networkName}` }
+        );
     }
 
     /**
@@ -415,19 +434,25 @@ export class MultiNetworkEthereumService {
             if (!request.token.tokenAddress) {
                 throw new Error(`Token address is required to estimate ERC-20 transfer for ${request.token.tokenSymbol}`);
             }
-            gasEstimate = await client.publicClient.estimateContractGas({
-                address: request.token.tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'transfer',
-                args: [request.to, amountRaw],
-                account: client.account.address
-            });
+            gasEstimate = await withRetry(
+                () => client.publicClient.estimateContractGas({
+                    address: request.token.tokenAddress!,
+                    abi: ERC20_ABI,
+                    functionName: 'transfer',
+                    args: [request.to, amountRaw],
+                    account: client.account.address
+                }),
+                { taskName: `estimateContractGas ${request.token.tokenSymbol} on ${request.networkName}` }
+            );
         } else {
-            gasEstimate = await client.publicClient.estimateGas({
-                account: client.account.address,
-                to: request.to,
-                value: amountRaw
-            });
+            gasEstimate = await withRetry(
+                () => client.publicClient.estimateGas({
+                    account: client.account.address,
+                    to: request.to,
+                    value: amountRaw
+                }),
+                { taskName: `estimateGas on ${request.networkName}` }
+            );
         }
 
         const gasPrice = await this.getGasPrice(request.networkName);
@@ -456,22 +481,28 @@ export class MultiNetworkEthereumService {
                 throw new Error(`Token address is required to send ERC-20 transfer for ${request.token.tokenSymbol}`);
             }
 
-            return await client.walletClient.writeContract({
-                account: client.account,
-                address: request.token.tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'transfer',
-                args: [request.to, amountRaw],
-                chain: client.publicClient.chain
-            });
+            return await withRetry(
+                () => client.walletClient.writeContract({
+                    account: client.account,
+                    address: request.token.tokenAddress!,
+                    abi: ERC20_ABI,
+                    functionName: 'transfer',
+                    args: [request.to, amountRaw],
+                    chain: client.publicClient.chain
+                }),
+                { taskName: `writeContract ${request.token.tokenSymbol} on ${request.networkName}` }
+            );
         }
 
-        return await client.walletClient.sendTransaction({
-            account: client.account,
-            to: request.to,
-            value: amountRaw,
-            chain: client.publicClient.chain
-        });
+        return await withRetry(
+            () => client.walletClient.sendTransaction({
+                account: client.account,
+                to: request.to,
+                value: amountRaw,
+                chain: client.publicClient.chain
+            }),
+            { taskName: `sendTransaction on ${request.networkName}` }
+        );
     }
 
     /**
@@ -567,7 +598,10 @@ export class MultiNetworkEthereumService {
 
         const promise = (async () => {
             try {
-                const gasPrice = await client.publicClient.getGasPrice();
+                const gasPrice = await withRetry(
+                    () => client.publicClient.getGasPrice(),
+                    { taskName: `getGasPrice ${networkName}` }
+                );
                 this.gasPriceCache.set(networkName, { value: gasPrice, timestamp: Date.now() });
                 return gasPrice;
             } catch (error) {

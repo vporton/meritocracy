@@ -8,6 +8,7 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
+import { withRetry } from '../../utils/retry.js';
 
 interface SolanaNetworkConfig {
   enabled: boolean;
@@ -122,7 +123,10 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const config = this.ensureEnabledConfig();
     const payerKey = this.getPayerPublicKey(config);
     const connection = this.getConnection(config);
-    const lamports = await connection.getBalance(payerKey);
+    const lamports = await withRetry(
+      () => connection.getBalance(payerKey),
+      { taskName: 'Solana getBalance' }
+    );
     return lamports / 10 ** context.tokenDecimals;
   }
 
@@ -146,7 +150,10 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       const config = this.ensureEnabledConfig();
       const connection = this.getConnection(config);
       const signer = this.getSigner(config);
-      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+      const latestBlockhash = await withRetry(
+        () => connection.getLatestBlockhash('confirmed'),
+        { taskName: 'Solana getLatestBlockhash' }
+      );
       const lamports = Math.round(amountToken * LAMPORTS_PER_SOL);
       if (lamports <= 0) {
         return { deferReason: 'Transfer amount too small' };
@@ -162,7 +169,10 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
           lamports
         })
       );
-      const feeInfo = await connection.getFeeForMessage(transaction.compileMessage());
+      const feeInfo = await withRetry(
+        () => connection.getFeeForMessage(transaction.compileMessage()),
+        { taskName: 'Solana getFeeForMessage' }
+      );
       const feeLamports = Number(feeInfo.value ?? 0);
       return {
         gasCostToken: feeLamports / LAMPORTS_PER_SOL
@@ -200,9 +210,12 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       })
     );
 
-    const signature = await sendAndConfirmTransaction(connection, transaction, [signer], {
-      commitment: 'confirmed'
-    });
+    const signature = await withRetry(
+      () => sendAndConfirmTransaction(connection, transaction, [signer], {
+        commitment: 'confirmed'
+      }),
+      { taskName: 'Solana sendAndConfirmTransaction' }
+    );
 
     return { transactionHash: signature };
   }

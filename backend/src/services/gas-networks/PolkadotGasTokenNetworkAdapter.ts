@@ -9,6 +9,7 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
+import { withRetry } from '../../utils/retry.js';
 
 interface PolkadotNetworkConfig {
   enabled: boolean;
@@ -145,7 +146,10 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const config = this.ensureConfigEnabled();
     const api = await this.getApi(config);
     const address = await this.getSignerAddress(config);
-    const accountInfo = (await api.query.system.account(address)) as unknown as {
+    const accountInfo = (await withRetry(
+      () => api.query.system.account(address),
+      { taskName: 'Polkadot query account' }
+    )) as unknown as {
       data: { free: { toBigInt(): bigint } };
     };
     const free = accountInfo.data.free.toBigInt();
@@ -182,7 +186,10 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         return { deferReason: 'Transfer amount too small' };
       }
       const tx = api.tx.balances.transferKeepAlive(recipientAddress, amountPlanck);
-      const info = await tx.paymentInfo(signer);
+      const info = await withRetry(
+        () => tx.paymentInfo(signer),
+        { taskName: 'Polkadot paymentInfo' }
+      );
       const fee = info.partialFee.toBigInt();
       return {
         gasCostToken: convertPlanckToUnits(fee, context.tokenDecimals)
@@ -207,32 +214,36 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
     const tx = api.tx.balances.transferKeepAlive(recipientAddress, amountPlanck);
 
-    return new Promise<GasTransferResult>((resolve, reject) => {
+    return new Promise<GasTransferResult>(async (resolve, reject) => {
       let unsubscribe: (() => void) | undefined;
-      tx.signAndSend(signer, result => {
-        if (result.dispatchError) {
-          if (unsubscribe) {
-            unsubscribe();
-          }
-          if (result.dispatchError.isModule) {
-            const meta = api.registry.findMetaError(result.dispatchError.asModule);
-            reject(new Error(`[Polkadot] ${meta.section}.${meta.name}: ${meta.docs.join(' ')}`));
-          } else {
-            reject(new Error(`[Polkadot] ${result.dispatchError.toString()}`));
-          }
-          return;
-        }
-        if (result.status.isInBlock || result.status.isFinalized) {
-          if (unsubscribe) {
-            unsubscribe();
-          }
-          resolve({ transactionHash: result.txHash.toHex() });
-        }
-      })
-        .then(unsub => {
-          unsubscribe = unsub;
-        })
-        .catch(error => reject(error));
+      try {
+        const unsub = await withRetry(
+          () => tx.signAndSend(signer, result => {
+            if (result.dispatchError) {
+              if (unsubscribe) {
+                unsubscribe();
+              }
+              if (result.dispatchError.isModule) {
+                const meta = api.registry.findMetaError(result.dispatchError.asModule);
+                reject(new Error(`[Polkadot] ${meta.section}.${meta.name}: ${meta.docs.join(' ')}`));
+              } else {
+                reject(new Error(`[Polkadot] ${result.dispatchError.toString()}`));
+              }
+              return;
+            }
+            if (result.status.isInBlock || result.status.isFinalized) {
+              if (unsubscribe) {
+                unsubscribe();
+              }
+              resolve({ transactionHash: result.txHash.toHex() });
+            }
+          }),
+          { taskName: 'Polkadot signAndSend' }
+        );
+        unsubscribe = unsub;
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 }

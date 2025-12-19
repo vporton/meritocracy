@@ -11,6 +11,7 @@ import {
     type Hash,
     type Chain
 } from 'viem';
+import { withRetry } from '../utils/retry.js';
 import { mainnet, sepolia, polygon, localhost } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import * as fs from 'fs';
@@ -63,16 +64,28 @@ class EthereumService {
     private initializeClients(): void {
         const chain = this.getChain();
 
-        // Initialize public client for read operations
+        // Initialize public client for read operations with robust retry settings
         this.publicClient = createPublicClient({
             chain,
-            transport: this.config.rpcUrl ? http(this.config.rpcUrl) : http()
+            transport: this.config.rpcUrl ? http(this.config.rpcUrl, {
+                retryCount: 5,
+                retryDelay: 1000,
+            }) : http(undefined, {
+                retryCount: 5,
+                retryDelay: 1000,
+            })
         });
 
-        // Initialize wallet client for write operations
+        // Initialize wallet client for write operations with robust retry settings
         this.walletClient = createWalletClient({
             chain,
-            transport: this.config.rpcUrl ? http(this.config.rpcUrl) : http()
+            transport: this.config.rpcUrl ? http(this.config.rpcUrl, {
+                retryCount: 5,
+                retryDelay: 1000,
+            }) : http(undefined, {
+                retryCount: 5,
+                retryDelay: 1000,
+            })
         });
     }
 
@@ -109,7 +122,10 @@ class EthereumService {
 
     // Utility methods
     public async getBalance(): Promise<bigint> {
-        return await this.publicClient.getBalance({ address: this.account.address });
+        return await withRetry(
+            () => this.publicClient.getBalance({ address: this.account.address }),
+            { taskName: 'EthereumService.getBalance' }
+        );
     }
 
     public getNetwork(): Chain {
@@ -117,13 +133,16 @@ class EthereumService {
     }
 
     public async sendTransaction(to: Address, value: string, data?: `0x${string}`): Promise<Hash> {
-        return await this.walletClient.sendTransaction({
-            account: this.account,
-            to,
-            value: parseEther(value),
-            data: data || '0x',
-            chain: this.publicClient.chain
-        });
+        return await withRetry(
+            () => this.walletClient.sendTransaction({
+                account: this.account,
+                to,
+                value: parseEther(value),
+                data: data || '0x',
+                chain: this.publicClient.chain
+            }),
+            { taskName: 'EthereumService.sendTransaction' }
+        );
     }
 
     // Contract interaction helper
@@ -140,19 +159,25 @@ class EthereumService {
 
     // Sign message
     public async signMessage(message: string): Promise<`0x${string}`> {
-        return await this.walletClient.signMessage({
-            account: this.account,
-            message
-        });
+        return await withRetry(
+            () => this.walletClient.signMessage({
+                account: this.account,
+                message
+            }),
+            { taskName: 'EthereumService.signMessage' }
+        );
     }
 
     // Verify signature
     public async verifyMessage(message: string, signature: `0x${string}`): Promise<boolean> {
-        return await this.publicClient.verifyMessage({
-            address: this.account.address,
-            message,
-            signature
-        });
+        return await withRetry(
+            () => this.publicClient.verifyMessage({
+                address: this.account.address,
+                message,
+                signature
+            }),
+            { taskName: 'EthereumService.verifyMessage' }
+        );
     }
 
     // Additional utility methods

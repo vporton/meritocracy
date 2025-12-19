@@ -14,6 +14,7 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
+import { withRetry } from '../../utils/retry.js';
 
 interface CosmosNetworkConfig {
   enabled: boolean;
@@ -184,7 +185,10 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const config = this.ensureEnabledConfig();
     const client = await this.getClient(config);
     const address = await this.getSignerAddress(config);
-    const balance = await client.getBalance(address, config.denom);
+    const balance = await withRetry(
+      () => client.getBalance(address, config.denom),
+      { taskName: 'Cosmos getBalance' }
+    );
     return this.baseUnitsToToken(balance.amount, context.tokenDecimals);
   }
 
@@ -234,7 +238,10 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         return { deferReason: 'Transfer amount too small' };
       }
       const message = this.buildSendMessage(config, fromAddress, recipientAddress, amount);
-      const gasEstimation = await client.simulate(fromAddress, [message], undefined);
+      const gasEstimation = await withRetry(
+        () => client.simulate(fromAddress, [message], undefined),
+        { taskName: 'Cosmos simulate' }
+      );
       const gasPrice = this.getGasPrice(config);
       const adjustedGas = Math.ceil(gasEstimation * config.gasAdjustment);
       const fee = calculateFee(adjustedGas, gasPrice);
@@ -265,15 +272,21 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
     const gasPrice = this.getGasPrice(config);
     const message = this.buildSendMessage(config, fromAddress, recipientAddress, amount);
-    const gasEstimation = await client.simulate(fromAddress, [message], undefined);
+    const gasEstimation = await withRetry(
+      () => client.simulate(fromAddress, [message], undefined),
+      { taskName: 'Cosmos simulate (pre-send)' }
+    );
     const adjustedGas = Math.ceil(gasEstimation * config.gasAdjustment);
     const fee = calculateFee(adjustedGas, gasPrice);
 
-    const result = await client.sendTokens(
-      fromAddress,
-      recipientAddress,
-      coins(amount.toString(), config.denom),
-      fee
+    const result = await withRetry(
+      () => client.sendTokens(
+        fromAddress,
+        recipientAddress,
+        coins(amount.toString(), config.denom),
+        fee
+      ),
+      { taskName: 'Cosmos sendTokens' }
     );
 
     if (result.code !== 0) {

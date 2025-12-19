@@ -13,6 +13,7 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
+import { withRetry } from '../../utils/retry.js';
 
 const ECPair = ECPairFactory(tinysecp);
 
@@ -118,9 +119,13 @@ const getExternalFeeRate = async (networkId: string): Promise<number | undefined
   const isTestnet = networkId.includes('testnet');
   const baseUrl = isTestnet ? 'https://mempool.space/testnet/api' : 'https://mempool.space/api';
   try {
-    const response = await fetch(`${baseUrl}/v1/fees/recommended`);
-    if (!response.ok) return undefined;
-    const data = await response.json() as any;
+    const data = await withRetry(async () => {
+      const response = await fetch(`${baseUrl}/v1/fees/recommended`);
+      if (!response.ok) {
+        throw new Error(`External fee API responded with status ${response.status}`);
+      }
+      return await response.json() as any;
+    }, { taskName: 'Bitcoin External Fee API' });
     // halfHourFee is usually a good balance for background distributions
     return typeof data.halfHourFee === 'number' ? data.halfHourFee : data.fastestFee;
   } catch (error) {
@@ -139,7 +144,16 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   private async getClient(): Promise<Client> {
     const config = readBitcoinConfig();
     if (!this.client) {
-      this.client = createClient(config);
+      const client = createClient(config);
+      // Wrap command with retry
+      const originalCommand = client.command.bind(client);
+      client.command = async (...args: any[]) => {
+        return withRetry(
+          () => originalCommand(...args),
+          { taskName: `Bitcoin RPC ${args[0]}` }
+        );
+      };
+      this.client = client;
     }
     return this.client;
   }

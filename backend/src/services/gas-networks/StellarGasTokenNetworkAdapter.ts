@@ -7,6 +7,7 @@ import type {
   TokenDistributionOptions
 } from './types.js';
 import StellarSdk from 'stellar-sdk';
+import { withRetry } from '../../utils/retry.js';
 
 const { Asset, Keypair, Networks, Operation, Server, StrKey, TransactionBuilder } = StellarSdk;
 
@@ -32,15 +33,15 @@ const readStellarConfig = (): StellarNetworkConfig => {
     Number.isFinite(rawBaseFee) && rawBaseFee > 0 ? Math.floor(rawBaseFee) : 100;
 
   return {
-  enabled: process.env.STELLAR_ENABLED === 'true',
-  networkId: process.env.STELLAR_NETWORK_ID ?? 'stellar-public',
-  networkName: process.env.STELLAR_NETWORK_NAME ?? 'Stellar Public Network',
-  nativeSymbol: process.env.STELLAR_NATIVE_SYMBOL ?? 'XLM',
-  nativeDecimals: Number(process.env.STELLAR_NATIVE_DECIMALS ?? '7'),
-  horizonUrl: process.env.STELLAR_HORIZON_URL,
-  walletAddress: process.env.STELLAR_WALLET_ADDRESS,
-  secretKey: process.env.STELLAR_SECRET_KEY,
-  networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.PUBLIC,
+    enabled: process.env.STELLAR_ENABLED === 'true',
+    networkId: process.env.STELLAR_NETWORK_ID ?? 'stellar-public',
+    networkName: process.env.STELLAR_NETWORK_NAME ?? 'Stellar Public Network',
+    nativeSymbol: process.env.STELLAR_NATIVE_SYMBOL ?? 'XLM',
+    nativeDecimals: Number(process.env.STELLAR_NATIVE_DECIMALS ?? '7'),
+    horizonUrl: process.env.STELLAR_HORIZON_URL,
+    walletAddress: process.env.STELLAR_WALLET_ADDRESS,
+    secretKey: process.env.STELLAR_SECRET_KEY,
+    networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.PUBLIC,
     baseFeeStroops
   };
 };
@@ -149,7 +150,10 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const signerPublicKey = this.getSigner(config).publicKey();
 
     try {
-      const account = await server.loadAccount(signerPublicKey);
+      const account = (await withRetry(
+        () => server.loadAccount(signerPublicKey),
+        { taskName: 'Stellar loadAccount' }
+      )) as any;
       const nativeBalance = account.balances.find(balance => balance.asset_type === 'native');
       if (!nativeBalance) {
         return 0;
@@ -174,7 +178,10 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
   private async resolveBaseFee(server: HorizonServer, config: StellarNetworkConfig): Promise<number> {
     try {
-      const fee = await server.fetchBaseFee();
+      const fee = await withRetry(
+        () => server.fetchBaseFee(),
+        { taskName: 'Stellar fetchBaseFee' }
+      );
       if (typeof fee === 'number' && fee > 0) {
         return fee;
       }
@@ -222,7 +229,10 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const config = this.ensureEnabledConfig();
     const server = this.getServer(config);
     const signer = this.getSigner(config);
-    const sourceAccount = await server.loadAccount(signer.publicKey());
+    const sourceAccount = await withRetry(
+      () => server.loadAccount(signer.publicKey()),
+      { taskName: 'Stellar loadAccount (pre-send)' }
+    );
     const baseFee = await this.resolveBaseFee(server, config);
 
     const amount = toPaymentAmount(amountToken, context.tokenDecimals);
@@ -243,7 +253,10 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     transaction.sign(signer);
 
     try {
-      const result = await server.submitTransaction(transaction);
+      const result = (await withRetry(
+        () => server.submitTransaction(transaction),
+        { taskName: 'Stellar submitTransaction' }
+      )) as any;
       return {
         transactionHash: result.hash,
         metadata: {

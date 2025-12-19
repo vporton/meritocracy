@@ -771,7 +771,7 @@ const ConnectForm = () => {
       } else if (user?.kycStatus === 'PENDING') {
         return 'KYC Pending...';
       } else if (user?.kycStatus === 'REJECTED') {
-        return 'KYC Rejected';
+        return 'Connect with KYC'; // Don't hint: 'KYC Rejected'
       }
     }
 

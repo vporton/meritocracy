@@ -83,12 +83,16 @@ type AdapterContextEntry = {
 };
 
 export class MultiNetworkGasTokenDistributionService {
+  private static instance: MultiNetworkGasTokenDistributionService | null = null;
+  private static warmupOnce = false;
+
   private prisma: PrismaClient;
   private readonly GAS_COST_VALUE_MULTIPLIER = 5;
   private readonly defaultTokenOptions: TokenDistributionOptions;
   private readonly networkAdapters: GasTokenNetworkAdapter[];
+  private contextCache: Map<string, Map<string, AdapterContextEntry>> = new Map();
 
-  constructor(
+  private constructor(
     prisma: PrismaClient,
     adapters?: GasTokenNetworkAdapter[],
     defaultTokenOptions?: TokenDistributionOptions
@@ -109,19 +113,47 @@ export class MultiNetworkGasTokenDistributionService {
       tokenType: defaultTokenOptions?.tokenType ?? 'NATIVE'
     };
 
-    this.warmupAdapters();
+    // Only warmup once across all instances
+    if (!MultiNetworkGasTokenDistributionService.warmupOnce) {
+      MultiNetworkGasTokenDistributionService.warmupOnce = true;
+      this.warmupAdapters();
+    }
+  }
+
+  public static getInstance(
+    prisma: PrismaClient,
+    adapters?: GasTokenNetworkAdapter[],
+    defaultTokenOptions?: TokenDistributionOptions
+  ): MultiNetworkGasTokenDistributionService {
+    if (!MultiNetworkGasTokenDistributionService.instance) {
+      MultiNetworkGasTokenDistributionService.instance = new MultiNetworkGasTokenDistributionService(
+        prisma,
+        adapters,
+        defaultTokenOptions
+      );
+    }
+    return MultiNetworkGasTokenDistributionService.instance;
   }
 
   private warmupAdapters(): void {
-    void this.collectNetworkAdapterContexts(this.defaultTokenOptions).catch(error => {
+    void this.collectNetworkAdapterContexts(this.defaultTokenOptions, true).catch(error => {
       const message = error instanceof Error ? error.message : String(error);
       console.warn(`⚠️  [MultiNetwork] Adapter warmup failed: ${message}`);
     });
   }
 
   private async collectNetworkAdapterContexts(
-    tokenOptions: TokenDistributionOptions
+    tokenOptions: TokenDistributionOptions,
+    shouldLog: boolean = false
   ): Promise<Map<string, AdapterContextEntry>> {
+    // Create cache key from token options
+    const cacheKey = JSON.stringify(tokenOptions);
+
+    // Return cached contexts if available
+    if (this.contextCache.has(cacheKey)) {
+      return this.contextCache.get(cacheKey)!;
+    }
+
     const contextEntries = new Map<string, AdapterContextEntry>();
 
     for (const adapter of this.networkAdapters) {
@@ -135,12 +167,17 @@ export class MultiNetworkGasTokenDistributionService {
       }
 
       for (const context of contexts) {
-        console.log(
-          `✅ [${adapter.type}] Loaded ${context.networkName} (${context.networkId}) token=${context.tokenSymbol}`
-        );
+        if (shouldLog) {
+          console.log(
+            `✅ [${adapter.type}] Loaded ${context.networkName} (${context.networkId}) token=${context.tokenSymbol}`
+          );
+        }
         contextEntries.set(context.networkId, { adapter, context });
       }
     }
+
+    // Cache the results
+    this.contextCache.set(cacheKey, contextEntries);
 
     return contextEntries;
   }
@@ -650,18 +687,15 @@ export class MultiNetworkGasTokenDistributionService {
           )} ${networkResult.tokenSymbol} reserved`
         );
         console.log(
-          `    ✅ Successful: ${
-            networkResult.distributions.filter(d => d.status === 'SENT').length
+          `    ✅ Successful: ${networkResult.distributions.filter(d => d.status === 'SENT').length
           }`
         );
         console.log(
-          `    ⏳ Deferred: ${
-            networkResult.distributions.filter(d => d.status === 'DEFERRED').length
+          `    ⏳ Deferred: ${networkResult.distributions.filter(d => d.status === 'DEFERRED').length
           }`
         );
         console.log(
-          `    ❌ Failed: ${
-            networkResult.distributions.filter(d => d.status === 'FAILED').length
+          `    ❌ Failed: ${networkResult.distributions.filter(d => d.status === 'FAILED').length
           }`
         );
       }

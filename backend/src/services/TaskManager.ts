@@ -16,8 +16,9 @@ export class TaskManager {
    * @returns Promise<boolean> - True if the task was successfully run, false otherwise
    */
   private async runTaskWithDependencies(task: Task & { dependencies: (TaskDependency & { dependency: Task })[] }): Promise<boolean> {
+    const taskId = task.id;
     try {
-      const taskId = task.id;
+
 
 
       // Check if task is already completed or in progress

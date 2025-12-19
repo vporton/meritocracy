@@ -1,6 +1,9 @@
 import Client from 'bitcoin-core';
 import bs58 from 'bs58';
 import { createECDH, createHash } from 'crypto';
+import * as bitcoin from 'bitcoinjs-lib';
+import { ECPairFactory } from 'ecpair';
+import * as tinysecp from 'tiny-secp256k1';
 import type { User } from '@prisma/client';
 import type {
   GasTokenNetworkAdapter,
@@ -9,6 +12,8 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
+
+const ECPair = ECPairFactory(tinysecp);
 
 interface BitcoinNetworkConfig {
   enabled: boolean;
@@ -20,22 +25,9 @@ interface BitcoinNetworkConfig {
   rpcUrl?: string;
   rpcUsername?: string;
   rpcPassword?: string;
-  walletName?: string;
   wif?: string;
   headers?: Record<string, string>;
 }
-
-const isLocalRpcHost = (rpcUrl?: string): boolean => {
-  if (!rpcUrl) {
-    return false;
-  }
-  try {
-    const url = new URL(rpcUrl);
-    return ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
-  } catch {
-    return false;
-  }
-};
 
 const readBitcoinConfig = (): BitcoinNetworkConfig => ({
   enabled: process.env.BITCOIN_ENABLED === 'true',
@@ -49,10 +41,9 @@ const readBitcoinConfig = (): BitcoinNetworkConfig => ({
   rpcPassword: process.env.BITCOIN_RPC_PASSWORD,
   headers: process.env.BITCOIN_RPC_KEY
     ? {
-        Authorization: `Bearer ${process.env.BITCOIN_RPC_KEY}`
-      }
+      Authorization: `Bearer ${process.env.BITCOIN_RPC_KEY}`
+    }
     : undefined,
-  walletName: process.env.BITCOIN_WALLET_NAME,
   wif: process.env.BITCOIN_WIF
 });
 
@@ -71,10 +62,6 @@ const createClient = (config: BitcoinNetworkConfig): Client => {
     options.password = config.rpcPassword;
   }
 
-  if (config.walletName) {
-    options.wallet = config.walletName;
-  }
-
   if (config.headers && Object.keys(config.headers).length > 0) {
     options.headers = config.headers;
   }
@@ -82,13 +69,6 @@ const createClient = (config: BitcoinNetworkConfig): Client => {
   const ClientConstructor = Client as unknown as new (config?: any) => Client;
   return new ClientConstructor(options);
 };
-
-const isUnsupportedWalletMethodError = (message: string): boolean =>
-  /unsupported method/i.test(message) ||
-  /method not found/i.test(message) ||
-  /does not exist/i.test(message) ||
-  /wallet.*disabled/i.test(message) ||
-  /not allowed on this endpoint/i.test(message);
 
 const doubleSha256 = (data: Uint8Array): Buffer => {
   const first = createHash('sha256').update(data).digest();
@@ -136,9 +116,6 @@ const deriveP2PKHAddressFromWif = (wif: string): string => {
 export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'BITCOIN';
   private client?: Client;
-  private privateKeyImported = false;
-  private privateKeyImportAttempted = false;
-  private walletRpcUnavailable = false;
   private resolvedWalletAddress?: string;
   private fallbackBalanceNoticeShown = false;
   private fallbackAddressMissingWarned = false;
@@ -148,54 +125,9 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     if (!this.client) {
       this.client = createClient(config);
     }
-    if (!this.privateKeyImported && !this.privateKeyImportAttempted) {
-      await this.ensureWalletKey(this.client, config);
-    }
     return this.client;
   }
 
-  private async ensureWalletKey(client: Client, config: BitcoinNetworkConfig): Promise<void> {
-    if (!config.wif || this.privateKeyImported === true || this.privateKeyImportAttempted === true) {
-      return;
-    }
-
-    if (!isLocalRpcHost(config.rpcUrl)) {
-      this.privateKeyImportAttempted = true;
-      console.log(
-        'ℹ️  [Bitcoin] Skipping private key import; remote RPC providers typically disable wallet commands. Ensure the destination wallet already contains the key.'
-      );
-      return;
-    }
-
-    this.privateKeyImportAttempted = true;
-    try {
-      await client.command('importprivkey', config.wif, config.walletName ?? 'gas-distribution', false);
-      this.privateKeyImported = true;
-      console.log('🔑 [Bitcoin] Private key imported into wallet.');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message.includes('already there') || message.includes('exists')) {
-        this.privateKeyImported = true;
-        console.log('ℹ️  [Bitcoin] Private key already present in wallet.');
-        return;
-      }
-      console.warn(`⚠️  [Bitcoin] Failed to import private key: ${message}`);
-      if (/unsupported method/i.test(message)) {
-        console.warn(
-          'ℹ️  [Bitcoin] The connected RPC node does not expose wallet import functionality; please import the key manually if required.'
-        );
-      }
-      const nonRetryablePatterns = [/specified chain/i, /method not found/i, /wallet/i, /unsupported method/i];
-      const shouldRetry =
-        !/auth/i.test(message) &&
-        !nonRetryablePatterns.some(pattern => pattern.test(message));
-      if (shouldRetry) {
-        this.privateKeyImportAttempted = false;
-      } else {
-        console.warn('ℹ️  [Bitcoin] Skipping further automatic private key import attempts.');
-      }
-    }
-  }
 
   private ensureStaticWalletAddress(config: BitcoinNetworkConfig): string | undefined {
     if (this.resolvedWalletAddress) {
@@ -223,67 +155,9 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
   private async resolveWalletAddress(
     config: BitcoinNetworkConfig,
-    client: Client
+    _client: Client
   ): Promise<string | undefined> {
-    const staticAddress = this.ensureStaticWalletAddress(config);
-    if (staticAddress) {
-      return staticAddress;
-    }
-
-    if (this.walletRpcUnavailable) {
-      return undefined;
-    }
-
-    const labelsToCheck = new Set<string>();
-    if (config.walletName) {
-      labelsToCheck.add(config.walletName);
-    }
-    labelsToCheck.add('gas-distribution');
-
-    for (const label of labelsToCheck) {
-      try {
-        const addresses = await client.command('getaddressesbylabel', label);
-        if (addresses && typeof addresses === 'object') {
-          const candidates = Object.keys(addresses);
-          if (candidates.length > 0) {
-            this.resolvedWalletAddress = candidates[0];
-            return this.resolvedWalletAddress;
-          }
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes('Label not found')) {
-          continue;
-        }
-        console.warn(`⚠️  [Bitcoin] Failed to read address for label "${label}": ${message}`);
-        if (isUnsupportedWalletMethodError(message)) {
-          this.walletRpcUnavailable = true;
-          console.warn(
-            'ℹ️  [Bitcoin] Wallet RPC commands are not available on the configured endpoint; set BITCOIN_WALLET_ADDRESS to supply a static address.'
-          );
-          return this.resolvedWalletAddress;
-        }
-      }
-    }
-
-    try {
-      const defaultAddress = await client.command('getrawchangeaddress');
-      if (typeof defaultAddress === 'string' && defaultAddress.length > 0) {
-        this.resolvedWalletAddress = defaultAddress;
-        return this.resolvedWalletAddress;
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.warn(`⚠️  [Bitcoin] Failed to resolve change address: ${message}`);
-      if (isUnsupportedWalletMethodError(message)) {
-        this.walletRpcUnavailable = true;
-        console.warn(
-          'ℹ️  [Bitcoin] Wallet RPC commands are not available on the configured endpoint; set BITCOIN_WALLET_ADDRESS to supply a static address.'
-        );
-      }
-    }
-
-    return undefined;
+    return this.ensureStaticWalletAddress(config);
   }
 
   private async tryWalletlessBalanceLookup(
@@ -366,34 +240,8 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const config = readBitcoinConfig();
     const client = await this.getClient();
 
-    const resolveFallback = async (): Promise<number> => {
-      const fallbackBalance = await this.tryWalletlessBalanceLookup(client, config);
-      return fallbackBalance ?? 0;
-    };
-
-    if (this.walletRpcUnavailable) {
-      return resolveFallback();
-    }
-
-    try {
-      const balance = NaN; // FIXME@P2: await client.command('getbalance') doesn't work on Alchemy.
-      return typeof balance === 'string' ? Number(balance) : balance ?? 0;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (isUnsupportedWalletMethodError(message)) {
-        const fallbackValue = await resolveFallback();
-        this.walletRpcUnavailable = true;
-        console.warn(
-          `⚠️  [Bitcoin] Failed to read wallet balance via wallet RPC: ${message}. ${
-            fallbackValue > 0
-              ? 'Returning value from UTXO scan fallback.'
-              : 'Returning 0; provide a wallet address to enable UTXO scan fallback.'
-          }`
-        );
-        return fallbackValue;
-      }
-      throw error;
-    }
+    const balance = await this.tryWalletlessBalanceLookup(client, config);
+    return balance ?? 0;
   }
 
   formatAmount(context: GasTokenNetworkContext, amountToken: number): string {
@@ -431,14 +279,123 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     if (amountToken <= 0) {
       throw new Error('[Bitcoin] Transfer amount must be greater than zero');
     }
-    if (this.walletRpcUnavailable) {
-      throw new Error(
-        '[Bitcoin] Wallet RPC commands are not available on the configured endpoint; unable to send transfers.'
-      );
+
+    const config = readBitcoinConfig();
+    if (!config.wif) {
+      throw new Error('[Bitcoin] BITCOIN_WIF is required for walletless transfers');
     }
+
     const client = await this.getClient();
-    const txId = await client.command('sendtoaddress', recipientAddress, amountToken);
-    return { transactionHash: txId };
+    const senderAddress = this.ensureStaticWalletAddress(config);
+    if (!senderAddress) {
+      throw new Error('[Bitcoin] Unable to determine sender address');
+    }
+
+    // 1. Get UTXOs using scantxoutset (non-wallet command)
+    let unspents: any[] = [];
+    try {
+      const scanResult = await client.command('scantxoutset', 'start', [`addr(${senderAddress})`]);
+      unspents = scanResult?.unspents ?? [];
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`[Bitcoin] Failed to scan UTXOs: ${message}. Ensure scantxoutset is supported by the RPC node.`);
+    }
+
+    if (unspents.length === 0) {
+      throw new Error(`[Bitcoin] No UTXOs found for the sender address ${senderAddress}`);
+    }
+
+    // 2. Estimate fee rate
+    let satPerByte = 1;
+    try {
+      const estimate = await client.command('estimatesmartfee', 6);
+      const feerateBTCperKB = typeof estimate?.feerate === 'number' ? estimate.feerate : Number(estimate?.feerate ?? 0.0001);
+      satPerByte = Math.ceil((feerateBTCperKB * 1e8) / 1000) || 1;
+    } catch {
+      console.warn('[Bitcoin] Failed to estimate fee, falling back to 1 sat/byte');
+    }
+
+    // 3. Build transaction locally
+    const amountSat = Math.round(amountToken * 1e8);
+    const network = (config.wif.startsWith('5') || config.wif.startsWith('K') || config.wif.startsWith('L'))
+      ? bitcoin.networks.bitcoin
+      : bitcoin.networks.testnet;
+
+    const keyPair = ECPair.fromWIF(config.wif, network);
+    const psbt = new bitcoin.Psbt({ network });
+
+    let totalInputSat = 0;
+    let inputsAdded = 0;
+
+    for (const utxo of unspents) {
+      const txid = utxo.txid;
+      const vout = utxo.vout;
+      const utxoAmountSat = Math.round(utxo.amount * 1e8);
+
+      // For Legacy (P2PKH) inputs, PSBT requires nonWitnessUtxo (the full transaction hex).
+      // This requires the node to have txindex=1 if the transaction is old.
+      const rawTx = await client.command('getrawtransaction', txid);
+      const nonWitnessUtxo = Buffer.from(rawTx, 'hex');
+
+      psbt.addInput({
+        hash: txid,
+        index: vout,
+        nonWitnessUtxo,
+      });
+
+      totalInputSat += utxoAmountSat;
+      inputsAdded++;
+
+      // Rough fee estimation: ~148 bytes per input, ~34 bytes per output, ~10 bytes overhead
+      const estimatedSize = inputsAdded * 148 + 2 * 34 + 10;
+      const estimatedFee = estimatedSize * satPerByte;
+
+      if (totalInputSat >= amountSat + estimatedFee) {
+        break;
+      }
+    }
+
+    if (totalInputSat < amountSat) {
+      throw new Error(`[Bitcoin] Insufficient funds: have ${totalInputSat / 1e8} BTC, need ${amountToken} BTC`);
+    }
+
+    // Calculate final fee with outputs
+    const estimatedSize = inputsAdded * 148 + 2 * 34 + 10;
+    const finalFee = estimatedSize * satPerByte;
+
+    if (totalInputSat < amountSat + finalFee) {
+      throw new Error(`[Bitcoin] Insufficient funds to cover fees: have ${totalInputSat / 1e8} BTC, need ${(amountSat + finalFee) / 1e8} BTC`);
+    }
+
+    psbt.addOutput({
+      address: recipientAddress,
+      value: BigInt(amountSat),
+    });
+
+    const changeSat = totalInputSat - amountSat - finalFee;
+    if (changeSat > 546) { // Dust threshold
+      psbt.addOutput({
+        address: senderAddress,
+        value: BigInt(changeSat),
+      });
+    }
+
+    // 4. Sign locally
+    for (let i = 0; i < inputsAdded; i++) {
+      psbt.signInput(i, keyPair);
+    }
+
+    psbt.finalizeAllInputs();
+    const txHex = psbt.extractTransaction().toHex();
+
+    // 5. Broadcast using sendrawtransaction (non-wallet command)
+    try {
+      const txId = await client.command('sendrawtransaction', txHex);
+      return { transactionHash: txId };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`[Bitcoin] Failed to broadcast transaction: ${message}`);
+    }
   }
 }
 

@@ -139,6 +139,15 @@ export class MultiNetworkEthereumService {
     private networks: Map<string, NetworkClient> = new Map();
     private config: { privateKey?: string; mnemonic?: string };
 
+    // Cache for gas prices and balances to avoid excessive RPC calls
+    private gasPriceCache: Map<string, { value: bigint; timestamp: number }> = new Map();
+    private balanceCache: Map<string, { value: bigint; timestamp: number }> = new Map();
+    private gasPricePromises: Map<string, Promise<bigint>> = new Map();
+    private balancePromises: Map<string, Promise<bigint>> = new Map();
+
+    private readonly GAS_PRICE_TTL = 60 * 1000; // 1 minute
+    private readonly BALANCE_TTL = 30 * 1000;   // 30 seconds
+
     constructor() {
         this.config = {
             privateKey: process.env.ETHEREUM_PRIVATE_KEY,
@@ -321,11 +330,40 @@ export class MultiNetworkEthereumService {
      * Get balance for a specific network
      */
     public async getBalance(networkName: string): Promise<bigint> {
+        const now = Date.now();
+        const cached = this.balanceCache.get(networkName);
+        if (cached && (now - cached.timestamp < this.BALANCE_TTL)) {
+            return cached.value;
+        }
+
+        // Check if a request is already in progress
+        const inProgress = this.balancePromises.get(networkName);
+        if (inProgress) {
+            return inProgress;
+        }
+
         const client = this.networks.get(networkName);
         if (!client) {
             throw new Error(`Network ${networkName} not found or not enabled`);
         }
-        return await client.publicClient.getBalance({ address: client.account.address });
+
+        const promise = (async () => {
+            try {
+                const balance = await client.publicClient.getBalance({ address: client.account.address });
+                this.balanceCache.set(networkName, { value: balance, timestamp: Date.now() });
+                return balance;
+            } catch (error) {
+                console.error(`Failed to get balance for ${networkName}:`, error);
+                // Return cached value even if expired if we fail to fetch new one
+                if (cached) return cached.value;
+                return 0n;
+            } finally {
+                this.balancePromises.delete(networkName);
+            }
+        })();
+
+        this.balancePromises.set(networkName, promise);
+        return promise;
     }
 
     /**
@@ -503,18 +541,40 @@ export class MultiNetworkEthereumService {
      * Get gas price for a specific network
      */
     public async getGasPrice(networkName: string): Promise<bigint> {
+        const now = Date.now();
+        const cached = this.gasPriceCache.get(networkName);
+        if (cached && (now - cached.timestamp < this.GAS_PRICE_TTL)) {
+            return cached.value;
+        }
+
+        // Check if a request is already in progress
+        const inProgress = this.gasPricePromises.get(networkName);
+        if (inProgress) {
+            return inProgress;
+        }
+
         const client = this.networks.get(networkName);
         if (!client) {
             throw new Error(`Network ${networkName} not found or not enabled`);
         }
 
-        try {
-            const gasPrice = await client.publicClient.getGasPrice();
-            return gasPrice;
-        } catch (error) {
-            console.error(`Failed to get gas price for ${networkName}:`, error);
-            return 0n;
-        }
+        const promise = (async () => {
+            try {
+                const gasPrice = await client.publicClient.getGasPrice();
+                this.gasPriceCache.set(networkName, { value: gasPrice, timestamp: Date.now() });
+                return gasPrice;
+            } catch (error) {
+                console.error(`Failed to get gas price for ${networkName}:`, error);
+                // Return cached value even if expired if we fail to fetch new one
+                if (cached) return cached.value;
+                return 0n;
+            } finally {
+                this.gasPricePromises.delete(networkName);
+            }
+        })();
+
+        this.gasPricePromises.set(networkName, promise);
+        return promise;
     }
 
     /**

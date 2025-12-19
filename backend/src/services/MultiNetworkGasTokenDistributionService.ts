@@ -87,6 +87,9 @@ export class MultiNetworkGasTokenDistributionService {
   private readonly GAS_COST_VALUE_MULTIPLIER = 5;
   private readonly defaultTokenOptions: TokenDistributionOptions;
   private readonly networkAdapters: GasTokenNetworkAdapter[];
+  private contextCache: Map<string, { entries: Map<string, AdapterContextEntry>; timestamp: number }> = new Map();
+  private contextPromises: Map<string, Promise<Map<string, AdapterContextEntry>>> = new Map();
+  private readonly CONTEXT_TTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(
     prisma: PrismaClient,
@@ -122,27 +125,48 @@ export class MultiNetworkGasTokenDistributionService {
   private async collectNetworkAdapterContexts(
     tokenOptions: TokenDistributionOptions
   ): Promise<Map<string, AdapterContextEntry>> {
-    const contextEntries = new Map<string, AdapterContextEntry>();
+    const cacheKey = JSON.stringify(tokenOptions);
+    const now = Date.now();
+    const cached = this.contextCache.get(cacheKey);
 
-    for (const adapter of this.networkAdapters) {
-      let contexts: GasTokenNetworkContext[] = [];
-      try {
-        contexts = await adapter.getNetworkContexts(tokenOptions);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`❌ Failed to load contexts for adapter ${adapter.type}: ${message}`);
-        continue;
-      }
-
-      for (const context of contexts) {
-        console.log(
-          `✅ [${adapter.type}] Loaded ${context.networkName} (${context.networkId}) token=${context.tokenSymbol}`
-        );
-        contextEntries.set(context.networkId, { adapter, context });
-      }
+    if (cached && (now - cached.timestamp < this.CONTEXT_TTL)) {
+      return cached.entries;
     }
 
-    return contextEntries;
+    const inProgress = this.contextPromises.get(cacheKey);
+    if (inProgress) {
+      return inProgress;
+    }
+
+    const promise = (async () => {
+      const contextEntries = new Map<string, AdapterContextEntry>();
+      console.log(`🔍 [MultiNetwork] Refreshing adapter contexts for ${cacheKey}...`);
+
+      for (const adapter of this.networkAdapters) {
+        let contexts: GasTokenNetworkContext[] = [];
+        try {
+          contexts = await adapter.getNetworkContexts(tokenOptions);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`❌ Failed to load contexts for adapter ${adapter.type}: ${message}`);
+          continue;
+        }
+
+        for (const context of contexts) {
+          // Only log at debug level or once
+          contextEntries.set(context.networkId, { adapter, context });
+        }
+      }
+
+      console.log(`✅ [MultiNetwork] Loaded ${contextEntries.size} network contexts.`);
+      this.contextCache.set(cacheKey, { entries: contextEntries, timestamp: Date.now() });
+      return contextEntries;
+    })().finally(() => {
+      this.contextPromises.delete(cacheKey);
+    });
+
+    this.contextPromises.set(cacheKey, promise);
+    return promise;
   }
 
   private resolveTokenOptions(overrides?: TokenDistributionOptions): TokenDistributionOptions {
@@ -831,7 +855,7 @@ export class MultiNetworkGasTokenDistributionService {
     const tokenOptions = this.resolveTokenOptions(overrides);
     const networks = new Map<
       string,
-      { networkId: string; networkName: string; adapterType: string }
+      { networkId: string; networkName: string; adapterType: string; walletAddress?: string }
     >();
 
     for (const adapter of this.networkAdapters) {
@@ -841,7 +865,8 @@ export class MultiNetworkGasTokenDistributionService {
           networks.set(context.networkId, {
             networkId: context.networkId,
             networkName: context.networkName,
-            adapterType: context.adapterType
+            adapterType: context.adapterType,
+            walletAddress: context.walletAddress
           });
         }
       } catch (error) {
@@ -1011,3 +1036,7 @@ export class MultiNetworkGasTokenDistributionService {
     return defaultGasCost;
   }
 }
+
+// Export singleton instance
+export const multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(new PrismaClient());
+export default MultiNetworkGasTokenDistributionService;

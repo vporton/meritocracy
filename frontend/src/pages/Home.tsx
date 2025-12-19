@@ -58,13 +58,12 @@ function Home() {
   useEffect(() => {
     const fetchPrimaryNetworkAddress = async () => {
       try {
-        // Try to get the primary network address from multi-network status
-        const response = await api.get('/api/multi-network-gas/status')
-        if (response.data.success && response.data.data.enabledNetworks.length > 0) {
-          const firstNetwork = response.data.data.enabledNetworks[0]
-          const networkInfo = response.data.data.networks[firstNetwork]
-          if (networkInfo?.address) {
-            setPrimaryNetworkAddress(networkInfo.address)
+        // Try to get the primary network address from multi-network list (lighter than status)
+        const response = await api.get('/api/multi-network-gas/list')
+        if (response.data.success && response.data.data.networkDetails && response.data.data.networkDetails.length > 0) {
+          const firstNetwork = response.data.data.networkDetails[0]
+          if (firstNetwork?.walletAddress) {
+            setPrimaryNetworkAddress(firstNetwork.walletAddress)
           }
         }
       } catch (error) {

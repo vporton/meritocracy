@@ -2,8 +2,6 @@
 
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH, GLRM payments.
 
-
-
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 
 - FIXME@P2 After failed login, the button text is "Try again". Thus the name of the button is not shown.

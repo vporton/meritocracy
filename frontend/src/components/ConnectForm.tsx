@@ -801,9 +801,9 @@ const ConnectForm = () => {
       case 'verification-sent':
         return 'Check Email!';
       case 'error':
-        return 'Try Again';
+        return `Try ${displayName} Again`;
       case 'cancelled':
-        return 'Try Again';
+        return `Try ${displayName} Again`;
       default:
         return `Connect with ${displayName}`;
     }

@@ -26,7 +26,14 @@ export async function withRetry<T>(
                 errorMessage.toLowerCase().includes('too many requests') ||
                 status === 429 ||
                 // Alchemy specific messages can sometimes be in the message
-                errorMessage.toLowerCase().includes('rate limit');
+                errorMessage.toLowerCase().includes('rate limit') ||
+                // Network errors
+                errorMessage.toLowerCase().includes('fetch failed') ||
+                errorMessage.includes('ECONNRESET') ||
+                errorMessage.includes('ETIMEDOUT') ||
+                // Server errors
+                status === 502 ||
+                status === 503;
 
             if (isRateLimit && attempt < maxRetries) {
                 const delay = baseDelay * Math.pow(2, attempt - 1);

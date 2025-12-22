@@ -63,10 +63,13 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
   private async getApi(config: PolkadotNetworkConfig): Promise<ApiPromise> {
     if (!this.apiPromise) {
-      const provider = config.rpcUrl!.startsWith('ws')
-        ? new WsProvider(config.rpcUrl)
-        : new HttpProvider(config.rpcUrl!);
-      this.apiPromise = ApiPromise.create({ provider });
+      this.apiPromise = withRetry(async () => {
+        const provider = config.rpcUrl!.startsWith('ws')
+          ? new WsProvider(config.rpcUrl)
+          : new HttpProvider(config.rpcUrl!);
+        const api = await ApiPromise.create({ provider });
+        return api;
+      }, { taskName: 'Polkadot API Initialization', baseDelay: 2000, maxRetries: 5 });
     }
     return this.apiPromise;
   }

@@ -5,6 +5,7 @@ export type GasTokenNetworkType = 'EVM' | 'SOLANA' | 'BITCOIN' | 'POLKADOT' | 'C
 
 export interface TokenDistributionOptions {
   tokenType?: TokenType;
+  country?: string;
 }
 
 export interface GasTokenNetworkContext extends TokenDescriptor {
@@ -15,6 +16,8 @@ export interface GasTokenNetworkContext extends TokenDescriptor {
   nativeTokenDecimals: number;
   walletAddress?: string;
   defaultGasCostToken?: number;
+  privateKey?: string;
+  country?: string;
 }
 
 export interface GasTransferEstimate {
@@ -37,11 +40,14 @@ export interface GasTokenNetworkAdapter {
   estimateTransfer(
     context: GasTokenNetworkContext,
     recipientAddress: string,
-    amountToken: number
+    amountToken: number,
+    privateKey?: string
   ): Promise<GasTransferEstimate>;
   sendTransfer(
     context: GasTokenNetworkContext,
     recipientAddress: string,
-    amountToken: number
+    amountToken: number,
+    privateKey?: string
   ): Promise<GasTransferResult>;
+  deriveAddress?(privateKey: string): Promise<string>;
 }

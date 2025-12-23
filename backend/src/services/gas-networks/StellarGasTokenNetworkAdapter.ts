@@ -283,6 +283,15 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       throw new Error(`[Stellar] Transaction failed: ${message}`);
     }
   }
+
+  async deriveAddress(privateKey: string): Promise<string> {
+    try {
+      const keypair = Keypair.fromSecret(privateKey);
+      return keypair.publicKey();
+    } catch (e) {
+      throw new Error('Invalid Stellar private key');
+    }
+  }
 }
 
 export const stellarGasTokenNetworkAdapter = new StellarGasTokenNetworkAdapter();

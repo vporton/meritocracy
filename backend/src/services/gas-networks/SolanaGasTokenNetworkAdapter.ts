@@ -219,6 +219,16 @@ export class SolanaGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
     return { transactionHash: signature };
   }
+
+  async deriveAddress(privateKey: string): Promise<string> {
+    try {
+      const secret = bs58.decode(privateKey);
+      const keypair = Keypair.fromSecretKey(secret);
+      return keypair.publicKey.toBase58();
+    } catch (e) {
+      throw new Error('Invalid Solana private key format (expected base58)');
+    }
+  }
 }
 
 export const solanaGasTokenNetworkAdapter = new SolanaGasTokenNetworkAdapter();

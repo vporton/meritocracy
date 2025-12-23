@@ -128,6 +128,7 @@ export interface TokenTransferRequest {
     token: TokenDescriptor;
     to: Address;
     amount: string;
+    privateKey?: string;
 }
 
 export interface TokenTransferCostEstimate extends TokenTransferRequest {
@@ -137,6 +138,15 @@ export interface TokenTransferCostEstimate extends TokenTransferRequest {
 }
 
 export class MultiNetworkEthereumService {
+    public deriveAddress(privateKey: string): string {
+        try {
+            return privateKeyToAccount(privateKey as `0x${string}`).address;
+        } catch (error) {
+            console.error('Failed to derive address from private key:', error);
+            throw new Error('Invalid private key');
+        }
+    }
+
     private networks: Map<string, NetworkClient> = new Map();
     private config: { privateKey?: string; mnemonic?: string };
 
@@ -343,17 +353,18 @@ export class MultiNetworkEthereumService {
     /**
      * Get balance for a specific network
      */
-    public async getBalance(networkName: string): Promise<bigint> {
+    public async getBalance(networkName: string, privateKey?: string): Promise<bigint> {
         const now = Date.now();
-        const cached = this.balanceCache.get(networkName);
-        if (cached && (now - cached.timestamp < this.BALANCE_TTL)) {
-            return cached.value;
-        }
-
-        // Check if a request is already in progress
-        const inProgress = this.balancePromises.get(networkName);
-        if (inProgress) {
-            return inProgress;
+        // Don't use cache if specific private key is provided (or cache by key, but simple is better)
+        if (!privateKey) {
+            const cached = this.balanceCache.get(networkName);
+            if (cached && (now - cached.timestamp < this.BALANCE_TTL)) {
+                return cached.value;
+            }
+            const inProgress = this.balancePromises.get(networkName);
+            if (inProgress) {
+                return inProgress;
+            }
         }
 
         const client = this.networks.get(networkName);
@@ -363,38 +374,46 @@ export class MultiNetworkEthereumService {
 
         const promise = (async () => {
             try {
+                let address = client.account.address;
+                if (privateKey) {
+                    address = privateKeyToAccount(privateKey as `0x${string}`).address;
+                }
+
                 const balance = await withRetry(
-                    () => client.publicClient.getBalance({ address: client.account.address }),
+                    () => client.publicClient.getBalance({ address }),
                     { taskName: `getBalance ${networkName}` }
                 );
-                this.balanceCache.set(networkName, { value: balance, timestamp: Date.now() });
+
+                if (!privateKey) {
+                    this.balanceCache.set(networkName, { value: balance, timestamp: Date.now() });
+                }
                 return balance;
             } catch (error) {
                 console.error(`Failed to get balance for ${networkName}:`, error);
 
-                // Cache error as 0 for a short time to avoid hitting the node repeatedly when it's failing
-                if (!cached) {
+                if (!privateKey && !this.balanceCache.get(networkName)) {
                     this.balanceCache.set(networkName, { value: 0n, timestamp: Date.now() - (this.BALANCE_TTL - this.ERROR_CACHE_TTL) });
                 }
 
-                // Return cached value even if expired if we fail to fetch new one
-                if (cached) return cached.value;
+                if (!privateKey && this.balanceCache.get(networkName)) return this.balanceCache.get(networkName)!.value;
                 return 0n;
             } finally {
-                this.balancePromises.delete(networkName);
+                if (!privateKey) this.balancePromises.delete(networkName);
             }
         })();
 
-        this.balancePromises.set(networkName, promise);
+        if (!privateKey) {
+            this.balancePromises.set(networkName, promise);
+        }
         return promise;
     }
 
     /**
      * Get balance for native or ERC-20 token on a specific network
      */
-    public async getTokenBalance(networkName: string, token: TokenDescriptor): Promise<bigint> {
+    public async getTokenBalance(networkName: string, token: TokenDescriptor & { privateKey?: string }): Promise<bigint> {
         if (token.tokenType === 'NATIVE') {
-            return await this.getBalance(networkName);
+            return await this.getBalance(networkName, token.privateKey);
         }
 
         if (!token.tokenAddress) {
@@ -406,12 +425,17 @@ export class MultiNetworkEthereumService {
             throw new Error(`Network ${networkName} not found or not enabled`);
         }
 
+        let address = client.account.address;
+        if (token.privateKey) {
+            address = privateKeyToAccount(token.privateKey as `0x${string}`).address;
+        }
+
         return await withRetry(
             () => client.publicClient.readContract({
                 address: token.tokenAddress!,
                 abi: ERC20_ABI,
                 functionName: 'balanceOf',
-                args: [client.account.address]
+                args: [address]
             }),
             { taskName: `getTokenBalance ${token.tokenSymbol} on ${networkName}` }
         );
@@ -429,6 +453,11 @@ export class MultiNetworkEthereumService {
         const decimals = request.token.tokenDecimals ?? client.config.nativeTokenDecimals ?? client.config.chain.nativeCurrency.decimals;
         const amountRaw = parseUnits(request.amount, decimals);
 
+        let account = client.account;
+        if (request.privateKey) {
+            account = privateKeyToAccount(request.privateKey as `0x${string}`);
+        }
+
         let gasEstimate: bigint;
         if (request.token.tokenType === 'ERC20') {
             if (!request.token.tokenAddress) {
@@ -440,14 +469,14 @@ export class MultiNetworkEthereumService {
                     abi: ERC20_ABI,
                     functionName: 'transfer',
                     args: [request.to, amountRaw],
-                    account: client.account.address
+                    account: account.address
                 }),
                 { taskName: `estimateContractGas ${request.token.tokenSymbol} on ${request.networkName}` }
             );
         } else {
             gasEstimate = await withRetry(
                 () => client.publicClient.estimateGas({
-                    account: client.account.address,
+                    account: account.address,
                     to: request.to,
                     value: amountRaw
                 }),
@@ -476,6 +505,11 @@ export class MultiNetworkEthereumService {
         const decimals = request.token.tokenDecimals ?? client.config.nativeTokenDecimals ?? client.config.chain.nativeCurrency.decimals;
         const amountRaw = parseUnits(request.amount, decimals);
 
+        let account = client.account;
+        if (request.privateKey) {
+            account = privateKeyToAccount(request.privateKey as `0x${string}`);
+        }
+
         if (request.token.tokenType === 'ERC20') {
             if (!request.token.tokenAddress) {
                 throw new Error(`Token address is required to send ERC-20 transfer for ${request.token.tokenSymbol}`);
@@ -483,7 +517,7 @@ export class MultiNetworkEthereumService {
 
             return await withRetry(
                 () => client.walletClient.writeContract({
-                    account: client.account,
+                    account: account,
                     address: request.token.tokenAddress!,
                     abi: ERC20_ABI,
                     functionName: 'transfer',
@@ -496,7 +530,7 @@ export class MultiNetworkEthereumService {
 
         return await withRetry(
             () => client.walletClient.sendTransaction({
-                account: client.account,
+                account: account,
                 to: request.to,
                 value: amountRaw,
                 chain: client.publicClient.chain

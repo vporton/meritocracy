@@ -444,6 +444,11 @@ export class BitcoinGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       throw new Error(`[Bitcoin] Failed to broadcast transaction: ${message}`);
     }
   }
+
+  async deriveAddress(privateKey: string): Promise<string> {
+    // NOTE: privateKey here is expected to be WIF format for Bitcoin, matching SystemSecretService output
+    return deriveP2PKHAddressFromWif(privateKey);
+  }
 }
 
 export const bitcoinGasTokenNetworkAdapter = new BitcoinGasTokenNetworkAdapter();

@@ -16,6 +16,7 @@ import {
   solanaGasTokenNetworkAdapter,
   stellarGasTokenNetworkAdapter
 } from './gas-networks/index.js';
+import { systemSecretService } from './SystemSecretService.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -130,7 +131,7 @@ export class MultiNetworkGasTokenDistributionService {
   private async collectNetworkAdapterContexts(
     tokenOptions: TokenDistributionOptions
   ): Promise<Map<string, AdapterContextEntry>> {
-    const cacheKey = JSON.stringify(tokenOptions);
+    const cacheKey = JSON.stringify(tokenOptions) + ':v2';
     const now = Date.now();
     const cached = this.contextCache.get(cacheKey);
 
@@ -158,8 +159,47 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         for (const context of contexts) {
-          // Only log at debug level or once
-          contextEntries.set(context.networkId, { adapter, context });
+          if (tokenOptions.country) {
+            const secret = await systemSecretService.getCountrySecret(context.networkId, tokenOptions.country);
+
+            let finalWalletAddress = 'ADDRESS-NOT-RESOLVED';
+            let finalPrivateKey: string | undefined = undefined;
+
+            if (secret) {
+              finalPrivateKey = secret.trim();
+              // Try to derive specific address if adapter supports it
+              if (adapter.deriveAddress) {
+                try {
+                  const derived = await adapter.deriveAddress(finalPrivateKey);
+                  finalWalletAddress = derived;
+                } catch (e) {
+                  console.error(`Derivation failed for ${context.networkId} (${tokenOptions.country}):`, e);
+                  finalWalletAddress = 'DERIVATION-FAILED';
+                }
+              } else {
+                finalWalletAddress = 'DERIVE-NOT-SUPPORTED';
+              }
+            } else {
+              console.warn(`[MultiNetwork] No secret found for ${context.networkId} / ${tokenOptions.country}`);
+              finalWalletAddress = 'SECRET-MISSING-DB';
+            }
+
+            const newNetworkId = `${context.networkId}-${tokenOptions.country}`;
+            contextEntries.set(newNetworkId, {
+              adapter,
+              context: {
+                ...context,
+                networkId: newNetworkId,
+                networkName: `${context.networkName} (${tokenOptions.country})`,
+                country: tokenOptions.country,
+                privateKey: finalPrivateKey,
+                walletAddress: finalWalletAddress
+              }
+            });
+          } else {
+            // Global
+            contextEntries.set(context.networkId, { adapter, context });
+          }
         }
       }
 
@@ -174,9 +214,15 @@ export class MultiNetworkGasTokenDistributionService {
     return promise;
   }
 
+  public clearContextCache(): void {
+    this.contextCache.clear();
+    console.log('🧹 [MultiNetwork] Context cache cleared.');
+  }
+
   private resolveTokenOptions(overrides?: TokenDistributionOptions): TokenDistributionOptions {
     return {
-      tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType
+      tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType,
+      country: overrides?.country
     };
   }
 
@@ -266,102 +312,135 @@ export class MultiNetworkGasTokenDistributionService {
         continue;
       }
 
-      for (const context of contexts) {
-        const eligibleUsers = users.filter(user => {
-          const share = user.shareInGDP ?? 0;
-          const address = adapter.getRecipientAddress(user);
-          return share > 0 && !!address;
-        });
+      for (const originalContext of contexts) {
+        // Prepare list of contexts to process (Global + Countries)
+        const contextsToProcess: Array<{ context: GasTokenNetworkContext; userFilter?: (u: User) => boolean }> = [
+          { context: originalContext } // Global
+        ];
 
-        const totalShare = eligibleUsers.reduce((sum, user) => sum + (user.shareInGDP ?? 0), 0);
-        if (eligibleUsers.length === 0 || totalShare <= 0) {
-          console.warn(
-            `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
-          );
-          networkDistributions.set(context.networkId, {
-            adapter,
-            context,
-            distributions: []
-          });
-          continue;
-        }
-
-        let walletBalance = 0;
-        try {
-          walletBalance = await adapter.getWalletBalance(context);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          console.error(
-            `❌ Failed to read wallet balance for ${context.networkName} (${context.adapterType}): ${message}`
-          );
-          networkDistributions.set(context.networkId, {
-            adapter,
-            context,
-            distributions: []
-          });
-          continue;
-        }
-
-        const currentReserve = await this.getTokenReserve(context);
-        const spendableFromWallet = Math.max(0, walletBalance);
-        const totalAvailable = spendableFromWallet + currentReserve;
-
-        if (totalAvailable <= 0) {
-          console.warn(
-            `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
-          );
-          networkDistributions.set(context.networkId, {
-            adapter,
-            context,
-            distributions: []
-          });
-          continue;
-        }
-
-        const distributions: DistributionFiber[] = eligibleUsers.map(user => {
-          const share = user.shareInGDP ?? 0;
-          const proportion = share / totalShare;
-          const recipientAddress = adapter.getRecipientAddress(user);
-
-          return {
-            userId: user.id,
-            recipientAddress: recipientAddress!,
-            amountToken: proportion > 0 ? spendableFromWallet * proportion : 0,
-            shareInGDP: share
-          };
-        });
-
-        const deferredRows = await this.prisma.gasTokenDistribution.findMany({
-          where: {
-            network: context.networkId,
-            tokenSymbol: context.tokenSymbol,
-            tokenType: context.tokenType,
-            status: 'DEFERRED'
-          },
-          select: {
-            userId: true,
-            amount: true
+        // Identify countries with specific funds
+        const distinctCountries = [...new Set(users.map(u => u.residenceCountry).filter(c => c))];
+        for (const country of distinctCountries) {
+          const countrySecret = await systemSecretService.getCountrySecret(originalContext.networkId, country!);
+          if (countrySecret) {
+            contextsToProcess.push({
+              context: {
+                ...originalContext,
+                networkId: `${originalContext.networkId}-${country}`,
+                networkName: `${originalContext.networkName} (${country})`,
+                privateKey: countrySecret,
+                country: country!
+              },
+              userFilter: (u) => u.residenceCountry === country
+            });
           }
-        });
-        const backlogLookup = new Map<number, number>();
-        for (const row of deferredRows) {
-          const previous = backlogLookup.get(row.userId) ?? 0;
-          backlogLookup.set(row.userId, previous + Number(row.amount));
         }
 
-        for (const dist of distributions) {
-          dist.backlogToken = backlogLookup.get(dist.userId) ?? 0;
-          dist.amountToken += dist.backlogToken;
+        for (const { context, userFilter } of contextsToProcess) {
+          const eligibleUsers = users.filter(user => {
+            if (userFilter && !userFilter(user)) return false;
+
+            const share = user.shareInGDP ?? 0;
+            const address = adapter.getRecipientAddress(user);
+            return share > 0 && !!address;
+          });
+
+          const totalShare = eligibleUsers.reduce((sum, user) => sum + (user.shareInGDP ?? 0), 0);
+          if (eligibleUsers.length === 0 || totalShare <= 0) {
+            // Only warn for Global, country specific might be empty mostly
+            if (!context.country) {
+              console.warn(
+                `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
+              );
+            }
+            networkDistributions.set(context.networkId, {
+              adapter,
+              context,
+              distributions: []
+            });
+            continue;
+          }
+
+          let walletBalance = 0;
+          try {
+            walletBalance = await adapter.getWalletBalance(context);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            console.error(
+              `❌ Failed to read wallet balance for ${context.networkName} (${context.adapterType}): ${message}`
+            );
+            networkDistributions.set(context.networkId, {
+              adapter,
+              context,
+              distributions: []
+            });
+            continue;
+          }
+
+          const currentReserve = await this.getTokenReserve(context);
+          const spendableFromWallet = Math.max(0, walletBalance);
+          const totalAvailable = spendableFromWallet + currentReserve;
+
+          if (totalAvailable <= 0) {
+            // Only warn for Global, country funds naturally empty often
+            if (!context.country) {
+              console.warn(
+                `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
+              );
+            }
+            networkDistributions.set(context.networkId, {
+              adapter,
+              context,
+              distributions: []
+            });
+            continue;
+          }
+
+          const distributions: DistributionFiber[] = eligibleUsers.map(user => {
+            const share = user.shareInGDP ?? 0;
+            const proportion = share / totalShare;
+            const recipientAddress = adapter.getRecipientAddress(user);
+
+            return {
+              userId: user.id,
+              recipientAddress: recipientAddress!,
+              amountToken: proportion > 0 ? spendableFromWallet * proportion : 0,
+              shareInGDP: share
+            };
+          });
+
+          const deferredRows = await this.prisma.gasTokenDistribution.findMany({
+            where: {
+              network: context.networkId,
+              tokenSymbol: context.tokenSymbol,
+              tokenType: context.tokenType,
+              status: 'DEFERRED'
+            },
+            select: {
+              userId: true,
+              amount: true
+            }
+          });
+          const backlogLookup = new Map<number, number>();
+          for (const row of deferredRows) {
+            const previous = backlogLookup.get(row.userId) ?? 0;
+            backlogLookup.set(row.userId, previous + Number(row.amount));
+          }
+
+          for (const dist of distributions) {
+            dist.backlogToken = backlogLookup.get(dist.userId) ?? 0;
+            dist.amountToken += dist.backlogToken;
+          }
+
+          const filtered = distributions.filter(dist => dist.amountToken > 0);
+          filtered.sort((a, b) => b.amountToken - a.amountToken);
+
+          networkDistributions.set(context.networkId, {
+            adapter,
+            context,
+            distributions: filtered
+          });
         }
-
-        const filtered = distributions.filter(dist => dist.amountToken > 0);
-        filtered.sort((a, b) => b.amountToken - a.amountToken);
-
-        networkDistributions.set(context.networkId, {
-          adapter,
-          context,
-          distributions: filtered
-        });
       }
     }
 
@@ -838,7 +917,12 @@ export class MultiNetworkGasTokenDistributionService {
   ): Promise<ReserveStatusEntry | undefined> {
     const tokenOptions = this.resolveTokenOptions(overrides);
     const contexts = await this.collectNetworkAdapterContexts(tokenOptions);
-    const entry = contexts.get(networkId);
+
+    let lookupKey = networkId;
+    if (tokenOptions.country && !networkId.endsWith(`-${tokenOptions.country}`)) {
+      lookupKey = `${networkId}-${tokenOptions.country}`;
+    }
+    const entry = contexts.get(lookupKey);
     if (!entry) return undefined;
 
     const { adapter, context } = entry;
@@ -928,31 +1012,14 @@ export class MultiNetworkGasTokenDistributionService {
 
   async getEnabledNetworks(overrides?: Partial<TokenDistributionOptions>) {
     const tokenOptions = this.resolveTokenOptions(overrides);
-    const networks = new Map<
-      string,
-      { networkId: string; networkName: string; adapterType: string; walletAddress?: string }
-    >();
+    const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
 
-    for (const adapter of this.networkAdapters) {
-      try {
-        const contexts = await adapter.getNetworkContexts(tokenOptions);
-        for (const context of contexts) {
-          networks.set(context.networkId, {
-            networkId: context.networkId,
-            networkName: context.networkName,
-            adapterType: context.adapterType,
-            walletAddress: context.walletAddress
-          });
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error(
-          `❌ Failed to enumerate networks for adapter ${adapter.type}: ${message}`
-        );
-      }
-    }
-
-    return Array.from(networks.values());
+    return Array.from(contextEntries.values()).map(entry => ({
+      networkId: entry.context.networkId,
+      networkName: entry.context.networkName,
+      adapterType: entry.context.adapterType,
+      walletAddress: entry.context.walletAddress
+    }));
   }
 
   async getNetworkStatus(overrides?: Partial<TokenDistributionOptions>) {
@@ -965,22 +1032,52 @@ export class MultiNetworkGasTokenDistributionService {
     // Supplementary info from EVM (Batch fetch)
     try {
       const networkInfo = await multiNetworkEthereumService.getAllNetworkInfo();
-      for (const [networkId, info] of networkInfo) {
-        const reserve = status.get(networkId);
-        if (!reserve) continue;
 
+      // Iterate over all active status entries (which might include country suffixes)
+      for (const [contextKey, reserve] of status.entries()) {
+        // Resolve base network ID by stripping known suffix format if present
+        // Or simpler: iterate networkInfo and check if contextKey starts with networkId
+
+        let matchedInfo: { name: string; chainId: number; address: string; balance: bigint; gasPrice: bigint } | undefined;
+
+        for (const [baseNetworkId, info] of networkInfo) {
+          if (contextKey === baseNetworkId || contextKey.startsWith(`${baseNetworkId}-`)) {
+            matchedInfo = info;
+            break;
+          }
+        }
+
+        if (!matchedInfo) continue;
+
+        const info = matchedInfo;
         const walletBalanceEth = Number(multiNetworkEthereumService.formatUnits(info.balance, reserve.tokenDecimals));
 
-        status.set(networkId, {
+        // NOTE: We do NOT overwrite 'address' here with info.address (which is the Global address from EVM service), 
+        // because reserve.address might be the country specific address we just derived.
+        // However, we DO want gasPrice.
+        // Balance comes from info.balance? No, info.balance is GLOBAL balance.
+        // Is info.balance global?
+        // multiNetworkEthereumService.getAllNetworkInfo uses getBalance(this.getAddress()).
+        // this.getAddress() is global.
+        // So info.balance is WRONG for country context.
+
+        // But wait! getReserveStatus calls getSingleNetworkReserveStatus -> calls adapter.getWalletBalance -> calls service.getTokenBalance
+        // service.getTokenBalance uses context.walletAddress.
+        // So 'reserve.walletBalance' is ALREADY CORRECT (Country Balance).
+
+        // So we should NOT overwrite balance/walletBalance with info.balance.
+        // We SHOULD overwrite gasPrice, chainId, name.
+
+        status.set(contextKey, {
           ...reserve,
           name: info.name,
           chainId: info.chainId,
-          address: info.address,
-          balance: info.balance.toString(),
+          // address: info.address, // Keep existing (country) address
+          // balance: info.balance.toString(), // Keep existing (country) balance
+          // walletBalance: walletBalanceEth, // Keep existing (country) balance
           gasPrice: info.gasPrice.toString(),
-          walletBalance: walletBalanceEth,
-          availableForDistribution: reserve.totalReserve + walletBalanceEth,
-          balanceFormatted: multiNetworkEthereumService.formatEther(info.balance),
+          // availableForDistribution: reserve.totalReserve + walletBalanceEth, // Keep calculated
+          // balanceFormatted: multiNetworkEthereumService.formatEther(info.balance), // Keep existing
           gasPriceFormatted: multiNetworkEthereumService.formatEther(info.gasPrice)
         });
       }

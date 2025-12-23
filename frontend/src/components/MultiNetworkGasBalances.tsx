@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
+import { countries } from '../utils/countries'
 
 interface NetworkInfo {
   name?: string;
@@ -37,100 +38,111 @@ function MultiNetworkGasBalances() {
   const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchMultiNetworkStatus = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+  const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
+  const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
 
-        // 1. Fetch initial list of networks (fast)
-        const listResponse = await api.get('/api/multi-network-gas/list')
-        if (listResponse.data.success) {
-          const listData = listResponse.data.data
-          const networks = listData.networkDetails || []
-          const initialNetworks: Record<string, NetworkInfo> = {}
-          const initialLoading: Record<string, boolean> = {}
+  const fetchMultiNetworkStatus = async (currentScope: 'GLOBAL' | 'COUNTRY', currentCountry: string) => {
+    try {
+      setLoading(true)
+      setError(null)
 
-          networks.forEach((net: any) => {
-            initialNetworks[net.networkId] = {
-              networkName: net.networkName,
-              adapterType: net.adapterType,
-              walletAddress: net.walletAddress,
-              tokenSymbol: '...',
-              totalReserve: 0,
-              walletBalance: 0,
-              availableForDistribution: 0,
-              balanceFormatted: 'Loading...',
-              gasPriceFormatted: 'Loading...'
-            }
-            initialLoading[net.networkId] = true
-          })
+      const queryParams = currentScope === 'COUNTRY' ? `?country=${currentCountry}` : '';
 
-          const enabledNetworks = listData.enabledNetworks || []
-          setNetworkStatus({
-            enabledNetworks,
-            networks: initialNetworks,
-            totalNetworks: listData.totalNetworks || 0,
-            totalAvailable: 0,
-            totalReserve: 0
-          })
-          setLoadingNetworks(initialLoading)
-          setLoading(false)
-
-          // 2. Fetch each network's status individualy in parallel (backend will coalesce and cache)
-          enabledNetworks.forEach(async (networkId: string) => {
-            try {
-              const response = await api.get(`/api/multi-network-gas/network/${networkId}/status`)
-              if (response.data.success) {
-                const data = response.data.data
-                setNetworkStatus(prev => {
-                  if (!prev) return prev;
-                  const updatedNetworks = {
-                    ...prev.networks,
-                    [networkId]: {
-                      ...prev.networks[networkId],
-                      ...data
-                    }
-                  }
-
-                  // Recalculate totals
-                  let totalAvailable = 0
-                  let totalReserve = 0
-                  Object.values(updatedNetworks).forEach(net => {
-                    totalAvailable += net.availableForDistribution || 0
-                    totalReserve += net.totalReserve || 0
-                  })
-
-                  return {
-                    ...prev,
-                    networks: updatedNetworks,
-                    totalAvailable,
-                    totalReserve
-                  }
-                })
-              }
-            } catch (err) {
-              console.error(`Failed to fetch status for ${networkId}:`, err)
-            } finally {
-              setLoadingNetworks(prev => ({
-                ...prev,
-                [networkId]: false
-              }))
-            }
-          })
-        }
-      } catch (err) {
-        console.error('Failed to fetch multi-network status:', err)
-        setError('Failed to load network balances. Please try again later.')
-      } finally {
-        setLoading(false)
+      // If country scope, ensure account exists first
+      if (currentScope === 'COUNTRY') {
+        await api.post('/api/multi-network-gas/ensure-country-account', { country: currentCountry });
       }
+
+      // 1. Fetch initial list of networks (fast)
+      const listResponse = await api.get(`/api/multi-network-gas/list${queryParams}`)
+      if (listResponse.data.success) {
+        const listData = listResponse.data.data
+        const networks = listData.networkDetails || []
+        const initialNetworks: Record<string, NetworkInfo> = {}
+        const initialLoading: Record<string, boolean> = {}
+
+        networks.forEach((net: any) => {
+          initialNetworks[net.networkId] = {
+            networkName: net.networkName,
+            adapterType: net.adapterType,
+            walletAddress: net.walletAddress,
+            tokenSymbol: '...',
+            totalReserve: 0,
+            walletBalance: 0,
+            availableForDistribution: 0,
+            balanceFormatted: 'Loading...',
+            gasPriceFormatted: 'Loading...'
+          }
+          initialLoading[net.networkId] = true
+        })
+
+        const enabledNetworks = listData.enabledNetworks || []
+        setNetworkStatus({
+          enabledNetworks,
+          networks: initialNetworks,
+          totalNetworks: listData.totalNetworks || 0,
+          totalAvailable: 0,
+          totalReserve: 0
+        })
+        setLoadingNetworks(initialLoading)
+        setLoading(false)
+
+        // 2. Fetch each network's status individualy in parallel (backend will coalesce and cache)
+        enabledNetworks.forEach(async (networkId: string) => {
+          try {
+            const response = await api.get(`/api/multi-network-gas/network/${networkId}/status${queryParams}`)
+            if (response.data.success) {
+              const data = response.data.data
+              setNetworkStatus(prev => {
+                if (!prev) return prev;
+                const updatedNetworks = {
+                  ...prev.networks,
+                  [networkId]: {
+                    ...prev.networks[networkId],
+                    ...data
+                  }
+                }
+
+                // Recalculate totals
+                let totalAvailable = 0
+                let totalReserve = 0
+                Object.values(updatedNetworks).forEach(net => {
+                  totalAvailable += net.availableForDistribution || 0
+                  totalReserve += net.totalReserve || 0
+                })
+
+                return {
+                  ...prev,
+                  networks: updatedNetworks,
+                  totalAvailable,
+                  totalReserve
+                }
+              })
+            }
+          } catch (err) {
+            // Ignore 404s for specific country networks that might not exist yet strictly speaking
+            console.error(`Failed to fetch status for ${networkId}:`, err)
+          } finally {
+            setLoadingNetworks(prev => ({
+              ...prev,
+              [networkId]: false
+            }))
+          }
+        })
+      }
+    } catch (err) {
+      console.error('Failed to fetch multi-network status:', err)
+      setError('Failed to load network balances. Please try again later.')
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchMultiNetworkStatus()
-  }, [])
+  useEffect(() => {
+    fetchMultiNetworkStatus(scope, selectedCountry)
+  }, [scope, selectedCountry])
 
-  if (loading) {
+  if (loading && !networkStatus) {
     return (
       <div className="card">
         <h3>🌐 Multi-Network Gas Balances</h3>
@@ -196,6 +208,30 @@ function MultiNetworkGasBalances() {
   return (
     <div className="card">
       <h3>🌐 Multi-Network Gas Balances</h3>
+
+      <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <label style={{ color: '#fff' }}>Fund Source:</label>
+        <select
+          value={scope === 'GLOBAL' ? 'GLOBAL' : selectedCountry}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === 'GLOBAL') {
+              setScope('GLOBAL');
+            } else {
+              setScope('COUNTRY');
+              setSelectedCountry(val);
+            }
+          }}
+          style={{ padding: '0.5rem', borderRadius: '4px', maxWidth: '300px' }}
+        >
+          <option value="GLOBAL">Global Fund</option>
+          <optgroup label="Countries">
+            {countries.map(c => (
+              <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+            ))}
+          </optgroup>
+        </select>
+      </div>
 
       {/* Summary */}
       <div style={{

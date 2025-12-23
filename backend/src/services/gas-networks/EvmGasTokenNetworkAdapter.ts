@@ -72,7 +72,8 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   async estimateTransfer(
     context: GasTokenNetworkContext,
     recipientAddress: string,
-    amountToken: number
+    amountToken: number,
+    privateKey?: string
   ): Promise<GasTransferEstimate> {
     const amountAsString = this.formatAmount(context, amountToken);
 
@@ -81,7 +82,8 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         networkName: context.networkId,
         token: context,
         to: recipientAddress as `0x${string}`,
-        amount: amountAsString
+        amount: amountAsString,
+        privateKey: privateKey || context.privateKey
       });
 
       const gasCostToken = Number(
@@ -98,7 +100,8 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   async sendTransfer(
     context: GasTokenNetworkContext,
     recipientAddress: string,
-    amountToken: number
+    amountToken: number,
+    privateKey?: string
   ): Promise<GasTransferResult> {
     const amountAsString = this.formatAmount(context, amountToken);
 
@@ -106,10 +109,14 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       networkName: context.networkId,
       token: context,
       to: recipientAddress as `0x${string}`,
-      amount: amountAsString
+      amount: amountAsString,
+      privateKey: privateKey || context.privateKey
     });
 
     return { transactionHash };
+  }
+  async deriveAddress(privateKey: string): Promise<string> {
+    return multiNetworkEthereumService.deriveAddress(privateKey);
   }
 }
 

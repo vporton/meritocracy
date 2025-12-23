@@ -21,6 +21,7 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
 
   const {
     tokenType,
+    country,
   } = source;
 
   if (typeof tokenType === 'string') {
@@ -28,6 +29,10 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
     if (normalized === 'NATIVE') {
       overrides.tokenType = normalized as TokenDistributionOptions['tokenType'];
     }
+  }
+
+  if (typeof country === 'string' && country.trim().length === 2) {
+    overrides.country = country.trim().toUpperCase();
   }
 
   return overrides;
@@ -283,6 +288,50 @@ router.post('/run-distribution', async (req, res) => {
   } catch (error) {
     console.error('Error running multi-network gas token distribution:', error);
     res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/multi-network-gas/ensure-country-account
+ * Create accounts for a specific country if they don't exist
+ */
+router.post('/ensure-country-account', async (req, res) => {
+  try {
+    const { country } = req.body;
+    if (!country || typeof country !== 'string' || country.length !== 2) {
+      return res.status(400).json({ success: false, error: 'Invalid country code (must be 2 chars)' });
+    }
+
+    const enabledNetworkDetails = await multiNetworkGasTokenDistributionService.getEnabledNetworks();
+    const results: Record<string, boolean> = {};
+
+    // We need to import systemSecretService here or access it safely.
+    // Since it's a singleton, we can import it.
+    // But imports are top-level. I will add import at top or just assume it's available via service?
+    // MultiNetworkGasTokenDistributionService doesn't expose secret service directly.
+    // I'll import it at the top of the file in the next step or rely on Dynamic import?
+    // Better: Add top-level import.
+    const { systemSecretService } = await import('../services/SystemSecretService.js');
+
+    for (const net of enabledNetworkDetails) {
+      await systemSecretService.ensureCountrySecret(net.networkId, country.toUpperCase());
+      results[net.networkId] = true;
+    }
+
+    // Clear context cache to ensure new secrets are picked up immediately
+    multiNetworkGasTokenDistributionService.clearContextCache();
+
+    return res.json({
+      success: true,
+      created: true,
+      networks: results
+    });
+  } catch (error) {
+    console.error('Error ensuring country account:', error);
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     });

@@ -249,6 +249,32 @@ export class PolkadotGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       }
     });
   }
+
+
+  async deriveAddress(secretUri: string): Promise<string> {
+    try {
+      await cryptoWaitReady();
+      const keyring = new Keyring({ type: 'sr25519' });
+      // addFromUri handles both seeds (hex/string) and mnemonics if formatted correctly or just mnemonics?
+      // For safety, let's try addFromUri which is the most generic.
+      // If it's a mnemonic, it works. If it's a hex seed, it usually expects 0x prefix.
+      // If the secret is just a raw seed without 0x, we might need to handle it.
+      // But typically secrets are stored as they are used.
+      // In getSigner we use addFromMnemonic (line 86) currently (commented out addFromUri).
+      // Let's try addFromUri as it's more general, or check for spaces.
+
+      let pair;
+      if (secretUri.includes(' ')) {
+        pair = keyring.addFromMnemonic(secretUri);
+      } else {
+        pair = keyring.addFromUri(secretUri);
+      }
+      return pair.address;
+    } catch (error) {
+      console.error('[Polkadot] Failed to derive address:', error);
+      throw new Error('Failed to derive Polkadot address from secret');
+    }
+  }
 }
 
 export const polkadotGasTokenNetworkAdapter = new PolkadotGasTokenNetworkAdapter();

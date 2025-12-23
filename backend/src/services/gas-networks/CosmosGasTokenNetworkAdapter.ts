@@ -1,5 +1,5 @@
 import type { User } from '@prisma/client';
-import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+import { DirectSecp256k1HdWallet, DirectSecp256k1Wallet } from '@cosmjs/proto-signing';
 import type { EncodeObject } from '@cosmjs/proto-signing';
 import {
   SigningStargateClient,
@@ -294,6 +294,31 @@ export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
 
     return { transactionHash: result.transactionHash };
+  }
+
+  async deriveAddress(privateKeyOrMnemonic: string): Promise<string> {
+    const config = readCosmosConfig();
+    try {
+      // Check if it's a mnemonic (has spaces)
+      if (privateKeyOrMnemonic.includes(' ')) {
+        const wallet = await DirectSecp256k1HdWallet.fromMnemonic(privateKeyOrMnemonic, {
+          prefix: config.accountPrefix
+        });
+        const [account] = await wallet.getAccounts();
+        return account.address;
+      } else {
+        // Assume private key (hex or base64? Usually hex for cosmos keys passed around as secrets here)
+        // ensure hex string. Removing 0x if present.
+        const cleanKey = privateKeyOrMnemonic.replace(/^0x/, '');
+        const keyBytes = Uint8Array.from(Buffer.from(cleanKey, 'hex'));
+        const wallet = await DirectSecp256k1Wallet.fromKey(keyBytes, config.accountPrefix);
+        const [account] = await wallet.getAccounts();
+        return account.address;
+      }
+    } catch (error) {
+      console.error('[Cosmos] Failed to derive address:', error);
+      throw new Error('Failed to derive Cosmos address from secret');
+    }
   }
 }
 

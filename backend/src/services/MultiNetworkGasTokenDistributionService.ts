@@ -956,22 +956,52 @@ export class MultiNetworkGasTokenDistributionService {
       address: context.walletAddress
     };
 
-    // 3. Supplement with live blockchain info (One batch of calls if possible)
+    // 3. Supplement with live blockchain info
     if (adapter.type === 'EVM') {
       try {
-        const info = await multiNetworkEthereumService.getNetworkInfo(networkId);
+        // Resolve base network ID (strip country suffix if present)
+        let baseNetworkId = networkId;
+        const enabledEvmNetworks = multiNetworkEthereumService.getEnabledNetworks();
+
+        if (!enabledEvmNetworks.includes(networkId)) {
+          // Try exact suffix match first
+          if (tokenOptions.country && networkId.endsWith(`-${tokenOptions.country}`)) {
+            const potential = networkId.slice(0, -1 * (tokenOptions.country.length + 1));
+            if (enabledEvmNetworks.includes(potential)) {
+              baseNetworkId = potential;
+            }
+          }
+
+          // If still not found, try prefix matching
+          if (baseNetworkId === networkId) {
+            const match = enabledEvmNetworks.find(n => networkId.startsWith(`${n}-`));
+            if (match) baseNetworkId = match;
+          }
+        }
+
+        // Fetch global network info (for gas price, chainId, name)
+        const info = await multiNetworkEthereumService.getNetworkInfo(baseNetworkId);
+
+        // Always fetch balance for the SPECIFIC context (which handles country-specific addresses)
+        let walletBalanceEth = 0;
+        try {
+          walletBalanceEth = await adapter.getWalletBalance(context);
+        } catch (e) {
+          console.error(`Failed to get EVM wallet balance for ${context.networkName}:`, e);
+        }
+
         if (info) {
-          const walletBalanceEth = Number(multiNetworkEthereumService.formatUnits(info.balance, context.tokenDecimals));
           status = {
             ...status,
             name: info.name,
             chainId: info.chainId,
-            address: info.address,
-            balance: info.balance.toString(),
+            // Keep derived/context address, do NOT overwrite with global info.address
+            address: context.walletAddress,
+            // balance: info.balance.toString(), // Do NOT use global balance
             gasPrice: info.gasPrice.toString(),
             walletBalance: walletBalanceEth,
             availableForDistribution: reserveAmount + walletBalanceEth,
-            balanceFormatted: multiNetworkEthereumService.formatEther(info.balance),
+            balanceFormatted: adapter.formatAmount(context, walletBalanceEth),
             gasPriceFormatted: multiNetworkEthereumService.formatEther(info.gasPrice)
           };
         }

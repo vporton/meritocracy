@@ -1,7 +1,4 @@
-# fly.toml app configuration file generated for meritocracy-staging on 2026-01-05T22:50:45+02:00
-#
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
 
 app = 'meritocracy-staging'
 primary_region = 'ewr'
@@ -85,7 +82,7 @@ primary_region = 'ewr'
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
@@ -93,7 +90,7 @@ primary_region = 'ewr'
 [[services]]
   protocol = ''
   internal_port = 4173
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
@@ -110,12 +107,12 @@ primary_region = 'ewr'
   [[services.tcp_checks]]
     interval = '2s'
     timeout = '2s'
-    grace_period = '40s'
+    grace_period = '40s' # TODO@P2
 
 [[services]]
   protocol = ''
   internal_port = 3001
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']

@@ -79,3 +79,5 @@
 - TODO@P3 Claude as an alternative with up to 75% discount: https://www.anthropic.com/news/claude-for-nonprofits
 
 - TODO@P3 Don't allow the same user to KYC often, to save money.
+
+- FIXME@P2 Make a secure DockerHub image instead of `vporton/fly`.

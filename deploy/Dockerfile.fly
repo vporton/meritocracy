@@ -1,0 +1,7 @@
+FROM ubuntu:latest
+
+LABEL description="Fly.io controller. Note that this is for internal use, I don't recommend to rely on it."
+LABEL version="1.0.0"
+LABEL org.opencontainers.image.authors="Victor Porton <porton.victor@gmail.com>"
+
+RUN curl -L https://fly.io/install.sh | sh

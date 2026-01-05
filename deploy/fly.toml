@@ -85,7 +85,7 @@ primary_region = 'ewr'
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
@@ -93,7 +93,7 @@ primary_region = 'ewr'
 [[services]]
   protocol = ''
   internal_port = 4173
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
@@ -115,7 +115,7 @@ primary_region = 'ewr'
 [[services]]
   protocol = ''
   internal_port = 3001
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']

@@ -6,10 +6,10 @@ RUN apk add openssl
 WORKDIR /app
 
 # Frontend URL
-ENV VITE_FRONTEND_URL=https://socialism.fly.dev
+ENV VITE_FRONTEND_URL=https://meritocracy-staging.fly.dev
 
 # API Configuration
-ENV VITE_API_URL=https://socialism.fly.dev:445
+ENV VITE_API_URL=https://meritocracy-staging.fly.dev:445
 
 # TOD: Web3/Ethereum Configuration
 ENV VITE_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id

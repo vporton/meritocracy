@@ -18,6 +18,7 @@ export interface GasTokenNetworkContext extends TokenDescriptor {
   defaultGasCostToken?: number;
   privateKey?: string;
   country?: string;
+  baseNetworkId?: string;
 }
 
 export interface GasTransferEstimate {

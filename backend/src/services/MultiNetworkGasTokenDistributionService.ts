@@ -193,7 +193,8 @@ export class MultiNetworkGasTokenDistributionService {
                 networkName: `${context.networkName} (${tokenOptions.country})`,
                 country: tokenOptions.country,
                 privateKey: finalPrivateKey,
-                walletAddress: finalWalletAddress
+                walletAddress: finalWalletAddress,
+                baseNetworkId: context.networkId
               }
             });
           } else {

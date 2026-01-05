@@ -54,7 +54,8 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   }
 
   async getWalletBalance(context: GasTokenNetworkContext): Promise<number> {
-    const balanceRaw = await multiNetworkEthereumService.getTokenBalance(context.networkId, context);
+    const networkId = context.baseNetworkId ?? context.networkId;
+    const balanceRaw = await multiNetworkEthereumService.getTokenBalance(networkId, context);
     return Number(multiNetworkEthereumService.formatUnits(balanceRaw, context.tokenDecimals));
   }
 
@@ -78,8 +79,9 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     const amountAsString = this.formatAmount(context, amountToken);
 
     try {
+      const networkId = context.baseNetworkId ?? context.networkId;
       const estimate = await multiNetworkEthereumService.estimateTokenTransferCost({
-        networkName: context.networkId,
+        networkName: networkId,
         token: context,
         to: recipientAddress as `0x${string}`,
         amount: amountAsString,
@@ -104,9 +106,10 @@ export class EvmGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     privateKey?: string
   ): Promise<GasTransferResult> {
     const amountAsString = this.formatAmount(context, amountToken);
+    const networkId = context.baseNetworkId ?? context.networkId;
 
     const transactionHash = await multiNetworkEthereumService.sendTokenTransfer({
-      networkName: context.networkId,
+      networkName: networkId,
       token: context,
       to: recipientAddress as `0x${string}`,
       amount: amountAsString,

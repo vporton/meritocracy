@@ -1,7 +1,4 @@
-# fly.toml app configuration file generated for socialism on 2025-09-15T23:12:20Z
-#
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
 
 app = 'meritocracy-staging'
 primary_region = 'ewr'

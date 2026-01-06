@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # TODO@P2: VITE_WALLETCONNECT_PROJECT_ID
-fly deploy -c deploy/fly.staging.toml \
+flyctl deploy -c deploy/fly.staging.toml \
     --build-arg VITE_FRONTEND_URL=https://meritocracy-staging.fly.dev \
     --build-arg VITE_API_URL=https://meritocracy-staging.fly.dev:445 \
     --build-arg VITE_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id \

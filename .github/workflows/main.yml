@@ -8,6 +8,7 @@ on:
   push:
     branches: [main]
 
+# FIXME@P1: https://chatgpt.com/share/695d5798-4788-8001-beb1-63d273f4dcd1
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest

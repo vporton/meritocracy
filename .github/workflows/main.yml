@@ -31,7 +31,7 @@ jobs:
         run: npm run build  # redundant, but need check that it builds
 
       - name: Build
-        run: (cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
+        run: (cd backend && DATABASE_URL="sqlite:///tmp/test.db" npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
 
       - run: flyctl deploy --remote-only
         env:

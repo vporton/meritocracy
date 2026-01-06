@@ -27,7 +27,7 @@ jobs:
       - name: Prisma code generator
         run: (cd backend && npx prisma generate)
 
-      - name: Build
+      - name: Test build
         run: npm run build  # redundant, but need check that it builds
 
       # TODO@P3: Error: P1003: Database `test.db` does not exist

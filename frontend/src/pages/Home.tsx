@@ -373,50 +373,6 @@ function Home() {
         </div>
       )}
 
-      {primaryNetworkAddress && (
-        <div className="card">
-          <h3>💖 Support This Project</h3>
-          <p>Help support the development of this open-source project by donating Ethereum or other gas token (ERC-20 is yet not supported):</p>
-          <div style={{
-            background: '#2a2a2a',
-            padding: '1rem',
-            borderRadius: '8px',
-            border: '1px solid #333',
-            margin: '1rem 0',
-            fontFamily: 'monospace',
-            fontSize: '0.9rem',
-            wordBreak: 'break-all',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1rem'
-          }}>
-            <span style={{ flex: 1, color: '#ffffff' }}>
-              {primaryNetworkAddress}
-            </span>
-            <button
-              onClick={() => copyToClipboard(primaryNetworkAddress)}
-              style={{
-                background: copySuccess ? '#4caf50' : '#646cff',
-                border: 'none',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                whiteSpace: 'nowrap',
-                transition: 'background-color 0.25s'
-              }}
-            >
-              {copySuccess ? '✓ Copied!' : '📋 Copy'}
-            </button>
-          </div>
-          <p style={{ fontSize: '0.9rem', color: '#888' }}>
-            This address accepts ETH and other gas tokens on all supported networks
-          </p>
-        </div>
-      )}
-
       {/* Onboarding Confirmation Dialog */}
       {showOnboardingConfirm && (
         <div style={{

@@ -18,8 +18,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
+      - name: Intall
+        run: |
+          npm install
+          npm run install-backend
+          npm run install-frontend
+
       - name: Build
-        run: npm build  # redundant, but need check that it builds
+        run: npm run build  # redundant, but need check that it builds
 
       - name: Build
         run: (cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.

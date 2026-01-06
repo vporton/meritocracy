@@ -24,12 +24,12 @@ interface PolkadotNetworkConfig {
 
 const readPolkadotConfig = (): PolkadotNetworkConfig => ({
   enabled: process.env.POLKADOT_ENABLED === 'true',
-  networkId: process.env.POLKADOT_NETWORK_ID ?? 'polkadot-mainnet',
-  networkName: process.env.POLKADOT_NETWORK_NAME ?? 'Polkadot Mainnet',
-  nativeSymbol: process.env.POLKADOT_NATIVE_SYMBOL ?? 'DOT',
-  nativeDecimals: Number(process.env.POLKADOT_NATIVE_DECIMALS ?? '10'),
+  networkId: 'polkadot-mainnet',
+  networkName: 'Polkadot Mainnet',
+  nativeSymbol: 'DOT',
+  nativeDecimals: 10,
   rpcUrl: process.env.POLKADOT_RPC_URL,
-  walletAddress: process.env.POLKADOT_WALLET_ADDRESS,
+  walletAddress: undefined,
   secretUri: process.env.POLKADOT_SECRET_URI
 });
 

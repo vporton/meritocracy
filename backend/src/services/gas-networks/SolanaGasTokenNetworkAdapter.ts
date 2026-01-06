@@ -23,12 +23,12 @@ interface SolanaNetworkConfig {
 
 const readSolanaConfig = (): SolanaNetworkConfig => ({
   enabled: process.env.SOLANA_ENABLED === 'true',
-  networkId: process.env.SOLANA_NETWORK_ID ?? 'solana-mainnet',
-  networkName: process.env.SOLANA_NETWORK_NAME ?? 'Solana Mainnet',
-  nativeSymbol: process.env.SOLANA_NATIVE_SYMBOL ?? 'SOL',
-  nativeDecimals: Number(process.env.SOLANA_NATIVE_DECIMALS ?? '9'),
+  networkId: 'solana-mainnet',
+  networkName: 'Solana Mainnet',
+  nativeSymbol: 'SOL',
+  nativeDecimals: 9,
   rpcUrl: process.env.SOLANA_RPC_URL,
-  walletAddress: process.env.SOLANA_WALLET_ADDRESS,
+  walletAddress: undefined,
   secretKeyBase58: process.env.SOLANA_SECRET_KEY_BASE58
 });
 

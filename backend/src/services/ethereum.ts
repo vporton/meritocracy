@@ -25,12 +25,13 @@ import '../db-secrets.js';
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 
+// TODO@P2: Remove this old code:
 // Load Ethereum configuration from secret file
 function loadEthereumConfig(): { privateKey?: string; mnemonic?: string; network: string; rpcUrl?: string } {
     return {
         privateKey: process.env.ETHEREUM_PRIVATE_KEY,
         mnemonic: process.env.ETHEREUM_MNEMONIC,
-        network: process.env.ETHEREUM_NETWORK || 'mainnet',
+        network: 'mainnet',
         rpcUrl: process.env.ETHEREUM_RPC_URL
     };
 }

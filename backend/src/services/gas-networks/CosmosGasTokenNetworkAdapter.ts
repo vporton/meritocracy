@@ -35,17 +35,17 @@ interface CosmosNetworkConfig {
 
 const readCosmosConfig = (): CosmosNetworkConfig => ({
   enabled: process.env.COSMOS_ENABLED === 'true',
-  networkId: process.env.COSMOS_NETWORK_ID ?? 'cosmoshub-mainnet',
-  networkName: process.env.COSMOS_NETWORK_NAME ?? 'Cosmos Hub',
-  nativeSymbol: process.env.COSMOS_NATIVE_SYMBOL ?? 'ATOM',
-  nativeDecimals: Number(process.env.COSMOS_NATIVE_DECIMALS ?? '6'),
-  denom: process.env.COSMOS_NATIVE_DENOM ?? 'uatom',
+  networkId: 'cosmoshub-mainnet',
+  networkName: 'Cosmos Hub',
+  nativeSymbol: 'ATOM',
+  nativeDecimals: 6,
+  denom: 'uatom',
   rpcUrl: process.env.COSMOS_RPC_URL,
-  mnemonic: process.env.COSMOS_MNEMONIC,
-  walletAddress: process.env.COSMOS_WALLET_ADDRESS,
+  mnemonic: undefined,
+  walletAddress: undefined,
   accountPrefix: 'cosmos',
-  gasPriceAmount: process.env.COSMOS_GAS_PRICE_AMOUNT ?? '0.025',
-  gasPriceDenom: process.env.COSMOS_GAS_PRICE_DENOM ?? 'uatom',
+  gasPriceAmount: '0.025',
+  gasPriceDenom: 'uatom',
   gasAdjustment: 1.3,
   defaultGasUnits: 120000
 });

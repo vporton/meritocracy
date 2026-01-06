@@ -22,8 +22,6 @@ npm install ethers
 2. Edit `ethereum-keys.secret` with your actual private key:
    ```
    ETHEREUM_PRIVATE_KEY=0xYOUR_ACTUAL_PRIVATE_KEY_HERE
-   ETHEREUM_NETWORK=mainnet
-   # ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
    ```
 
    **⚠️ SECURITY WARNING:** 

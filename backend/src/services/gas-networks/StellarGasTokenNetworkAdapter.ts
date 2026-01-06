@@ -33,9 +33,9 @@ const readStellarConfig = (): StellarNetworkConfig => {
 
   return {
     enabled: process.env.STELLAR_ENABLED === 'true',
-    networkId: process.env.STELLAR_NETWORK_ID ?? 'stellar-public',
-    networkName: process.env.STELLAR_NETWORK_NAME ?? 'Stellar Public Network',
-    nativeSymbol: process.env.STELLAR_NATIVE_SYMBOL ?? 'XLM',
+    networkId: 'stellar-public',
+    networkName: 'Stellar Public Network',
+    nativeSymbol: 'XLM',
     nativeDecimals: Number(process.env.STELLAR_NATIVE_DECIMALS ?? '7'),
     horizonUrl: process.env.STELLAR_HORIZON_URL,
     walletAddress: process.env.STELLAR_WALLET_ADDRESS,

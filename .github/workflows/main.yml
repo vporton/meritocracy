@@ -19,10 +19,10 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Build
-        run: (cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
+        run: npm build  # redundant, but need check that it builds
 
       - name: Build
-        run: npm build  # redundant, but need check that it builds
+        run: (cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
 
       - run: flyctl deploy --remote-only
         env:

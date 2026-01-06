@@ -27,7 +27,7 @@ interface StellarNetworkConfig {
 }
 
 const readStellarConfig = (): StellarNetworkConfig => {
-  const rawBaseFee = Number(process.env.STELLAR_BASE_FEE_STROOPS ?? '100');
+  const rawBaseFee = 100;
   const baseFeeStroops =
     Number.isFinite(rawBaseFee) && rawBaseFee > 0 ? Math.floor(rawBaseFee) : 100;
 
@@ -36,10 +36,10 @@ const readStellarConfig = (): StellarNetworkConfig => {
     networkId: 'stellar-public',
     networkName: 'Stellar Public Network',
     nativeSymbol: 'XLM',
-    nativeDecimals: Number(process.env.STELLAR_NATIVE_DECIMALS ?? '7'),
+    nativeDecimals: 7,
     horizonUrl: process.env.STELLAR_HORIZON_URL,
-    walletAddress: process.env.STELLAR_WALLET_ADDRESS,
-    secretKey: process.env.STELLAR_SECRET_KEY,
+    walletAddress: undefined,
+    secretKey: undefined,
     networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.PUBLIC,
     baseFeeStroops
   };

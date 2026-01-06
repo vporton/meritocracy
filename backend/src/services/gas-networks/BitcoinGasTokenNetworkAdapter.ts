@@ -33,9 +33,9 @@ interface BitcoinNetworkConfig {
 
 const readBitcoinConfig = (): BitcoinNetworkConfig => ({
   enabled: process.env.BITCOIN_ENABLED === 'true',
-  networkId: process.env.BITCOIN_NETWORK_ID ?? 'bitcoin-mainnet',
-  networkName: process.env.BITCOIN_NETWORK_NAME ?? 'Bitcoin Mainnet',
-  nativeSymbol: process.env.BITCOIN_NATIVE_SYMBOL ?? 'BTC',
+  networkId: 'bitcoin-mainnet',
+  networkName: 'Bitcoin Mainnet',
+  nativeSymbol: 'BTC',
   nativeDecimals: 8,
   walletAddress: process.env.BITCOIN_WALLET_ADDRESS,
   rpcUrl: process.env.BITCOIN_RPC_URL,

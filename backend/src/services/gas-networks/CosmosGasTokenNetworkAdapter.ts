@@ -43,11 +43,11 @@ const readCosmosConfig = (): CosmosNetworkConfig => ({
   rpcUrl: process.env.COSMOS_RPC_URL,
   mnemonic: process.env.COSMOS_MNEMONIC,
   walletAddress: process.env.COSMOS_WALLET_ADDRESS,
-  accountPrefix: process.env.COSMOS_ACCOUNT_PREFIX ?? 'cosmos',
+  accountPrefix: 'cosmos',
   gasPriceAmount: process.env.COSMOS_GAS_PRICE_AMOUNT ?? '0.025',
   gasPriceDenom: process.env.COSMOS_GAS_PRICE_DENOM ?? 'uatom',
-  gasAdjustment: Number(process.env.COSMOS_GAS_ADJUSTMENT ?? '1.2'),
-  defaultGasUnits: Number(process.env.COSMOS_DEFAULT_GAS_UNITS ?? '120000')
+  gasAdjustment: 1.3,
+  defaultGasUnits: 120000
 });
 
 export class CosmosGasTokenNetworkAdapter implements GasTokenNetworkAdapter {

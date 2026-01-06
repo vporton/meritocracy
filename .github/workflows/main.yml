@@ -1,0 +1,26 @@
+# https://chatgpt.com/share/695d0a21-5718-8001-a9ad-20ef8f8e09d1
+
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    container:
+      image: vporton/fly 
+    environment: staging  # CRITICAL
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: (cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
+
+      - name: Build
+        run: npm build  # redundant, but need check that it builds
+
+      - name: Deploy to staging
+        run: ./deploy/deploy-staging.sh

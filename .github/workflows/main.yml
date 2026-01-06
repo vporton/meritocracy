@@ -1,3 +1,5 @@
+# See:
+# https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/
 # https://chatgpt.com/share/695d0a21-5718-8001-a9ad-20ef8f8e09d1
 
 name: Deploy to Staging
@@ -9,18 +11,23 @@ on:
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
-    container:
-      image: vporton/fly 
+    concurrency: deploy-group    # optional: ensure only one action runs at a time
     environment: staging  # CRITICAL
 
     steps:
       - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Build
         run: (cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
 
       - name: Build
         run: npm build  # redundant, but need check that it builds
+
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.STAGING_DEPLOY_TOKEN }}
+      - uses: actions/checkout@v4
 
       - name: Deploy to staging
         run: ./deploy/deploy-staging.sh

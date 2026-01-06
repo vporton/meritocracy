@@ -1,5 +1,5 @@
 {
-  "name": "socialism-app",
+  "name": "meritocracy-app",
   "workspaces": [
     "backend",
     "frontend"

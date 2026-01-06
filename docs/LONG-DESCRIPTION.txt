@@ -16,12 +16,12 @@ It is protected against prompt injections by several means: randomizing proofs, 
 
 Calls to the AI are implemented through storing AI and other tasks in a DB, as a graph of interconnected tasks. It can use the usual (non-batch) OpenAI API calls or (still untested) batch calls (50% cheaper) of OpenAI API.
 
-https://science-dao.org/ai-internet-socialism/ -  product homepage.
+https://science-dao.org/ai-internet-meritocracy/ -  product homepage.
 
-https://science-dao.org/a-new-economic-formation-ai-internet-socialism/ - the initial whitepaper.
+https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ - the initial whitepaper.
 
 https://youtu.be/h21sKeHMHLI - demo video.
 
 https://science-dao.org/product-status/ - the status of the product (the diagram became outdated, because security review shows that certain simple changes are needed).
 
-https://science-dao.org/category/ai-internet-socialism/ - blog posts.
+https://science-dao.org/category/ai-internet-meritocracy/ - blog posts.

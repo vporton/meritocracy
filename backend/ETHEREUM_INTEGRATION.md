@@ -1,6 +1,6 @@
 # Ethereum Integration
 
-This document explains how to use the Ethereum integration in the socialism backend API.
+This document explains how to use the Ethereum integration in the meritocracy backend API.
 
 ## Setup
 

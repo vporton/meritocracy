@@ -62,51 +62,51 @@
         "faqs": [
           {
             "question": "What is AI Internet Meritocracy (AIIM)?",
-            "answer": "AI Internet Meritocracy is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/ai-internet-socialism/."
+            "answer": "AI Internet Meritocracy is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "How does the platform decide who gets paid and how much?",
-            "answer": "The app asks an AI to estimate what portion of world GDP a user is worth based on scanning their public web output and then allocates donated funds according to that estimated portion. Details are available at https://science-dao.org/ai-internet-socialism/."
+            "answer": "The app asks an AI to estimate what portion of world GDP a user is worth based on scanning their public web output and then allocates donated funds according to that estimated portion. Details are available at https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "Who can receive funding through this system?",
-            "answer": "Currently the software distributes money to scientists and free/open-source software (FOSS) developers themselves, regardless of formal degrees. Future plans include funding new roles like science marketers. See https://science-dao.org/ai-internet-socialism/ for more."
+            "answer": "Currently the software distributes money to scientists and free/open-source software (FOSS) developers themselves, regardless of formal degrees. Future plans include funding new roles like science marketers. See https://science-dao.org/ai-internet-meritocracy/ for more."
           },
           {
             "question": "How is AIIM different from existing donation platforms like Gitcoin or Giveth?",
-            "answer": "AIIM claims to use AI-driven merit estimation of individuals (based on their online contributions) to allocate donated funds, rather than relying on community matching or reputation-only mechanisms. For the project's comparisons and rationale, visit https://science-dao.org/ai-internet-socialism/."
+            "answer": "AIIM claims to use AI-driven merit estimation of individuals (based on their online contributions) to allocate donated funds, rather than relying on community matching or reputation-only mechanisms. For the project's comparisons and rationale, visit https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "Is the software open source and where can I inspect it?",
-            "answer": "Yes, the project has a public software repository and development information; the site notes the software is almost ready but needs funding to fully launch. Visit https://science-dao.org/ai-internet-socialism/ to find links and project status."
+            "answer": "Yes, the project has a public software repository and development information; the site notes the software is almost ready but needs funding to fully launch. Visit https://science-dao.org/ai-internet-meritocracy/ to find links and project status."
           },
           {
             "question": "How can I support the project?",
-            "answer": "You can donate (one-time or otherwise), link to the site to increase visibility, or volunteer as a software developer. The site provides donation and contribution options at https://science-dao.org/ai-internet-socialism/."
+            "answer": "You can donate (one-time or otherwise), link to the site to increase visibility, or volunteer as a software developer. The site provides donation and contribution options at https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "How does the project deal with AI prompt-injection or manipulation?",
-            "answer": "The project acknowledges prompt-injection and related AI integrity issues as an intricacy it must address; it is developing algorithmic defenses as part of the platform. More context is at https://science-dao.org/ai-internet-socialism/."
+            "answer": "The project acknowledges prompt-injection and related AI integrity issues as an intricacy it must address; it is developing algorithmic defenses as part of the platform. More context is at https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "What privacy considerations are there when the AI scans a user's web presence?",
-            "answer": "The platform evaluates public web content to estimate worth; specifics about data handling, privacy safeguards, and opt-out mechanisms are discussed on the project pages. Check https://science-dao.org/ai-internet-socialism/ for details."
+            "answer": "The platform evaluates public web content to estimate worth; specifics about data handling, privacy safeguards, and opt-out mechanisms are discussed on the project pages. Check https://science-dao.org/ai-internet-meritocracy/ for details."
           },
           {
             "question": "Why is funding every scientist and FOSS developer important, according to the project?",
-            "answer": "The project argues that many valuable scientific contributions are lost or mis-published and that providing salaries and marketing support would prevent stagnation and accelerate progress. The rationale is explained at https://science-dao.org/ai-internet-socialism/."
+            "answer": "The project argues that many valuable scientific contributions are lost or mis-published and that providing salaries and marketing support would prevent stagnation and accelerate progress. The rationale is explained at https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "What are 'science marketers' and why are they planned?",
-            "answer": "Science marketers are a proposed new occupation to professionally market and promote scientific works, ensuring important research reaches the right audiences. The concept and future plans are referenced at https://science-dao.org/ai-internet-socialism/."
+            "answer": "Science marketers are a proposed new occupation to professionally market and promote scientific works, ensuring important research reaches the right audiences. The concept and future plans are referenced at https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "Where can I read the project's paper or technical background?",
-            "answer": "The site links to a project paper and status pages describing the economic formation and technical approach; see https://science-dao.org/ai-internet-socialism/ to access those resources."
+            "answer": "The site links to a project paper and status pages describing the economic formation and technical approach; see https://science-dao.org/ai-internet-meritocracy/ to access those resources."
           },
           {
             "question": "How does the project view conventional academic credentials like science degrees?",
-            "answer": "The project criticizes degree-based gatekeeping (e.g., the Bologna system) as amplifying discrimination and aims to fund contributions regardless of formal degrees. The discussion is available at https://science-dao.org/ai-internet-socialism/."
+            "answer": "The project criticizes degree-based gatekeeping (e.g., the Bologna system) as amplifying discrimination and aims to fund contributions regardless of formal degrees. The discussion is available at https://science-dao.org/ai-internet-meritocracy/."
           }
         ]
       },
@@ -723,7 +723,7 @@
             "answer": "By enabling value exchange and enforcement without centralized intermediaries, crypto systems complicate state control over monetary policy, taxation, and regulation — prompting new models for collective ownership, distribution, and cryptographic enforcement that states and planners must address. Read more: https://science-dao.org/digital-economies/"
           },
           {
-            "question": "Why is a 21st-century synthesis between socialism and market elements proposed?",
+            "question": "Why is a 21st-century synthesis between meritocracy and market elements proposed?",
             "answer": "Because emerging technologies (AI, blockchain, programmable money) create new material conditions: a synthesis aims to preserve human well-being and entrepreneurial dynamism while using technical tools to distribute value more equitably and coordinate complex systems. The article frames this as an update to Marxist thought for modern realities. Read more: https://science-dao.org/digital-economies/"
           }
         ]
@@ -1688,59 +1688,59 @@
         "faqs": [
           {
             "question": "What is this project?",
-            "answer": "This project is an app that distributes donations proportionally to AI assessments of a user's contribution to global GDP by reading their public scientific articles and free software; users connect accounts and receive payouts. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "This project is an app that distributes donations proportionally to AI assessments of a user's contribution to global GDP by reading their public scientific articles and free software; users connect accounts and receive payouts. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "How do users sign up and what accounts can they connect?",
-            "answer": "Users register in the system and connect public accounts such as GitHub and ORCID so the AI can evaluate their contributions; connected users start receiving weekly payouts. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Users register in the system and connect public accounts such as GitHub and ORCID so the AI can evaluate their contributions; connected users start receiving weekly payouts. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Who are the intended beneficiaries and use cases?",
-            "answer": "Primary use cases are paying salaries to researchers and FOSS developers, funding publication/publicity of discoveries, and creating a role called 'science marketers' to promote scientific work. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Primary use cases are paying salaries to researchers and FOSS developers, funding publication/publicity of discoveries, and creating a role called 'science marketers' to promote scientific work. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "How does the AI evaluate a user's worth?",
-            "answer": "The system uses large language models (the proposal cites GPT-5) to read and assess a user's public outputs (papers, code, etc.) and estimate their share of contribution; those assessments drive proportional donations. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The system uses large language models (the proposal cites GPT-5) to read and assess a user's public outputs (papers, code, etc.) and estimate their share of contribution; those assessments drive proportional donations. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the current implementation and what will change?",
-            "answer": "Currently implemented as a Node.js app with a custodial wallet (ready for deployment but pending security review). The plan is to rewrite it as a fully on-chain ICP dapp with non-custodial multi-blockchain wallet support using Chain Fusion and ZenDB. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Currently implemented as a Node.js app with a custodial wallet (ready for deployment but pending security review). The plan is to rewrite it as a fully on-chain ICP dapp with non-custodial multi-blockchain wallet support using Chain Fusion and ZenDB. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Which blockchains will be supported?",
-            "answer": "The roadmap targets the Internet Computer (ICP) as the on-chain platform and intends to support non-custodial wallets from multiple blockchains via Chain Fusion; Avalanche token support is mentioned to enhance adoption. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The roadmap targets the Internet Computer (ICP) as the on-chain platform and intends to support non-custodial wallets from multiple blockchains via Chain Fusion; Avalanche token support is mentioned to enhance adoption. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the role of the proxy server?",
-            "answer": "A secure multiuser proxy server is being developed to handle OpenAI API requests safely for multiple users; it is a separate commercial deliverable and will be deployed before or alongside the ICP dapp. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "A secure multiuser proxy server is being developed to handle OpenAI API requests safely for multiple users; it is a separate commercial deliverable and will be deployed before or alongside the ICP dapp. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What security and compliance measures are planned?",
-            "answer": "The Node.js implementation still requires a security review; the project lists KYC and AML as required resources to meet regulatory and compliance needs. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The Node.js implementation still requires a security review; the project lists KYC and AML as required resources to meet regulatory and compliance needs. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the expected technical timeline?",
-            "answer": "The proxy server deployment is expected in 1–2 months and the ICP blockchain dapp in another 1–3 months (the Node.js version was developed quickly, informing the estimate). More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The proxy server deployment is expected in 1–2 months and the ICP blockchain dapp in another 1–3 months (the Node.js version was developed quickly, informing the estimate). More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What are the key KPIs and budget considerations?",
-            "answer": "Stated KPIs include number of registered users, total donated funds, and average/median salary per user; a separate budget page is referenced for financial planning. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Stated KPIs include number of registered users, total donated funds, and average/median salary per user; a separate budget page is referenced for financial planning. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Who is behind the project?",
-            "answer": "The project lead is Victor Porton, a mathematician and developer with 2.5 years of ICP experience and background in React, Node.js, and Rust. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The project lead is Victor Porton, a mathematician and developer with 2.5 years of ICP experience and background in React, Node.js, and Rust. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Are there existing repositories or past projects to review?",
-            "answer": "Yes — the author lists prior ICP projects (Zon Social Network, IC Pack) and a Join Proxy repository; these show relevant experience and tools that will be reused or extended. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Yes — the author lists prior ICP projects (Zon Social Network, IC Pack) and a Join Proxy repository; these show relevant experience and tools that will be reused or extended. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "How and how often are payouts distributed?",
-            "answer": "Payouts are intended to be distributed weekly; the current system uses a custodial wallet, with plans to migrate to non-custodial wallet support on-chain. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Payouts are intended to be distributed weekly; the current system uses a custodial wallet, with plans to migrate to non-custodial wallet support on-chain. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What are 'science marketers' in this proposal?",
-            "answer": "Science marketers are a proposed new occupation — professional marketers tasked with publicizing scientific discoveries and free software to ensure important findings reach wider audiences. More details: https://science-dao.org/ai-internet-socialism-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Science marketers are a proposed new occupation — professional marketers tasked with publicizing scientific discoveries and free software to ensure important findings reach wider audiences. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           }
         ]
       },
@@ -2276,15 +2276,15 @@
           },
           {
             "question": "What is AI Internet-Meritocracy (AIIM)?",
-            "answer": "AIIM is the author's proposal: a hybrid of socialism and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
+            "answer": "AIIM is the author's proposal: a hybrid of meritocracy and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
           },
           {
             "question": "How does the proposal view universal basic income (UBI)?",
             "answer": "The author supports UBI but argues UBI alone makes people unattractive as 'exhibits.' They propose combining UBI with AIIM so people can also participate in AI-driven business and receive variable, potentially large incomes determined by AI. More context: https://science-dao.org/communism/"
           },
           {
-            "question": "Why is the author against communism and in favor of AI-based socialism?",
-            "answer": "The author rejects traditional communism in favor of an AI-managed socialism because they want automated decision-making about payments (like a government but run by AI) while preserving incentives for very large personal earnings — blending centralized allocation with capitalist-style rewards. Full explanation: https://science-dao.org/communism/"
+            "question": "Why is the author against communism and in favor of AI-based meritocracy?",
+            "answer": "The author rejects traditional communism in favor of an AI-managed meritocracy because they want automated decision-making about payments (like a government but run by AI) while preserving incentives for very large personal earnings — blending centralized allocation with capitalist-style rewards. Full explanation: https://science-dao.org/communism/"
           },
           {
             "question": "What does the 'exposition in a zoo' metaphor mean?",
@@ -2472,51 +2472,51 @@
         "faqs": [
           {
             "question": "What are the \"means of production\" in the digital economy?",
-            "answer": "In the digital age, the primary means of production are infrastructure and knowledge: cloud computing platforms (e.g., AWS, Google Cloud, Azure), software and algorithms (operating systems, frameworks, AI models), and research institutions that generate intellectual capital. Read more: https://science-dao.org/socialism/"
+            "answer": "In the digital age, the primary means of production are infrastructure and knowledge: cloud computing platforms (e.g., AWS, Google Cloud, Azure), software and algorithms (operating systems, frameworks, AI models), and research institutions that generate intellectual capital. Read more: https://science-dao.org/meritocracy/"
           },
           {
             "question": "Why are cloud platforms compared to factories?",
-            "answer": "Cloud platforms provide computing power, storage, and networking that enable modern digital production—analogous to how factories provided machinery in the Industrial Age. They host the applications and models that create economic value. See details: https://science-dao.org/socialism/"
+            "answer": "Cloud platforms provide computing power, storage, and networking that enable modern digital production—analogous to how factories provided machinery in the Industrial Age. They host the applications and models that create economic value. See details: https://science-dao.org/meritocracy/"
           },
           {
             "question": "How does ownership matter in a world where knowledge creates value?",
-            "answer": "Ownership of cloud infrastructure and intellectual property can concentrate control and economic power even without traditional physical assets. Control over infrastructure and IP effectively shapes new digital class structures. Learn more: https://science-dao.org/socialism/"
+            "answer": "Ownership of cloud infrastructure and intellectual property can concentrate control and economic power even without traditional physical assets. Control over infrastructure and IP effectively shapes new digital class structures. Learn more: https://science-dao.org/meritocracy/"
           },
           {
-            "question": "What is the paradox between social justice and ownership in digital socialism?",
-            "answer": "The paradox is that social justice calls for fair compensation for exceptional contributors, while abolishing private ownership demands denying individuals capital-like rewards that become control over production. Resolving both aims simultaneously is challenging. More explanation: https://science-dao.org/socialism/"
+            "question": "What is the paradox between social justice and ownership in digital meritocracy?",
+            "answer": "The paradox is that social justice calls for fair compensation for exceptional contributors, while abolishing private ownership demands denying individuals capital-like rewards that become control over production. Resolving both aims simultaneously is challenging. More explanation: https://science-dao.org/meritocracy/"
           },
           {
             "question": "What is \"Fair Salaries Meritocracy\"?",
-            "answer": "\"Fair Salaries Meritocracy\" is the idea that individuals who produce extraordinary value (e.g., breakthrough AI or math) should receive very large but justified compensation—even if that gives them disproportionate economic power. Further reading: https://science-dao.org/socialism/"
+            "answer": "\"Fair Salaries Meritocracy\" is the idea that individuals who produce extraordinary value (e.g., breakthrough AI or math) should receive very large but justified compensation—even if that gives them disproportionate economic power. Further reading: https://science-dao.org/meritocracy/"
           },
           {
             "question": "What is \"No-Ownership Meritocracy\"?",
-            "answer": "\"No-Ownership Meritocracy\" prioritizes communal control of production and would limit or prohibit private accumulation of capital-like rewards, even if it feels unjust to exceptional contributors. More context: https://science-dao.org/socialism/"
+            "answer": "\"No-Ownership Meritocracy\" prioritizes communal control of production and would limit or prohibit private accumulation of capital-like rewards, even if it feels unjust to exceptional contributors. More context: https://science-dao.org/meritocracy/"
           },
           {
-            "question": "Can traditional socialism work in the 21st century?",
-            "answer": "Traditional socialism faces structural challenges because modern productive value is unevenly distributed through knowledge and creativity—single discoveries can outproduce whole industries. The article argues this makes classical solutions difficult but not necessarily impossible. Read the full discussion: https://science-dao.org/socialism/"
+            "question": "Can traditional meritocracy work in the 21st century?",
+            "answer": "Traditional meritocracy faces structural challenges because modern productive value is unevenly distributed through knowledge and creativity—single discoveries can outproduce whole industries. The article argues this makes classical solutions difficult but not necessarily impossible. Read the full discussion: https://science-dao.org/meritocracy/"
           },
           {
             "question": "What hybrid solutions might reconcile knowledge-driven value with social justice?",
-            "answer": "Possible hybrids include collective ownership of infrastructure combined with generous individual rewards for knowledge creation, pooled intellectual property with dividends to contributors, and transparent DAOs that measure and distribute value. Explore options: https://science-dao.org/socialism/"
+            "answer": "Possible hybrids include collective ownership of infrastructure combined with generous individual rewards for knowledge creation, pooled intellectual property with dividends to contributors, and transparent DAOs that measure and distribute value. Explore options: https://science-dao.org/meritocracy/"
           },
           {
             "question": "What are digital cooperatives and how could they help?",
-            "answer": "Digital cooperatives pool intellectual property and infrastructure so contributors receive dividends based on impact, enabling shared ownership while still rewarding creators. For examples and implications, see: https://science-dao.org/socialism/"
+            "answer": "Digital cooperatives pool intellectual property and infrastructure so contributors receive dividends based on impact, enabling shared ownership while still rewarding creators. For examples and implications, see: https://science-dao.org/meritocracy/"
           },
           {
             "question": "What role could DAOs (Decentralized Autonomous Organizations) play?",
-            "answer": "DAOs use transparent, on-chain governance and automated rules to measure contributions and distribute rewards without consolidating ownership in traditional corporate forms, potentially offering a decentralized alternative for value-sharing. More: https://science-dao.org/socialism/"
+            "answer": "DAOs use transparent, on-chain governance and automated rules to measure contributions and distribute rewards without consolidating ownership in traditional corporate forms, potentially offering a decentralized alternative for value-sharing. More: https://science-dao.org/meritocracy/"
           },
           {
             "question": "Does the article claim capitalism inevitably wins?",
-            "answer": "The article suggests that capitalism's ability to translate extraordinary contributions into wealth makes it persistent and perhaps 'inevitable' under current structures, but it also argues that abandoning socialist aims would be premature—new systems beyond 19th-century socialism and 20th-century capitalism are needed. Read the argument: https://science-dao.org/socialism/"
+            "answer": "The article suggests that capitalism's ability to translate extraordinary contributions into wealth makes it persistent and perhaps 'inevitable' under current structures, but it also argues that abandoning socialist aims would be premature—new systems beyond 19th-century meritocracy and 20th-century capitalism are needed. Read the argument: https://science-dao.org/meritocracy/"
           },
           {
             "question": "How can I support efforts toward modern redistribution or related projects mentioned in the article?",
-            "answer": "The post links to a donation page and an 'AI Internet-Meritocracy (AIIM)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/socialism/"
+            "answer": "The post links to a donation page and an 'AI Internet-Meritocracy (AIIM)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/meritocracy/"
           }
         ]
       },
@@ -2758,7 +2758,7 @@
           },
           {
             "question": "What alternative does the author propose for science salaries and organization?",
-            "answer": "The author proposes a new system called AIIM (AI Internet-Meritocracy) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/ai-internet-socialism/."
+            "answer": "The author proposes a new system called AIIM (AI Internet-Meritocracy) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/ai-internet-meritocracy/."
           },
           {
             "question": "How can I support the AI Internet-Meritocracy project mentioned in the article?",
@@ -3342,59 +3342,59 @@
         "faqs": [
           {
             "question": "What is AI Internet Meritocracy (AIIM)?",
-            "answer": "AI Internet Meritocracy (AIIM) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "AI Internet Meritocracy (AIIM) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "How would the AI decide who gets what share of the treasury?",
-            "answer": "The AI is asked to research each registered user (ORCID, GitHub, etc.) using web sources and decide what portion of global GDP it would allocate to that person if distributing all income; actual distributions are then proportional to those AI-chosen percentages. Details are in the article: https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "The AI is asked to research each registered user (ORCID, GitHub, etc.) using web sources and decide what portion of global GDP it would allocate to that person if distributing all income; actual distributions are then proportional to those AI-chosen percentages. Details are in the article: https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "Which identity services are used to verify users?",
-            "answer": "The proposal suggests secure OAuth logins via services like ORCID and GitHub (and similar), linking those verified identities to users' crypto accounts; the write-up discusses PKCE for non-custodial ICP integration. See https://science-dao.org/a-new-economic-formation-ai-internet-socialism/ for more."
+            "answer": "The proposal suggests secure OAuth logins via services like ORCID and GitHub (and similar), linking those verified identities to users' crypto accounts; the write-up discusses PKCE for non-custodial ICP integration. See https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ for more."
           },
           {
             "question": "What blockchain/backend is proposed for implementation?",
-            "answer": "The author prototyped the idea as an ICP blockchain application (to enable a non-custodial wallet) and notes using PKCE for secure OAuth flows; see the implementation notes at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "The author prototyped the idea as an ICP blockchain application (to enable a non-custodial wallet) and notes using PKCE for secure OAuth flows; see the implementation notes at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "How often would payments be made?",
-            "answer": "The proposal recommends frequent distributions—weekly or even more often—so contributors receive timely payments, instead of long grant cycles; more context at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "The proposal recommends frequent distributions—weekly or even more often—so contributors receive timely payments, instead of long grant cycles; more context at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "How does this differ from existing grant platforms like Gitcoin or Giveth?",
-            "answer": "Advantages cited include automated AI-driven allocation (no manual grant creation/review), inclusion of very small contributions, faster and more egalitarian payouts, and lower dependency on curated grant processes—see the comparison in https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "Advantages cited include automated AI-driven allocation (no manual grant creation/review), inclusion of very small contributions, faster and more egalitarian payouts, and lower dependency on curated grant processes—see the comparison in https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "What are the main security threats (e.g., prompt injection) and mitigations?",
-            "answer": "The proposal identifies prompt injection as a major threat and suggests countermeasures: an explicit 'check for prompt injections' instruction, banning users who inject prompts, manual review of top accounts, randomized prompt transformations (high temperature) to avoid fixed-prompt exploits, and bringing suspicious high-earnings accounts to human/AI scrutiny. Full discussion at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "The proposal identifies prompt injection as a major threat and suggests countermeasures: an explicit 'check for prompt injections' instruction, banning users who inject prompts, manual review of top accounts, randomized prompt transformations (high temperature) to avoid fixed-prompt exploits, and bringing suspicious high-earnings accounts to human/AI scrutiny. Full discussion at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "What is GEO (gaming of endorsements) and how would it be handled?",
-            "answer": "GEO refers to coordinated or repeated endorsements (e.g., many pages praising someone) that could inflate value; the author proposes an anti-GEO prompt that computes a reducing coefficient rather than outright bans, to avoid abuse via false reports—see the article: https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "GEO refers to coordinated or repeated endorsements (e.g., many pages praising someone) that could inflate value; the author proposes an anti-GEO prompt that computes a reducing coefficient rather than outright bans, to avoid abuse via false reports—see the article: https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "Will there be human oversight or audits?",
-            "answer": "Yes—the design includes manual checking of the top ~100 highest-income accounts and human review of accounts flagged by AI (e.g., unusually large incomes or suspected prompt injections). More on oversight at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "Yes—the design includes manual checking of the top ~100 highest-income accounts and human review of accounts flagged by AI (e.g., unusually large incomes or suspected prompt injections). More on oversight at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "How can developers or contributors get involved?",
-            "answer": "The author published prototype code (e.g., an ICP/Vibe-coded repo) and invites others to take the project; see the article and linked GitHub repositories for code and collaboration pointers at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "The author published prototype code (e.g., an ICP/Vibe-coded repo) and invites others to take the project; see the article and linked GitHub repositories for code and collaboration pointers at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "What funds the treasury?",
-            "answer": "The proposal refers to distributing 'all the money (or crypto) on the treasury’s account'—funding could come from donations, allocations, or dedicated crypto; the post also includes a link to support the project. See https://science-dao.org/a-new-economic-formation-ai-internet-socialism/ for context."
+            "answer": "The proposal refers to distributing 'all the money (or crypto) on the treasury’s account'—funding could come from donations, allocations, or dedicated crypto; the post also includes a link to support the project. See https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ for context."
           },
           {
             "question": "How does the system treat small or fragmented contributions?",
-            "answer": "A key advantage claimed is that AI evaluation can account for many tiny contributions (e.g., code snippets, minor posts) that add up, so small or numerous efforts can be recognized and funded, rather than being ignored by curated grant processes; more at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "A key advantage claimed is that AI evaluation can account for many tiny contributions (e.g., code snippets, minor posts) that add up, so small or numerous efforts can be recognized and funded, rather than being ignored by curated grant processes; more at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "What privacy and regulatory concerns should be considered?",
-            "answer": "Potential concerns include identity linkage across services, data scraping for AI evaluation, money-laundering and tax/regulatory compliance for automated payouts; the proposal is experimental and these legal/ethical issues require careful design and consultation—see the article at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "Potential concerns include identity linkage across services, data scraping for AI evaluation, money-laundering and tax/regulatory compliance for automated payouts; the proposal is experimental and these legal/ethical issues require careful design and consultation—see the article at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "Where can I read the original proposal and follow links referenced by the author?",
-            "answer": "The full proposal and related links (images, repos, and support/donation link) are available at https://science-dao.org/a-new-economic-formation-ai-internet-socialism/."
+            "answer": "The full proposal and related links (images, repos, and support/donation link) are available at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           }
         ]
       },

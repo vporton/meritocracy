@@ -8,7 +8,7 @@ See [the site](https://science-dao.org/meritocracy/) for more information.
 
 The app decides how much to pay each employee (registered user) simply by asking an AI (not by, for example, quadratic voting of users).
 
-Actually, this "socialism" is quite capitalistic, as it hinted to me (the author of the app) that I am probably worth ~$1B/year.
+Actually, this "meritocracy" is quite capitalistic, as it hinted to me (the author of the app) that I am probably worth ~$1B/year.
 
 It is a full-stack application built with Node.js, React, and Prisma ORM.
 
@@ -42,7 +42,7 @@ The automated distribution service currently supports native gas tokens on:
 ## 📁 Project Structure
 
 ```
-socialism/
+meritocracy/
 ├── backend/                 # Node.js API server
 │   ├── src/
 │   │   ├── index.js        # Express server setup
@@ -72,8 +72,8 @@ socialism/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/vporton/socialism.git
-cd socialism
+git clone https://github.com/vporton/meritocracy.git
+cd meritocracy
 ```
 
 ### 2. Install Dependencies
@@ -109,7 +109,7 @@ FRONTEND_URL=http://localhost:5173
 
 **PostgreSQL:**
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/socialism?schema=public"
+DATABASE_URL="postgresql://username:password@localhost:5432/meritocracy?schema=public"
 PORT=3001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
@@ -117,7 +117,7 @@ FRONTEND_URL=http://localhost:5173
 
 **MySQL:**
 ```env
-DATABASE_URL="mysql://username:password@localhost:3306/socialism"
+DATABASE_URL="mysql://username:password@localhost:3306/meritocracy"
 PORT=3001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173

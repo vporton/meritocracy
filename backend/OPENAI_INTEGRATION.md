@@ -1,6 +1,6 @@
 # OpenAI Integration
 
-This document describes how to use the OpenAI integration in the socialism backend.
+This document describes how to use the OpenAI integration in the meritocracy backend.
 
 ## Setup
 

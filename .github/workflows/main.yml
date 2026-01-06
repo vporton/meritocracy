@@ -30,9 +30,8 @@ jobs:
       - name: Test build
         run: npm run build  # redundant, but need check that it builds
 
-      # TODO@P3: Error: P1003: Database `test.db` does not exist
-      # - name: Check DB format integrity
-      #   run: (cd backend && DATABASE_URL="file:///tmp/test.db" npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
+      - name: Check DB format integrity
+        run: (export DATABASE_URL="file:///tmp/test.db" && npm run db:reset && cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
 
       - name: Deploy to staging
         env:

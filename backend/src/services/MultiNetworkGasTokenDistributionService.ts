@@ -521,7 +521,9 @@ export class MultiNetworkGasTokenDistributionService {
           console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
 
           if (user?.email) {
-            await emailService.sendKycRequestEmail(user.email, user.name || undefined);
+            const token = emailService.generateKycToken();
+            await emailService.storeKycToken(token, user.id);
+            await emailService.sendKycRequestEmail(user.email, token, user.name || undefined);
           }
 
           remainingAmount = Math.max(0, remainingAmount - dist.amountToken);

@@ -1494,6 +1494,19 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       updateData.kycRejectedAt = null;
       updateData.kycRejectionReason = null;
 
+      // Mark any unused KYC tokens for this user as used
+      try {
+        await (prisma as any).kycToken.updateMany({
+          where: {
+            userId: user.id,
+            used: false
+          },
+          data: { used: true }
+        });
+      } catch (tokenError) {
+        console.error('Failed to mark KYC tokens as used for user:', user.id, tokenError);
+      }
+
       // Store additional verification data if available
       if (decision && decision.id_verification) {
         const idData = decision.id_verification;
@@ -1623,6 +1636,13 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
 // KYC initiation endpoint
 router.post('/kyc/initiate', async (req, res): Promise<void> => {
   try {
+    const { kycToken } = req.body;
+
+    if (!kycToken) {
+      res.status(400).json({ error: 'KYC token is required to initiate the process' });
+      return;
+    }
+
     let session;
     let user;
 
@@ -1642,34 +1662,17 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       }
 
       user = session.user;
+
+      // Validate the KYC token
+      const verificationResult = await EmailService.verifyKycToken(kycToken, user.id);
+      if (!verificationResult.success) {
+        res.status(403).json({ error: verificationResult.error });
+        return;
+      }
     } else {
-      // User is not authenticated, create a temporary user and session for KYC
-      user = await prisma.user.create({
-        data: {
-          // Create a minimal user record for KYC
-          name: 'KYC User',
-          email: null,
-          ethereumAddress: null,
-          orcidId: null,
-          githubHandle: null,
-          bitbucketHandle: null,
-          gitlabHandle: null,
-          onboarded: false,
-          kycStatus: 'PENDING'
-        } as any
-      });
-
-      // Create a session for this temporary user with extended expiration for KYC
-      session = await createSession(user.id);
-
-      // Extend session expiration for KYC process (30 days instead of 7)
-      const extendedExpiresAt = new Date();
-      extendedExpiresAt.setDate(extendedExpiresAt.getDate() + 30);
-
-      session = await prisma.session.update({
-        where: { id: session.id },
-        data: { expiresAt: extendedExpiresAt }
-      });
+      // Unauthenticated KYC initiation is no longer allowed because a user must have received an email first
+      res.status(401).json({ error: 'Authentication is required to initiate KYC via token' });
+      return;
     }
 
     // Check if KYC should be skipped

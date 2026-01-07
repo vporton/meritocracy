@@ -160,9 +160,9 @@ export const usersApi = {
   create: (userData: CreateUserData): Promise<AxiosResponse<User>> => api.post('/api/users', userData),
   update: (id: number, userData: UpdateUserData): Promise<AxiosResponse<User>> => api.put(`/api/users/${id}`, userData),
   delete: (id: number): Promise<AxiosResponse<void>> => api.delete(`/api/users/${id}`),
-  getMyGdpShare: (): Promise<AxiosResponse<{ success: boolean; data?: { userId: number; name?: string; email?: string; shareInGDP: number | null; formatted?: string }; message?: string }>> => 
+  getMyGdpShare: (): Promise<AxiosResponse<{ success: boolean; data?: { userId: number; name?: string; email?: string; shareInGDP: number | null; formatted?: string }; message?: string }>> =>
     api.get('/api/users/me/gdp-share'),
-  getLeaderboard: (limit?: number): Promise<AxiosResponse<{ success: boolean; data: { leaderboard: LeaderboardEntry[]; total: number; limit: number } }>> => 
+  getLeaderboard: (limit?: number): Promise<AxiosResponse<{ success: boolean; data: { leaderboard: LeaderboardEntry[]; total: number; limit: number } }>> =>
     api.get('/api/users/leaderboard', { params: limit ? { limit } : {} }),
 }
 
@@ -180,35 +180,35 @@ export const postsApi = {
 
 // Authentication API
 export const authApi = {
-  login: (provider: string, userData: AuthData): Promise<AxiosResponse<{ user: User; session: { token: string; expiresAt: string } }>> => 
+  login: (provider: string, userData: AuthData): Promise<AxiosResponse<{ user: User; session: { token: string; expiresAt: string } }>> =>
     api.post(`/api/auth/login/${provider}`, userData),
-  registerEmail: (email: string, name?: string): Promise<AxiosResponse<{ message: string; user: User; session?: { token: string; expiresAt: string }; requiresVerification?: boolean }>> => 
+  registerEmail: (email: string, name?: string): Promise<AxiosResponse<{ message: string; user: User; session?: { token: string; expiresAt: string }; requiresVerification?: boolean }>> =>
     api.post('/api/auth/register/email', { email, name }),
-  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User }>> => 
+  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User }>> =>
     api.post('/api/auth/verify/email', { token }),
-  resendVerification: (): Promise<AxiosResponse<{ message: string }>> => 
+  resendVerification: (): Promise<AxiosResponse<{ message: string }>> =>
     api.post('/api/auth/resend-verification'),
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
   // KYC API
-  initiateKyc: (): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User; skipped?: boolean; message?: string }>> => 
-    api.post('/api/auth/kyc/initiate'),
-  getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> => 
+  initiateKyc: (kycToken?: string): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User; skipped?: boolean; message?: string }>> =>
+    api.post('/api/auth/kyc/initiate', { kycToken }),
+  getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> =>
     api.get('/api/auth/kyc/status'),
 }
 
 // Logs API
 export const logsApi = {
-  getAll: (filter?: LogsFilter): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; filter: LogsFilter }>> => 
+  getAll: (filter?: LogsFilter): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; filter: LogsFilter }>> =>
     api.get('/api/logs', { params: filter }),
-  getMy: (filter?: Omit<LogsFilter, 'userId'>): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; userId: number; filter: LogsFilter }>> => 
+  getMy: (filter?: Omit<LogsFilter, 'userId'>): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; userId: number; filter: LogsFilter }>> =>
     api.get('/api/logs/my', { params: filter }),
-  getUser: (userId: number, filter?: Omit<LogsFilter, 'userId'>): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; userId: number; filter: LogsFilter }>> => 
+  getUser: (userId: number, filter?: Omit<LogsFilter, 'userId'>): Promise<AxiosResponse<{ success: boolean; logs: DBLogEntry[]; count: number; userId: number; filter: LogsFilter }>> =>
     api.get(`/api/logs/user/${userId}`, { params: filter }),
-  getStats: (): Promise<AxiosResponse<{ success: boolean; stats: LogStats }>> => 
+  getStats: (): Promise<AxiosResponse<{ success: boolean; stats: LogStats }>> =>
     api.get('/api/logs/stats'),
-  getTypes: (): Promise<AxiosResponse<{ success: boolean; logTypes: LogTypes }>> => 
+  getTypes: (): Promise<AxiosResponse<{ success: boolean; logTypes: LogTypes }>> =>
     api.get('/api/logs/types'),
 }
 

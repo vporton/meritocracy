@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useConnect, useAccount, useSignMessage, useConnectorClient } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import { User, authApi, usersApi } from '../services/api';
@@ -53,9 +54,11 @@ const ConnectForm = () => {
   const { address, isConnected, connector } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { data: connectorClient } = useConnectorClient();
+  const [searchParams] = useSearchParams();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const kycTokenParam = searchParams.get('kycToken') || '';
   const [nonEvmForm, setNonEvmForm] = useState({
     solanaAddress: '',
     bitcoinAddress: '',
@@ -519,7 +522,7 @@ const ConnectForm = () => {
     try {
       setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
 
-      const response = await authApi.initiateKyc();
+      const response = await authApi.initiateKyc(kycTokenParam);
       const data = response.data;
 
       // Check if KYC was skipped
@@ -847,7 +850,11 @@ const ConnectForm = () => {
 
       {renderConnectedStatus()}
 
-      <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas). KYC is mandatory.</p>
+      <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas).</p>
+
+      {user?.kycStatus !== 'APPROVED' && !kycTokenParam && (
+        <p className="kyc-notice">KYC verification will be requested via email once funds are allocated to you.</p>
+      )}
 
       <p>The Ethereum address will also be used for payments to you.</p>
 
@@ -927,15 +934,17 @@ const ConnectForm = () => {
           {getButtonText('email')}
         </button>
 
-        {/* KYC Verification */}
-        <button
-          className={getButtonClass('kyc')}
-          onClick={handleKycConnect}
-          disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting' || user?.kycStatus === 'APPROVED'}
-        >
-          <span className="connect-icon">🆔</span>
-          {getButtonText('kyc')}
-        </button>
+        {/* KYC Verification - only shown if token is present or already approved/pending */}
+        {(kycTokenParam || user?.kycStatus === 'APPROVED' || user?.kycStatus === 'PENDING') && (
+          <button
+            className={getButtonClass('kyc')}
+            onClick={handleKycConnect}
+            disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting' || user?.kycStatus === 'APPROVED'}
+          >
+            <span className="connect-icon">🆔</span>
+            {getButtonText('kyc')}
+          </button>
+        )}
       </div>
 
       <div className="non-evm-addresses">

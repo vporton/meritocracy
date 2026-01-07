@@ -34,7 +34,7 @@ jobs:
 
       # TODO@P3: Can it be simplified?
       - name: Check DB format integrity
-        run: (export DATABASE_URL="file:///tmp/test.db" && npm run db:setup && cd backend && npx prisma migrate status)  # TODO@P1: Ensure correct exit code.
+        run: (export DATABASE_URL="file:///tmp/test.db" && npm run db:setup && cd backend && npx prisma migrate status)
 
       - name: Deploy to staging
         env:

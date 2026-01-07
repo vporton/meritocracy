@@ -46,8 +46,6 @@
 
 - Make our AI to summarize each time when it asserts worth and save work and/or go further building on it the next time.
 
-- TODO@P1 Debug migrations, they seem to be buggy.
-
 - TODO@P2 User email should be passed to AI.
 
 - TODO@P3 Option to donate back to AIIM automatically.
@@ -63,8 +61,6 @@
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
 - TODO@P3 https://DonateHelper.com for requesting donations from Russia.
-
-- TODO@P1 Don't show a hint, if KYC/AML didn't pass.
 
 - TODO@P3 Funds for individual countries, disbursed, when the user migrates.
 

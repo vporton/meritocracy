@@ -17,6 +17,7 @@ import {
   stellarGasTokenNetworkAdapter
 } from './gas-networks/index.js';
 import { systemSecretService } from './SystemSecretService.js';
+import emailService from './EmailService.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -489,6 +490,42 @@ export class MultiNetworkGasTokenDistributionService {
       try {
         if (remainingAmount <= 0) {
           break;
+        }
+
+        const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
+        if (user?.kycStatus !== 'APPROVED') {
+          const kycError = 'KYC_REQUIRED';
+          result.reservedAmount += dist.amountToken;
+
+          await this.prisma.gasTokenDistribution.create({
+            data: {
+              userId: dist.userId,
+              network: context.networkId,
+              amount: dist.amountToken,
+              amountUsd: 0,
+              status: 'DEFERRED',
+              errorMessage: kycError,
+              tokenType: context.tokenType,
+              tokenSymbol: context.tokenSymbol,
+              tokenDecimals: context.tokenDecimals
+            }
+          });
+
+          result.distributions.push({
+            userId: dist.userId,
+            amount: dist.amountToken,
+            status: 'DEFERRED',
+            errorMessage: kycError
+          });
+
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
+
+          if (user?.email) {
+            await emailService.sendKycRequestEmail(user.email, user.name || undefined);
+          }
+
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
+          continue;
         }
 
         if (dist.amountToken > remainingAmount) {

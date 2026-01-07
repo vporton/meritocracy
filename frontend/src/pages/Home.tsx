@@ -270,7 +270,7 @@ function Home() {
                 Your evaluation process has been completed. You can view your progress and results in the <a href="/logs" style={{ color: '#b45309', textDecoration: 'underline' }}>Logs</a> page.
               </p>
             </div>
-          ) : hasConnectedAccounts() && hasKycVerification() ? (
+          ) : hasConnectedAccounts() ? (
             <div>
               {/* Prominent warning about connecting accounts */}
               <div style={{
@@ -292,7 +292,31 @@ function Home() {
                 </p>
               </div>
 
-              <p>✅ You have connected accounts and completed KYC verification. You are ready to start your evaluation!</p>
+              {!hasKycVerification() && (
+                <div style={{
+                  padding: '1rem',
+                  background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #0ea5e9',
+                  marginBottom: '1.5rem'
+                }}>
+                  <p style={{ margin: 0, color: '#0369a1', fontWeight: '600', fontSize: '1rem' }}>
+                    🆔 <strong>KYC Verification Notice</strong>
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', color: '#0369a1', fontSize: '0.9rem' }}>
+                    You can start your evaluation now without KYC.
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', color: '#0369a1', fontSize: '0.9rem' }}>
+                    However, you will be required to complete KYC later to receive payments once they are allocated to you.
+                  </p>
+                </div>
+              )}
+
+              <p>
+                {hasKycVerification()
+                  ? "✅ You have connected accounts and completed KYC verification."
+                  : "✅ You have connected accounts. You can start your evaluation now!"}
+              </p>
               <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
                 Click the button below to begin the AI analysis of your contributions and receive your GDP share calculation.
               </p>
@@ -326,37 +350,6 @@ function Home() {
                   </>
                 )}
               </button>
-            </div>
-          ) : hasConnectedAccounts() && !hasKycVerification() ? (
-            <div>
-              {/* KYC requirement warning */}
-              <div style={{
-                padding: '1rem',
-                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                borderRadius: '8px',
-                borderLeft: '4px solid #f59e0b',
-                marginBottom: '1.5rem'
-              }}>
-                <p style={{ margin: 0, color: '#92400e', fontWeight: '600', fontSize: '1rem' }}>
-                  🆔 <strong>KYC Verification Required!</strong>
-                </p>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
-                  You must complete KYC (Know Your Customer) verification before you can start the onboarding process.
-                </p>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
-                  Please go to the <a href="/connect" style={{ color: '#b45309', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> and complete your KYC verification.
-                </p>
-                {user.kycStatus === 'PENDING' && (
-                  <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
-                    Current KYC Status: <strong>{user.kycStatus}</strong>
-                  </p>
-                )}
-              </div>
-
-              <p>⚠️ You have connected accounts but need to complete KYC verification first.</p>
-              <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
-                KYC verification is required for compliance and security purposes before starting the evaluation process.
-              </p>
             </div>
           ) : (
             <div>
@@ -413,7 +406,9 @@ function Home() {
                 If not, your salary calculation may be delayed by up to <strong>two months</strong>!
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                ✅ KYC verification is complete and required for onboarding.
+                {hasKycVerification()
+                  ? "✅ KYC verification is complete."
+                  : "ℹ️ KYC verification is NOT yet complete. You can proceed with evaluation, but you will need to complete KYC later to receive payments."}
               </p>
             </div>
             <p style={{ margin: '0 0 1.5rem 0', color: '#666' }}>

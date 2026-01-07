@@ -1,0 +1,73 @@
+# See:
+# https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/
+# https://chatgpt.com/share/695d0a21-5718-8001-a9ad-20ef8f8e09d1
+
+name: Deploy to Production
+
+on:
+  push:
+    branches: [stable]
+
+jobs:
+  deploy-production:
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    environment: production  # CRITICAL
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+    #   - name: Install
+    #     run: |
+    #       npm install
+    #       npm run install-backend
+    #       npm run install-frontend
+
+    #   - name: Prisma code generator
+    #     run: (cd backend && npx prisma generate)
+
+    #   - name: Test build
+    #     run: npm run build  # redundant, but need check that it builds
+
+    #   # TODO@P3: Can it be simplified?
+    #   - name: Check DB format integrity
+    #     run: (export DATABASE_URL="file:///tmp/test.db" && npm run db:setup && cd backend && npx prisma migrate status)
+
+      # Above checks have been already done in staging deployment.
+      - name: Verify staging deployment exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${GITHUB_SHA}"
+          REPO="${GITHUB_REPOSITORY}"
+
+          DEPLOYMENTS=$(curl -s \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/deployments?environment=staging&sha=$SHA")
+
+          DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | jq '.[0].id')
+
+          if [ "$DEPLOYMENT_ID" = "null" ]; then
+            echo "ERROR: Commit was never deployed to staging."
+            exit 1
+          fi
+
+          STATUS=$(curl -s \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/deployments/$DEPLOYMENT_ID/statuses" \
+            | jq -r '.[0].state')
+
+          if [ "$STATUS" != "success" ]; then
+            echo "ERROR: Staging deployment did not succeed."
+            exit 1
+          fi
+
+      - name: Deploy to production
+        env:
+          FLY_API_TOKEN: ${{ secrets.PRODUCTION_DEPLOY_TOKEN }}
+        run: ./deploy/deploy-production.sh

@@ -35,6 +35,6 @@ export default defineConfig({
     include: ['buffer', 'crypto-browserify', 'stream-browserify'],
   },
   preview: {
-    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'meritocracy-staging.fly.dev'],
+    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'meritocracy.fly.dev', 'meritocracy-staging.fly.dev'],
   },
 })

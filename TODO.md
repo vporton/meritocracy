@@ -4,8 +4,6 @@
 
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 
-- FIXME@P2 After failed login, the button text is "Try again". Thus the name of the button is not shown.
-
 - TODO@P3 Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.
 
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
@@ -50,9 +48,7 @@
 
 - TODO@P3 Option to donate back to AIIM automatically.
 
-- TODO@P2 Deleting use data.
-
-- TODO@P2 Do KYC/AML only after the user is assigned a salary, to minimize the amount of money spent on KYC.
+- TODO@P2 Deleting user data.
 
 - FIXME@P2 `[Bitcoin] Failed to import private key:`.
   This  is a part of a bigger problem: Bitcoin integration should not use Wallet API.
@@ -75,8 +71,6 @@
 - TODO@P3 Claude as an alternative with up to 75% discount: https://www.anthropic.com/news/claude-for-nonprofits
 
 - TODO@P3 Don't allow the same user to KYC often, to save money.
-
-- FIXME@P2 Make a secure DockerHub image instead of `vporton/fly`.
 
 - FIXME@P2 Connecting with Ethereum sometimes fails without prompting for signature.
 

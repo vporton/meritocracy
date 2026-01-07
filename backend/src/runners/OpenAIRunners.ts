@@ -271,7 +271,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
       ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
-      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? options?.max_tool_calls ?? 10, // TODO@P3
+      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? (options as any)?.max_tool_calls ?? 10, // TODO@P3
       text: <ResponseTextConfig>{
         format: {
           type: "json_schema" as const,

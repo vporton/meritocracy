@@ -156,6 +156,9 @@ function Home() {
           githubHandle: user.githubHandle,
           bitbucketHandle: user.bitbucketHandle,
           gitlabHandle: user.gitlabHandle,
+          ethereumAddress: user.ethereumAddress,
+          email: user.email,
+          emailVerified: user.emailVerified,
         }
       })
 
@@ -179,7 +182,10 @@ function Home() {
 
   const hasConnectedAccounts = () => {
     if (!user) return false
-    return !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle || user.ethereumAddress)
+    const hasSocial = !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle)
+    const hasEmail = !!(user.email && user.emailVerified)
+    const hasEth = !!user.ethereumAddress
+    return hasSocial && hasEmail && hasEth
   }
 
   const hasKycVerification = () => {
@@ -281,14 +287,13 @@ function Home() {
                 marginBottom: '1.5rem'
               }}>
                 <p style={{ margin: 0, color: '#dc2626', fontWeight: '600', fontSize: '1rem' }}>
-                  ⚠️ <strong>IMPORTANT: Connect ALL Your Accounts First!</strong>
+                  ⚠️ <strong>IMPORTANT: Connect Your Accounts First!</strong>
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  If you start onboarding without connecting all your accounts (GitHub, ORCID, BitBucket, GitLab, etc.),
-                  your salary calculation may be delayed by up to <strong>two months</strong>!
+                  To start evaluation, you MUST connect <strong>Ethereum</strong>, <strong>email (verified)</strong>, and at least <strong>one</strong> of the following: <strong>ORCID, GitHub, BitBucket, GitLab</strong>.
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  Make sure to connect all accounts, that have your publications, on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
+                  Make sure to connect these on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
                 </p>
               </div>
 
@@ -353,12 +358,17 @@ function Home() {
             </div>
           ) : (
             <div>
-              <p>⚠️ <strong>Please connect all your accounts first!</strong></p>
+              <p>⚠️ <strong>Please connect your accounts first!</strong></p>
               <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
-                You need to connect your accounts (GitHub, ORCID, BitBucket, GitLab, etc.) before starting the evaluation process.
-                This allows our AI to analyze your contributions and calculate your fair share of the world economy.
+                To start evaluation, you MUST connect:
               </p>
-              <p style={{ fontSize: '0.9rem', color: '#888' }}>
+              <ul style={{ fontSize: '0.9rem', color: '#888', textAlign: 'left', display: 'inline-block' }}>
+                <li>Ethereum wallet</li>
+                <li>Email address (and verify it)</li>
+                <li>At least one of: ORCID, GitHub, BitBucket, or GitLab{" "}
+                  <span style={{ color: '#dc2626' }}>(Be sure to connect accounts where you works are presented <strong>before</strong> evaluation!)</span></li>
+              </ul>
+              <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
                 Go to the <a href="/connect" style={{ color: '#646cff' }}>Connect</a> page to link your accounts.
               </p>
             </div>
@@ -402,8 +412,7 @@ function Home() {
                 <strong>IMPORTANT REMINDER:</strong>
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                Have you connected ALL your accounts (GitHub, ORCID, BitBucket, GitLab, etc.)?
-                If not, your salary calculation may be delayed by up to <strong>two months</strong>!
+                Have you connected <strong>Ethereum</strong>, <strong>email</strong>, and at least <strong>one</strong> of: <strong>ORCID, GitHub, BitBucket, GitLab</strong>?
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
                 {hasKycVerification()

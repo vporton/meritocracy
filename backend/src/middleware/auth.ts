@@ -12,17 +12,17 @@ export async function getCurrentUserFromToken(req: express.Request): Promise<num
     }
 
     const token = authHeader.substring(7);
-    
+
     // Find session
     const session = await prisma.session.findUnique({
       where: { token },
       include: { user: true }
     });
-    
+
     if (!session || session.expiresAt < new Date()) {
       return null;
     }
-    
+
     return session.user.id;
   } catch (error) {
     console.error('Error extracting user from token:', error);
@@ -59,8 +59,8 @@ export async function requireKYC(req: express.Request, res: express.Response, ne
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { 
-        kycStatus: true, 
+      select: {
+        kycStatus: true,
         kycVerifiedAt: true,
         kycRejectedAt: true,
         kycRejectionReason: true
@@ -102,7 +102,10 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { 
+      select: {
+        ethereumAddress: true,
+        email: true,
+        emailVerified: true,
         orcidId: true,
         githubHandle: true,
         bitbucketHandle: true,
@@ -115,20 +118,27 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
       return;
     }
 
-    // Check if user has at least one additional connection beyond KYC and Ethereum
-    const hasAdditionalConnection = !!(
-      user.orcidId || 
-      user.githubHandle || 
-      user.bitbucketHandle || 
+    const missingRequirements: string[] = [];
+    if (!user.ethereumAddress) missingRequirements.push('Ethereum Address');
+    if (!user.email || !user.emailVerified) missingRequirements.push('Verified Email');
+
+    const hasSocialConnection = !!(
+      user.orcidId ||
+      user.githubHandle ||
+      user.bitbucketHandle ||
       user.gitlabHandle
     );
+    if (!hasSocialConnection) missingRequirements.push('one of: ORCID, GitHub, Bitbucket, or GitLab');
 
-    if (!hasAdditionalConnection) {
+    if (missingRequirements.length > 0) {
       res.status(403).json({
-        error: 'Additional connections are required for worth assessment',
-        message: 'You must connect at least one of the following: ORCID, GitHub, Bitbucket, or GitLab',
-        requiredConnections: ['ORCID', 'GitHub', 'Bitbucket', 'GitLab'],
+        error: 'Evaluation requirements not met',
+        message: `To start evaluation, you must connect: Ethereum, email (verified), and at least one of: ORCID, GitHub, Bitbucket, or GitLab. Missing: ${missingRequirements.join(', ')}`,
+        requiredConnections: ['Ethereum', 'Verified Email', 'ORCID/GitHub/Bitbucket/GitLab'],
         currentConnections: {
+          ethereumAddress: user.ethereumAddress,
+          email: user.email,
+          emailVerified: user.emailVerified,
           orcidId: user.orcidId,
           githubHandle: user.githubHandle,
           bitbucketHandle: user.bitbucketHandle,

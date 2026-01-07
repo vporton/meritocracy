@@ -1081,6 +1081,9 @@ const ConnectForm = () => {
               Cancel
             </button>
           </div>
+          <p>
+            <strong>Note:</strong> Email will be  used to send you important communications. You can unsubscribe at any time.
+          </p>
           <p className="email-info">
             <strong>Note:</strong> You will receive a verification email. Please check your inbox and click the verification link to complete the connection.
           </p>

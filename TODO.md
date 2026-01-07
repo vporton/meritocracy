@@ -75,3 +75,6 @@
 - FIXME@P2 It tries to use `COSMOS_MNEMONIC` instead of the DB for Cosmos.
 
 - FIXME@P1 Correct user data necessary for evaluation.
+
+- TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
+  by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.

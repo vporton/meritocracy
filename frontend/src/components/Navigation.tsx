@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 function Navigation() {
   const location = useLocation()
   const { user, isAuthenticated, logout, isLoading } = useAuth()
-  
+
   const isActive = (path: string) => location.pathname === path
 
   const handleLogout = async () => {
@@ -14,20 +14,25 @@ function Navigation() {
   return (
     <nav className="nav">
       <div className="nav-left">
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className={`nav-link ${isActive('/') ? 'active' : ''}`}
         >
           Home
         </Link>
-        <Link 
-          to="/logs" 
+        <Link
+          to="/logs"
           className={`nav-link ${isActive('/logs') ? 'active' : ''}`}
         >
           OpenAI Logs
         </Link>
+        <Link
+          to="https://science-dao.org/meritocracy/"
+        >
+          Site
+        </Link>
       </div>
-      
+
       <div className="nav-right">
         {isLoading ? (
           <span className="nav-loading">Loading...</span>
@@ -38,8 +43,8 @@ function Navigation() {
                 Welcome, {user?.name || 'User'}
               </span>
             )}
-            <Link 
-              to="/connect" 
+            <Link
+              to="/connect"
               className={`nav-link ${isActive('/connect') ? 'active' : ''}`}
             >
               Connect

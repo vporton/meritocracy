@@ -78,3 +78,5 @@
 
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
+
+- TODO@P2 Add links to GitHub.

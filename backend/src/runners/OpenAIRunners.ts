@@ -265,13 +265,13 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       input: input, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
       ...(/gpt-5-mini/.test(options?.model ?? DEFAULT_MODEL)
-        ? {/* temperature not supported */ } : options?.temperature === undefined
-          ? { temperature: options.temperature } : { temperature: DEFAULT_TEMPERATURE }),
+        ? {/* temperature not supported */ } : { temperature: options?.temperature ?? DEFAULT_TEMPERATURE }),
       // include: ['web_search_call.action.sources'], // TODO@P3: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
         effort: OVERRIDE_REASONING_EFFORT ?? options?.reasoning?.effort ?? 'medium'
       },
-      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? 10, // TODO@P3
+      ...(this.useWebSearchTool() ? USE_WEB_SEARCH_TOOL : {}),
+      max_tool_calls: OVERRIDE_MAX_TOOL_CALLS ?? options?.max_tool_calls ?? 10, // TODO@P3
       text: <ResponseTextConfig>{
         format: {
           type: "json_schema" as const,
@@ -746,10 +746,6 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
    */
   protected getOriginalPrompt(): string {
     return injectionPrompt;
-  }
-
-  protected useWebSearchTool(): boolean {
-    return true;
   }
 
   /**

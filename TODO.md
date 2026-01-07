@@ -85,3 +85,6 @@
 
 - TODO@P2 When switching Global/national fund, immediately remove blockchain addresses from the screen,
   not to confuse the user.
+
+- FIXME@P2 When I opened it in a private browser window, it displayed error 401 retrieving world GDP
+  (F5 helped).

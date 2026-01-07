@@ -78,10 +78,6 @@
 
 - FIXME@P2 Make a secure DockerHub image instead of `vporton/fly`.
 
-- TODO@P1 If the user enters several emails, mark the "main" one, to be used for communication.
-
-- TODO@P1 Tell connecting users, that their email can be used to send important announcements.
-
 - FIXME@P2 Connecting with Ethereum sometimes fails without prompting for signature.
 
 - FIXME@P2 It tries to use `COSMOS_MNEMONIC` instead of the DB for Cosmos.

@@ -88,3 +88,5 @@
 
 - FIXME@P2 When I opened it in a private browser window, it displayed error 401 retrieving world GDP
   (F5 helped).
+
+- FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.

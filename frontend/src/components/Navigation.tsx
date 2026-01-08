@@ -31,6 +31,11 @@ function Navigation() {
         >
           Site
         </Link>
+        <Link
+          to="https://science-dao.org/donation/"
+        >
+          Donate
+        </Link>
       </div>
 
       <div className="nav-right">

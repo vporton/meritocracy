@@ -24,7 +24,7 @@ function Navigation() {
           to="/logs"
           className={`nav-link ${isActive('/logs') ? 'active' : ''}`}
         >
-          OpenAI Logs
+          Logs
         </Link>
         <Link
           to="https://science-dao.org/meritocracy/"

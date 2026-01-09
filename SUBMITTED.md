@@ -123,3 +123,4 @@
 * SocialJusticeAccelerator https://urbanjustice.org - "At this time, we're accepting applications from US-based institutions only."
 * Clay Math - emailed 14 Dec 2025
 * Ashoka https://www.ashoka.org - submitted 15 Dec 2025
+* SparkDeSci https://spark-science.org/ - waiver for under-resourced teams, but the site does not work.

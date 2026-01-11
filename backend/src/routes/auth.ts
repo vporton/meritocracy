@@ -233,7 +233,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
 
 // Helper function to create session
 async function createSession(userId: number) {
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret', {
+  const token = jwt.sign({ userId }, process.env.JWT_SECRET!, {
     expiresIn: '7d'
   });
 

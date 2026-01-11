@@ -196,7 +196,7 @@ router.get('/network/:networkName/status', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(`Error getting status for network ${req.params.networkName}:`, error);
+    console.error(`Error getting status for network %s: %s`, req.params.networkName, error);
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -224,7 +224,7 @@ router.get('/network/:networkName/distribution-history', async (req, res) => {
       network: networkName
     });
   } catch (error) {
-    console.error(`Error getting distribution history for network ${req.params.networkName}:`, error);
+    console.error(`Error getting distribution history for network %s: %s`, req.params.networkName, error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -252,7 +252,7 @@ router.get('/user/:userId/distribution-history', async (req, res) => {
       userId: parseInt(userId)
     });
   } catch (error) {
-    console.error(`Error getting distribution history for user ${req.params.userId}:`, error);
+    console.error(`Error getting distribution history for user %s: %s`, req.params.userId, error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

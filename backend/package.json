@@ -14,7 +14,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@cosmjs/proto-signing": "^0.32.4",
+    "@cosmjs/proto-signing": "0.34.0",
     "@cosmjs/stargate": "^0.32.4",
     "@polkadot/api": "^16.4.9",
     "@polkadot/keyring": "^13.5.7",

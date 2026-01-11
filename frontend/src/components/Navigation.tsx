@@ -28,11 +28,13 @@ function Navigation() {
         </Link>
         <Link
           to="https://science-dao.org/meritocracy/"
+          className='nav-link'
         >
           Site
         </Link>
         <Link
           to="https://science-dao.org/donation/"
+          className='nav-link'
         >
           Donate
         </Link>

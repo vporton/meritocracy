@@ -90,5 +90,3 @@
   (F5 helped).
 
 - FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.
-
-- TODO@P2 Menu is displayed wrongly.

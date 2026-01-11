@@ -915,7 +915,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
   console.log('GitHub token response:', {
     status: tokenResponse.status,
     statusText: tokenResponse.statusText,
-    headers: Object.fromEntries(tokenResponse.headers.entries()),
+    headers: Object.fromEntries((tokenResponse.headers as any).entries()),
     body: responseText
   });
 
@@ -966,7 +966,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
       status: userResponse.status,
       statusText: userResponse.statusText,
       body: errorText,
-      headers: Object.fromEntries(userResponse.headers.entries())
+      headers: Object.fromEntries((userResponse.headers as any).entries())
     });
     throw new Error(`Failed to fetch GitHub user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
   }
@@ -1022,7 +1022,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
   console.log('ORCID token response:', {
     status: tokenResponse.status,
     statusText: tokenResponse.statusText,
-    headers: Object.fromEntries(tokenResponse.headers.entries()),
+    headers: Object.fromEntries((tokenResponse.headers as any).entries()),
     body: responseText
   });
 
@@ -1177,7 +1177,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
   console.log('GitLab token response:', {
     status: tokenResponse.status,
     statusText: tokenResponse.statusText,
-    headers: Object.fromEntries(tokenResponse.headers.entries()),
+    headers: Object.fromEntries((tokenResponse.headers as any).entries()),
     body: responseText
   });
 
@@ -1229,7 +1229,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
       status: userResponse.status,
       statusText: userResponse.statusText,
       body: errorText,
-      headers: Object.fromEntries(userResponse.headers.entries())
+      headers: Object.fromEntries((userResponse.headers as any).entries())
     });
     throw new Error(`Failed to fetch GitLab user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
   }

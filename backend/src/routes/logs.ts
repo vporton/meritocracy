@@ -54,7 +54,7 @@ router.get('/', async (req, res): Promise<void> => {
     if (type) {
       const validTypes = ['openai', 'task', 'user', 'session'];
       if (!validTypes.includes(type as string)) {
-        res.status(400).json({ 
+        res.status(400).json({
           error: 'Invalid type parameter. Must be one of: ' + validTypes.join(', ')
         });
         return;
@@ -105,9 +105,9 @@ router.get('/', async (req, res): Promise<void> => {
 
   } catch (error: any) {
     console.error('Error fetching logs:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch logs',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -148,9 +148,9 @@ router.get('/my', requireAuth, async (req, res): Promise<void> => {
 
   } catch (error: any) {
     console.error('Error fetching user logs:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch user logs',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -161,9 +161,9 @@ router.get('/my', requireAuth, async (req, res): Promise<void> => {
  */
 router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
   try {
-    const requestedUserId = parseInt(req.params.userId);
+    const requestedUserId = parseInt(req.params.userId as string);
     const authenticatedUserId = (req as any).userId;
-    
+
     if (isNaN(requestedUserId)) {
       res.status(400).json({ error: 'Invalid user ID' });
       return;
@@ -204,9 +204,9 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
 
   } catch (error: any) {
     console.error('Error fetching user logs:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch user logs',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -226,9 +226,9 @@ router.get('/stats', async (req, res): Promise<void> => {
 
   } catch (error: any) {
     console.error('Error fetching log stats:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch log statistics',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -274,9 +274,9 @@ router.get('/types', async (req, res): Promise<void> => {
 
   } catch (error: any) {
     console.error('Error fetching log types:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch log types',
-      message: error.message 
+      message: error.message
     });
   }
 });

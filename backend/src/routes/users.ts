@@ -23,7 +23,7 @@ router.get('/', async (req, res): Promise<void> => {
 router.get('/leaderboard', async (req, res): Promise<void> => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 100, 100); // Max 100 users
-    
+
     const users = await prisma.user.findMany({
       where: {
         shareInGDP: {
@@ -49,8 +49,8 @@ router.get('/leaderboard', async (req, res): Promise<void> => {
       shareInGDP: user.shareInGDP!,
     }));
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: {
         leaderboard,
         total: leaderboard.length,
@@ -68,7 +68,7 @@ router.get('/:id', async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id as string) },
     });
 
     if (!user) {
@@ -87,7 +87,7 @@ router.get('/:id', async (req, res): Promise<void> => {
 router.get('/me/gdp-share', requireAuth, async (req, res): Promise<void> => {
   try {
     const userId = (req as any).userId;
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -104,8 +104,8 @@ router.get('/me/gdp-share', requireAuth, async (req, res): Promise<void> => {
     }
 
     if (user.shareInGDP === null) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: 'No GDP share assigned yet',
         data: {
           userId: user.id,
@@ -117,8 +117,8 @@ router.get('/me/gdp-share', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: {
         userId: user.id,
         name: user.name,
@@ -177,7 +177,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     const authenticatedUserId = (req as any).userId;
 
     // Check if user is trying to update their own account
-    if (parseInt(id) !== authenticatedUserId) {
+    if (parseInt(id as string) !== authenticatedUserId) {
       res.status(403).json({ error: 'Forbidden: You can only update your own account' });
       return;
     }
@@ -199,7 +199,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     }
 
     const user = await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id as string) },
       data: {
         ...(email && { email }),
         ...(name !== undefined && { name }),
@@ -233,13 +233,13 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
     const authenticatedUserId = (req as any).userId;
 
     // Check if user is trying to delete their own account
-    if (parseInt(id) !== authenticatedUserId) {
+    if (parseInt(id as string) !== authenticatedUserId) {
       res.status(403).json({ error: 'Forbidden: You can only delete your own account' });
       return;
     }
 
     await prisma.user.delete({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id as string) },
     });
 
     res.status(204).send();

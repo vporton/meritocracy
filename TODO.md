@@ -77,8 +77,6 @@
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
-- TODO@P2 Add links to GitHub.
-
 - FIXME@P2 Some tasks seem (accordingly Logs) remaining Pending forever. But the share is calculated well.
 
 - TODO@P2 When switching Global/national fund, immediately remove blockchain addresses from the screen,

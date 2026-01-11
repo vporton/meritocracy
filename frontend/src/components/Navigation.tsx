@@ -63,6 +63,11 @@ function Navigation() {
             )}
           </div>
         )}
+        <Link
+          to="https://github.com/vporton/meritocracy"
+        >
+          <img src="/github-mark.svg" alt="GitHub" width="20" height="20" />
+        </Link>
       </div>
     </nav>
   )

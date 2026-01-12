@@ -77,3 +77,6 @@
 - FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
+
+- FIXME@P2 When I clicked Home, `Failed to load resource: the server responded with a status of 401 ()`,
+  then `Cannot read properties of null (reading 'worldGdp')`.

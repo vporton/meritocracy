@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { User, authApi, usersApi } from '../services/api';
 import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
 import './ConnectForm.css';
+import Canonical from './Canonical';
+import { Helmet } from 'react-helmet-async';
 
 interface ConnectStatus {
   [provider: string]: string | undefined;
@@ -846,6 +848,11 @@ const ConnectForm = () => {
 
   return (
     <div className="connect-form">
+      <Helmet>
+        <title>Meritocracy App - Connect Your Account and Receive Money</title>
+        <meta name="description" content="Meritocracy App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
+      </Helmet>
+      <Canonical baseUrl="https://merit.science-dao.org" />
       <h2>Connect to Meritocracy Platform</h2>
 
       {renderConnectedStatus()}

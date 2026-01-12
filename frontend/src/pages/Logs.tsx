@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { logsApi, DBLogEntry, LogsFilter, LogStats, LogTypes } from '../services/api';
 import './Logs.css';
+import { Helmet } from 'react-helmet-async';
+import Canonical from '../components/Canonical';
 
 const Logs: React.FC = () => {
   const [logs, setLogs] = useState<DBLogEntry[]>([]);
@@ -31,7 +33,7 @@ const Logs: React.FC = () => {
         logsApi.getStats(),
         logsApi.getTypes()
       ]);
-      
+
       setStats(statsResponse.data.stats);
       setLogTypes(typesResponse.data.logTypes);
     } catch (err: any) {
@@ -45,7 +47,7 @@ const Logs: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       let response;
       if (showMyLogs) {
         response = await logsApi.getMy(filter);
@@ -54,7 +56,7 @@ const Logs: React.FC = () => {
       } else {
         response = await logsApi.getAll(filter);
       }
-      
+
       setLogs(response.data.logs);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load logs');
@@ -120,7 +122,7 @@ const Logs: React.FC = () => {
               </div>
               <pre>{JSON.stringify(log.request.data, null, 2)}</pre>
             </div>
-            
+
             <div className="log-details-section response-section">
               <h4>📥 Response from OpenAI</h4>
               <div className="response-meta">
@@ -142,7 +144,7 @@ const Logs: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Additional metadata */}
             <div className="log-details-section">
               <h4>Metadata</h4>
@@ -178,6 +180,11 @@ const Logs: React.FC = () => {
 
   return (
     <div className="logs-container">
+      <Helmet>
+        <title>Meritocracy App - User Activity Logs</title>
+        <meta name="description" content="Meritocracy App - Show user activity logs." />
+      </Helmet>
+      <Canonical baseUrl="https://merit.science-dao.org" />
       <div className="logs-header">
         <h1>OpenAI API Logs</h1>
         <p>View and filter OpenAI API request and response logs</p>
@@ -324,7 +331,7 @@ const Logs: React.FC = () => {
       {/* Logs List */}
       <div className="logs-section">
         <h3>Logs ({logs.length})</h3>
-        
+
         {logs.length === 0 ? (
           <div className="no-logs">No logs found matching the current filters.</div>
         ) : (
@@ -338,15 +345,15 @@ const Logs: React.FC = () => {
                   <div className="log-action">{log.action}</div>
                   <div className="log-timestamp">{formatTimestamp(log.timestamp)}</div>
                   {log.status && (
-                    <div 
-                      className="log-status" 
+                    <div
+                      className="log-status"
                       style={{ color: getStatusColor(log.status) }}
                     >
                       {log.status}
                     </div>
                   )}
                 </div>
-                
+
                 <div className="log-meta">
                   {log.userId && (
                     <span className="log-meta-item">User: {log.userId}</span>
@@ -378,7 +385,7 @@ const Logs: React.FC = () => {
               Previous
             </button>
             <span>
-              Showing {filter.offset || 0 + 1} to {Math.min((filter.offset || 0) + (filter.limit || 50), logs.length)} 
+              Showing {filter.offset || 0 + 1} to {Math.min((filter.offset || 0) + (filter.limit || 50), logs.length)}
               {logs.length === (filter.limit || 50) && ' (more available)'}
             </span>
             <button

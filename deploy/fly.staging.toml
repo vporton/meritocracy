@@ -84,11 +84,6 @@ primary_region = 'ewr'
   processes = ['app']
 
   [[services.ports]]
-    port = 444
-    handlers = ['http']
-    force_https = true
-
-  [[services.ports]]
     port = 445
     handlers = ['tls', 'http']
 

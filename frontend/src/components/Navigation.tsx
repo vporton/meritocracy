@@ -38,6 +38,12 @@ function Navigation() {
         >
           Donate
         </Link>
+        <Link
+          to="https://science-dao.org/meritocracy-help/"
+          className='nav-link'
+        >
+          Help
+        </Link>
       </div>
 
       <div className="nav-right">

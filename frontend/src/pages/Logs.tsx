@@ -186,7 +186,7 @@ const Logs: React.FC = () => {
       </Helmet>
       <Canonical baseUrl="https://merit.science-dao.org" />
       <div className="logs-header">
-        <h1>OpenAI API Logs</h1>
+        <h1>Meritocracy App Logs</h1>
         <p>View and filter OpenAI API request and response logs</p>
       </div>
 

@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { generatePrivateKey } from 'viem/accounts';
 import { Keypair as SolanaKeypair } from '@solana/web3.js';
 import { Keypair as StellarKeypair } from 'stellar-sdk';
-import { mnemonicGenerate } from '@polkadot/util-crypto';
+import { mnemonicGenerate, cryptoWaitReady } from '@polkadot/util-crypto';
 import { ECPairFactory } from 'ecpair';
 import * as tinysecp from 'tiny-secp256k1';
 import bs58 from 'bs58';
@@ -34,13 +34,16 @@ export class SystemSecretService {
     public async initialize(): Promise<void> {
         if (this.initialized) return;
 
+        await cryptoWaitReady();
+
         // Ensure essential secrets exist (generate if missing)
         const essentialSecrets = [
             'ETHEREUM_PRIVATE_KEY',
             'SOLANA_SECRET_KEY_BASE58',
             'STELLAR_SECRET_KEY',
             'POLKADOT_SECRET_URI',
-            'BITCOIN_WIF'
+            'BITCOIN_WIF',
+            'COSMOS_MNEMONIC'
         ];
 
         for (const name of essentialSecrets) {
@@ -106,6 +109,9 @@ export class SystemSecretService {
             const keyPair = ECPair.makeRandom();
             return keyPair.toWIF();
         }
+        if (name === 'COSMOS_MNEMONIC') {
+            return mnemonicGenerate();
+        }
 
         // Generic fallback: random hex
         return Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString('hex');
@@ -152,6 +158,8 @@ export class SystemSecretService {
             value = this.generateSecretForName('STELLAR_SECRET_KEY');
         } else if (name.startsWith('POLKADOT')) {
             value = this.generateSecretForName('POLKADOT_SECRET_URI');
+        } else if (name.startsWith('COSMOS')) {
+            value = this.generateSecretForName('COSMOS_MNEMONIC');
         } else {
             // Default to EVM style (Ethereum) for others
             value = this.generateSecretForName('ETHEREUM_PRIVATE_KEY');

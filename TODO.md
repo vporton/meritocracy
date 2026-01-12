@@ -68,7 +68,7 @@
 
 - TODO@P3 Claude as an alternative with up to 75% discount: https://www.anthropic.com/news/claude-for-nonprofits
 
-- TODO@P3 Don't allow the same user to KYC often, to save money.
+- TODO@P3 Repeat KYC time-to-time.
 
 - FIXME@P2 Connecting with Ethereum sometimes fails without prompting for signature.
 

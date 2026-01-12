@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { HelmetProvider } from "react-helmet-async";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/wagmi'
@@ -22,6 +22,9 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <BrowserRouter>
+              <Helmet>
+                <meta name="description" content="Meritocracy App - AI decides how much you earn (for scientists and FOSS devs). Free to use." />
+              </Helmet>
               <Canonical baseUrl="https://merit.science-dao.org" />
               <div className="App">
                 <Navigation />

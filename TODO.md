@@ -82,3 +82,5 @@
   (F5 helped).
 
 - FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.
+
+- FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.

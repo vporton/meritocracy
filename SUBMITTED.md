@@ -1,9 +1,9 @@
   * https://airtable.com/app19BOc2TF5bAstw/shr86elKgWTSCP4AY/tbld93rVIguyQLORG
-    * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU The site does not work 26 Sep.
+    * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU The site does not work 26 Sep 2025; 12 Jan 2026.
     * https://open.harmony.one/300m-on-bounties-grants-daos/apply-for-grants-or-dao - paused  
     * https://algorand.co/ - seem to have ended grants program.
     * https://solana.org/grants-funding - submitted 27 Sep 2025 - rejected 15 Oct 2025 "didn't see a sufficient public good for the Solana ecosystem".
-      * Participating in Cypherpunk hackaton - TODO: videos - rejected 15 Dec 2025
+      * Participating in Cypherpunk hackaton - rejected 15 Dec 2025
     * Polygon - does not accept applications now
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction

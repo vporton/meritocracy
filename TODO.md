@@ -68,8 +68,6 @@
 
 - TODO@P3 Claude as an alternative with up to 75% discount: https://www.anthropic.com/news/claude-for-nonprofits
 
-- TODO@P3 Repeat KYC time-to-time.
-
 - FIXME@P2 Connecting with Ethereum sometimes fails without prompting for signature.
 
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting

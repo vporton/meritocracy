@@ -106,14 +106,14 @@
 * Activate AI https://challenge.data.org - submitted 1 Nov 2025.
 * https://ffwdorg.notion.site/funder-database?v=548b116633be41d5a4da86921bea3a02
   * 2xchallenge.org - emailed a question 15 Nov 2025
-  * 100x Impact Accelerator - not for early stage
+  * 100x Impact Accelerator https://www.100ximpact.org - not for early stage - subscribed to updates 13 Jan 2026
   * TODO
 * https://bizthon.com/builder-grants
   * Web3 Foundation Grants (Polkadot) - submitted 28 Nov 2025 - rejected 1 Dec 2025 "are largely unrelated to both Polkadot..."
   * Polkadot Open Source Grants - only for community having expressed interest in the project
   * Atom Accelerator DAO Grants - "Identification of the use of Cosmos Interchain ecosystem or infrastructure."
   * BNB Chain Builder Grant https://www.bnbchain.org/en/grants - submitted 1 Dec 2025 - rejected 12 Dec 2025 "due to the high volume of submissions", "encouraged to re-apply for the program in the future application rounds"
-  * Stellar Community Fund https://communityfund.stellar.org/ - currenlty not accepting
+  * Stellar Community Fund https://communityfund.stellar.org/dashboard/projects - submitted 13 Jan 2026
   * EOS Network Foundation Grants - not explicitly supported by chain fusion
   * NEAR https://www.near.org/funding
     * Protocol Rewards https://www.nearprotocolrewards.com - Applications for this cohort are now closed

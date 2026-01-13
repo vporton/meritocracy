@@ -83,4 +83,4 @@
 
 - TODO@P3 Different `<title>`, meta description, and canonical URL for different pages.
 
-- TODO@P2 Appellations.
+- TODO@P2 Appeals.

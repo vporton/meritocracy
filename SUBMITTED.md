@@ -21,6 +21,7 @@
     * Moonbeam - submitted 29 Sep 2025 - rejected 10 Oct 2025 ("high volume of applications received").
     * Arbitrum - 29 Sep 2025:
       * Phase 3 of the Arbitrum Foundation Grant Program has now ended!
+      * https://arbitrum.foundation/grants - no program to apply
       * Arbitrum DAO Grant Program - submitted 10 Oct 2025
     * TODO
   * https://blockworks.co/grants
@@ -48,7 +49,7 @@
   * https://www2.fundsforngos.org/articles-listicles/20-grants-for-ngos-using-ai-for-social-good/
     * AI for social good awards https://research.google/programs-and-events/past-programs/ai-for-social-good-awards/ - not found how to contact.
     * IBM Watson AI XPRIZE https://www.xprize.org/ - emailed 22 Oct 2025
-    * https://omidyar.com - We do not accept funding requests or proposals. 
+    * https://omidyar.com - We do not accept funding requests or proposals. - contacted 13 Jan 2026
     * https://data.org - submitted 2 Oct 2025
     * https://www2.fundsforngos.org - noted
   * The RAAIS Foundation Grants https://www.raais.org/grants - submitted 2 Oct 2025

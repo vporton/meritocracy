@@ -102,7 +102,7 @@
   * EA Funds https://funds.effectivealtruism.org/funds/far-future
     * Effective Altruism Infrastructure - submitted 22 Oct 2025 - rejected 24 Oct 2025.
     * Long-Term Future - submitted 25 Oct 2025 - rejected 29 Oct 2025.
-  * Patrick J. McGovern Foundation https://www.mcgovern.org - unclear how to apply
+  * Patrick J. McGovern Foundation https://www.mcgovern.org - unclear how to apply - emailed product@mcgovern.org 13 Jan 2026
 * Activate AI https://challenge.data.org - submitted 1 Nov 2025.
 * https://ffwdorg.notion.site/funder-database?v=548b116633be41d5a4da86921bea3a02
   * 2xchallenge.org - emailed a question 15 Nov 2025

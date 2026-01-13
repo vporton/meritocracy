@@ -82,3 +82,5 @@
   then `Cannot read properties of null (reading 'worldGdp')`.
 
 - TODO@P2 Appeals.
+
+- TODO@P2 Backup the DB from Docker: https://litestream.io/guides/tigris/

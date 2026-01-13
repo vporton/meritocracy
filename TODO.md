@@ -83,4 +83,7 @@
 
 - TODO@P2 Appeals.
 
+- TODO@P2 Should we store the entire lists of Web sources, to ease appeals?
+  At first, this looks like a good idea, but sources could easily be faked afterwards.
+
 - TODO@P2 Backup the DB from Docker: https://litestream.io/guides/tigris/

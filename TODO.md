@@ -81,6 +81,4 @@
 - FIXME@P2 When I clicked Home, `Failed to load resource: the server responded with a status of 401 ()`,
   then `Cannot read properties of null (reading 'worldGdp')`.
 
-- TODO@P3 Different `<title>`, meta description, and canonical URL for different pages.
-
 - TODO@P2 Appeals.

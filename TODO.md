@@ -82,5 +82,3 @@
   then `Cannot read properties of null (reading 'worldGdp')`.
 
 - TODO@P3 Different `<title>`, meta description, and canonical URL for different pages.
-
-- FIXME@P3 Shows wrong "Total Logs" number.

@@ -24,7 +24,7 @@ export interface DistributionFiber {
   recipientAddress: string;
   amountToken: number;
   shareInGDP: number;
-  backlogToken?: number;
+  backlogToken: number;
 }
 
 export interface NetworkDistributionResult {
@@ -1080,7 +1080,7 @@ export class MultiNetworkGasTokenDistributionService {
     return status;
   }
 
-  private sanitizeContext(context: GasTokenNetworkContext): Partial<GasTokenNetworkContext> {
+  private(context: GasTokenNetworkContext): Partial<GasTokenNetworkContext> {
     const { privateKey, ...sanitized } = context;
     return sanitized;
   }

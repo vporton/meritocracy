@@ -1080,16 +1080,24 @@ export class MultiNetworkGasTokenDistributionService {
     return status;
   }
 
+  private sanitizeContext(context: GasTokenNetworkContext): Partial<GasTokenNetworkContext> {
+    const { privateKey, ...sanitized } = context;
+    return sanitized;
+  }
+
   async getEnabledNetworks(overrides?: Partial<TokenDistributionOptions>) {
     const tokenOptions = this.resolveTokenOptions(overrides);
     const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
 
-    return Array.from(contextEntries.values()).map(entry => ({
-      networkId: entry.context.networkId,
-      networkName: entry.context.networkName,
-      adapterType: entry.context.adapterType,
-      walletAddress: entry.context.walletAddress
-    }));
+    return Array.from(contextEntries.values()).map(entry => {
+      const sanitized = this.sanitizeContext(entry.context);
+      return {
+        networkId: sanitized.networkId!,
+        networkName: sanitized.networkName!,
+        adapterType: sanitized.adapterType!,
+        walletAddress: sanitized.walletAddress
+      };
+    });
   }
 
   async getNetworkStatus(overrides?: Partial<TokenDistributionOptions>) {

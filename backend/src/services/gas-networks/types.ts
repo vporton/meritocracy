@@ -16,6 +16,9 @@ export interface GasTokenNetworkContext extends TokenDescriptor {
   nativeTokenDecimals: number;
   walletAddress?: string;
   defaultGasCostToken?: number;
+  /**
+   * Secret field - MUST NOT be sent to the frontend.
+   */
   privateKey?: string;
   country?: string;
   baseNetworkId?: string;

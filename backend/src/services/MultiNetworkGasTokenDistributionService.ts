@@ -237,7 +237,7 @@ export class MultiNetworkGasTokenDistributionService {
     };
   }
 
-  private async fetchEligibleUsers(): Promise<User[]> {
+  private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
     return await this.prisma.user.findMany({
       where: {
         onboarded: true,

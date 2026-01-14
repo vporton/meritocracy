@@ -159,7 +159,7 @@ export class MultiNetworkGasTokenDistributionService {
             let finalPrivateKey: string | undefined = undefined;
 
             if (secret) {
-              finalPrivateKey = secret.trim();
+              finalPrivateKey = secret.trim(); // TODO@P3: trim() is not needed, apparently.
               // Try to derive specific address if adapter supports it
               if (adapter.deriveAddress) {
                 try {
@@ -282,7 +282,7 @@ export class MultiNetworkGasTokenDistributionService {
       }
     >
   > {
-    const users = await this.fetchEligibleUsers();
+    const users = await this.fetchEligibleUsers(); // TODO@P3: Don't load the full list into memory.
     if (users.length === 0) {
       return new Map();
     }

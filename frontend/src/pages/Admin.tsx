@@ -150,7 +150,7 @@ const Admin: React.FC = () => {
                         <button
                             className="trigger-button"
                             onClick={triggerDistribution}
-                            disabled={triggering || !status?.gasDistributionEnabled}
+                            disabled={triggering}
                         >
                             {triggering ? 'Running Distribution...' : 'Run Distribution Now'}
                         </button>

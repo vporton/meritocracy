@@ -75,7 +75,7 @@ router.post('/trigger-distribution', authAdmin, async (req, res) => {
     try {
         // Note: This starts the distribution process in the background if it's long-running,
         // or waits for it if it's manageable. In CronService it returns the result.
-        const result = await cronService.runWeeklyGasDistribution();
+        const result = await cronService.runWeeklyGasDistribution(true);
         res.json({ message: 'Distribution triggered successfully', result });
     } catch (error) {
         console.error('Error triggering distribution:', error);

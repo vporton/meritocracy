@@ -139,20 +139,23 @@ export class CronService {
   /**
    * Manually trigger the weekly gas token distribution process
    * This can be called via API endpoint for testing
+   * @param force - If true, skip the enabled check (used for manual triggers)
    */
-  async runWeeklyGasDistribution() {
-    console.log('🔄 Starting weekly multi-network token distribution process...');
+  async runWeeklyGasDistribution(force: boolean = false) {
+    console.log('🔄 Starting multi-network token distribution process...');
 
     try {
-      const isEnabled = await GlobalDataService.isGasDistributionEnabled();
-      if (!isEnabled) {
-        console.log('🚫 Gas distribution is currently disabled via admin setting.');
-        return {
-          totalDistributedAmount: 0,
-          totalReservedAmount: 0,
-          networkResults: new Map(),
-          errors: ['Gas distribution is disabled.']
-        };
+      if (!force) {
+        const isEnabled = await GlobalDataService.isGasDistributionEnabled();
+        if (!isEnabled) {
+          console.log('🚫 Gas distribution is currently disabled via admin setting.');
+          return {
+            totalDistributedAmount: 0,
+            totalReservedAmount: 0,
+            networkResults: new Map(),
+            errors: ['Gas distribution is disabled.']
+          };
+        }
       }
 
       const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();

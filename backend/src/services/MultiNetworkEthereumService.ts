@@ -316,8 +316,8 @@ export class MultiNetworkEthereumService {
             });
 
             const networkClient: NetworkClient = {
-                publicClient,
-                walletClient,
+                publicClient: publicClient as any,
+                walletClient: walletClient as any,
                 account,
                 config: networkConfig
             };
@@ -430,13 +430,13 @@ export class MultiNetworkEthereumService {
             address = privateKeyToAccount(token.privateKey as `0x${string}`).address;
         }
 
-        return await withRetry(
+        return await withRetry<bigint>(
             () => client.publicClient.readContract({
                 address: token.tokenAddress!,
                 abi: ERC20_ABI,
                 functionName: 'balanceOf',
                 args: [address]
-            }),
+            } as any) as Promise<bigint>,
             { taskName: `getTokenBalance ${token.tokenSymbol} on ${networkName}` }
         );
     }
@@ -534,7 +534,7 @@ export class MultiNetworkEthereumService {
                 to: request.to,
                 value: amountRaw,
                 chain: client.publicClient.chain
-            }),
+            } as any),
             { taskName: `sendTransaction on ${request.networkName}` }
         );
     }
@@ -579,7 +579,7 @@ export class MultiNetworkEthereumService {
             value: parseEther(value),
             data: data || '0x',
             chain: client.publicClient.chain
-        });
+        } as any);
     }
 
     /**

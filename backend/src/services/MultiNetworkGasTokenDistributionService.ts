@@ -47,8 +47,8 @@ export interface MultiNetworkDistributionResult {
   totalReservedAmount: number;
   networkResults: Map<string, NetworkDistributionResult>;
   errors: string[];
-  totalDistributed?: number;
-  totalReserved?: number;
+  totalDistributed: number;
+  totalReserved: number;
 }
 
 type ReserveStatusEntry = {

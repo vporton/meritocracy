@@ -145,24 +145,19 @@ export class CronService {
     try {
       const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
 
-      if (result.success) {
-        console.log('✅ Weekly multi-network token distribution completed successfully');
-        console.log(`💰 Total distributed: ${result.totalDistributedAmount.toFixed(6)} tokens`);
-        console.log(`🏦 Total reserved: ${result.totalReservedAmount.toFixed(6)} tokens`);
+      console.log('✅ Weekly multi-network token distribution completed');
+      console.log(`💰 Total distributed: ${result.totalDistributedAmount.toFixed(6)} tokens`);
+      console.log(`🏦 Total reserved: ${result.totalReservedAmount.toFixed(6)} tokens`);
 
-        for (const [networkName, networkResult] of result.networkResults) {
-          console.log(
-            `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed, ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved`
-          );
-        }
+      for (const [networkName, networkResult] of result.networkResults) {
+        console.log(
+          `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed, ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved`
+        );
+      }
 
-        if (result.errors.length > 0) {
-          console.log('⚠️  Some errors occurred:');
-          result.errors.forEach(error => console.log(`  - ${error}`));
-        }
-      } else {
-        console.error('❌ Weekly multi-network token distribution failed');
-        result.errors.forEach(error => console.error(`  - ${error}`));
+      if (result.errors.length > 0) {
+        console.log('⚠️  Some errors occurred:');
+        result.errors.forEach(error => console.log(`  - ${error}`));
       }
 
       return result;

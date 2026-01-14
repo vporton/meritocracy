@@ -273,7 +273,6 @@ router.post('/run-distribution', async (req, res) => {
     const result = await multiNetworkGasTokenDistributionService.processMultiNetworkDistribution(overrides);
 
     res.json({
-      success: result.success,
       data: {
         totalDistributed: result.totalDistributed,
         totalReserved: result.totalReserved,

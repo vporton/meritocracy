@@ -254,7 +254,7 @@ export class MultiNetworkGasTokenDistributionService {
       where: {
         network_tokenSymbol_tokenType: {
           network: context.networkId,
-          tokenSymbol: context.tokenSymbol,
+          tokenSymbol: context.tokenSymbol, // TODO@P2: Use tokenAddress instead.
           tokenType: context.tokenType
         }
       }

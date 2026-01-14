@@ -43,7 +43,6 @@ export interface NetworkDistributionResult {
 }
 
 export interface MultiNetworkDistributionResult {
-  success: boolean;
   totalDistributedAmount: number;
   totalReservedAmount: number;
   networkResults: Map<string, NetworkDistributionResult>;
@@ -1219,7 +1218,6 @@ export class MultiNetworkGasTokenDistributionService {
       await Promise.all(networkPromises);
 
       const result: MultiNetworkDistributionResult = {
-        success: errors.length === 0,
         totalDistributedAmount,
         totalReservedAmount,
         totalDistributed: totalDistributedAmount,
@@ -1255,7 +1253,6 @@ export class MultiNetworkGasTokenDistributionService {
       console.error('💥 Fatal error in multi-network gas token distribution:', errorMessage);
 
       return {
-        success: false,
         totalDistributedAmount: 0,
         totalReservedAmount: 0,
         totalDistributed: 0,
@@ -1330,7 +1327,6 @@ export class MultiNetworkGasTokenDistributionService {
       await Promise.all(networkPromises);
 
       const result: MultiNetworkDistributionResult = {
-        success: errors.length === 0,
         totalDistributedAmount,
         totalReservedAmount,
         totalDistributed: totalDistributedAmount,
@@ -1368,7 +1364,6 @@ export class MultiNetworkGasTokenDistributionService {
       console.error('💥 Fatal error in multi-network gas token distribution (Stage 1):', errorMessage);
 
       return {
-        success: false,
         totalDistributedAmount: 0,
         totalReservedAmount: 0,
         totalDistributed: 0,

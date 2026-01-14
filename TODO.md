@@ -87,3 +87,5 @@
   At first, this looks like a good idea, but sources could easily be faked afterwards.
 
 - TODO@P2 Backup the DB from Docker: https://litestream.io/guides/tigris/
+
+- TODO@P3 Ensure that payments are sent, even if the process is interrupted.

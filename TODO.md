@@ -89,3 +89,5 @@
 - TODO@P2 Backup the DB from Docker: https://litestream.io/guides/tigris/
 
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
+
+- TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚

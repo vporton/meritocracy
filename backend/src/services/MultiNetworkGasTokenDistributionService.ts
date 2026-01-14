@@ -1117,17 +1117,28 @@ export class MultiNetworkGasTokenDistributionService {
       errors: [] as string[]
     };
 
+    // Keep track of networks we've skipped in this batch to avoid nonce collisions
+    const skippedNetworks = new Set<string>();
+
     // Get contexts for all networks we need
     const tokenOptions = this.resolveTokenOptions();
     const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
 
     for (const pendingTx of transactionsToExecute) {
       try {
+        // If we failed to lock an earlier transaction for this network, skip all subsequent ones
+        // to maintain strict sequential order and correct nonces.
+        if (skippedNetworks.has(pendingTx.network)) {
+          results.skipped++;
+          continue;
+        }
+
         // Mark as executing (this prevents concurrent execution)
         const locked = await pendingTransactionService.markAsExecuting(pendingTx.transactionHash);
 
         if (!locked) {
-          console.log(`⏭️  Transaction ${pendingTx.transactionHash.substring(0, 16)}... already being executed or completed`);
+          console.log(`⏭️  Transaction ${pendingTx.transactionHash.substring(0, 16)}... already being executed or completed. Skipping network ${pendingTx.network} to maintain order.`);
+          skippedNetworks.add(pendingTx.network);
           results.skipped++;
           continue;
         }

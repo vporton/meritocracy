@@ -123,7 +123,10 @@ export class PendingTransactionService {
 
         return await this.prisma.pendingTransaction.findMany({
             where,
-            orderBy: { createdAt: 'asc' }, // FIFO execution
+            orderBy: [
+                { network: 'asc' },
+                { id: 'asc' } // ensure order of NONCEs is correct
+            ], // Fair and stable sort order
             include: { user: true }
         });
     }

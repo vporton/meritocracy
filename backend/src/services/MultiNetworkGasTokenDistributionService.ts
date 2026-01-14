@@ -554,7 +554,7 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
-          const totalRequired = dist.amountToken + gasCostToken;
+          const totalRequired = dist.amountToken;
           if (totalRequired > remainingAmount + Number.EPSILON) {
             const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
             if (adjustedAmount <= 0) {
@@ -808,7 +808,7 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
-          const totalRequired = dist.amountToken + gasCostToken;
+          const totalRequired = dist.amountToken;
           if (totalRequired > remainingAmount + Number.EPSILON) {
             const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
             if (adjustedAmount <= 0) {

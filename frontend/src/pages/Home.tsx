@@ -94,6 +94,8 @@ function Home() {
 
   useEffect(() => {
     const fetchUserGdpShare = async () => {
+      if (!isAuthenticated) return;
+
       try {
         const response = await usersApi.getMyGdpShare()
         if (response.data.success) {
@@ -106,7 +108,7 @@ function Home() {
     }
 
     fetchUserGdpShare()
-  }, [])
+  }, [isAuthenticated])
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -246,7 +248,7 @@ function Home() {
             <div>
               <p>🎯 <strong>Your GDP Share:</strong>{" "}
                 {userGdpShare.shareInGDP.toString()}{" = "}
-                ${(worldGdp ? userGdpShare.shareInGDP * worldGdp!.worldGdp : "").toLocaleString()}</p>
+                {worldGdp ? `$${(userGdpShare.shareInGDP * worldGdp.worldGdp).toLocaleString()}` : "Calculating..."}</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
                 This represents your calculated portion of the world economy based on your contributions
               </p>

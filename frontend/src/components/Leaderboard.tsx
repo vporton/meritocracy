@@ -117,11 +117,11 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
       <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
         Top contributors to the world economy ({leaderboard.length} total)
       </p>
-      
+
       <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'auto 1fr auto', 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr auto',
           gap: '0.5rem',
           alignItems: 'center',
           padding: '0.5rem',
@@ -135,7 +135,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
           <div>Name</div>
           <div style={{ textAlign: 'right' }}>GDP Share</div>
         </div>
-        
+
         {displayEntries.map((entry) => (
           <div
             key={entry.userId}
@@ -152,19 +152,19 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
             <div style={getRankStyle(entry.rank)}>
               {getRankIcon(entry.rank)}
             </div>
-            <div style={{ 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap' 
+            <div style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
             }}>
               {entry.name}
             </div>
-            <div style={{ 
-              textAlign: 'right', 
+            <div style={{
+              textAlign: 'right',
               fontWeight: 'bold',
               color: '#4caf50'
             }}>
-              {entry.shareInGDP} of GDP = ${(entry.shareInGDP * worldGdp!.worldGdp).toLocaleString()}
+              {entry.shareInGDP} of GDP {worldGdp ? `= $${(entry.shareInGDP * worldGdp.worldGdp).toLocaleString()}` : ""}
             </div>
           </div>
         ))}

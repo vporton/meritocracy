@@ -128,7 +128,12 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
       user.bitbucketHandle ||
       user.gitlabHandle
     );
-    if (!hasSocialConnection) missingRequirements.push('one of: ORCID, GitHub, Bitbucket, or GitLab');
+
+    // In development mode, we allow evaluation even if social connections are missing
+    const isDev = process.env.NODE_ENV === 'development';
+    if (!hasSocialConnection && !isDev) {
+      missingRequirements.push('one of: ORCID, GitHub, Bitbucket, or GitLab');
+    }
 
     if (missingRequirements.length > 0) {
       res.status(403).json({

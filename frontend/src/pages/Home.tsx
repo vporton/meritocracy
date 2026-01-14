@@ -189,6 +189,11 @@ function Home() {
     const hasSocial = !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle)
     const hasEmail = !!(user.email && user.emailVerified)
     const hasEth = !!user.ethereumAddress
+
+    if (import.meta.env.DEV) {
+      return hasEmail && hasEth
+    }
+
     return hasSocial && hasEmail && hasEth
   }
 
@@ -299,7 +304,7 @@ function Home() {
                   ⚠️ <strong>IMPORTANT: Connect Your Accounts First!</strong>
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  To start evaluation, you MUST connect <strong>Ethereum</strong>, <strong>email (verified)</strong>, and at least <strong>one</strong> of the following: <strong>ORCID, GitHub, BitBucket, GitLab</strong>.
+                  To start evaluation, you MUST connect <strong>Ethereum</strong>, <strong>email (verified)</strong>{import.meta.env.DEV ? ' (Social connection is optional in dev mode)' : <>, and at least <strong>one</strong> of the following: <strong>ORCID, GitHub, BitBucket, GitLab</strong></>}.
                 </p>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
                   Make sure to connect these on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
@@ -374,7 +379,7 @@ function Home() {
               <ul style={{ fontSize: '0.9rem', color: '#888', textAlign: 'left', display: 'inline-block' }}>
                 <li>Ethereum wallet</li>
                 <li>Email address (and verify it)</li>
-                <li>At least one of: ORCID, GitHub, BitBucket, or GitLab{" "}
+                <li>At least one of: ORCID, GitHub, BitBucket, or GitLab {import.meta.env.DEV && <span style={{ color: '#059669' }}>(Optional in development mode)</span>}
                   <span style={{ color: '#dc2626' }}>(Be sure to connect accounts where you works are presented <strong>before</strong> evaluation!)</span></li>
               </ul>
               <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
@@ -421,7 +426,7 @@ function Home() {
                 <strong>IMPORTANT REMINDER:</strong>
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                Have you connected <strong>Ethereum</strong>, <strong>email</strong>, and at least <strong>one</strong> of: <strong>ORCID, GitHub, BitBucket, GitLab</strong>?
+                Have you connected <strong>Ethereum</strong> and <strong>email</strong>{import.meta.env.DEV ? '?' : <>, and at least <strong>one</strong> of: <strong>ORCID, GitHub, BitBucket, GitLab?</strong></>}
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
                 {hasKycVerification()

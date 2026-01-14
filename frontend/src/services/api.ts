@@ -212,6 +212,16 @@ export const logsApi = {
     api.get('/api/logs/types'),
 }
 
+// Admin API
+export const adminApi = {
+  getStatus: (password: string): Promise<AxiosResponse<{ gasDistributionEnabled: boolean; cronStatus: any }>> =>
+    api.get('/api/admin/status', { headers: { 'x-admin-password': password } }),
+  toggleDistribution: (password: string, enabled: boolean): Promise<AxiosResponse<{ message: string; enabled: boolean }>> =>
+    api.post('/api/admin/toggle-distribution', { enabled }, { headers: { 'x-admin-password': password } }),
+  triggerDistribution: (password: string): Promise<AxiosResponse<{ message: string; result: any }>> =>
+    api.post('/api/admin/trigger-distribution', {}, { headers: { 'x-admin-password': password } }),
+}
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,

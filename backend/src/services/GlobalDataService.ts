@@ -12,18 +12,18 @@ export class GlobalDataService {
     try {
       const url = 'http://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.CD?format=json&per_page=1';
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json() as any[];
-      
+
       if (data && data.length > 1 && data[1] && data[1].length > 0) {
         const gdpValue = data[1][0].value;
         return gdpValue ? parseFloat(gdpValue) : null;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error fetching world GDP:', error);
@@ -58,7 +58,7 @@ export class GlobalDataService {
         update: { worldGdp: gdpValue },
         create: { worldGdp: gdpValue }
       });
-      
+
       console.log(`World GDP updated: $${gdpValue.toLocaleString()}`);
       return true;
     } catch (error) {
@@ -74,12 +74,12 @@ export class GlobalDataService {
   static async fetchAndUpdateWorldGdp(): Promise<boolean> {
     try {
       const gdpValue = await this.fetchWorldGdp();
-      
+
       if (gdpValue === null) {
         console.error('Failed to fetch world GDP data');
         return false;
       }
-      
+
       return await this.updateWorldGdp(gdpValue);
     } catch (error) {
       console.error('Error in fetchAndUpdateWorldGdp:', error);
@@ -94,7 +94,7 @@ export class GlobalDataService {
   static async initializeGlobalData(): Promise<boolean> {
     try {
       const currentGdp = await this.getWorldGdp();
-      
+
       if (currentGdp === null) {
         console.log('No world GDP data found, fetching...');
         return await this.fetchAndUpdateWorldGdp();
@@ -115,18 +115,52 @@ export class GlobalDataService {
   static async shouldUpdateGdp(): Promise<boolean> {
     try {
       const globalData = await prisma.global.findFirst();
-      
+
       if (!globalData) {
         return true;
       }
-      
+
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-      
+
       return globalData.updatedAt < oneMonthAgo;
     } catch (error) {
       console.error('Error checking if GDP should be updated:', error);
       return true; // Default to updating if there's an error
+    }
+  }
+
+  /**
+   * Checks if gas distribution is enabled
+   * @returns Promise<boolean> - True if gas distribution is enabled
+   */
+  static async isGasDistributionEnabled(): Promise<boolean> {
+    try {
+      const globalData = await prisma.global.findFirst();
+      return globalData?.gasDistributionEnabled ?? true;
+    } catch (error) {
+      console.error('Error checking if gas distribution is enabled:', error);
+      return true; // Default to true if there's an error
+    }
+  }
+
+  /**
+   * Sets the gas distribution enabled status
+   * @param enabled - Whether gas distribution should be enabled
+   * @returns Promise<boolean> - Success status
+   */
+  static async setGasDistributionEnabled(enabled: boolean): Promise<boolean> {
+    try {
+      await prisma.global.upsert({
+        where: { id: 1 },
+        update: { gasDistributionEnabled: enabled },
+        create: { gasDistributionEnabled: enabled }
+      });
+      console.log(`Gas distribution enabled set to: ${enabled}`);
+      return true;
+    } catch (error) {
+      console.error('Error setting gas distribution enabled status:', error);
+      return false;
     }
   }
 }

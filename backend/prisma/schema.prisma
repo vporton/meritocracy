@@ -167,10 +167,11 @@ model OpenAILog {
 }
 
 model Global {
-  id        Int      @id @default(autoincrement())
-  worldGdp  Float?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                     Int      @id @default(autoincrement())
+  worldGdp               Float?
+  gasDistributionEnabled Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   @@map("global")
 }

@@ -4,6 +4,7 @@ import { UserEvaluationFlow, UserEvaluationData } from './UserEvaluationFlow.js'
 import { TaskManager } from './TaskManager.js';
 import { MultiNetworkGasTokenDistributionService, multiNetworkGasTokenDistributionService } from './MultiNetworkGasTokenDistributionService.js';
 import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupService.js';
+import { GlobalDataService } from './GlobalDataService.js';
 
 export class CronService {
   private prisma: PrismaClient;
@@ -143,6 +144,17 @@ export class CronService {
     console.log('🔄 Starting weekly multi-network token distribution process...');
 
     try {
+      const isEnabled = await GlobalDataService.isGasDistributionEnabled();
+      if (!isEnabled) {
+        console.log('🚫 Gas distribution is currently disabled via admin setting.');
+        return {
+          totalDistributedAmount: 0,
+          totalReservedAmount: 0,
+          networkResults: new Map(),
+          errors: ['Gas distribution is disabled.']
+        };
+      }
+
       const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
 
       console.log('✅ Weekly multi-network token distribution completed');

@@ -65,26 +65,26 @@ You need to create OAuth applications for each provider:
 #### GitHub OAuth App
 1. Go to GitHub Settings > Developer settings > OAuth Apps
 2. Click "New OAuth App"
-3. Set Authorization callback URL to: `http://localhost:5173/auth/github/callback`
+3. Set Authorization callback URL to: `http://localhost:3001/api/auth/github/callback` (assuming backend runs on port 3001)
 4. Copy the Client ID and Client Secret to your `.env` file
 
 #### ORCID OAuth App
 1. Go to ORCID Developer Tools
 2. Register a new application
-3. Set redirect URI to: `http://localhost:5173/auth/orcid/callback`
+3. Set redirect URI to: `http://localhost:3001/api/auth/orcid/callback`
 4. Copy the Client ID and Client Secret to your `.env` file
 
 #### BitBucket OAuth App
 1. Go to BitBucket Settings > OAuth consumers
 2. Create a new consumer
-3. Set callback URL to: `http://localhost:5173/auth/bitbucket/callback`
+3. Set callback URL to: `http://localhost:3001/api/auth/bitbucket/callback`
 4. Copy the Key and Secret to your `.env` file
 
 #### GitLab OAuth App
 1. Go to GitLab Applications settings
 2. Create a new application
-3. Set redirect URI to: `http://localhost:5173/auth/gitlab/callback`
-4. Select the **api** scope in the Scopes section (this includes read_user and avoids permission errors)
+3. Set redirect URI to: `http://localhost:3001/api/auth/gitlab/callback`
+4. Select the **api**, **read_user**, and **openid** scopes in the Scopes section
 5. Copy the Application ID and Secret to your `.env` file
 
 ## Frontend Setup
@@ -176,7 +176,7 @@ Matching is based on unique fields in the User model:
 
 ### Common Issues
 
-1. **OAuth callback errors**: Ensure redirect URIs in OAuth apps match exactly what's in your `.env` file
+1. **OAuth callback errors**: Ensure redirect URIs in OAuth apps match exactly what's in your `.env` file and point to the backend API (`http://localhost:3001/api/auth/{provider}/callback`)
 2. **Wallet connection issues**: Ensure WalletConnect Project ID is correctly configured
 3. **CORS issues**: Ensure frontend URL is properly configured in backend CORS settings
 

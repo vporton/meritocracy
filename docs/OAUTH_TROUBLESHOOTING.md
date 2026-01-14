@@ -12,7 +12,7 @@ This error typically occurs due to one of the following issues:
 ### 2. GitHub App Configuration Mismatch
 **Check these in your GitHub OAuth App settings:**
 
-- **Authorization callback URL** must be exactly: `http://localhost:5173/auth/github/callback` (for development)
+- **Authorization callback URL** must be exactly: `http://localhost:3001/api/auth/github/callback` (for development, assuming backend runs on port 3001)
 - **Client ID** must match your `GITHUB_CLIENT_ID` environment variable
 - **Client Secret** must match your `GITHUB_CLIENT_SECRET` environment variable
 
@@ -56,8 +56,8 @@ GitHub token exchange failed: { status: 400, statusText: 'Bad Request', body: '.
 2. Click on your app
 3. Verify:
    - **Application name**: Any name you want
-   - **Homepage URL**: `http://localhost:5173` (for dev)
-   - **Authorization callback URL**: `http://localhost:5173/auth/github/callback`
+   - **Homepage URL**: `http://localhost:5173`
+   - **Authorization callback URL**: `http://localhost:3001/api/auth/github/callback`
 
 ### 3. Test OAuth Flow
 1. Clear browser cache/cookies
@@ -104,7 +104,7 @@ cp frontend/env.example frontend/.env
 1. Go to GitHub → Settings → Developer settings → OAuth Apps → Your App
 2. Set these values:
    - **Homepage URL**: `http://localhost:5173` 
-   - **Authorization callback URL**: `http://localhost:5173/auth/github/callback`
+   - **Authorization callback URL**: `http://localhost:3001/api/auth/github/callback`
 
 ### Step 3: Update Environment Variables
 
@@ -154,7 +154,7 @@ This will help identify the specific issue (wrong client ID, mismatched redirect
 
 ### ❌ "redirect_uri_mismatch" 
 - Callback URL in GitHub app ≠ redirect URI in code
-- Ensure both are exactly: `http://localhost:5173/auth/github/callback`
+- Ensure both are exactly: `http://localhost:3001/api/auth/github/callback`
 
 ### ❌ "bad_verification_code"
 - Code expired (try again immediately)

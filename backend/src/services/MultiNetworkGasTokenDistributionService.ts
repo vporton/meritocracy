@@ -37,14 +37,6 @@ export interface NetworkDistributionResult {
   tokenDecimals: number;
   distributedAmount: number;
   reservedAmount: number;
-  distributions: Array<{
-    userId: number;
-    amount: number;
-    status: 'SENT' | 'DEFERRED' | 'FAILED';
-    transactionHash?: string;
-    errorMessage?: string;
-    gasCostToken?: number;
-  }>;
   errors: string[];
   distributed?: number;
   reserved?: number;
@@ -479,7 +471,6 @@ export class MultiNetworkGasTokenDistributionService {
       tokenDecimals: context.tokenDecimals,
       distributedAmount: 0,
       reservedAmount: 0,
-      distributions: [],
       errors: []
     };
 
@@ -525,13 +516,6 @@ export class MultiNetworkGasTokenDistributionService {
               }
             })
           ]);
-
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'DEFERRED',
-            errorMessage: kycError
-          });
 
           console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
 
@@ -624,14 +608,6 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'DEFERRED',
-            errorMessage: estimationError,
-            gasCostToken
-          });
-
           console.log(
             `⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError}`
           );
@@ -678,14 +654,6 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'SENT',
-            transactionHash: transferResult.transactionHash,
-            gasCostToken
-          });
-
           result.distributedAmount += dist.amountToken;
           remainingAmount = Math.max(0, remainingAmount - totalCostToken);
 
@@ -727,14 +695,6 @@ export class MultiNetworkGasTokenDistributionService {
               }
             })
           ]);
-
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'FAILED',
-            errorMessage,
-            gasCostToken
-          });
 
           const message = `Failed to send to user ${dist.userId}: ${errorMessage}`;
           result.errors.push(message);
@@ -782,7 +742,6 @@ export class MultiNetworkGasTokenDistributionService {
       tokenDecimals: context.tokenDecimals,
       distributedAmount: 0,
       reservedAmount: 0,
-      distributions: [],
       errors: []
     };
 
@@ -828,13 +787,6 @@ export class MultiNetworkGasTokenDistributionService {
               }
             })
           ]);
-
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'DEFERRED',
-            errorMessage: kycError
-          });
 
           console.log(`⏳[${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
 
@@ -928,14 +880,6 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'DEFERRED',
-            errorMessage: estimationError,
-            gasCostToken
-          });
-
           console.log(
             `⏳[${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError} `
           );
@@ -990,14 +934,6 @@ export class MultiNetworkGasTokenDistributionService {
               })
             ]);
 
-            result.distributions.push({
-              userId: dist.userId,
-              amount: dist.amountToken,
-              status: 'DEFERRED',
-              transactionHash: txHash,
-              gasCostToken
-            });
-
             result.distributedAmount += dist.amountToken;
             remainingAmount = Math.max(0, remainingAmount - totalCostToken);
 
@@ -1041,14 +977,6 @@ export class MultiNetworkGasTokenDistributionService {
               }
             })
           ]);
-
-          result.distributions.push({
-            userId: dist.userId,
-            amount: dist.amountToken,
-            status: 'FAILED',
-            errorMessage,
-            gasCostToken
-          });
 
           const message = `Failed to store transaction for user ${dist.userId}: ${errorMessage} `;
           result.errors.push(message);
@@ -1261,7 +1189,6 @@ export class MultiNetworkGasTokenDistributionService {
                 tokenDecimals: context.tokenDecimals,
                 distributedAmount: 0,
                 reservedAmount: 0,
-                distributions: [],
                 errors: [],
                 distributed: 0,
                 reserved: 0
@@ -1314,18 +1241,6 @@ export class MultiNetworkGasTokenDistributionService {
             6
           )
           } ${networkResult.tokenSymbol} reserved`
-        );
-        console.log(
-          `    ✅ Successful: ${networkResult.distributions.filter(d => d.status === 'SENT').length
-          } `
-        );
-        console.log(
-          `    ⏳ Deferred: ${networkResult.distributions.filter(d => d.status === 'DEFERRED').length
-          } `
-        );
-        console.log(
-          `    ❌ Failed: ${networkResult.distributions.filter(d => d.status === 'FAILED').length
-          } `
         );
       }
 
@@ -1384,7 +1299,6 @@ export class MultiNetworkGasTokenDistributionService {
                 tokenDecimals: context.tokenDecimals,
                 distributedAmount: 0,
                 reservedAmount: 0,
-                distributions: [],
                 errors: [],
                 distributed: 0,
                 reserved: 0
@@ -1438,15 +1352,6 @@ export class MultiNetworkGasTokenDistributionService {
             6
           )
           } ${networkResult.tokenSymbol} reserved`
-        );
-        console.log(
-          `    📝 Prepared: ${networkResult.distributions.filter(d => d.status === 'DEFERRED').length} `
-        );
-        console.log(
-          `    ⏳ Deferred: ${networkResult.distributions.filter(d => d.status === 'DEFERRED').length} `
-        );
-        console.log(
-          `    ❌ Failed: ${networkResult.distributions.filter(d => d.status === 'FAILED').length} `
         );
       }
 

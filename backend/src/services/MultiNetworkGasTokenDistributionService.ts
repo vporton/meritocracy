@@ -586,7 +586,7 @@ export class MultiNetworkGasTokenDistributionService {
             shouldStopDueToGasCost = true;
           }
 
-          totalCostToken = dist.amountToken + gasCostToken;
+          totalCostToken = dist.amountToken;
         } else {
           totalCostToken = dist.amountToken;
         }

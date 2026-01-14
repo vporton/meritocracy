@@ -24,7 +24,7 @@ export interface DistributionFiber {
   recipientAddress: string;
   amountToken: number;
   shareInGDP: number;
-  backlogToken: number;
+  backlogAmount: number;
 }
 
 export interface NetworkDistributionResult {
@@ -430,8 +430,8 @@ export class MultiNetworkGasTokenDistributionService {
           }
 
           for (const dist of distributions) {
-            dist.backlogToken = backlogLookup.get(dist.userId) ?? 0;
-            dist.amountToken += dist.backlogToken;
+            dist.backlogAmount = backlogLookup.get(dist.userId) ?? 0;
+            dist.amountToken += dist.backlogAmount;
           }
 
           const filtered = distributions.filter(dist => dist.amountToken > 0);

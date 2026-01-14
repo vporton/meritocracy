@@ -77,13 +77,8 @@ GitHub token exchange failed: { status: 400, statusText: 'Bad Request', body: '.
 
 ## Automated Configuration Check
 
-Run the configuration checker to diagnose common issues:
-
-```bash
-node oauth-debug.js
-```
-
-This script will check your environment files and identify missing or misconfigured OAuth settings.
+> [!WARNING]
+> The automated configuration check script (`oauth-debug.js`) is currently under maintenance. Please follow the manual debugging steps below.
 
 ## Manual Configuration Steps
 
@@ -162,7 +157,7 @@ This will help identify the specific issue (wrong client ID, mismatched redirect
 - Network/timing issue (check for delays)
 
 ### ❌ Missing environment variables
-- Run `node oauth-debug.js` to check configuration
 - Ensure both frontend and backend .env files exist and are configured
+- Check that `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are correctly set in `backend/.env`
 
 If you're still experiencing issues, the enhanced logging will now provide much more specific error details to help identify the exact problem.

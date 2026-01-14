@@ -65,8 +65,11 @@ You need to create OAuth applications for each provider:
 #### GitHub OAuth App
 1. Go to GitHub Settings > Developer settings > OAuth Apps
 2. Click "New OAuth App"
-3. Set Authorization callback URL to: `http://localhost:3001/api/auth/github/callback` (assuming backend runs on port 3001)
+3. Set Authorization callback URL to: `http://localhost:3001/api/auth/github/callback`
 4. Copy the Client ID and Client Secret to your `.env` file
+
+> [!NOTE]
+> In development, both the frontend (`http://localhost:5173/auth/github/callback`) and the backend (`http://localhost:3001/api/auth/github/callback`) redirect URIs are used. The frontend initiates the flow and receives the code, then sends it to the backend.
 
 #### ORCID OAuth App
 1. Go to ORCID Developer Tools
@@ -144,8 +147,13 @@ The authentication system provides the following API endpoints:
 - `POST /api/auth/login/github` - GitHub OAuth login
 - `POST /api/auth/login/bitbucket` - BitBucket OAuth login
 - `POST /api/auth/login/gitlab` - GitLab OAuth login
+- `POST /api/auth/register/email` - Register/Login with email (sends verification)
+- `POST /api/auth/verify/email` - Verify email with token
+- `POST /api/auth/resend-verification` - Resend verification email
 - `POST /api/auth/logout` - Logout (invalidate session)
-- `GET /api/auth/me` - Get current user
+- `GET /api/auth/me` - Get current user profile
+- `GET /api/auth/kyc/status` - Get user KYC status
+- `POST /api/auth/disconnect/:provider` - Unlink a specific provider (ethereum, github, kyc, etc.)
 - `DELETE /api/auth/sessions/cleanup` - Cleanup expired sessions
 
 ## User Matching Logic

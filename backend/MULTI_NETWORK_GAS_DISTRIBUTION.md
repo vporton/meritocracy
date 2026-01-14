@@ -5,13 +5,15 @@ This document describes the enhanced token distribution system that supports mul
 ## Overview
 
 The multi-network distribution system extends the original single-network system to support:
+- **Two-Stage Payments**: Separation of transaction preparation (hashing/storage) from execution for robustness.
 - **Native Gas Tokens Only**: Distributes each network's own gas asset
-- **Multiple Networks**: Ethereum Mainnet, Polygon, Arbitrum, Optimism, Base, Sepolia, and localhost
+- **Multiple Networks**: Ethereum Mainnet, Celo, Polygon, Arbitrum, Optimism, Base, Sepolia, and localhost
 - **Async Fibers**: Parallel processing of distributions across networks
 - **Unified Address**: One EVM address per user across all networks
 - **Network-Specific Configuration**: Different gas reserves and minimum distribution thresholds per network
 - **Gas Cost Guardrail**: Stop once transfers would be less than 5× the estimated gas cost
 - **Comprehensive Monitoring**: Per-network status, reserves, and distribution history
+- **Country-Specific Secrets**: Using `SystemSecretService` for granular private key management.
 - **Cross-Chain Adapters**: Native distribution adapters for Solana (SOL), Bitcoin (BTC), Polkadot (DOT), Cosmos (ATOM), and Stellar (XLM)
 
 ## Architecture
@@ -28,6 +30,7 @@ The multi-network distribution system extends the original single-network system
 | Network | Chain ID | Gas Reserve | Min Distribution | Notes |
 |---------|----------|-------------|------------------|-------|
 | Mainnet | 1 | 0.01 ETH | $20 | Primary network |
+| Celo | 42220 | 0.01 CELO | $5 | Mobile-first network |
 | Polygon | 137 | 0.1 ETH | $5 | Lower gas costs, higher reserve |
 | Arbitrum | 42161 | 0.005 ETH | $10 | L2 scaling solution |
 | Optimism | 10 | 0.005 ETH | $10 | L2 scaling solution |
@@ -145,7 +148,24 @@ ETHEREUM_LOCALHOST_RPC_URL=http://localhost:8545
 - `GET /api/multi-network-gas/user/:userId/distribution-history` - Get distribution history for a specific user
 
 ### Manual Operations
-- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution
+- `POST /api/multi-network-gas/run-distribution` - Manually trigger multi-network distribution (Stage 1)
+- `POST /api/multi-network-gas/execute-pending` - Execute prepared pending transactions (Stage 2)
+
+## Two-Stage Payment System
+
+To ensure robustness and prevent double-spending or missed transfers, the system uses a two-stage process:
+
+### Stage 1: Preparation
+1. Calculate distributions for all eligible users.
+2. Generate deterministic hashes for each transaction.
+3. Store prepared transactions in the `PendingTransaction` table.
+4. Mark original `GasTokenDistribution` as `PROCESSED` and link to pending.
+
+### Stage 2: Execution
+1. Retrieve pending transactions from the database.
+2. Order them deterministically (by network, then creation time).
+3. Execute transfers using the respective network adapter.
+4. Update transaction status to `SENT` or `FAILED` with reconciliation.
 
 ## Async Fiber Processing
 

@@ -22,14 +22,11 @@ The system supports the following networks:
 
 ### 1. View Gas Balances
 
-Use the provided script to view gas token balances:
+You can view gas token balances across all enabled networks using the REST API:
 
 ```bash
-# From the project root
-node show-gas-balances.js
-
-# Or specify a custom API URL
-node show-gas-balances.js http://localhost:3001
+# Get status of all enabled networks
+curl http://localhost:3001/api/multi-network-gas/status
 ```
 
 ### 2. API Endpoints
@@ -125,12 +122,10 @@ When you run the gas balance script, you'll see information like:
 
 ### Key Metrics Explained
 
-- **Balance**: Current ETH balance in the wallet for this network
-- **Gas Reserve**: Amount of ETH kept as gas reserve (not distributed)
-- **Available for Distribution**: Balance minus gas reserve plus existing reserves
-- **Total Reserve**: Accumulated small distributions that haven't been sent yet
-- **Min Distribution USD**: Minimum USD value required to send a distribution
-- **Last Distribution**: When the last distribution was processed
+- **Balance**: Current balance in the wallet for this network/token
+- **Available for Distribution**: Total balance available for distribution (wallet balance + existing reserves)
+- **Total Reserve**: Accumulated small distributions that haven't been sent yet for this specific network/token
+- **Last Distribution**: When the last distribution was processed for this network
 
 ## Troubleshooting
 

@@ -12,7 +12,7 @@ The user evaluation system creates a flow graph of tasks that:
 4. **Prompt Injection Detection**: Checks for prompt injection attempts (3 times, with optimization)
 5. **Additional Worth Assessments**: Performs 2 more worth assessments if threshold is met
 6. **Median Calculation**: Calculates the median from all completed worth assessments
-7. **Security Response**: Immediately bans users and cancels remaining tasks if injection is detected
+7. **Security Response**: Immediately bans users and cancels remaining tasks if injection is detected by the `PromptInjectionRunner`.
 
 **Key Features:**
 - **Partial Execution**: Tasks can be cancelled early based on conditions
@@ -38,7 +38,7 @@ The system implements several TaskRunner classes:
 - **`ScientistOnboardingRunner`**: Uses OpenAI to check if user is an active scientist/FOSS dev
 - **`RandomizePromptRunner`**: Uses OpenAI to randomize prompts while preserving meaning (can be conditionally cancelled based on worth threshold)
 - **`WorthAssessmentRunner`**: Uses OpenAI to assess user worth with randomized prompts (depends on RandomizePromptRunner, returns undefined if parent injection detected)
-- **`PromptInjectionRunner`**: Uses OpenAI to detect prompt injection attempts (bans user and marks as CANCELLED if injection detected)
+- **`PromptInjectionRunner`**: Uses OpenAI to detect prompt injection attempts. If injection is detected, it **immediately bans the user** (1-year ban) and marks itself as `CANCELLED`.
 - **`WorthThresholdCheckRunner`**: Checks if worth exceeds 1e-11 threshold (depends on WorthAssessmentRunner)
 - **`MedianRunner`**: Calculates median from dependency results (depends on WorthAssessmentRunners, **EXCEPTION**: not cancelled if dependencies are cancelled)
 
@@ -467,7 +467,8 @@ The CANCELLED status enables significant optimizations:
 
 ### Best Practices
 
-1. **Always check task status** before using results
+1. **Meet Evaluation Requirements**: To start evaluation, a user must have a connected Ethereum wallet, a verified email, and at least one connected social account (ORCID, GitHub, BitBucket, or GitLab).
+2. **Always check task status** before using results
 2. **Handle partial evaluations gracefully** in the UI
 3. **Log cancellation reasons** for debugging
 4. **Consider retry logic** for transient failures

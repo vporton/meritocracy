@@ -407,7 +407,8 @@ export class MultiNetworkGasTokenDistributionService {
               userId: user.id,
               recipientAddress: recipientAddress!,
               amountToken: proportion > 0 ? spendableFromWallet * proportion : 0,
-              shareInGDP: share
+              shareInGDP: share,
+              backlogAmount: 0
             };
           });
 
@@ -1129,7 +1130,7 @@ export class MultiNetworkGasTokenDistributionService {
     return status;
   }
 
-  private(context: GasTokenNetworkContext): Partial<GasTokenNetworkContext> {
+  private sanitizeContext(context: GasTokenNetworkContext): Partial<GasTokenNetworkContext> {
     const { privateKey, ...sanitized } = context;
     return sanitized;
   }

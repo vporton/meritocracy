@@ -124,7 +124,7 @@ export class MultiNetworkGasTokenDistributionService {
   private async collectNetworkAdapterContexts(
     tokenOptions: TokenDistributionOptions
   ): Promise<Map<string, AdapterContextEntry>> {
-    const cacheKey = JSON.stringify(tokenOptions) + ':v2';
+    const cacheKey = JSON.stringify(tokenOptions) + ':v3';
     const now = Date.now();
     const cached = this.contextCache.get(cacheKey);
 
@@ -141,58 +141,75 @@ export class MultiNetworkGasTokenDistributionService {
       const contextEntries = new Map<string, AdapterContextEntry>();
       console.log(`🔍 [MultiNetwork] Refreshing adapter contexts for ${cacheKey}...`);
 
+      // If no specific country is requested, we include all countries that have onboarded users
+      let countriesToInclude: string[] = [];
+      if (tokenOptions.country) {
+        countriesToInclude = [tokenOptions.country];
+      } else {
+        const usersWithCountry = await this.prisma.user.findMany({
+          where: { residenceCountry: { not: null }, onboarded: true },
+          select: { residenceCountry: true },
+          distinct: ['residenceCountry']
+        });
+        countriesToInclude = usersWithCountry.map(u => u.residenceCountry!);
+      }
+
       for (const adapter of this.networkAdapters) {
-        let contexts: GasTokenNetworkContext[] = [];
+        let baseContexts: GasTokenNetworkContext[] = [];
         try {
-          contexts = await adapter.getNetworkContexts(tokenOptions);
+          baseContexts = await adapter.getNetworkContexts(tokenOptions);
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
           console.error(`❌ Failed to load contexts for adapter ${adapter.type}: ${message}`);
           continue;
         }
 
-        for (const context of contexts) {
-          if (tokenOptions.country) {
-            const secret = await systemSecretService.getCountrySecret(context.networkId, tokenOptions.country);
+        for (const context of baseContexts) {
+          // Add Global context (only if we are not restricted to a specific country)
+          if (!tokenOptions.country) {
+            contextEntries.set(context.networkId, { adapter, context });
+          }
 
-            let finalWalletAddress = 'ADDRESS-NOT-RESOLVED';
-            let finalPrivateKey: string | undefined = undefined;
+          // Add Country contexts
+          for (const country of countriesToInclude) {
+            try {
+              const secret = await systemSecretService.ensureCountrySecret(context.networkId, country);
 
-            if (secret) {
-              finalPrivateKey = secret.trim(); // TODO@P3: trim() is not needed, apparently.
-              // Try to derive specific address if adapter supports it
-              if (adapter.deriveAddress) {
-                try {
-                  const derived = await adapter.deriveAddress(finalPrivateKey);
-                  finalWalletAddress = derived;
-                } catch (e) {
-                  console.error(`Derivation failed for ${context.networkId} (${tokenOptions.country}):`, e);
-                  finalWalletAddress = 'DERIVATION-FAILED';
+              let finalWalletAddress = 'ADDRESS-NOT-RESOLVED';
+              let finalPrivateKey: string | undefined = undefined;
+
+              if (secret) {
+                finalPrivateKey = secret.trim();
+                if (adapter.deriveAddress) {
+                  try {
+                    finalWalletAddress = await adapter.deriveAddress(finalPrivateKey);
+                  } catch (e) {
+                    console.error(`Derivation failed for ${context.networkId} (${country}):`, e);
+                    finalWalletAddress = 'DERIVATION-FAILED';
+                  }
+                } else {
+                  finalWalletAddress = 'DERIVE-NOT-SUPPORTED';
                 }
               } else {
-                finalWalletAddress = 'DERIVE-NOT-SUPPORTED';
+                finalWalletAddress = 'SECRET-MISSING-DB';
               }
-            } else {
-              console.warn(`[MultiNetwork] No secret found for ${context.networkId} / ${tokenOptions.country}`);
-              finalWalletAddress = 'SECRET-MISSING-DB';
-            }
 
-            const newNetworkId = `${context.networkId}-${tokenOptions.country}`;
-            contextEntries.set(newNetworkId, {
-              adapter,
-              context: {
-                ...context,
-                networkId: newNetworkId,
-                networkName: `${context.networkName} (${tokenOptions.country})`,
-                country: tokenOptions.country,
-                privateKey: finalPrivateKey,
-                walletAddress: finalWalletAddress,
-                baseNetworkId: context.networkId
-              }
-            });
-          } else {
-            // Global
-            contextEntries.set(context.networkId, { adapter, context });
+              const newNetworkId = `${context.networkId}-${country}`;
+              contextEntries.set(newNetworkId, {
+                adapter,
+                context: {
+                  ...context,
+                  networkId: newNetworkId,
+                  networkName: `${context.networkName} (${country})`,
+                  country,
+                  privateKey: finalPrivateKey,
+                  walletAddress: finalWalletAddress,
+                  baseNetworkId: context.networkId
+                }
+              });
+            } catch (error) {
+              console.error(`❌ Failed to setup country context for ${context.networkId} / ${country}:`, error);
+            }
           }
         }
       }
@@ -282,9 +299,23 @@ export class MultiNetworkGasTokenDistributionService {
       }
     >
   > {
-    const users = await this.fetchEligibleUsers(); // TODO@P3: Don't load the full list into memory.
+    const users = await this.fetchEligibleUsers();
     if (users.length === 0) {
       return new Map();
+    }
+
+    // Pre-calculate GDP share totals for groups (all users with shares, even not onboarded)
+    const gdpStats = await this.prisma.user.groupBy({
+      by: ['residenceCountry'],
+      where: { shareInGDP: { not: null } },
+      _sum: { shareInGDP: true }
+    });
+
+    const countryShareTotals = new Map<string, number>();
+    for (const row of gdpStats) {
+      if (row.residenceCountry) {
+        countryShareTotals.set(row.residenceCountry, row._sum.shareInGDP ?? 0);
+      }
     }
 
     const networkDistributions = new Map<
@@ -296,148 +327,121 @@ export class MultiNetworkGasTokenDistributionService {
       }
     >();
 
-    for (const adapter of this.networkAdapters) {
-      let contexts: GasTokenNetworkContext[] = [];
-      try {
-        contexts = await adapter.getNetworkContexts(tokenOptions);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`❌ Failed to load contexts for adapter ${adapter.type}: ${message}`);
+    // Use collectNetworkAdapterContexts to get all relevant contexts (Global + Countries)
+    const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
+
+    for (const [contextId, { adapter, context }] of contextEntries.entries()) {
+      const userFilter = context.country ? (u: User) => u.residenceCountry === context.country : undefined;
+
+      const eligibleUsers = users.filter(user => {
+        if (userFilter && !userFilter(user)) return false;
+
+        const share = user.shareInGDP ?? 0;
+        const address = adapter.getRecipientAddress(user);
+        return share > 0 && !!address;
+      });
+
+      // Total share used as denominator
+      // For global: denominator is 1.0 (since shares are absolute fractions of world GDP)
+      // For country: denominator is the sum of shares of all known citizens of that country
+      const totalShareDenom = context.country
+        ? (countryShareTotals.get(context.country) ?? 0)
+        : 1.0;
+
+      if (eligibleUsers.length === 0 || totalShareDenom <= 0) {
+        if (!context.country) {
+          console.warn(
+            `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
+          );
+        }
+        networkDistributions.set(contextId, {
+          adapter,
+          context,
+          distributions: []
+        });
         continue;
       }
 
-      for (const originalContext of contexts) {
-        // Prepare list of contexts to process (Global + Countries)
-        const contextsToProcess: Array<{ context: GasTokenNetworkContext; userFilter?: (u: User) => boolean }> = [
-          { context: originalContext } // Global
-        ];
-
-        // Identify countries with specific funds
-        const distinctCountries = [...new Set(users.map(u => u.residenceCountry).filter(c => c))];
-        for (const country of distinctCountries) {
-          const countrySecret = await systemSecretService.getCountrySecret(originalContext.networkId, country!);
-          if (countrySecret) {
-            contextsToProcess.push({
-              context: {
-                ...originalContext,
-                networkId: `${originalContext.networkId}-${country}`,
-                networkName: `${originalContext.networkName} (${country})`,
-                privateKey: countrySecret,
-                country: country!
-              },
-              userFilter: (u) => u.residenceCountry === country
-            });
-          }
-        }
-
-        for (const { context, userFilter } of contextsToProcess) {
-          const eligibleUsers = users.filter(user => {
-            if (userFilter && !userFilter(user)) return false;
-
-            const share = user.shareInGDP ?? 0;
-            const address = adapter.getRecipientAddress(user);
-            return share > 0 && !!address;
-          });
-
-          const totalShare = eligibleUsers.reduce((sum, user) => sum + (user.shareInGDP ?? 0), 0);
-          if (eligibleUsers.length === 0 || totalShare <= 0) {
-            // Only warn for Global, country specific might be empty mostly
-            if (!context.country) {
-              console.warn(
-                `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
-              );
-            }
-            networkDistributions.set(context.networkId, {
-              adapter,
-              context,
-              distributions: []
-            });
-            continue;
-          }
-
-          let walletBalance = 0;
-          try {
-            walletBalance = await adapter.getWalletBalance(context);
-          } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error(
-              `❌ Failed to read wallet balance for ${context.networkName} (${context.adapterType}): ${message}`
-            );
-            networkDistributions.set(context.networkId, {
-              adapter,
-              context,
-              distributions: []
-            });
-            continue;
-          }
-
-          const currentReserve = await this.getTokenReserve(context);
-          const spendableFromWallet = Math.max(0, walletBalance);
-          const totalAvailable = spendableFromWallet + currentReserve;
-
-          if (totalAvailable <= 0) {
-            // Only warn for Global, country funds naturally empty often
-            if (!context.country) {
-              console.warn(
-                `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
-              );
-            }
-            networkDistributions.set(context.networkId, {
-              adapter,
-              context,
-              distributions: []
-            });
-            continue;
-          }
-
-          const distributions: DistributionFiber[] = eligibleUsers.map(user => {
-            const share = user.shareInGDP ?? 0;
-            const proportion = share / totalShare;
-            const recipientAddress = adapter.getRecipientAddress(user);
-
-            return {
-              userId: user.id,
-              recipientAddress: recipientAddress!,
-              amountToken: proportion > 0 ? spendableFromWallet * proportion : 0,
-              shareInGDP: share,
-              backlogAmount: 0
-            };
-          });
-
-          // Fetch aggregated backlog from DB instead of manual Map summation
-          const backlogSums = await this.prisma.gasTokenDistribution.groupBy({
-            by: ['userId'],
-            where: {
-              network: context.networkId,
-              tokenSymbol: context.tokenSymbol,
-              tokenType: context.tokenType,
-              status: { in: ['DEFERRED', 'FAILED'] }
-            },
-            _sum: {
-              amount: true
-            }
-          });
-
-          const backlogLookup = new Map<number, number>();
-          for (const row of backlogSums) {
-            backlogLookup.set(row.userId, Number(row._sum.amount ?? 0));
-          }
-
-          for (const dist of distributions) {
-            dist.backlogAmount = backlogLookup.get(dist.userId) ?? 0;
-            dist.amountToken += dist.backlogAmount;
-          }
-
-          const filtered = distributions.filter(dist => dist.amountToken > 0);
-          filtered.sort((a, b) => b.amountToken - a.amountToken);
-
-          networkDistributions.set(context.networkId, {
-            adapter,
-            context,
-            distributions: filtered
-          });
-        }
+      let walletBalance = 0;
+      try {
+        walletBalance = await adapter.getWalletBalance(context);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error(
+          `❌ Failed to read wallet balance for ${context.networkName} (${context.adapterType}): ${message}`
+        );
+        networkDistributions.set(contextId, {
+          adapter,
+          context,
+          distributions: []
+        });
+        continue;
       }
+
+      const currentReserve = await this.getTokenReserve(context);
+      const spendableFromWallet = Math.max(0, walletBalance);
+      const totalAvailable = spendableFromWallet + currentReserve;
+
+      if (totalAvailable <= 0) {
+        if (!context.country) {
+          console.warn(
+            `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
+          );
+        }
+        networkDistributions.set(contextId, {
+          adapter,
+          context,
+          distributions: []
+        });
+        continue;
+      }
+
+      const distributions: DistributionFiber[] = eligibleUsers.map(user => {
+        const share = user.shareInGDP ?? 0;
+        const proportion = share / totalShareDenom;
+        const recipientAddress = adapter.getRecipientAddress(user);
+
+        return {
+          userId: user.id,
+          recipientAddress: recipientAddress!,
+          amountToken: proportion > 0 ? spendableFromWallet * proportion : 0,
+          shareInGDP: share,
+          backlogAmount: 0
+        };
+      });
+
+      // Fetch aggregated backlog from DB
+      const backlogSums = await this.prisma.gasTokenDistribution.groupBy({
+        by: ['userId'],
+        where: {
+          network: context.networkId,
+          tokenSymbol: context.tokenSymbol,
+          tokenType: context.tokenType,
+          status: { in: ['DEFERRED', 'FAILED'] }
+        },
+        _sum: {
+          amount: true
+        }
+      });
+
+      const backlogLookup = new Map<number, number>();
+      for (const row of backlogSums) {
+        backlogLookup.set(row.userId, Number(row._sum.amount ?? 0));
+      }
+
+      for (const dist of distributions) {
+        dist.backlogAmount = backlogLookup.get(dist.userId) ?? 0;
+        dist.amountToken += dist.backlogAmount;
+      }
+
+      const filtered = distributions.filter(dist => dist.amountToken > 0);
+      filtered.sort((a, b) => b.amountToken - a.amountToken);
+
+      networkDistributions.set(contextId, {
+        adapter,
+        context,
+        distributions: filtered
+      });
     }
 
     return networkDistributions;
@@ -554,9 +558,7 @@ export class MultiNetworkGasTokenDistributionService {
           if (totalRequired > remainingAmount + Number.EPSILON) {
             const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
             if (adjustedAmount <= 0) {
-              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(
-                6
-              )} ${context.tokenSymbol}`;
+              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(6)} ${context.tokenSymbol}`;
               shouldStopDueToGasCost = true;
             } else {
               dist.amountToken = adjustedAmount;
@@ -607,14 +609,10 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          console.log(
-            `⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError}`
-          );
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError}`);
           remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
           if (shouldStopDueToGasCost) {
-            console.log(
-              `🛑 [${context.networkName}] Halting further distributions due to gas cost threshold.`
-            );
+            console.log(`🛑 [${context.networkName}] Halting further distributions due to gas cost threshold.`);
             break;
           }
           continue;
@@ -656,13 +654,8 @@ export class MultiNetworkGasTokenDistributionService {
           result.distributedAmount += dist.amountToken;
           remainingAmount = Math.max(0, remainingAmount - totalCostToken);
 
-          const gasInfo =
-            gasCostToken !== undefined
-              ? ` (gas ${gasCostToken.toFixed(6)} ${context.tokenSymbol})`
-              : '';
-          console.log(
-            `✅ [${context.networkName}] Sent ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} to user ${dist.userId}${gasInfo}`
-          );
+          const gasInfo = gasCostToken !== undefined ? ` (gas ${gasCostToken.toFixed(6)} ${context.tokenSymbol})` : '';
+          console.log(`✅ [${context.networkName}] Sent ${dist.amountToken.toFixed(6)} ${context.tokenSymbol} to user ${dist.userId}${gasInfo}`);
         } catch (error) {
           result.reservedAmount += dist.amountToken;
           remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
@@ -702,9 +695,7 @@ export class MultiNetworkGasTokenDistributionService {
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push(`Error processing user ${dist.userId}: ${errorMessage}`);
-        console.error(
-          `❌ [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`
-        );
+        console.error(`❌ [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`);
       }
     }
 
@@ -713,11 +704,7 @@ export class MultiNetworkGasTokenDistributionService {
     await this.updateGasTokenReserve(context, newReserve);
 
     console.log(
-      `📊 [${context.networkName}] Distribution completed: ${result.distributedAmount.toFixed(
-        6
-      )} ${context.tokenSymbol} distributed, ${result.reservedAmount.toFixed(
-        6
-      )} ${context.tokenSymbol} reserved`
+      `📊 [${context.networkName}] Distribution completed: ${result.distributedAmount.toFixed(6)} ${context.tokenSymbol} distributed, ${result.reservedAmount.toFixed(6)} ${context.tokenSymbol} reserved`
     );
 
     return result;
@@ -745,7 +732,7 @@ export class MultiNetworkGasTokenDistributionService {
     };
 
     console.log(
-      `🔄[STAGE 1] Preparing ${distributions.length} ${context.tokenSymbol} transactions on ${context.networkName} (${context.adapterType})...`
+      `🔄 [STAGE 1] Preparing ${distributions.length} ${context.tokenSymbol} transactions on ${context.networkName} (${context.adapterType})...`
     );
 
     let remainingAmount = distributions.reduce((sum, dist) => sum + dist.amountToken, 0);
@@ -787,7 +774,7 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          console.log(`⏳[${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
 
           if (user?.email) {
             const token = emailService.generateKycToken();
@@ -825,10 +812,7 @@ export class MultiNetworkGasTokenDistributionService {
           if (totalRequired > remainingAmount + Number.EPSILON) {
             const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
             if (adjustedAmount <= 0) {
-              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(
-                6
-              )
-                } ${context.tokenSymbol} `;
+              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(6)} ${context.tokenSymbol}`;
               shouldStopDueToGasCost = true;
             } else {
               dist.amountToken = adjustedAmount;
@@ -879,14 +863,10 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          console.log(
-            `⏳[${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError} `
-          );
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${estimationError}`);
           remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
           if (shouldStopDueToGasCost) {
-            console.log(
-              `🛑[${context.networkName}] Halting further distributions due to gas cost threshold.`
-            );
+            console.log(`🛑 [${context.networkName}] Halting further distributions due to gas cost threshold.`);
             break;
           }
           continue;
@@ -936,14 +916,10 @@ export class MultiNetworkGasTokenDistributionService {
             result.distributedAmount += dist.amountToken;
             remainingAmount = Math.max(0, remainingAmount - totalCostToken);
 
-            console.log(
-              `📝[${context.networkName}] Stored transaction ${txHash.substring(0, 16)}... for user ${dist.userId}(${dist.amountToken.toFixed(6)} ${context.tokenSymbol})`
-            );
+            console.log(`📝 [${context.networkName}] Stored transaction ${txHash.substring(0, 16)}... for user ${dist.userId} (${dist.amountToken.toFixed(6)} ${context.tokenSymbol})`);
           } else {
             // Transaction already exists - skip
-            console.log(
-              `⏭️[${context.networkName}] Skipping duplicate transaction for user ${dist.userId}`
-            );
+            console.log(`⏭️ [${context.networkName}] Skipping duplicate transaction for user ${dist.userId}`);
           }
         } catch (error) {
           result.reservedAmount += dist.amountToken;
@@ -977,16 +953,14 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          const message = `Failed to store transaction for user ${dist.userId}: ${errorMessage} `;
+          const message = `Failed to store transaction for user ${dist.userId}: ${errorMessage}`;
           result.errors.push(message);
-          console.error(`❌[${context.networkName}] ${message} `);
+          console.error(`❌ [${context.networkName}] ${message}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        result.errors.push(`Error processing user ${dist.userId}: ${errorMessage} `);
-        console.error(
-          `❌[${context.networkName}] Error processing user ${dist.userId}: ${errorMessage} `
-        );
+        result.errors.push(`Error processing user ${dist.userId}: ${errorMessage}`);
+        console.error(`❌ [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`);
       }
     }
 
@@ -995,13 +969,7 @@ export class MultiNetworkGasTokenDistributionService {
     await this.updateGasTokenReserve(context, newReserve);
 
     console.log(
-      `📊[${context.networkName}] Stage 1 completed: ${result.distributedAmount.toFixed(
-        6
-      )
-      } ${context.tokenSymbol} prepared for execution, ${result.reservedAmount.toFixed(
-        6
-      )
-      } ${context.tokenSymbol} reserved`
+      `📊 [${context.networkName}] Stage 1 completed: ${result.distributedAmount.toFixed(6)} ${context.tokenSymbol} prepared for execution, ${result.reservedAmount.toFixed(6)} ${context.tokenSymbol} reserved`
     );
 
     return {
@@ -1501,8 +1469,8 @@ export class MultiNetworkGasTokenDistributionService {
     const contexts = await this.collectNetworkAdapterContexts(tokenOptions);
 
     let lookupKey = networkId;
-    if (tokenOptions.country && !networkId.endsWith(`- ${tokenOptions.country} `)) {
-      lookupKey = `${networkId} -${tokenOptions.country} `;
+    if (tokenOptions.country && !networkId.endsWith(`-${tokenOptions.country}`)) {
+      lookupKey = `${networkId}-${tokenOptions.country}`;
     }
     const entry = contexts.get(lookupKey);
     if (!entry) return undefined;
@@ -1547,7 +1515,7 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (!enabledEvmNetworks.includes(networkId)) {
           // Try exact suffix match first
-          if (tokenOptions.country && networkId.endsWith(`- ${tokenOptions.country} `)) {
+          if (tokenOptions.country && networkId.endsWith(`-${tokenOptions.country}`)) {
             const potential = networkId.slice(0, -1 * (tokenOptions.country.length + 1));
             if (enabledEvmNetworks.includes(potential)) {
               baseNetworkId = potential;
@@ -1556,7 +1524,7 @@ export class MultiNetworkGasTokenDistributionService {
 
           // If still not found, try prefix matching
           if (baseNetworkId === networkId) {
-            const match = enabledEvmNetworks.find(n => networkId.startsWith(`${n} -`));
+            const match = enabledEvmNetworks.find(n => networkId.startsWith(`${n}-`));
             if (match) baseNetworkId = match;
           }
         }

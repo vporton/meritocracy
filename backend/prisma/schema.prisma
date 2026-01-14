@@ -39,6 +39,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   kycTokens               KycToken[]
   gasTokenDistributions   GasTokenDistribution[]
+  pendingTransactions     PendingTransaction[]
   openaiLogs              OpenAILog[]
   sessions                Session[]
 
@@ -259,4 +260,33 @@ model SystemSecret {
   updatedAt DateTime @updatedAt
 
   @@map("system_secrets")
+}
+
+model PendingTransaction {
+  id                  Int      @id @default(autoincrement())
+  transactionHash     String   @unique  // Computed hash of transaction data
+  userId              Int
+  network             String
+  recipientAddress    String
+  amount              Decimal
+  backlogAmount       Decimal  @default(0)
+  tokenType           String
+  tokenSymbol         String
+  tokenDecimals       Int
+  status              String   @default("PENDING")  // PENDING, EXECUTING, COMPLETED, FAILED
+  executionAttempts   Int      @default(0)
+  lastExecutionAttempt DateTime?
+  executedTransactionHash String?  // Actual blockchain transaction hash after execution
+  errorMessage        String?
+  transactionData     String   // JSON string with all transaction details
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([network])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status, network])
+  @@map("pending_transactions")
 }

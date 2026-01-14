@@ -88,7 +88,7 @@ export class MultiNetworkGasTokenDistributionService {
   // Cache for network status to coalesce parallel requests from frontend
   private statusCache: Map<string, { entry: ReserveStatusEntry; timestamp: number }> = new Map();
   private statusPromises: Map<string, Promise<ReserveStatusEntry | undefined>> = new Map();
-  private readonly STATUS_TTL = 10 * 1000; // 10 seconds
+  private readonly STATUS_TTL = 100 * 1000; // 100 seconds
 
   constructor(
     prisma: PrismaClient,

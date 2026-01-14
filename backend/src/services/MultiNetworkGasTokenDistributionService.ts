@@ -1235,6 +1235,8 @@ export class MultiNetworkGasTokenDistributionService {
    * TWO-STAGE VARIANT: Prepare distributions without executing transactions
    * This is Stage 1 of the two-stage payment system
    * Call executePendingTransactions() afterward to execute the stored transactions
+   * 
+   * TODO@P3: Execute a payment right after storing it.
    */
   async processMultiNetworkDistributionTwoStage(
     overrides?: Partial<TokenDistributionOptions>
@@ -1394,7 +1396,7 @@ export class MultiNetworkGasTokenDistributionService {
       where: {
         network_tokenSymbol_tokenType: {
           network: context.networkId,
-          tokenSymbol: context.tokenSymbol,
+          tokenSymbol: context.tokenSymbol, // TODO@P2: Use tokenAddress instead.
           tokenType: context.tokenType
         }
       }

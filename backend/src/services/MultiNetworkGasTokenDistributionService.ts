@@ -411,22 +411,23 @@ export class MultiNetworkGasTokenDistributionService {
             };
           });
 
-          const deferredRows = await this.prisma.gasTokenDistribution.findMany({
+          // Fetch aggregated backlog from DB instead of manual Map summation
+          const backlogSums = await this.prisma.gasTokenDistribution.groupBy({
+            by: ['userId'],
             where: {
               network: context.networkId,
               tokenSymbol: context.tokenSymbol,
               tokenType: context.tokenType,
-              status: 'DEFERRED'
+              status: { in: ['DEFERRED', 'FAILED'] }
             },
-            select: {
-              userId: true,
+            _sum: {
               amount: true
             }
           });
+
           const backlogLookup = new Map<number, number>();
-          for (const row of deferredRows) {
-            const previous = backlogLookup.get(row.userId) ?? 0;
-            backlogLookup.set(row.userId, previous + Number(row.amount));
+          for (const row of backlogSums) {
+            backlogLookup.set(row.userId, Number(row._sum.amount ?? 0));
           }
 
           for (const dist of distributions) {
@@ -497,19 +498,31 @@ export class MultiNetworkGasTokenDistributionService {
           const kycError = 'KYC_REQUIRED';
           result.reservedAmount += dist.amountToken;
 
-          await this.prisma.gasTokenDistribution.create({
-            data: {
-              userId: dist.userId,
-              network: context.networkId,
-              amount: dist.amountToken,
-              amountUsd: 0,
-              status: 'DEFERRED',
-              errorMessage: kycError,
-              tokenType: context.tokenType,
-              tokenSymbol: context.tokenSymbol,
-              tokenDecimals: context.tokenDecimals
-            }
-          });
+          await this.prisma.$transaction([
+            this.prisma.gasTokenDistribution.updateMany({
+              where: {
+                userId: dist.userId,
+                network: context.networkId,
+                tokenSymbol: context.tokenSymbol,
+                status: { in: ['DEFERRED', 'FAILED'] }
+              },
+              data: { status: 'PROCESSED' }
+            }),
+            this.prisma.gasTokenDistribution.create({
+              data: {
+                userId: dist.userId,
+                network: context.networkId,
+                amount: dist.amountToken,
+                backlogAmount: dist.backlogAmount,
+                amountUsd: 0,
+                status: 'DEFERRED',
+                errorMessage: kycError,
+                tokenType: context.tokenType,
+                tokenSymbol: context.tokenSymbol,
+                tokenDecimals: context.tokenDecimals
+              }
+            })
+          ]);
 
           result.distributions.push({
             userId: dist.userId,
@@ -583,19 +596,31 @@ export class MultiNetworkGasTokenDistributionService {
         if (estimationError) {
           result.reservedAmount += dist.amountToken;
 
-          await this.prisma.gasTokenDistribution.create({
-            data: {
-              userId: dist.userId,
-              network: context.networkId,
-              amount: dist.amountToken,
-              amountUsd: 0,
-              status: 'DEFERRED',
-              errorMessage: estimationError,
-              tokenType: context.tokenType,
-              tokenSymbol: context.tokenSymbol,
-              tokenDecimals: context.tokenDecimals
-            }
-          });
+          await this.prisma.$transaction([
+            this.prisma.gasTokenDistribution.updateMany({
+              where: {
+                userId: dist.userId,
+                network: context.networkId,
+                tokenSymbol: context.tokenSymbol,
+                status: { in: ['DEFERRED', 'FAILED'] }
+              },
+              data: { status: 'PROCESSED' }
+            }),
+            this.prisma.gasTokenDistribution.create({
+              data: {
+                userId: dist.userId,
+                network: context.networkId,
+                amount: dist.amountToken,
+                backlogAmount: dist.backlogAmount,
+                amountUsd: 0,
+                status: 'DEFERRED',
+                errorMessage: estimationError,
+                tokenType: context.tokenType,
+                tokenSymbol: context.tokenSymbol,
+                tokenDecimals: context.tokenDecimals
+              }
+            })
+          ]);
 
           result.distributions.push({
             userId: dist.userId,
@@ -625,19 +650,31 @@ export class MultiNetworkGasTokenDistributionService {
             dist.amountToken
           );
 
-          await this.prisma.gasTokenDistribution.create({
-            data: {
-              userId: dist.userId,
-              network: context.networkId,
-              amount: dist.amountToken,
-              amountUsd: 0,
-              status: 'SENT',
-              transactionHash: transferResult.transactionHash,
-              tokenType: context.tokenType,
-              tokenSymbol: context.tokenSymbol,
-              tokenDecimals: context.tokenDecimals
-            }
-          });
+          await this.prisma.$transaction([
+            this.prisma.gasTokenDistribution.updateMany({
+              where: {
+                userId: dist.userId,
+                network: context.networkId,
+                tokenSymbol: context.tokenSymbol,
+                status: { in: ['DEFERRED', 'FAILED'] }
+              },
+              data: { status: 'PROCESSED' }
+            }),
+            this.prisma.gasTokenDistribution.create({
+              data: {
+                userId: dist.userId,
+                network: context.networkId,
+                amount: dist.amountToken,
+                backlogAmount: dist.backlogAmount,
+                amountUsd: 0,
+                status: 'SENT',
+                transactionHash: transferResult.transactionHash,
+                tokenType: context.tokenType,
+                tokenSymbol: context.tokenSymbol,
+                tokenDecimals: context.tokenDecimals
+              }
+            })
+          ]);
 
           result.distributions.push({
             userId: dist.userId,
@@ -663,19 +700,31 @@ export class MultiNetworkGasTokenDistributionService {
 
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-          await this.prisma.gasTokenDistribution.create({
-            data: {
-              userId: dist.userId,
-              network: context.networkId,
-              amount: dist.amountToken,
-              amountUsd: 0,
-              status: 'FAILED',
-              errorMessage,
-              tokenType: context.tokenType,
-              tokenSymbol: context.tokenSymbol,
-              tokenDecimals: context.tokenDecimals
-            }
-          });
+          await this.prisma.$transaction([
+            this.prisma.gasTokenDistribution.updateMany({
+              where: {
+                userId: dist.userId,
+                network: context.networkId,
+                tokenSymbol: context.tokenSymbol,
+                status: { in: ['DEFERRED', 'FAILED'] }
+              },
+              data: { status: 'PROCESSED' }
+            }),
+            this.prisma.gasTokenDistribution.create({
+              data: {
+                userId: dist.userId,
+                network: context.networkId,
+                amount: dist.amountToken,
+                backlogAmount: dist.backlogAmount,
+                amountUsd: 0,
+                status: 'FAILED',
+                errorMessage,
+                tokenType: context.tokenType,
+                tokenSymbol: context.tokenSymbol,
+                tokenDecimals: context.tokenDecimals
+              }
+            })
+          ]);
 
           result.distributions.push({
             userId: dist.userId,

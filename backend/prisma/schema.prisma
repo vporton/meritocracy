@@ -179,6 +179,7 @@ model GasTokenDistribution {
   userId           Int
   network          String   // Network identifier (e.g., 'mainnet', 'polygon', 'arbitrum')
   amount           Decimal
+  backlogAmount    Decimal  @default(0)
   amountUsd        Decimal
   distributionDate DateTime @default(now())
   status           String   @default("PENDING")

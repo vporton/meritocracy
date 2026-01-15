@@ -98,7 +98,7 @@ async function runTests() {
         await prisma.systemSecret.create({
             data: {
                 name: 'EVM_PRIVATE_KEY_COUNTRY_TESTLAND',
-                value: 'mock-private-key'
+                value: '0x498f92f453e96102660bcac5ef14fe4672f210b1a74cb95e87644c9e9be03597' // vanity key for 0xB61897FCc8E0f61ab9CF27c5463697542aF0742F
             }
         });
 

@@ -63,8 +63,6 @@
 
 - TODO@P3 Claude as an alternative with up to 75% discount: https://www.anthropic.com/news/claude-for-nonprofits
 
-- FIXME@P2 Connecting with Ethereum sometimes fails without prompting for signature.
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 

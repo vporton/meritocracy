@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useConnect, useAccount, useSignMessage, useConnectorClient } from 'wagmi';
+import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import { User, authApi, usersApi } from '../services/api';
 import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
@@ -55,7 +55,6 @@ const ConnectForm = () => {
   const { connect, connectors } = useConnect();
   const { address, isConnected, connector } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { data: connectorClient } = useConnectorClient();
   const [searchParams] = useSearchParams();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
@@ -69,22 +68,67 @@ const ConnectForm = () => {
     stellarAddress: '',
   });
   const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
+  const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
 
   // Handle Ethereum connection flow when address becomes available
-  // Note: This useEffect is disabled in favor of manual authentication flow in wallet selection
   useEffect(() => {
-    console.log('useEffect triggered with:', {
-      address: !!address,
-      isConnected,
-      connector: !!connector,
-      connectorClient: !!connectorClient,
-      isProviderConnected: isProviderConnected('ethereum'),
-      currentStatus: connectStatus.ethereum
-    });
+    const handleAuthentication = async () => {
+      // Only proceed if we're waiting for wallet auth and have a connected address
+      if (!pendingWalletAuth || !isConnected || !address) {
+        return;
+      }
 
-    // Disabled automatic authentication - now handled manually in wallet selection
-    console.log('Automatic authentication disabled - use wallet selection modal instead');
-  }, [address, isConnected, signMessageAsync, login, connectors, connector, connectorClient, connectStatus.ethereum]);
+      console.log('Wallet connected, proceeding with authentication...', { address, isConnected });
+
+      try {
+        // Clear the pending flag immediately to prevent re-entry
+        setPendingWalletAuth(false);
+        setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
+
+        // Request signature
+        const message = `Connect to Meritocracy platform with address: ${address}`;
+        console.log('Requesting signature for message:', message);
+
+        const signature = await signMessageAsync({ message });
+        console.log('Signature received:', signature ? 'yes' : 'no');
+
+        if (!signature) {
+          throw new Error('Signature was cancelled');
+        }
+
+        // Authenticate with backend
+        setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
+        console.log('Authenticating with backend...');
+
+        const authResult = await login({
+          ethereumAddress: address,
+          signature,
+          message
+        }, 'ethereum');
+
+        console.log('Authentication result:', authResult);
+
+        if (authResult.success) {
+          setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
+          setTimeout(() => setConnectStatus(prev => {
+            const { ethereum, ...rest } = prev;
+            return rest;
+          }), 2000);
+        } else {
+          setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
+        }
+      } catch (error: any) {
+        console.error('Authentication error:', error);
+        if (error.message.includes('rejected') || error.message.includes('cancelled')) {
+          setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
+        } else {
+          setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: error.message }));
+        }
+      }
+    };
+
+    handleAuthentication();
+  }, [pendingWalletAuth, isConnected, address, signMessageAsync, login]);
 
   useEffect(() => {
     if (user) {
@@ -215,148 +259,21 @@ const ConnectForm = () => {
     try {
       setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
       console.log('Connecting to wallet:', selectedConnector.name);
-      console.log('Connector details:', selectedConnector);
-      console.log('Current connection state:', { isConnected, connector: connector?.name });
 
-      // If already connected to this connector, proceed with authentication
-      if (isConnected && selectedConnector.name === connector?.name) {
+      // If already connected to this connector, proceed with authentication immediately
+      if (isConnected && selectedConnector.name === connector?.name && address) {
         console.log('Already connected to this wallet, proceeding with authentication...');
-        setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-
-        // Proceed with authentication directly
-        const message = `Connect to Meritocracy platform with address: ${address}`;
-        console.log('Attempting to sign message...');
-
-        const signature = await signMessageAsync({ message });
-        console.log('Signature result:', signature ? 'received' : 'null/undefined');
-
-        if (!signature) {
-          throw new Error('Signature was cancelled');
-        }
-
-        // Now authenticate with backend
-        console.log('Setting status to authenticating');
-        setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-
-        console.log('Calling backend login API...');
-        const authResult = await login({
-          ethereumAddress: address,
-          signature,
-          message
-        }, 'ethereum');
-        console.log('Backend login result:', authResult);
-
-        if (authResult.success) {
-          console.log('Connect successful! Setting status to success');
-          setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
-          // Reset status after a short delay
-          setTimeout(() => setConnectStatus(prev => {
-            const { ethereum, ...rest } = prev;
-            return rest;
-          }), 2000);
-        } else {
-          console.log('Connect failed. Setting status to error');
-          setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
-        }
-      } else {
-        // Connect to the selected wallet
-        console.log('Attempting to connect to wallet...');
-        await connect({ connector: selectedConnector });
-        console.log('Wallet connection initiated successfully');
-
-        // Wait for the connection to be established with timeout
-        let connectionAttempts = 0;
-        const maxAttempts = 10;
-
-        while (connectionAttempts < maxAttempts && (!isConnected || !address)) {
-          console.log(`Waiting for connection... attempt ${connectionAttempts + 1}/${maxAttempts}`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          connectionAttempts++;
-        }
-
-        // Check if connection was successful
-        if (isConnected && address) {
-          console.log('Connection successful, proceeding with authentication...');
-          setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-
-          // Proceed with authentication
-          const message = `Connect to Meritocracy platform with address: ${address}`;
-          console.log('Attempting to sign message...');
-
-          const signature = await signMessageAsync({ message });
-          console.log('Signature result:', signature ? 'received' : 'null/undefined');
-
-          if (!signature) {
-            throw new Error('Signature was cancelled');
-          }
-
-          // Now authenticate with backend
-          console.log('Setting status to authenticating');
-          setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-
-          console.log('Calling backend login API...');
-          const authResult = await login({
-            ethereumAddress: address,
-            signature,
-            message
-          }, 'ethereum');
-          console.log('Backend login result:', authResult);
-
-          if (authResult.success) {
-            console.log('Connect successful! Setting status to success');
-            setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
-            // Reset status after a short delay
-            setTimeout(() => setConnectStatus(prev => {
-              const { ethereum, ...rest } = prev;
-              return rest;
-            }), 2000);
-          } else {
-            console.log('Connect failed. Setting status to error');
-            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
-          }
-        } else {
-          console.log('Connection not established, trying direct authentication anyway...');
-          // Even if the connection state isn't updated, try to proceed with authentication
-          // This handles cases where the hooks don't update immediately
-          try {
-            setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
-
-            // Try to get the address from the connector directly
-            const currentAddress = address || await selectedConnector.getAccount?.();
-            if (currentAddress) {
-              console.log('Found address from connector, proceeding with authentication...');
-              const message = `Connect to Meritocracy platform with address: ${currentAddress}`;
-
-              const signature = await signMessageAsync({ message });
-              if (!signature) {
-                throw new Error('Signature was cancelled');
-              }
-
-              setConnectStatus(prev => ({ ...prev, ethereum: 'authenticating' }));
-              const authResult = await login({
-                ethereumAddress: currentAddress,
-                signature,
-                message
-              }, 'ethereum');
-
-              if (authResult.success) {
-                setConnectStatus(prev => ({ ...prev, ethereum: 'success' }));
-                setTimeout(() => setConnectStatus(prev => {
-                  const { ethereum, ...rest } = prev;
-                  return rest;
-                }), 2000);
-              } else {
-                setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: authResult.error }));
-              }
-            } else {
-              throw new Error('No address available');
-            }
-          } catch (authError: any) {
-            console.error('Fallback authentication failed:', authError);
-            setConnectStatus(prev => ({ ...prev, ethereum: 'error', error: 'Failed to connect to wallet' }));
-          }
-        }
+        setPendingWalletAuth(true);
+        return;
       }
+
+      // Connect to the selected wallet
+      console.log('Initiating wallet connection...');
+      await connect({ connector: selectedConnector });
+      console.log('Wallet connection initiated');
+
+      // Set flag to trigger authentication once connection is established
+      setPendingWalletAuth(true);
     } catch (error: any) {
       console.error('Wallet connection error:', error);
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {

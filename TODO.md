@@ -69,9 +69,6 @@
 - TODO@P2 When switching Global/national fund, immediately remove blockchain addresses from the screen,
   not to confuse the user.
 
-- FIXME@P2 When I opened it in a private browser window, it displayed error 401 retrieving world GDP
-  (F5 helped).
-
 - FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.

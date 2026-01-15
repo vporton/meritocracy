@@ -63,8 +63,8 @@ export class SystemSecretService {
     }
 
     public async getSecret(name: string): Promise<string | null> {
-        const secret = await (prisma as any).systemSecret.findUnique({
-            where: { name }
+        const secret = await prisma.systemSecret.findUnique({
+            where: { name },
         });
 
         if (secret) {
@@ -72,7 +72,7 @@ export class SystemSecretService {
         }
 
         // fallback to process.env if not in DB (for transition)
-        return process.env[name] || null;
+        return process.env[name] || null; // FIXME@P3: nonsense
     }
 
     public async ensureSecret(name: string, defaultValue?: string): Promise<string> {

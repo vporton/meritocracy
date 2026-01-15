@@ -776,6 +776,9 @@ const ConnectForm = () => {
 
       <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas).</p>
 
+      <p style={{ color: 'red' }}>Your data won't be deleted (even on request),
+        because it may be necessary to sue against you, if you misbehave (hack, DoS, etc. us).</p>
+
       {user?.kycStatus !== 'APPROVED' && !kycTokenParam && (
         <p className="kyc-notice">KYC verification will be requested via email once funds are allocated to you.</p>
       )}

@@ -45,8 +45,6 @@
 
 - TODO@P3 Option to donate back to AIIM automatically.
 
-- TODO@P2 Deleting user data.
-
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
 - TODO@P3 https://DonateHelper.com for requesting donations from Russia.

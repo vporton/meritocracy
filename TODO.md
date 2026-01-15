@@ -94,5 +94,6 @@
 - TODO@P2 "Prisma Postgres is a fully managed PostgreSQL database... a generous free tier."
   https://www.prisma.io/docs/postgres
   https://www.prisma.io/docs/postgres/integrations/flyio
+  https://prisma.io/startups
 
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349

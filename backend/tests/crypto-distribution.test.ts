@@ -5,7 +5,7 @@ import { GasTokenNetworkAdapter, GasTokenNetworkContext, GasTokenNetworkType, Ga
 import { User } from '@prisma/client';
 
 class MockAdapter implements GasTokenNetworkAdapter {
-    type = 'MOCK' as GasTokenNetworkType;
+    readonly type = 'MOCK';
 
     constructor(
         public balances: Record<string, number> = {},

@@ -89,4 +89,7 @@
 
 - TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
 
-- TODO@P3 Add "Copy" buttons near blockchain addresses. 
+- TODO@P3 Add "Copy" buttons near blockchain addresses.
+
+- TODO@P2 "Prisma Postgres is a fully managed PostgreSQL database... a generous free tier."
+  https://www.prisma.io/docs/postgres

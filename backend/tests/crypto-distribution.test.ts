@@ -1,11 +1,11 @@
 
 import { PrismaClient } from '@prisma/client';
 import { MultiNetworkGasTokenDistributionService } from '../src/services/MultiNetworkGasTokenDistributionService.js';
-import { GasTokenNetworkAdapter, GasTokenNetworkContext, GasTransferEstimate, GasTransferResult, TokenDistributionOptions } from '../src/services/gas-networks/types.js';
+import { GasTokenNetworkAdapter, GasTokenNetworkContext, GasTokenNetworkType, GasTransferEstimate, GasTransferResult, TokenDistributionOptions } from '../src/services/gas-networks/types.js';
 import { User } from '@prisma/client';
 
 class MockAdapter implements GasTokenNetworkAdapter {
-    type = 'MOCK';
+    type = 'MOCK' as GasTokenNetworkType;
 
     constructor(
         public balances: Record<string, number> = {},
@@ -16,6 +16,8 @@ class MockAdapter implements GasTokenNetworkAdapter {
     async getNetworkContexts(options: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
         return [
             {
+                nativeTokenSymbol: 'MOCK',
+                nativeTokenDecimals: 18,
                 networkId: 'mock-network',
                 networkName: 'Mock Network',
                 adapterType: 'MOCK',
@@ -23,7 +25,7 @@ class MockAdapter implements GasTokenNetworkAdapter {
                 tokenType: 'NATIVE',
                 tokenDecimals: 18,
                 walletAddress: '0x123',
-                isDefault: true
+                // isDefault: true
             }
         ];
     }
@@ -38,7 +40,7 @@ class MockAdapter implements GasTokenNetworkAdapter {
         }
         return {
             gasCostToken: 0.001,
-            isPossible: true
+            // isPossible: true
         };
     }
 
@@ -57,6 +59,13 @@ class MockAdapter implements GasTokenNetworkAdapter {
 
     async deriveAddress(privateKey: string): Promise<string> {
         return '0xderived';
+    }
+
+    formatAmount(context: GasTokenNetworkContext, amountToken: number): string {
+        return amountToken.toLocaleString('en-US', {
+            useGrouping: false,
+            maximumFractionDigits: context.tokenDecimals
+        });
     }
 }
 

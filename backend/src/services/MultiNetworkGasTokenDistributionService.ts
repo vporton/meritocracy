@@ -312,9 +312,12 @@ export class MultiNetworkGasTokenDistributionService {
     });
 
     const countryShareTotals = new Map<string, number>();
+    let globalShareTotal = 0;
     for (const row of gdpStats) {
+      const share = row._sum.shareInGDP ?? 0;
+      globalShareTotal += share;
       if (row.residenceCountry) {
-        countryShareTotals.set(row.residenceCountry, row._sum.shareInGDP ?? 0);
+        countryShareTotals.set(row.residenceCountry, share);
       }
     }
 
@@ -342,11 +345,11 @@ export class MultiNetworkGasTokenDistributionService {
       });
 
       // Total share used as denominator
-      // For global: denominator is 1.0 (since shares are absolute fractions of world GDP)
+      // For global: denominator is the sum of shares of all known users
       // For country: denominator is the sum of shares of all known citizens of that country
       const totalShareDenom = context.country
         ? (countryShareTotals.get(context.country) ?? 0)
-        : 1.0;
+        : globalShareTotal;
 
       if (eligibleUsers.length === 0 || totalShareDenom <= 0) {
         if (!context.country) {

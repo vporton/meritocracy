@@ -554,24 +554,29 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
-          const totalRequired = dist.amountToken + gasCostToken;
-          if (totalRequired > remainingAmount + Number.EPSILON) {
-            const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
-            if (adjustedAmount <= 0) {
+
+          // The user pays for gas, so we subtract it from their distribution
+          const originalAllocatedAmount = dist.amountToken;
+          dist.amountToken = Math.max(0, originalAllocatedAmount - gasCostToken);
+
+          // The total cost to the system is the original allocated amount (amount + gas)
+          totalCostToken = originalAllocatedAmount;
+
+          if (totalCostToken > remainingAmount + Number.EPSILON) {
+            totalCostToken = remainingAmount;
+            dist.amountToken = Math.max(0, totalCostToken - gasCostToken);
+
+            if (dist.amountToken <= 0 && totalCostToken > 0) {
               estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(6)} ${context.tokenSymbol}`;
               shouldStopDueToGasCost = true;
-            } else {
-              dist.amountToken = adjustedAmount;
             }
           }
 
           const minimumRequired = gasCostToken * this.GAS_COST_VALUE_MULTIPLIER;
-          if (!estimationError && dist.amountToken <= minimumRequired) {
+          if (!estimationError && dist.amountToken < minimumRequired) {
             estimationError = this.buildGasCostMessage(context, gasCostToken, dist.amountToken);
             shouldStopDueToGasCost = true;
           }
-
-          totalCostToken = dist.amountToken;
         } else {
           totalCostToken = dist.amountToken;
         }
@@ -808,24 +813,29 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
-          const totalRequired = dist.amountToken + gasCostToken;
-          if (totalRequired > remainingAmount + Number.EPSILON) {
-            const adjustedAmount = Math.max(0, remainingAmount - gasCostToken);
-            if (adjustedAmount <= 0) {
+
+          // The user pays for gas, so we subtract it from their distribution
+          const originalAllocatedAmount = dist.amountToken;
+          dist.amountToken = Math.max(0, originalAllocatedAmount - gasCostToken);
+
+          // The total cost to the system is the original allocated amount (amount + gas)
+          totalCostToken = originalAllocatedAmount;
+
+          if (totalCostToken > remainingAmount + Number.EPSILON) {
+            totalCostToken = remainingAmount;
+            dist.amountToken = Math.max(0, totalCostToken - gasCostToken);
+
+            if (dist.amountToken <= 0 && totalCostToken > 0) {
               estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(6)} ${context.tokenSymbol}`;
               shouldStopDueToGasCost = true;
-            } else {
-              dist.amountToken = adjustedAmount;
             }
           }
 
           const minimumRequired = gasCostToken * this.GAS_COST_VALUE_MULTIPLIER;
-          if (!estimationError && dist.amountToken <= minimumRequired) {
+          if (!estimationError && dist.amountToken < minimumRequired) {
             estimationError = this.buildGasCostMessage(context, gasCostToken, dist.amountToken);
             shouldStopDueToGasCost = true;
           }
-
-          totalCostToken = dist.amountToken + gasCostToken;
         } else {
           totalCostToken = dist.amountToken;
         }

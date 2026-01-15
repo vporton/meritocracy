@@ -93,3 +93,4 @@
 
 - TODO@P2 "Prisma Postgres is a fully managed PostgreSQL database... a generous free tier."
   https://www.prisma.io/docs/postgres
+  https://www.prisma.io/docs/postgres/integrations/flyio

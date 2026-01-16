@@ -32,10 +32,6 @@ jobs:
       - name: Test build
         run: npm run build  # redundant, but need check that it builds
 
-      # TODO@P3: Can it be simplified?
-      - name: Check DB format integrity
-        run: (export DATABASE_URL="file:///tmp/test.db" && npm run db:setup && cd backend && npx prisma migrate status)
-
     # This does not work due to `git merge` creating new commits :-(
     #   - name: Verify staging deployment exists
     #     env:

@@ -90,3 +90,5 @@
   https://prisma.io/startups
 
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
+
+- TODO@P3 Multi-AI agentic framework https://www.openresponses.org

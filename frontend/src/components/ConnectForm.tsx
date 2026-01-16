@@ -769,7 +769,7 @@ const ConnectForm = () => {
         <title>Meritocracy App - Connect Your Account and Receive Money</title>
         <meta name="description" content="Meritocracy App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
       </Helmet>
-      <Canonical baseUrl="https://merit.science-dao.org" />
+      <Canonical baseUrl="https://merit.science-dao.org/connect" />
       <h2>Connect to Meritocracy Platform</h2>
 
       {renderConnectedStatus()}

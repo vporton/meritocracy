@@ -49,10 +49,6 @@ primary_region = 'iad'
   STELLAR_HORIZON_URL = 'https://horizon.stellar.org'
   STELLAR_NETWORK_PASSPHRASE = 'Public Global Stellar Network ; September 2015'
 
-[[mounts]]
-  source = 'db'
-  destination = '/db'
-
 [[services]]
   protocol = ''
   internal_port = 4173

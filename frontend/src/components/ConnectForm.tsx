@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
 import { User, authApi, usersApi } from '../services/api';
@@ -778,6 +778,9 @@ const ConnectForm = () => {
 
       <p style={{ color: 'red' }}>Your data won't be deleted (even on request),
         because it may be necessary to sue against you, if you misbehave (hack, DoS, etc. us).</p>
+
+      <p style={{ color: 'red' }}>After connecting your accounts, you need to pass evaluation at <Link to="/">the homepage</Link>{" "}
+        to decide, whether the system will pay you and how much.</p>
 
       {user?.kycStatus !== 'APPROVED' && !kycTokenParam && (
         <p className="kyc-notice">KYC verification will be requested via email once funds are allocated to you.</p>

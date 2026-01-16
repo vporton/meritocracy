@@ -83,3 +83,5 @@
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
 
 - TODO@P3 Multi-AI agentic framework https://www.openresponses.org
+
+- TODO@P3 Ensure that user names like `User 123` are replaced by real names on KYC and not replaced back.

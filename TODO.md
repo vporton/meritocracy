@@ -18,8 +18,6 @@
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
   If this is the case, we should rewrite this in ICP. Use ZenDB to replace SQL.
 
-- TODO@P2 Delete DB migrations before the release.
-
 - TODO@P3 Always run prompt randomization as non-batch, because its cost is low.
 
 - TODO@P3 Give back token like GIV of Giveth.
@@ -76,18 +74,11 @@
 - TODO@P2 Should we store the entire lists of Web sources, to ease appeals?
   At first, this looks like a good idea, but sources could easily be faked afterwards.
 
-- TODO@P2 Backup the DB from Docker: https://litestream.io/guides/tigris/
-
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
 - TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
 
 - TODO@P3 Add "Copy" buttons near blockchain addresses.
-
-- TODO@P2 "Prisma Postgres is a fully managed PostgreSQL database... a generous free tier."
-  https://www.prisma.io/docs/postgres
-  https://www.prisma.io/docs/postgres/integrations/flyio
-  https://prisma.io/startups
 
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
 

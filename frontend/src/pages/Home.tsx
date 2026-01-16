@@ -213,7 +213,7 @@ function Home() {
         <meta name="description" content="Meritocracy App - AI decides how much you earn (for scientists and FOSS devs). Free to use." />
       </Helmet>
       <Canonical baseUrl="https://merit.science-dao.org" />
-      <h1>Welcome to Meritocracy App <span style={{ color: 'red' }}>⚠️This is a test version</span></h1>
+      <h1>Welcome to Meritocracy App <span style={{ color: 'red' }}>⚠️This is a beta version</span></h1>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
       <div className="card">
         <h3>Server Status</h3>

@@ -1,5 +1,7 @@
 # Meritocracy App
 
+**Don't forget to run `git config core.hooksPath git_hooks`, if you are a maintainer!**
+
 (For the most functioning version, you may see the `stable` branch.)
 
 "Meritocracy" (in full: "AI Internet-Meritocracy", or AIIM) is an app that gathers crypto donations and distributes them among scientists and free software developers.

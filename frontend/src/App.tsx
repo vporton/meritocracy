@@ -40,6 +40,11 @@ function App() {
                   </Routes>
                 </main>
               </div>
+              <p>
+                <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
+                <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
+                <a href="https://science-dao.org/contact/">Contact</a>
+              </p>
             </BrowserRouter>
           </AuthProvider>
         </QueryClientProvider>

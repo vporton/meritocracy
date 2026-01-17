@@ -1,5 +1,9 @@
 {
   "name": "meritocracy-app",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "version": "1.0.0",
   "description": "Full-stack Node.js + React application with Prisma ORM",
   "scripts": {

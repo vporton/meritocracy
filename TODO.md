@@ -94,6 +94,4 @@
 
 - TODO@P3 Science marketers and popularizers salaries.
 
-- TODO@P1 Apply at https://southsummit.io
-
 - TODO@P2 Esnure we enable all supported blockchains.

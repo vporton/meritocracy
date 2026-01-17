@@ -3,6 +3,9 @@
 app = 'meritocracy'
 primary_region = 'iad'
 
+[deploy]
+  strategy = "rolling"
+
 [build]
 
 [env]

@@ -258,7 +258,7 @@ router.get('/types', async (req, res): Promise<void> => {
       user: {
         name: 'User Account Logs',
         description: 'User account creation and updates',
-        fields: ['email', 'name', 'ethereumAddress', 'orcidId', 'githubHandle', 'shareInGDP']
+        fields: [/*'email',*/ 'name', 'ethereumAddress', 'orcidId', 'githubHandle', 'shareInGDP'] // Don't show emails publicly.
       },
       session: {
         name: 'Authentication Session Logs',

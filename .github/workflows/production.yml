@@ -23,8 +23,6 @@ jobs:
       - name: Install
         run: |
           npm install
-          npm run install-backend
-          npm run install-frontend
 
       - name: Prisma code generator
         run: (cd backend && npx prisma generate)

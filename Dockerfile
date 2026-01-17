@@ -25,8 +25,6 @@ ENV VITE_ORCID_DOMAIN=$VITE_ORCID_DOMAIN
 
 COPY . ./
 RUN npm install
-RUN npm install --prefix backend
-RUN npm install --prefix frontend
 RUN cd backend && npx prisma generate
 RUN npm run build
 

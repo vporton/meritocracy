@@ -85,10 +85,6 @@ nvm use v22.1.0
 
 # Install base dependencies
 npm run install
-
-# And this:
-npm run install-backend
-npm run install-frontend
 ```
 
 ### 3. Environment Setup

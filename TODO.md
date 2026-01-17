@@ -96,4 +96,4 @@
 
 - TODO@P2 Esnure we enable all supported blockchains.
 
-- FIXME@P2 Don't publish emails of users in public logs.
+- FIXME@P2 Don't publish emails of users in public logs. [Most likely fixed.]

@@ -93,3 +93,5 @@
 - FIXME@P2 Email form is inserted below the content, often invisible.
 
 - TODO@P3 Science marketers and popularizers salaries.
+
+- TODO@P1 Apply at https://southsummit.io

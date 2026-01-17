@@ -97,3 +97,5 @@
 - TODO@P2 Esnure we enable all supported blockchains.
 
 - FIXME@P2 Don't publish emails of users in public logs. [Most likely fixed.]
+
+- TODO@P2 Precompile the backend, instead of re-compiling it on each `npm start`.

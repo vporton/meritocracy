@@ -3,4 +3,5 @@
 set -e
 
 cd backend
+. ./.env
 npx prisma migrate status

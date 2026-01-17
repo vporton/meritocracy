@@ -99,3 +99,5 @@
 - FIXME@P2 Don't publish emails of users in public logs. [Most likely fixed.]
 
 - TODO@P2 Precompile the backend, instead of re-compiling it on each `npm start`.
+
+- FIXME@P3 It doesn't fit my phone Samsumg Salaxy A25 5G 90E7. Need help of a professional designer.

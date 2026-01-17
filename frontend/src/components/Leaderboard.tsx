@@ -118,53 +118,31 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
         Top contributors to the world economy ({leaderboard.length} total)
       </p>
 
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'auto 1fr auto',
-          gap: '0.5rem',
-          alignItems: 'center',
-          padding: '0.5rem',
-          backgroundColor: '#2a2a2a',
-          borderRadius: '4px',
-          marginBottom: '0.5rem',
-          fontSize: '0.9rem',
-          fontWeight: 'bold'
-        }}>
-          <div>Rank</div>
-          <div>Name</div>
-          <div style={{ textAlign: 'right' }}>GDP Share</div>
+      <div className="leaderboard-container">
+        <div className="leaderboard-header">
+          <div className="col-rank">Rank</div>
+          <div className="col-name">Name</div>
+          <div className="col-share">GDP Share</div>
         </div>
 
         {displayEntries.map((entry) => (
           <div
             key={entry.userId}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto',
-              gap: '0.5rem',
-              alignItems: 'center',
-              padding: '0.75rem',
-              borderBottom: '1px solid #333',
-              fontSize: '0.9rem'
-            }}
+            className="leaderboard-row"
           >
-            <div style={getRankStyle(entry.rank)}>
+            <div className="col-rank" style={getRankStyle(entry.rank)}>
               {getRankIcon(entry.rank)}
             </div>
-            <div style={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
+            <div className="col-name">
               {entry.name}
             </div>
-            <div style={{
-              textAlign: 'right',
-              fontWeight: 'bold',
-              color: '#4caf50'
-            }}>
-              {entry.shareInGDP} of GDP {worldGdp ? `= $${(entry.shareInGDP * worldGdp.worldGdp).toLocaleString()}` : ""}
+            <div className="col-share">
+              <span className="share-percent">{entry.shareInGDP} of GDP</span>
+              {worldGdp && (
+                <span className="share-value">
+                  {' = '}${(entry.shareInGDP * worldGdp.worldGdp).toLocaleString()}
+                </span>
+              )}
             </div>
           </div>
         ))}

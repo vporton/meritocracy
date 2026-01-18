@@ -110,5 +110,3 @@
 - TODO@P3 In the leadeboard, `Name` is centered but names are left-aligned. Fix it.
 
 - TODO@P3 `🏦 Total reserved:` in logs is a nonsense: It sums tokens of different kinds.
-
-- TODO@P3 Do we need to execute `npm run build`, etc. in GitHub Actions?

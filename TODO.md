@@ -109,3 +109,5 @@
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
+
+- TODO@P3 In the leadeboard, `Name` is centered but names are left-aligned. Fix it.

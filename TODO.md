@@ -112,5 +112,3 @@
 - TODO@P3 `🏦 Total reserved:` in logs is a nonsense: It sums tokens of different kinds.
 
 - TODO@P3 Do we need to execute `npm run build`, etc. in GitHub Actions?
-
-- TODO@P2 Attack vector: Create both GitHub and GitLab accounts (or several GitHub accounts). Interlink these accounts. In Connect, make separable connection for each of these accounts. So, the user will have double (or multiple) pay.

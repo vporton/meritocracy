@@ -113,3 +113,5 @@
 - TODO@P3 In the leadeboard, `Name` is centered but names are left-aligned. Fix it.
 
 - TODO@P3 `🏦 Total reserved:` in logs is a nonsense: It sums tokens of different kinds.
+
+- TODO@P3 [`fly m start -a meritocracy` to run `npm start` now.](https://community.openai.com/t/feature-suggestion-awake-machine-by-a-timer/1371925)

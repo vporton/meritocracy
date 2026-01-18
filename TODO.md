@@ -39,7 +39,7 @@
 
 - Make our AI to summarize each time when it asserts worth and save work and/or go further building on it the next time.
 
-- TODO@P2 User email should be passed to AI.
+- TODO@P2 User email should be passed to AI. (Remove it from logs!)
 
 - TODO@P3 Option to donate back to AIIM automatically.
 
@@ -87,6 +87,7 @@
 - TODO@P3 Ensure that user names like `User 123` are replaced by real names on KYC and not replaced back.
 
 - TODO@P2 For government: https://chatgpt.com/share/696a9356-b494-8001-a21e-34c974fed3d5
+  Russia: Нужна красивая и понятная презентация на Русском без всплывашки с просьбой доната для начала, показать Гос. выгоду от использовния, посчитать цену внедрения, показать реальные примеры УЖЕ существующие, писать надо в профильные комитеты ГД и министерств, 3-5 лет доработок и после всех согласований если очень поезет то может быть что-то будут точечно тестировать
 
 - TODO@P2 Implement tech support.
 
@@ -98,11 +99,7 @@
 
 - FIXME@P2 Don't publish emails of users in public logs. [Most likely fixed.]
 
-- TODO@P2 Precompile the backend, instead of re-compiling it on each `npm start`.
-
 - FIXME@P3 It doesn't fit my phone Samsumg Salaxy A25 5G 90E7. Need help of a professional designer.
-
-- TODO@P3 Russia: Нужна красивая и понятная презентация на Русском без всплывашки с просьбой доната для начала, показать Гос. выгоду от использовния, посчитать цену внедрения, показать реальные примеры УЖЕ существующие, писать надо в профильные комитеты ГД и министерств, 3-5 лет доработок и после всех согласований если очень поезет то может быть что-то будут точечно тестировать
 
 - TODO@P2 KYC link from the email leads to Connect page with KYC button shown, but it should lead to KYC page directly.
 

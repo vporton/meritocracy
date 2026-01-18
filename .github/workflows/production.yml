@@ -67,6 +67,4 @@ jobs:
         run: |
           ./deploy/deploy-production.sh
           # Make sure machines are started:
-          # flyctl m start -a meritocracy  # run `npm start` now. # It does not enumerate all machines.
-          # TODO@P3: The following starts just one machine :-(
-          curl -o/dev/null https://merit.science-dao.org
+          flyctl m start $MY_MACHINE_IDS -a meritocracy

@@ -4,7 +4,7 @@ app = 'meritocracy'
 primary_region = 'iad'
 
 [deploy]
-  strategy = "rolling"
+  strategy = "bluegreen"
   max_unavailable = 1
 
 [build]

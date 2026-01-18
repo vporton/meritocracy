@@ -111,6 +111,6 @@
 
 - TODO@P3 `🏦 Total reserved:` in logs is a nonsense: It sums tokens of different kinds.
 
-- TODO@P3 [`fly m start -a meritocracy` to run `npm start` now.](https://community.openai.com/t/feature-suggestion-awake-machine-by-a-timer/1371925)
-
 - TODO@P3 Do we need to execute `npm run build`, etc. in GitHub Actions?
+
+- TODO@P2 Attack vector: Create both GitHub and GitLab accounts (or several GitHub accounts). Interlink these accounts. In Connect, make separable connection for each of these accounts. So, the user will have double (or multiple) pay.

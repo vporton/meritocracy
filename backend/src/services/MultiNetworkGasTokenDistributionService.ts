@@ -381,38 +381,6 @@ export class MultiNetworkGasTokenDistributionService {
         continue;
       }
 
-      const currentReserve = await this.getTokenReserve(context);
-      const spendableFromWallet = Math.max(0, walletBalance);
-      const totalAvailable = spendableFromWallet + currentReserve;
-
-      if (totalAvailable <= 0) {
-        if (!context.country) {
-          console.warn(
-            `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
-          );
-        }
-        networkDistributions.set(contextId, {
-          adapter,
-          context,
-          distributions: []
-        });
-        continue;
-      }
-
-      const distributions: DistributionFiber[] = eligibleUsers.map(user => {
-        const share = user.shareInGDP ?? 0;
-        const proportion = share / totalShareDenom;
-        const recipientAddress = adapter.getRecipientAddress(user);
-
-        return {
-          userId: user.id,
-          recipientAddress: recipientAddress!,
-          amountToken: proportion > 0 ? spendableFromWallet * proportion : 0,
-          shareInGDP: share,
-          backlogAmount: 0
-        };
-      });
-
       // Fetch aggregated backlog from DB
       const backlogSums = await this.prisma.gasTokenDistribution.groupBy({
         by: ['userId'],
@@ -428,14 +396,55 @@ export class MultiNetworkGasTokenDistributionService {
       });
 
       const backlogLookup = new Map<number, number>();
+      let totalBacklogLiability = 0;
       for (const row of backlogSums) {
-        backlogLookup.set(row.userId, Number(row._sum.amount ?? 0));
+        const amount = Number(row._sum.amount ?? 0);
+        backlogLookup.set(row.userId, amount);
+        totalBacklogLiability += amount;
       }
 
-      for (const dist of distributions) {
-        dist.backlogAmount = backlogLookup.get(dist.userId) ?? 0;
-        dist.amountToken += dist.backlogAmount;
+      const currentReserve = await this.getTokenReserve(context);
+
+      // We must deduct the total backlog liability from the wallet balance to find 
+      // the amount available for NEW distribution. 
+      // If we don't, we effectively re-distribute the money that is already "owned" 
+      // by the backlog holders.
+      const realWalletBalance = Math.max(0, walletBalance);
+      const spendableFromWallet = Math.max(0, realWalletBalance - totalBacklogLiability);
+      const totalAvailable = spendableFromWallet + currentReserve; // currentReserve checks the separate reserve table, mostly for reporting now
+
+      if (totalAvailable <= 0 && totalBacklogLiability <= 0) {
+        if (!context.country) {
+          console.warn(
+            `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
+          );
+        }
+        networkDistributions.set(contextId, {
+          adapter,
+          context,
+          distributions: []
+        });
+        continue;
       }
+
+      console.log(`[${context.networkName}] Wallet: ${realWalletBalance}, Backlog Liability: ${totalBacklogLiability}, New Distributable: ${spendableFromWallet}`);
+
+      const distributions: DistributionFiber[] = eligibleUsers.map(user => {
+        const share = user.shareInGDP ?? 0;
+        const proportion = share / totalShareDenom;
+        const recipientAddress = adapter.getRecipientAddress(user);
+
+        const backlogAmount = backlogLookup.get(user.id) ?? 0;
+        const newAmount = proportion > 0 ? spendableFromWallet * proportion : 0;
+
+        return {
+          userId: user.id,
+          recipientAddress: recipientAddress!,
+          amountToken: newAmount + backlogAmount,
+          shareInGDP: share,
+          backlogAmount: backlogAmount
+        };
+      });
 
       const filtered = distributions.filter(dist => dist.amountToken > 0);
       filtered.sort((a, b) => b.amountToken - a.amountToken);

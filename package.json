@@ -15,7 +15,7 @@
     "build-frontend": "cd frontend && npm run build --prefix .",
     "start": "npm run setup && npx concurrently --kill-others-on-fail --kill-others \"npm run start-backend\" \"npm run start-frontend\"",
     "start-backend": "npm start --prefix backend",
-    "start-frontend": "npm run preview --prefix frontend",
+    "start-frontend": "npm start --prefix frontend",
     "setup": "npm run db:setup",
     "db:setup": "cd backend && npx prisma migrate deploy",
     "db:reset": "cd backend && npx prisma db push --force-reset",
@@ -40,6 +40,7 @@
   "dependencies": {
     "@types/node": "^24.4.0",
     "concurrently": "^9.2.1",
+    "serve": "^14.2.5",
     "typescript": "^5.9.2"
   },
   "packageManager": "npm@10.7.0"

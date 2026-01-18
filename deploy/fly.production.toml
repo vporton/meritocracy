@@ -4,7 +4,7 @@ app = 'meritocracy'
 primary_region = 'iad'
 
 [deploy]
-  strategy = "bluegreen"
+  strategy = "rolling" # "bluegreen" # TODO@P3: Neither makes zero downtime :-(
   max_unavailable = 1
 
 [build]

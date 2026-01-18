@@ -557,9 +557,6 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
-          if (distributions.length === 1) {
-            gasCostToken *= 1.5;
-          }
 
           // The user pays for gas, so we subtract it from their distribution
           const originalAllocatedAmount = dist.amountToken;
@@ -819,9 +816,6 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (estimate?.gasCostToken !== undefined) {
           gasCostToken = estimate.gasCostToken;
-          if (distributions.length === 1) {
-            gasCostToken *= 1.5;
-          }
 
           // The user pays for gas, so we subtract it from their distribution
           const originalAllocatedAmount = dist.amountToken;

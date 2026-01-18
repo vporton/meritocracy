@@ -103,3 +103,5 @@
 - FIXME@P3 It doesn't fit my phone Samsumg Salaxy A25 5G 90E7. Need help of a professional designer.
 
 - TODO@P3 Russia: Нужна красивая и понятная презентация на Русском без всплывашки с просьбой доната для начала, показать Гос. выгоду от использовния, посчитать цену внедрения, показать реальные примеры УЖЕ существующие, писать надо в профильные комитеты ГД и министерств, 3-5 лет доработок и после всех согласований если очень поезет то может быть что-то будут точечно тестировать
+
+- TODO@P2 KYC link from the email leads to Connect page with KYC button shown, but it should lead to KYC page directly.

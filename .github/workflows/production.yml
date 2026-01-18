@@ -67,4 +67,5 @@ jobs:
         run: |
           ./deploy/deploy-production.sh
           # Make sure machines are started and `npm start` is run:
-          flyctl m start $MY_MACHINE_IDS -a meritocracy
+          MY_MACHINE_IDS="$(flyctl m list -a meritocracy --json | jq -r '.[].id')" && \
+            flyctl m start $MY_MACHINE_IDS -a meritocracy

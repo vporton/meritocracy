@@ -106,8 +106,6 @@
 
 - TODO@P2 KYC link from the email leads to Connect page with KYC button shown, but it should lead to KYC page directly.
 
-- TODO@P1 Update KYC to full one.
-
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.

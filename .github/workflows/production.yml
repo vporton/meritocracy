@@ -66,4 +66,6 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.PRODUCTION_DEPLOY_TOKEN }}
         run: |
           ./deploy/deploy-production.sh
-          flyctl m start -a meritocracy  # run `npm start` now.
+          # Make sure machines are started:
+          # flyctl m start -a meritocracy  # run `npm start` now. # It does not enumerate all machines.
+          curl -o/dev/null https://merit.science-dao.org

@@ -20,15 +20,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Install
-        run: |
-          npm install
+      # - name: Install
+      #   run: |
+      #     npm install
 
-      - name: Prisma code generator
-        run: (cd backend && npx prisma generate)
+      # - name: Prisma code generator
+      #   run: (cd backend && npx prisma generate)
 
-      - name: Test build
-        run: npm run build  # redundant, but need check that it builds
+      # - name: Test build
+      #   run: npm run build  # redundant, but need check that it builds
 
       - name: Deploy to staging
         env:

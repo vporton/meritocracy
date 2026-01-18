@@ -5,6 +5,7 @@ primary_region = 'iad'
 
 [deploy]
   strategy = "rolling"
+  max_unavailable = 1
 
 [build]
 

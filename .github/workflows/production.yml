@@ -67,5 +67,8 @@ jobs:
         run: |
           ./deploy/deploy-production.sh
           # Make sure machines are started and `npm start` is run:
-          MY_MACHINE_IDS="$(flyctl m list -a meritocracy --json | jq -r '.[].id')" && \
-            flyctl m start $MY_MACHINE_IDS -a meritocracy
+          # could not start machine XXX: failed to start VM XXX: failed_precondition: machine getting replaced, refusing to start
+          #MY_MACHINE_IDS="$(flyctl m list -a meritocracy --json | jq -r '.[].id')" && \
+          #  flyctl m start $MY_MACHINE_IDS -a meritocracy
+          # The following starts just one machine :-(
+          curl -o/dev/null https://merit.science-dao.org:445

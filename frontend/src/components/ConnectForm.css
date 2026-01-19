@@ -115,6 +115,14 @@
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
 }
 
+.votingKyc-button {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.votingKyc-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+}
+
 /* Loading state */
 .connect-button.loading::after {
   content: '';

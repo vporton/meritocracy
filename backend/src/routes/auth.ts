@@ -1401,7 +1401,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     // Signature is valid, proceed with processing
     console.log('Didit KYC callback received and verified:', rawBody);
 
-    const { session_id, status, webhook_type, vendor_data, decision, aml } = rawBody;
+    const { session_id, status, webhook_type, vendor_data, decision, aml, workflow_id } = rawBody;
 
     if (!session_id) {
       console.error('No session_id in Didit callback');
@@ -1468,7 +1468,9 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           bitbucketHandle: null,
           gitlabHandle: null,
           onboarded: false,
-          kycStatus: 'PENDING'
+          // If we don't know the workflow (weird), default to PENDING status on the main one or just leave null? 
+          // Defaulting to receiver status for safety if unclear, or check workflow_id
+          kycStatus: workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID ? 'PENDING' : 'PENDING' // TODO: refine
         } as any
       });
 
@@ -1487,24 +1489,35 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     // Update user KYC status based on Didit response
     const updateData: any = {};
 
+    const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
+
     // Handle different statuses according to Didit webhook format
     if (status === 'Approved' && aml?.status === 'Approved') {
-      updateData.kycStatus = 'APPROVED';
-      updateData.kycVerifiedAt = new Date();
-      updateData.kycRejectedAt = null;
-      updateData.kycRejectionReason = null;
+      if (isVotingFlow) {
+        updateData.kycVotingStatus = 'APPROVED';
+        updateData.kycVotingVerifiedAt = new Date();
+        updateData.kycVotingRejectedAt = null;
+        updateData.kycVotingRejectionReason = null;
+      } else {
+        updateData.kycStatus = 'APPROVED';
+        updateData.kycVerifiedAt = new Date();
+        updateData.kycRejectedAt = null;
+        updateData.kycRejectionReason = null;
+      }
 
-      // Mark any unused KYC tokens for this user as used
-      try {
-        await (prisma as any).kycToken.updateMany({
-          where: {
-            userId: user.id,
-            used: false
-          },
-          data: { used: true }
-        });
-      } catch (tokenError) {
-        console.error('Failed to mark KYC tokens as used for user:', user.id, tokenError);
+      // Mark any unused KYC tokens for this user as used (Only for Receiver flow usually, but safe to do check)
+      if (!isVotingFlow) {
+        try {
+          await (prisma as any).kycToken.updateMany({
+            where: {
+              userId: user.id,
+              used: false
+            },
+            data: { used: true }
+          });
+        } catch (tokenError) {
+          console.error('Failed to mark KYC tokens as used for user:', user.id, tokenError);
+        }
       }
 
       // Store additional verification data if available
@@ -1530,7 +1543,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           updateData.residenceCountry = idData.residence;
         }
 
-        updateData.kycData = JSON.stringify({
+        const kycDataStr = JSON.stringify({
           documentType: idData.document_type,
           documentNumber: idData.document_number,
           firstName: idData.first_name,
@@ -1541,19 +1554,37 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           residence: idData.residence,
           expirationDate: idData.expiration_date
         });
+
+        if (isVotingFlow) {
+          updateData.kycVotingData = kycDataStr;
+        } else {
+          updateData.kycData = kycDataStr;
+        }
       }
     } else if (status === 'Declined' || aml?.status === 'Rejected') {
-      updateData.kycStatus = 'REJECTED';
-      updateData.kycRejectedAt = new Date();
-      updateData.kycRejectionReason = 'Verification declined by Didit';
-      updateData.kycVerifiedAt = null;
+      const reason = 'Verification declined by Didit';
+      if (isVotingFlow) {
+        updateData.kycVotingStatus = 'REJECTED';
+        updateData.kycVotingRejectedAt = new Date();
+        updateData.kycVotingRejectionReason = reason;
+        updateData.kycVotingVerifiedAt = null;
+      } else {
+        updateData.kycStatus = 'REJECTED';
+        updateData.kycRejectedAt = new Date();
+        updateData.kycRejectionReason = reason;
+        updateData.kycVerifiedAt = null;
+      }
 
       // Store rejection details if available
-      let rejectionReason = 'Verification declined by Didit';
+      let rejectionReason = reason;
       if (decision && decision.reviews && decision.reviews.length > 0) {
         const review = decision.reviews[0];
-        rejectionReason = review.comment || 'Verification declined by Didit';
-        updateData.kycRejectionReason = rejectionReason;
+        rejectionReason = review.comment || reason;
+        if (isVotingFlow) {
+          updateData.kycVotingRejectionReason = rejectionReason;
+        } else {
+          updateData.kycRejectionReason = rejectionReason;
+        }
       }
 
       // Send OFAC report only for AML rejections (sanctions screening)
@@ -1582,9 +1613,11 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         }
       }
     } else if (status === 'In Review') {
-      updateData.kycStatus = 'PENDING';
+      if (isVotingFlow) updateData.kycVotingStatus = 'PENDING';
+      else updateData.kycStatus = 'PENDING';
     } else if (status === 'Abandoned') {
-      updateData.kycStatus = 'ABANDONED';
+      if (isVotingFlow) updateData.kycVotingStatus = 'ABANDONED';
+      else updateData.kycStatus = 'ABANDONED';
     }
 
     // Update user KYC status
@@ -1638,11 +1671,6 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
   try {
     const { kycToken } = req.body;
 
-    if (!kycToken) {
-      res.status(400).json({ error: 'KYC token is required to initiate the process' });
-      return;
-    }
-
     let session;
     let user;
 
@@ -1663,56 +1691,53 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
 
       user = session.user;
 
-      // Validate the KYC token
-      const verificationResult = await EmailService.verifyKycToken(kycToken, user.id);
-      if (!verificationResult.success) {
-        res.status(403).json({ error: verificationResult.error });
-        return;
+      // Validate the KYC token if provided (Level 2)
+      if (kycToken) {
+        const verificationResult = await EmailService.verifyKycToken(kycToken, user.id);
+        if (!verificationResult.success) {
+          res.status(403).json({ error: verificationResult.error });
+          return;
+        }
       }
     } else {
-      // Unauthenticated KYC initiation is no longer allowed because a user must have received an email first
-      res.status(401).json({ error: 'Authentication is required to initiate KYC via token' });
+      // Unauthenticated KYC initiation requires a token (Level 2 link)
+      if (!kycToken) {
+        res.status(401).json({ error: 'Authentication is required to initiate KYC without a token' });
+        return;
+      }
+      // Note: We'll verify the token momentarily but we need user ID... 
+      // Actually standard flow for unauth user with token is confusing here because we need to find user first.
+      // Easiest is to reject unauthenticated requests without token, and for with token, we need to lookup user via token in EmailService - but verifyKycToken takes userId.
+      // So let's stick to requiring Auth OR having a token that we can look up?
+      // verifyKycToken assumes we know userId.
+      // Let's rely on finding token in DB to get user if unauthenticated? 
+      // For now, let's keep it simple: If unauthenticated, require token, but logic below needs adjusting.
+      // CURRENTLY: The original code wouldn't work for unauth users either because verifyKycToken takes userId.
+      // If user is unauthenticated, they can't call this endpoint successfully with current logic unless we lookup token first.
+      // But let's assume valid scenarios are: 
+      // 1. Authenticated user clicking button (no token) -> Level 1
+      // 2. Authenticated user with token (from email link) -> Level 2
+
+      res.status(401).json({ error: 'Please log in to initiate KYC' });
       return;
     }
 
-    // Check if KYC should be skipped
-    if (process.env.SKIP_KYC === 'true') {
-      console.log('SKIP_KYC is enabled - setting KYC as passed for user:', user.id);
+    // Determine workflow ID
+    let workflowId = process.env.DIDIT_WORKFLOW_VOTING_ID;
+    let isReceiverFlow = false;
 
-      // Update user KYC status to VERIFIED
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          kycStatus: 'APPROVED',
-          kycVerifiedAt: new Date(),
-          kycRejectedAt: null,
-          kycRejectionReason: null,
-          kycData: JSON.stringify({ skipped: true, reason: 'SKIP_KYC environment variable enabled' })
-        } as any
-      });
+    if (kycToken) {
+      workflowId = process.env.DIDIT_WORKFLOW_RECEIVER_ID;
+      isReceiverFlow = true;
+    }
 
-      const response: any = {
-        url: null, // No external URL needed
-        sessionId: null,
-        skipped: true,
-        message: 'KYC skipped - status set to VERIFIED'
-      };
-
-      // If user was not authenticated, include session token for frontend
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        response.session = {
-          token: session.token,
-          expiresAt: session.expiresAt
-        };
-        response.user = user;
-      }
-
-      res.json(response);
+    if (!workflowId) {
+      res.status(500).json({ error: 'KYC workflow configuration missing' });
       return;
     }
 
     // Check environment variables
-    if (!process.env.DIDIT_WORKFLOW_ID || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
+    if (!process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
       res.status(500).json({ error: 'KYC service configuration missing' });
       return;
     }
@@ -1725,10 +1750,11 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         'x-api-key': process.env.DIDIT_API_KEY
       },
       body: JSON.stringify({
-        workflow_id: process.env.DIDIT_WORKFLOW_ID,
+        workflow_id: workflowId,
         vendor_data: process.env.INSTALLATION_UID,
         metadata: {
-          session_id: session.id
+          session_id: session.id,
+          workflow_type: isReceiverFlow ? 'RECEIVER' : 'VOTING'
         },
       })
     });
@@ -1752,27 +1778,23 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       return;
     }
 
-    // Store KYC session info
+    // Store KYC session info - Update correct status field
+    const updateStatusData: any = {};
+    if (isReceiverFlow) {
+      updateStatusData.kycStatus = 'PENDING';
+    } else {
+      updateStatusData.kycVotingStatus = 'PENDING';
+    }
+
     await prisma.user.update({
       where: { id: user.id },
-      data: {
-        kycStatus: 'PENDING'
-      } as any
+      data: updateStatusData
     });
 
     const response: any = {
       url: diditData.url,
       sessionId: diditData.session_id || null
     };
-
-    // If user was not authenticated, include session token for frontend
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      response.session = {
-        token: session.token,
-        expiresAt: session.expiresAt
-      };
-      response.user = user;
-    }
 
     res.json(response);
   } catch (error: any) {

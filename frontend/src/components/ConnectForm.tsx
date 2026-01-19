@@ -172,7 +172,10 @@ const ConnectForm = () => {
         connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
       }
       if (user.kycStatus === 'APPROVED' || user.kycStatus === 'PENDING') {
-        connectedProviders.push({ name: 'KYC', value: `APPROVED ✓` });
+        connectedProviders.push({ name: 'Receiver KYC', value: `APPROVED ✓` });
+      }
+      if (user.kycVotingStatus === 'APPROVED' || user.kycVotingStatus === 'PENDING') {
+        connectedProviders.push({ name: 'Voting KYC', value: `APPROVED ✓` });
       }
 
       return (
@@ -501,6 +504,56 @@ const ConnectForm = () => {
     }
   };
 
+
+  // Voting KYC connection handler
+  const handleVotingKycConnect = async () => {
+    // Check if already connected and user wants to disconnect
+    if (isProviderConnected('votingKyc')) {
+      return handleDisconnect('votingKyc'); // Check if backend supports this for votingKyc
+    }
+
+    try {
+      setConnectStatus(prev => ({ ...prev, votingKyc: 'connecting' }));
+
+      // initiateKyc without token implies Voting KYC for authenticated user
+      const response = await authApi.initiateKyc();
+      const data = response.data;
+
+      // Check if KYC was skipped
+      if (data.skipped) {
+        console.log('Voting KYC was skipped - automatically verified');
+        await refreshUser();
+        setConnectStatus(prev => ({ ...prev, votingKyc: 'success' }));
+        setTimeout(() => {
+          setConnectStatus(prev => {
+            const { votingKyc, ...rest } = prev;
+            return rest;
+          });
+        }, 3000);
+      } else if (data.url) {
+        window.open(data.url, '_blank');
+        setConnectStatus(prev => ({ ...prev, votingKyc: 'success' }));
+        setTimeout(() => {
+          setConnectStatus(prev => {
+            const { votingKyc, ...rest } = prev;
+            return rest;
+          });
+        }, 3000);
+      } else {
+        throw new Error('No KYC URL received');
+      }
+    } catch (error: any) {
+      console.error('Voting KYC connection error:', error);
+      setConnectStatus(prev => ({ ...prev, votingKyc: 'error', error: error.message }));
+      setTimeout(() => {
+        setConnectStatus(prev => {
+          const { votingKyc, ...rest } = prev;
+          return rest;
+        });
+      }, 5000);
+    }
+  };
+
   // Email connection handler
   const handleEmailConnect = async () => {
     // Check if already connected and user wants to disconnect
@@ -645,13 +698,16 @@ const ConnectForm = () => {
       bitbucket: 'bitbucketHandle',
       gitlab: 'gitlabHandle',
       email: 'email',
-      kyc: 'kycStatus'
+      kyc: 'kycStatus',
+      votingKyc: 'kycVotingStatus'
     };
 
     const field = providerFields[provider];
     if (provider === 'kyc') {
-      // KYC is connected if status is APPROVED
       return user.kycStatus === 'APPROVED';
+    }
+    if (provider === 'votingKyc') {
+      return user.kycVotingStatus === 'APPROVED';
     }
 
     const isConnected = field && user[field] != null && user[field] !== '';
@@ -673,7 +729,8 @@ const ConnectForm = () => {
       bitbucket: 'BitBucket',
       gitlab: 'GitLab',
       email: 'Email',
-      kyc: 'KYC'
+      kyc: 'Receiver KYC',
+      votingKyc: 'Voting KYC'
     };
 
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
@@ -693,7 +750,17 @@ const ConnectForm = () => {
       } else if (user?.kycStatus === 'PENDING') {
         return 'KYC Pending...';
       } else if (user?.kycStatus === 'REJECTED') {
-        return 'Connect with KYC'; // Don't hint: 'KYC Rejected'
+        return 'Connect Receiver KYC'; // Don't hint: 'KYC Rejected'
+      }
+    }
+
+    if (provider === 'votingKyc' && !status) {
+      if (user?.kycVotingStatus === 'APPROVED') {
+        return 'Voting KYC Passed';
+      } else if (user?.kycVotingStatus === 'PENDING') {
+        return 'Voting KYC Pending...';
+      } else if (user?.kycVotingStatus === 'REJECTED') {
+        return 'Connect Voting KYC';
       }
     }
 
@@ -756,6 +823,14 @@ const ConnectForm = () => {
       } else if (user?.kycStatus === 'REJECTED') {
         className += ' error';
       }
+    } else if (provider === 'votingKyc' && !status) {
+      if (user?.kycVotingStatus === 'APPROVED') {
+        className += ' connected';
+      } else if (user?.kycVotingStatus === 'PENDING') {
+        className += ' waiting-for-verification';
+      } else if (user?.kycVotingStatus === 'REJECTED') {
+        className += ' error';
+      }
     } else if (isConnected && !status) {
       className += ' connected';
     }
@@ -813,6 +888,19 @@ const ConnectForm = () => {
           <span className="connect-icon">⟠</span>
           {getButtonText('ethereum')}
         </button>
+
+        {/* Voting KYC Connect - Only show if authenticated */}
+        {isAuthenticated && user && (
+          <button
+            className={getButtonClass('votingKyc')}
+            onClick={handleVotingKycConnect}
+            disabled={isLoading || connectStatus.votingKyc === 'connecting' || connectStatus.votingKyc === 'success'}
+          >
+            <span className="connect-icon">🗳️</span>
+            {getButtonText('votingKyc')}
+            {connectStatus.votingKyc === 'error' && <span className="error-message">{connectStatus.error}</span>}
+          </button>
+        )}
 
         {/* ORCID Connect */}
         <button

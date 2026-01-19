@@ -42,6 +42,11 @@ interface User {
   kycRejectionReason?: string;
   createdAt: string;
   updatedAt: string;
+  // KYC Voting fields
+  kycVotingStatus?: string;
+  kycVotingVerifiedAt?: string;
+  kycVotingRejectedAt?: string;
+  kycVotingRejectionReason?: string;
 }
 
 interface Post {

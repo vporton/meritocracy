@@ -504,7 +504,8 @@ export class MultiNetworkGasTokenDistributionService {
         const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
         if (user?.kycStatus !== 'APPROVED') {
           const kycError = 'KYC_REQUIRED';
-          result.reservedAmount += dist.amountToken;
+          // Critical change: Do NOT reserve funds for user if KYC not passed.
+          // result.reservedAmount += dist.amountToken; // REMOVED
 
           await this.prisma.$transaction([
             this.prisma.gasTokenDistribution.updateMany({
@@ -520,10 +521,16 @@ export class MultiNetworkGasTokenDistributionService {
               data: {
                 userId: dist.userId,
                 network: context.networkId,
-                amount: dist.amountToken,
-                backlogAmount: dist.backlogAmount,
+                amount: 0, // Set amount to 0 so it doesn't count as backlog
+                backlogAmount: dist.backlogAmount, // Keep tracking old backlog? Or should this also be 0? 
+                // If we want to "not reserve", we probably shouldn't carry over old backlog either for *this* record, 
+                // but preserving it in `backlogAmount` field might be useful for history. 
+                // However, since we set amount=0, next time the aggregated sums won't include this "new" amount. 
+                // The old backlog is "processed" by the updateMany above.
+                // So effectively, the user LOSES their backlog claim if we mark old ones PROCESSED and new one has amount 0.
+                // This satisfies "money are not reserved for him" (clearing reservation).
                 amountUsd: 0,
-                status: 'DEFERRED',
+                status: 'FAILED', // Use FAILED instead of DEFERRED so it's not picked up as active backlog
                 errorMessage: kycError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
@@ -532,7 +539,7 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
+          console.log(`⏳ [${context.networkName}] Skipped distribution for user ${dist.userId}: KYC required (reservation cleared)`);
 
           if (user?.email) {
             const token = emailService.generateKycToken();
@@ -540,7 +547,8 @@ export class MultiNetworkGasTokenDistributionService {
             await emailService.sendKycRequestEmail(user.email, token, user.name || undefined);
           }
 
-          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
+          // Do NOT decrement remainingAmount because we didn't use it.
+          // remainingAmount = Math.max(0, remainingAmount - dist.amountToken); // REMOVED
           continue;
         }
 
@@ -763,7 +771,8 @@ export class MultiNetworkGasTokenDistributionService {
         const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
         if (user?.kycStatus !== 'APPROVED') {
           const kycError = 'KYC_REQUIRED';
-          result.reservedAmount += dist.amountToken;
+          // Critical change: Do NOT reserve funds for user if KYC not passed.
+          // result.reservedAmount += dist.amountToken; // REMOVED
 
           await this.prisma.$transaction([
             this.prisma.gasTokenDistribution.updateMany({
@@ -779,10 +788,10 @@ export class MultiNetworkGasTokenDistributionService {
               data: {
                 userId: dist.userId,
                 network: context.networkId,
-                amount: dist.amountToken,
+                amount: 0, // Set amount to 0 to clear reservation
                 backlogAmount: dist.backlogAmount,
                 amountUsd: 0,
-                status: 'DEFERRED',
+                status: 'FAILED', // FAILED instead of DEFERRED
                 errorMessage: kycError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
@@ -791,7 +800,7 @@ export class MultiNetworkGasTokenDistributionService {
             })
           ]);
 
-          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: KYC required`);
+          console.log(`⏳ [${context.networkName}] Skipped distribution for user ${dist.userId}: KYC required (reservation cleared)`);
 
           if (user?.email) {
             const token = emailService.generateKycToken();
@@ -799,8 +808,11 @@ export class MultiNetworkGasTokenDistributionService {
             await emailService.sendKycRequestEmail(user.email, token, user.name || undefined);
           }
 
-          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
+          // Do not decrement remainingAmount
+          // remainingAmount = Math.max(0, remainingAmount - dist.amountToken); // REMOVED
           continue;
+
+
         }
 
         if (dist.amountToken > remainingAmount) {

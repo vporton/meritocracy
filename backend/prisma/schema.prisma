@@ -33,6 +33,11 @@ model User {
   kycRejectedAt           DateTime?
   kycRejectionReason      String?
   kycData                 String?
+  kycVotingStatus         String?
+  kycVotingVerifiedAt     DateTime?
+  kycVotingRejectedAt     DateTime?
+  kycVotingRejectionReason String?
+  kycVotingData           String?
   issuingState            String?
   personalNumber          String?
   residenceCountry        String?

@@ -114,3 +114,5 @@
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
 - TODO@P2 Attack vector: Create many GitHub accounts each containing a prompt injection. It makes hard for people to vote against each one. Possible solution: Allow evaluations only from Gitcoin Passport verified accounts.
+
+- TODO@P2 If the sum to be paid is more than availiable minus gas cost, pay partially.

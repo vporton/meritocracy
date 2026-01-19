@@ -726,7 +726,7 @@ const ConnectForm = () => {
       bitbucket: 'BitBucket',
       gitlab: 'GitLab',
       email: 'Email',
-      votingKyc: 'Voting KYC'
+      votingKyc: 'KYC Level 1 (Voter)'
     };
 
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
@@ -754,11 +754,11 @@ const ConnectForm = () => {
 
     if (provider === 'votingKyc' && !status) {
       if (user?.kycVotingStatus === 'APPROVED') {
-        return 'Voting KYC Passed';
+        return 'KYC Level 1 (Voter) Passed';
       } else if (user?.kycVotingStatus === 'PENDING') {
-        return 'Voting KYC Pending...';
+        return 'KYC Level 1 (Voter) Pending...';
       } else if (user?.kycVotingStatus === 'REJECTED') {
-        return 'Connect Voting KYC';
+        return 'Connect with KYC Level 1 (Voter)';
       }
     }
 

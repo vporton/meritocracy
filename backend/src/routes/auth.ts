@@ -1468,9 +1468,15 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           bitbucketHandle: null,
           gitlabHandle: null,
           onboarded: false,
-          // If we don't know the workflow (weird), default to PENDING status on the main one or just leave null? 
-          // Defaulting to receiver status for safety if unclear, or check workflow_id
-          kycStatus: workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID ? 'PENDING' : 'PENDING' // TODO: refine
+          // Initialize correct status based on workflow
+          // If Voting Workflow: Set kycVotingStatus = PENDING
+          // If Receiver Workflow: Set kycStatus = PENDING (and kycVotingStatus = PENDING?)
+          kycStatus: workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID ? undefined : 'PENDING',
+          kycVotingStatus: 'PENDING' // Always set Voting to PENDING if we are creating a user via KYC? 
+          // If Receiver flow, we are starting a process that verifies identity, so effectively Voting is pending too.
+          // If Voting flow, obviously Voting is pending.
+          // So kycVotingStatus = 'PENDING' is safe for both.
+          // kycStatus (Receiver) should ONLY be PENDING if it is Receiver flow.
         } as any
       });
 
@@ -1492,17 +1498,26 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
 
     // Handle different statuses according to Didit webhook format
-    if (status === 'Approved' && aml?.status === 'Approved') {
+    if (status === 'Approved' && (isVotingFlow || aml?.status === 'Approved')) {
       if (isVotingFlow) {
+        // Voting KYC Flow: Sets ONLY Voting Status
         updateData.kycVotingStatus = 'APPROVED';
         updateData.kycVotingVerifiedAt = new Date();
         updateData.kycVotingRejectedAt = null;
         updateData.kycVotingRejectionReason = null;
       } else {
+        // Receiver KYC Flow: Sets BOTH Receiver Status AND Voting Status
+        // Primary: Receiver Status
         updateData.kycStatus = 'APPROVED';
         updateData.kycVerifiedAt = new Date();
         updateData.kycRejectedAt = null;
         updateData.kycRejectionReason = null;
+
+        // Secondary: Voting Status (passing Level 2 implies passing Level 1)
+        updateData.kycVotingStatus = 'APPROVED';
+        updateData.kycVotingVerifiedAt = new Date();
+        updateData.kycVotingRejectedAt = null;
+        updateData.kycVotingRejectionReason = null;
       }
 
       // Mark any unused KYC tokens for this user as used (Only for Receiver flow usually, but safe to do check)

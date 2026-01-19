@@ -434,75 +434,76 @@ const ConnectForm = () => {
     window.addEventListener('message', handleMessage as any);
   };
 
-  // KYC connection handler
-  const handleKycConnect = async () => {
-    // Check if already connected and user wants to disconnect
-    if (isProviderConnected('kyc')) {
-      return handleDisconnect('kyc');
-    }
+  // Auto-initiate Receiver KYC if token is present
+  useEffect(() => {
+    const autoHandleReceiverKyc = async () => {
+      // If no token or already "started" handled by status checks mostly,
+      // but strictly we only want to run if we have a token.
+      if (!kycTokenParam) return;
 
-    try {
-      setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
+      // Prevent re-entry if already connecting/success/error
+      // Note: 'error' state might prevent retrying if page not refreshed, which is probably fine.
+      if (connectStatus.kyc) return;
 
-      const response = await authApi.initiateKyc(kycTokenParam);
-      const data = response.data;
+      try {
+        setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
+        console.log('Auto-initiating Receiver KYC with token:', kycTokenParam);
 
-      // Check if KYC was skipped
-      if (data.skipped) {
-        console.log('KYC was skipped - automatically verified');
+        // initiateKyc with token implies Receiver KYC
+        const response = await authApi.initiateKyc(kycTokenParam);
+        const data = response.data;
 
-        // If we got a session back (for unauthenticated users), update auth context
-        if (data.session && data.user) {
-          console.log('KYC created new session for unauthenticated user');
-          updateAuthData(data.user, data.session.token);
+        // Check if KYC was skipped
+        if (data.skipped) {
+          console.log('KYC was skipped - automatically verified');
+
+          // If we got a session back (for unauthenticated users), update auth context
+          if (data.session && data.user) {
+            console.log('KYC created new session for unauthenticated user');
+            updateAuthData(data.user, data.session.token);
+          } else {
+            // Refresh user data to get updated KYC status
+            await refreshUser();
+          }
+
+          setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
+
+          // Reset status after a delay
+          setTimeout(() => {
+            setConnectStatus(prev => {
+              const { kyc, ...rest } = prev;
+              return rest;
+            });
+          }, 3000);
+        } else if (data.url) {
+          // If we got a session back (for unauthenticated users), update auth context
+          if (data.session && data.user) {
+            console.log('KYC created new session for unauthenticated user');
+            updateAuthData(data.user, data.session.token);
+          }
+
+          // Open KYC URL in new tab 
+          window.open(data.url, '_blank');
+          setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
+
+          // Reset status after a delay
+          setTimeout(() => {
+            setConnectStatus(prev => {
+              const { kyc, ...rest } = prev;
+              return rest;
+            });
+          }, 3000);
         } else {
-          // Refresh user data to get updated KYC status
-          await refreshUser();
+          throw new Error('No KYC URL received');
         }
-
-        setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
-
-        // Reset status after a delay
-        setTimeout(() => {
-          setConnectStatus(prev => {
-            const { kyc, ...rest } = prev;
-            return rest;
-          });
-        }, 3000);
-      } else if (data.url) {
-        // If we got a session back (for unauthenticated users), update auth context
-        if (data.session && data.user) {
-          console.log('KYC created new session for unauthenticated user');
-          updateAuthData(data.user, data.session.token);
-        }
-
-        // Open KYC URL in new tab
-        window.open(data.url, '_blank');
-        setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
-
-        // Reset status after a delay
-        setTimeout(() => {
-          setConnectStatus(prev => {
-            const { kyc, ...rest } = prev;
-            return rest;
-          });
-        }, 3000);
-      } else {
-        throw new Error('No KYC URL received');
+      } catch (error: any) {
+        console.error('KYC connection error:', error);
+        setConnectStatus(prev => ({ ...prev, kyc: 'error', error: error.message }));
       }
-    } catch (error: any) {
-      console.error('KYC connection error:', error);
-      setConnectStatus(prev => ({ ...prev, kyc: 'error', error: error.message }));
+    };
 
-      // Reset status after a delay
-      setTimeout(() => {
-        setConnectStatus(prev => {
-          const { kyc, ...rest } = prev;
-          return rest;
-        });
-      }, 5000);
-    }
-  };
+    autoHandleReceiverKyc();
+  }, [kycTokenParam, connectStatus.kyc, updateAuthData, refreshUser]);
 
 
   // Voting KYC connection handler
@@ -698,14 +699,10 @@ const ConnectForm = () => {
       bitbucket: 'bitbucketHandle',
       gitlab: 'gitlabHandle',
       email: 'email',
-      kyc: 'kycStatus',
       votingKyc: 'kycVotingStatus'
     };
 
     const field = providerFields[provider];
-    if (provider === 'kyc') {
-      return user.kycStatus === 'APPROVED';
-    }
     if (provider === 'votingKyc') {
       return user.kycVotingStatus === 'APPROVED';
     }
@@ -729,7 +726,6 @@ const ConnectForm = () => {
       bitbucket: 'BitBucket',
       gitlab: 'GitLab',
       email: 'Email',
-      kyc: 'Receiver KYC',
       votingKyc: 'Voting KYC'
     };
 
@@ -743,16 +739,18 @@ const ConnectForm = () => {
       return `Disconnect ${displayName}`;
     }
 
-    // Special handling for KYC: show status
+    // Special handling for KYC: show status -> REMOVED
+    /*
     if (provider === 'kyc' && !status) {
       if (user?.kycStatus === 'APPROVED') {
         return 'KYC passed';
       } else if (user?.kycStatus === 'PENDING') {
         return 'KYC Pending...';
       } else if (user?.kycStatus === 'REJECTED') {
-        return 'Connect Receiver KYC'; // Don't hint: 'KYC Rejected'
+        return 'Connect Receiver KYC'; 
       }
     }
+    */
 
     if (provider === 'votingKyc' && !status) {
       if (user?.kycVotingStatus === 'APPROVED') {
@@ -813,15 +811,6 @@ const ConnectForm = () => {
         className += ' waiting-for-verification';
       } else {
         className += ' connected';
-      }
-    } else if (provider === 'kyc' && !status) {
-      // Special handling for KYC status
-      if (user?.kycStatus === 'APPROVED') {
-        className += ' connected';
-      } else if (user?.kycStatus === 'PENDING') {
-        className += ' waiting-for-verification';
-      } else if (user?.kycStatus === 'REJECTED') {
-        className += ' error';
       }
     } else if (provider === 'votingKyc' && !status) {
       if (user?.kycVotingStatus === 'APPROVED') {
@@ -952,17 +941,7 @@ const ConnectForm = () => {
           {getButtonText('email')}
         </button>
 
-        {/* KYC Verification - only shown if token is present or already approved/pending */}
-        {(kycTokenParam || user?.kycStatus === 'APPROVED' || user?.kycStatus === 'PENDING') && (
-          <button
-            className={getButtonClass('kyc')}
-            onClick={handleKycConnect}
-            disabled={isLoading || connectStatus.kyc === 'connecting' || connectStatus.kyc === 'disconnecting' || user?.kycStatus === 'APPROVED'}
-          >
-            <span className="connect-icon">🆔</span>
-            {getButtonText('kyc')}
-          </button>
-        )}
+
       </div>
 
       <div className="non-evm-addresses">
@@ -1139,7 +1118,7 @@ const ConnectForm = () => {
           <div className="modal-content">
             <h3>Select a Wallet</h3>
             <div className="wallet-options">
-              {console.log('Rendering wallet selection modal with connectors:', connectors)}
+
               {connectors.map((connector) => (
                 <button
                   key={connector.uid}

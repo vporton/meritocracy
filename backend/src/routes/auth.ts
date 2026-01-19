@@ -1742,7 +1742,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
     let isReceiverFlow = false;
 
     if (kycToken) {
-      workflowId = process.env.DIDIT_WORKFLOW_RECEIVER_ID;
+      workflowId = process.env.DIDIT_WORKFLOW_RECEIVING_ID;
       isReceiverFlow = true;
     }
 
@@ -1769,7 +1769,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         vendor_data: process.env.INSTALLATION_UID,
         metadata: {
           session_id: session.id,
-          workflow_type: isReceiverFlow ? 'RECEIVER' : 'VOTING'
+          workflow_type: isReceiverFlow ? 'RECEIVING' : 'VOTING'
         },
       })
     });

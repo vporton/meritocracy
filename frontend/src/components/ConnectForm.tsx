@@ -483,7 +483,8 @@ const ConnectForm = () => {
           }
 
           // Open KYC URL in new tab 
-          window.open(data.url, '_blank');
+          // Redirect to KYC URL in the same tab to avoid popup blockers and provide seamless flow
+          window.location.href = data.url;
           setConnectStatus(prev => ({ ...prev, kyc: 'success' }));
 
           // Reset status after a delay

@@ -1714,27 +1714,39 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
           return;
         }
       }
-    } else {
       // Unauthenticated KYC initiation requires a token (Level 2 link)
       if (!kycToken) {
-        res.status(401).json({ error: 'Authentication is required to initiate KYC without a token' });
+        res.status(401).json({ error: 'Please log in to initiate KYC' });
         return;
       }
-      // Note: We'll verify the token momentarily but we need user ID... 
-      // Actually standard flow for unauth user with token is confusing here because we need to find user first.
-      // Easiest is to reject unauthenticated requests without token, and for with token, we need to lookup user via token in EmailService - but verifyKycToken takes userId.
-      // So let's stick to requiring Auth OR having a token that we can look up?
-      // verifyKycToken assumes we know userId.
-      // Let's rely on finding token in DB to get user if unauthenticated? 
-      // For now, let's keep it simple: If unauthenticated, require token, but logic below needs adjusting.
-      // CURRENTLY: The original code wouldn't work for unauth users either because verifyKycToken takes userId.
-      // If user is unauthenticated, they can't call this endpoint successfully with current logic unless we lookup token first.
-      // But let's assume valid scenarios are: 
-      // 1. Authenticated user clicking button (no token) -> Level 1
-      // 2. Authenticated user with token (from email link) -> Level 2
 
-      res.status(401).json({ error: 'Please log in to initiate KYC' });
-      return;
+      // Look up user by KYC token
+      const tokenRecord = await (prisma as any).kycToken.findUnique({
+        where: { token: kycToken },
+        include: { user: true }
+      });
+
+      if (!tokenRecord) {
+        res.status(403).json({ error: 'Invalid KYC token' });
+        return;
+      }
+
+      if (tokenRecord.used) {
+        res.status(403).json({ error: 'KYC token has already been used' });
+        return;
+      }
+
+      if (tokenRecord.expiresAt < new Date()) {
+        res.status(403).json({ error: 'KYC token has expired' });
+        return;
+      }
+
+      user = tokenRecord.user;
+
+      // Create a session for this user so they are authenticated
+      session = await createSession(user.id);
+
+      console.log('User authenticated via KYC token:', user.id);
     }
 
     // Determine workflow ID
@@ -1810,6 +1822,15 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       url: diditData.url,
       sessionId: diditData.session_id || null
     };
+
+    // If we established a new session (was unauthenticated), return it
+    if ((!authHeader || !authHeader.startsWith('Bearer ')) && session) {
+      response.session = {
+        token: session.token,
+        expiresAt: session.expiresAt
+      };
+      response.user = user;
+    }
 
     res.json(response);
   } catch (error: any) {

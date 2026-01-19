@@ -116,3 +116,5 @@
 - TODO@P2 Attack vector: Create many GitHub accounts each containing a prompt injection. It makes hard for people to vote against each one. Possible solution: Allow evaluations only from Gitcoin Passport verified accounts.
 
 - TODO@P2 If the sum to be paid is more than availiable minus gas cost, pay partially.
+
+- TODO@P2 Voting rules: Everybody with KYC Level 1 can start voting to ban anyone else, show ban votings in the reverse order like the leaderboard.

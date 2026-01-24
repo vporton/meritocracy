@@ -32,7 +32,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['buffer', 'crypto-browserify', 'stream-browserify'],
+    include: ['buffer', 'crypto-browserify', 'stream-browserify', 'ethers', 'wagmi', 'axios'],
   },
   preview: {
     allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'meritocracy.fly.dev', 'meritocracy-staging.fly.dev', 'merit.science-dao.org'],

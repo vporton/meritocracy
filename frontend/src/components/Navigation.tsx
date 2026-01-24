@@ -41,6 +41,13 @@ function Navigation() {
             Logs
           </Link>
           <Link
+            to="/ban-voting"
+            className={`nav-link ${isActive('/ban-voting') ? 'active' : ''}`}
+            onClick={closeMenu}
+          >
+            Ban Voting
+          </Link>
+          <Link
             to="https://science-dao.org/meritocracy/"
             className='nav-link'
             onClick={closeMenu}

@@ -48,6 +48,9 @@ model User {
   openaiLogs              OpenAILog[]
   sessions                Session[]
 
+  banVotesCast        BanVote[] @relation("MyBanVotes")
+  banVotesReceived    BanVote[] @relation("ReceivedBanVotes")
+
   @@index([onboarded])
   @@index([onboarded, shareInGDP(sort: Desc)])
   @@index([shareInGDP])
@@ -55,6 +58,22 @@ model User {
   @@index([cosmosAddress])
   @@unique([issuingState, personalNumber])
   @@map("users")
+}
+
+model BanVote {
+  id             Int      @id @default(autoincrement())
+  voterUserId    Int
+  targetUserId   Int
+  message        String
+  weekStartDate  DateTime // Start of the week this vote belongs to
+  createdAt      DateTime @default(now())
+  
+  voter          User     @relation("MyBanVotes", fields: [voterUserId], references: [id], onDelete: Cascade)
+  target         User     @relation("ReceivedBanVotes", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([targetUserId, weekStartDate])
+  @@unique([voterUserId, targetUserId, weekStartDate])
+  @@map("ban_votes")
 }
 
 model Session {

@@ -19,6 +19,7 @@ import cronRoutes from './routes/cron.js';
 import multiNetworkGasRoutes from './routes/multi-network-gas.js';
 import cleanupRoutes from './routes/cleanup.js';
 import adminRoutes from './routes/admin.js';
+import banVotingRoutes from './routes/banVoting.js';
 
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
@@ -82,6 +83,7 @@ app.use('/api/cron', cronRoutes);
 app.use('/api/multi-network-gas', multiNetworkGasRoutes);
 app.use('/api/cleanup', cleanupRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ban-voting', banVotingRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

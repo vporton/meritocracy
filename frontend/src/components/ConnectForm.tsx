@@ -879,18 +879,16 @@ const ConnectForm = () => {
           {getButtonText('ethereum')}
         </button>
 
-        {/* Voting KYC Connect - Only show if authenticated */}
-        {isAuthenticated && user && (
-          <button
-            className={getButtonClass('votingKyc')}
-            onClick={handleVotingKycConnect}
-            disabled={isLoading || connectStatus.votingKyc === 'connecting' || connectStatus.votingKyc === 'success'}
-          >
-            <span className="connect-icon">🗳️</span>
-            {getButtonText('votingKyc')}
-            {connectStatus.votingKyc === 'error' && <span className="error-message">{connectStatus.error}</span>}
-          </button>
-        )}
+        {/* Voting KYC Connect - Displayed always */}
+        <button
+          className={getButtonClass('votingKyc')}
+          onClick={handleVotingKycConnect}
+          disabled={isLoading || connectStatus.votingKyc === 'connecting' || connectStatus.votingKyc === 'success'}
+        >
+          <span className="connect-icon">🗳️</span>
+          {getButtonText('votingKyc')}
+          {connectStatus.votingKyc === 'error' && <span className="error-message">{connectStatus.error}</span>}
+        </button>
 
         {/* ORCID Connect */}
         <button

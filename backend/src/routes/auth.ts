@@ -1714,6 +1714,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
           return;
         }
       }
+    } else {
       // Unauthenticated KYC initiation requires a token (Level 2 link)
       if (!kycToken) {
         res.status(401).json({ error: 'Please log in to initiate KYC' });

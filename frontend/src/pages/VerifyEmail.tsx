@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './VerifyEmail.css';
@@ -13,18 +13,24 @@ const VerifyEmail = () => {
 
   const token = searchParams.get('token');
 
+  const verificationStarted = useRef(false);
+
   useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setError('No verification token provided');
+    if (!token || verificationStarted.current) {
+      if (!token) {
+        setStatus('error');
+        setError('No verification token provided');
+      }
       return;
     }
+
+    verificationStarted.current = true;
 
     const handleVerification = async () => {
       try {
         setStatus('verifying');
         const result = await verifyEmail(token);
-        
+
         if (result.success) {
           setStatus('success');
           setMessage('Your email has been verified successfully!');
@@ -49,7 +55,7 @@ const VerifyEmail = () => {
     try {
       setStatus('resending');
       const result = await resendVerification();
-      
+
       if (result.success) {
         setMessage('Verification email sent successfully! Please check your inbox.');
         setStatus('success');
@@ -71,7 +77,7 @@ const VerifyEmail = () => {
     <div className="verify-email">
       <div className="verify-email-container">
         <h1>Email Verification</h1>
-        
+
         {status === 'verifying' && (
           <div className="status-message verifying">
             <div className="spinner"></div>
@@ -94,20 +100,20 @@ const VerifyEmail = () => {
           <div className="status-message error">
             <div className="error-icon">✗</div>
             <p className="error-text">{error}</p>
-            
+
             {isAuthenticated && user && !user.emailVerified && (
               <div className="resend-section">
                 <p>Didn't receive the verification email?</p>
-                <button 
+                <button
                   onClick={handleResendVerification}
-                  disabled={status === 'resending'}
+                  disabled={false}
                   className="resend-button"
                 >
-                  {status === 'resending' ? 'Sending...' : 'Resend Verification Email'}
+                  Resend Verification Email
                 </button>
               </div>
             )}
-            
+
             <button onClick={handleGoHome} className="home-button">
               Go to Home Page
             </button>

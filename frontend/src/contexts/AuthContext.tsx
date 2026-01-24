@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { User, AuthData, authApi } from '../services/api';
 
@@ -63,43 +63,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuth();
   }, [token, API_BASE_URL]);
 
-  const login = async (authData: AuthData, provider: string) => {
+  const login = useCallback(async (authData: AuthData, provider: string) => {
     try {
       setIsLoading(true);
-      
+
       // Create headers object
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      
+
       // Include authorization header if user is already logged in (for connecting additional accounts)
       const authToken = localStorage.getItem('authToken');
       if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
       }
-      
+
       const response = await axios.post(`${API_BASE_URL}/api/auth/login/${provider}`, authData, {
         headers
       });
-      
+
       const { user: userData, session } = response.data;
       setUser(userData);
       setToken(session.token);
       localStorage.setItem('authToken', session.token);
-      
+
       return { success: true, user: userData };
     } catch (error: any) {
       console.error('Login failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Login failed'
       };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       if (token) {
         await axios.post(`${API_BASE_URL}/api/auth/logout`);
@@ -112,9 +112,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.removeItem('authToken');
       delete axios.defaults.headers.common['Authorization'];
     }
-  };
+  }, [token, API_BASE_URL]);
 
-  const refreshUser = async (): Promise<User | undefined> => {
+  const refreshUser = useCallback(async (): Promise<User | undefined> => {
     if (token) {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
@@ -125,17 +125,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
     }
-  };
+  }, [token, API_BASE_URL]);
 
-  const registerEmail = async (email: string, name?: string) => {
+  const registerEmail = useCallback(async (email: string, name?: string) => {
     try {
       setIsLoading(true);
-      
+
       const response = await authApi.registerEmail(email, name);
       const { message, user: userData, session, requiresVerification } = response.data;
-      
+
       console.log('Email registration response:', { message, requiresVerification });
-      
+
       if (session) {
         setUser(userData);
         setToken(session.token);
@@ -143,75 +143,75 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } else {
         setUser(userData);
       }
-      
-      return { 
-        success: true, 
-        user: userData, 
+
+      return {
+        success: true,
+        user: userData,
         requiresVerification,
-        message 
+        message
       };
     } catch (error: any) {
       console.error('Email registration failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Email registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Email registration failed'
       };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const verifyEmail = async (token: string) => {
+  const verifyEmail = useCallback(async (token: string) => {
     try {
       setIsLoading(true);
-      
+
       const response = await authApi.verifyEmail(token);
       const { user: userData } = response.data;
-      
+
       setUser(userData);
-      
-      return { 
-        success: true, 
-        user: userData 
+
+      return {
+        success: true,
+        user: userData
       };
     } catch (error: any) {
       console.error('Email verification failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Email verification failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Email verification failed'
       };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const resendVerification = async () => {
+  const resendVerification = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       await authApi.resendVerification();
-      
-      return { 
-        success: true 
+
+      return {
+        success: true
       };
     } catch (error: any) {
       console.error('Resend verification failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to resend verification email' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to resend verification email'
       };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const updateAuthData = (userData: User, sessionToken: string) => {
+  const updateAuthData = useCallback((userData: User, sessionToken: string) => {
     setUser(userData);
     setToken(sessionToken);
     localStorage.setItem('authToken', sessionToken);
-  };
+  }, []);
 
-  const value: AuthContextType = {
+  const value = useMemo(() => ({
     user,
     isLoading,
     isAuthenticated: !!user,
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     logout,
     refreshUser,
     updateAuthData,
-  };
+  }), [user, isLoading, login, registerEmail, verifyEmail, resendVerification, logout, refreshUser, updateAuthData]);
 
   return (
     <AuthContext.Provider value={value}>

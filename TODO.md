@@ -120,3 +120,5 @@
 - TODO@P1 Ensure that, if voting happens in begining of a week, money are send in the end.
 
 - TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).
+
+- TODO@P3 Run tasks in parallel.

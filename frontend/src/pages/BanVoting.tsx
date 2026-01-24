@@ -4,6 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { worldGdpApi } from '../services/api';
 import './BanVoting.css';
 
+interface AIResponse {
+    text: string;
+    sources: string[];
+}
+
 interface User {
     id: number;
     name: string | null;
@@ -14,6 +19,7 @@ interface User {
     bitbucketHandle?: string;
     gitlabHandle?: string;
     orcidId?: string;
+    aiResponses?: AIResponse[];
 }
 
 interface VoteResponse {
@@ -30,6 +36,7 @@ export default function BanVoting() {
     const { user: authUser } = useAuth();
     const queryClient = useQueryClient();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [viewAiRationaleUser, setViewAiRationaleUser] = useState<User | null>(null);
     const [voteMessage, setVoteMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -117,7 +124,7 @@ export default function BanVoting() {
             <div className="container">
                 <header className="page-header">
                     <h1>Ban Voting System</h1>
-                    <p className="subtitle">Vote to ban users who violate community standards. Weekly reset.</p>
+                    <p className="subtitle">Vote to ban users who do prompt injection or severe plagiarism. Weekly reset.</p>
                 </header>
 
                 {!isKycApproved && authUser && (
@@ -195,6 +202,16 @@ export default function BanVoting() {
                                             </a>
                                         )}
                                     </div>
+                                    {user.aiResponses && user.aiResponses.length > 0 && (
+                                        <div className="ai-rationale-link">
+                                            <button
+                                                className="link-button"
+                                                onClick={() => setViewAiRationaleUser(user)}
+                                            >
+                                                View AI Rationale ({user.aiResponses.length})
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <button
                                     className={`vote-button ${!isKycApproved ? 'disabled' : ''}`}
@@ -220,7 +237,7 @@ export default function BanVoting() {
                             <form onSubmit={handleSubmitVote}>
                                 <div className="form-group">
                                     <label htmlFor="vote-message">
-                                        Reason for ban (Message)
+                                        Reason for ban (provide confirming links)
                                         {selectedUser.voteCount === 0 ? <span className="required-star">*</span> : <span className="optional-text"> (Optional)</span>}:
                                     </label>
                                     <textarea
@@ -252,6 +269,40 @@ export default function BanVoting() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {viewAiRationaleUser && (
+                    <div className="modal-overlay" onClick={() => setViewAiRationaleUser(null)}>
+                        <div className="modal-content rationale-modal" onClick={e => e.stopPropagation()}>
+                            <button className="close-button" onClick={() => setViewAiRationaleUser(null)}>×</button>
+                            <h2>AI Rationale for {viewAiRationaleUser.name || `User #${viewAiRationaleUser.id}`}</h2>
+                            <div className="ai-responses-list">
+                                {viewAiRationaleUser.aiResponses?.map((response, index) => (
+                                    <div key={index} className="ai-response-item">
+                                        <div className="response-header">Assessment #{index + 1}</div>
+                                        <div className="response-text">{response.text}</div>
+                                        {response.sources && response.sources.length > 0 && (
+                                            <div className="response-sources">
+                                                <h4>Sources:</h4>
+                                                <ul>
+                                                    {response.sources.map((source, sIndex) => (
+                                                        <li key={sIndex}>
+                                                            <a href={source} target="_blank" rel="noopener noreferrer">{source}</a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="modal-actions">
+                                <button className="cancel-button" onClick={() => setViewAiRationaleUser(null)}>
+                                    Close
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

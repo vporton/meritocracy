@@ -121,4 +121,4 @@
 
   - FIXME@P2 Don't show the user email here.
 
-- FIXME@P2 If I click "Verify Email Address" in verification email second time, it starts to query the backend repeatedly times per second.
+- TODO@P2 Voting to unban (with higher quorum than to ban).

@@ -360,3 +360,92 @@
     color: white;
     border-color: #a6ce39;
 }
+
+.ai-rationale-link {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: #4c51bf;
+    text-decoration: underline;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+}
+
+.link-button:hover {
+    color: #2d3748;
+}
+
+/* Rationale Modal */
+.rationale-modal {
+    max-width: 800px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.ai-responses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.ai-response-item {
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.response-header {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.response-text {
+    line-height: 1.6;
+    color: #2d3748;
+    white-space: pre-wrap;
+}
+
+.response-sources {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.response-sources h4 {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+    color: #4a5568;
+}
+
+.response-sources ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.response-sources li {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    color: #667eea;
+}
+
+.response-sources a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.response-sources a:hover {
+    text-decoration: underline;
+}

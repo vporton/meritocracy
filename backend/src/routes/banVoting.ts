@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 const router = express.Router();
 
 // Get list of evaluated users with their vote stats for the current week
-router.get('/', requireAuth, async (req, res): Promise<void> => {
+router.get('/', async (req, res): Promise<void> => {
     try {
         const users = await BanVotingService.getEvaluatedUsersWithVoteStats();
         res.json(users);
@@ -54,7 +54,7 @@ router.post('/vote', requireAuth, async (req, res): Promise<void> => {
 });
 
 // Get votes for a specific user (optional, maybe for detail view)
-router.get('/:userId/votes', requireAuth, async (req, res): Promise<void> => {
+router.get('/:userId/votes', async (req, res): Promise<void> => {
     try {
         const targetId = Number(req.params.userId);
         const votes = await BanVotingService.getBanVotes(targetId);

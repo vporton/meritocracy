@@ -268,3 +268,29 @@
     font-size: 0.9em;
     margin-left: 4px;
 }
+
+.kyc-warning-banner {
+    background: #fffaf0;
+    border: 1px solid #feebc8;
+    color: #c05621;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.kyc-warning-banner a {
+    color: #dd6b20;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.vote-button.disabled {
+    background: #cbd5e0 !important;
+    color: #718096 !important;
+    cursor: not-allowed;
+}
+
+.vote-button.disabled:hover {
+    background: #cbd5e0 !important;
+}

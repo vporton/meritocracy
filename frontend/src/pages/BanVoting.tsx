@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../contexts/AuthContext';
 import './BanVoting.css';
 
 interface User {
@@ -21,11 +22,14 @@ interface VoteResponse {
 }
 
 export default function BanVoting() {
+    const { user: authUser } = useAuth();
     const queryClient = useQueryClient();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [voteMessage, setVoteMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+
+    const isKycApproved = authUser?.kycVotingStatus === 'APPROVED';
 
     // Fetch evaluated users and their vote stats
     const { data: users, isLoading, isError } = useQuery<User[]>({
@@ -76,6 +80,10 @@ export default function BanVoting() {
     });
 
     const handleVoteClick = (user: User) => {
+        if (!isKycApproved) {
+            setError('You must pass KYC Level 1 to participate in ban voting.');
+            return;
+        }
         setSelectedUser(user);
         setVoteMessage('');
         setError(null);
@@ -95,6 +103,19 @@ export default function BanVoting() {
                     <h1>Ban Voting System</h1>
                     <p className="subtitle">Vote to ban users who violate community standards. Weekly reset.</p>
                 </header>
+
+                {!isKycApproved && authUser && (
+                    <div className="kyc-warning-banner">
+                        <p><strong>Verification Required:</strong> You need to pass KYC Level 1 (Voting KYC) to participate in ban voting.
+                            Please visit the <a href="/connect">Connect page</a> to initiate verification.</p>
+                    </div>
+                )}
+
+                {!authUser && (
+                    <div className="kyc-warning-banner">
+                        <p>Please <a href="/connect">log in</a> to participate in ban voting.</p>
+                    </div>
+                )}
 
                 {error && <div className="alert error">{error}</div>}
                 {success && <div className="alert success">{success}</div>}
@@ -123,10 +144,12 @@ export default function BanVoting() {
                                     </div>
                                 </div>
                                 <button
-                                    className="vote-button"
+                                    className={`vote-button ${!isKycApproved ? 'disabled' : ''}`}
                                     onClick={() => handleVoteClick(user)}
+                                    disabled={!isKycApproved}
+                                    title={!isKycApproved ? 'KYC Level 1 required' : ''}
                                 >
-                                    Start Ban Vote
+                                    {user.voteCount === 0 ? 'Start Ban Vote' : 'Join Ban Vote'}
                                 </button>
                             </div>
                         ))

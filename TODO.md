@@ -118,3 +118,5 @@
 - TODO@P2 If the sum to be paid is more than availiable minus gas cost, pay partially.
 
 - TODO@P1 Ensure that, if voting happens in begining of a week, money are send in the end.
+
+- TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).

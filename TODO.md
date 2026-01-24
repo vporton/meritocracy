@@ -117,4 +117,4 @@
 
 - TODO@P2 If the sum to be paid is more than availiable minus gas cost, pay partially.
 
-- [x] FIXME@P2 /ban-voting shows `Failed to load users. Please try again later.` if the user is not logged in.
+- TODO@P1 Ensure that, if voting happens in begining of a week, money are send in the end.

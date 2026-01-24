@@ -6,6 +6,11 @@ export class BanVotingService {
   /**
    * Get the start of the current week (Monday 00:00:00).
    * This ensures all votes for the same week are grouped together.
+   * 
+   * CRITICAL: This timing is synchronized with the gas token distribution.
+   * Voting begins at the beginning of the week (returned here) and distribution
+   * happens at the end (Sunday 22:00 in CronService).
+   * Do not change this timing without ensuring the distribution cycle is also updated.
    */
   static getCurrentWeekStartDate(): Date {
     const now = new Date();

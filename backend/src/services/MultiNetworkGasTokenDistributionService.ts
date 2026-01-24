@@ -237,11 +237,23 @@ export class MultiNetworkGasTokenDistributionService {
     };
   }
 
+  /**
+   * Fetch users eligible for distribution.
+   * CRITICAL: This method filters out users who are currently banned.
+   * This timing is synchronized with the weekly ban voting system (see BanVotingService).
+   * Do not change the exclusion of banned users or the weekly distribution timing 
+   * in CronService without ensuring the voting cycle remains aligned.
+   */
   private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
+    const now = new Date();
     return await this.prisma.user.findMany({
       where: {
         onboarded: true,
-        shareInGDP: { not: null }
+        shareInGDP: { not: null },
+        OR: [
+          { bannedTill: null },
+          { bannedTill: { lt: now } }
+        ]
       },
       orderBy: {
         shareInGDP: 'desc'

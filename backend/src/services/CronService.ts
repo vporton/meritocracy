@@ -61,8 +61,14 @@ export class CronService {
   }
 
   /**
-   * Start the weekly cron job for gas token distribution
-   * Runs every Sunday at 3:00 AM UTC
+   * Start the weekly cron job for gas token distribution.
+   * Runs every Sunday at 22:00 UTC (End of the week).
+   * 
+   * CRITICAL: This timing is synchronized with the weekly ban voting system.
+   * Voting begins at the beginning of the week (Monday 00:00) and distribution
+   * happens at the end (Sunday 22:00) to ensure that users who are voted to be
+   * banned during the week are excluded from that week's distribution.
+   * Do not change this timing without ensuring the BanVotingService cycle is also updated.
    */
   startWeeklyGasDistributionCron() {
     if (this.weeklyGasDistributionJob) {
@@ -70,14 +76,14 @@ export class CronService {
       return;
     }
 
-    // Cron expression: "0 3 * * 0" means:
+    // Cron expression: "0 22 * * 0" means:
     // - 0 minutes
-    // - 3 hours (3 AM)
+    // - 22 hours (10 PM)
     // - Every day of month
     // - Every month
     // - 0 = Sunday
-    this.weeklyGasDistributionJob = cron.schedule('0 3 * * 0', async () => {
-      console.log('🕐 Weekly gas token distribution cron job triggered');
+    this.weeklyGasDistributionJob = cron.schedule('0 22 * * 0', async () => {
+      console.log('🕐 Weekly gas token distribution cron job triggered (End of Week)');
       await this.runWeeklyGasDistribution();
     }, {
       timezone: 'UTC'
@@ -320,7 +326,7 @@ export class CronService {
       weeklyGasDistribution: {
         isRunning: this.weeklyGasDistributionJob !== null,
         nextRun: this.weeklyGasDistributionJob ? this.getNextWeeklyRunTime() : null,
-        schedule: '0 3 * * 0 (Every Sunday at 3:00 AM UTC)'
+        schedule: '0 22 * * 0 (Every Sunday at 22:00 UTC)'
       },
       monthlyCleanup: {
         isRunning: this.monthlyCleanupJob !== null,
@@ -389,9 +395,9 @@ export class CronService {
     // Calculate days until next Sunday
     const daysUntilSunday = currentDay === 0 ? 7 : (7 - currentDay);
 
-    // If it's Sunday and before 3 AM, next run is today at 3 AM
-    if (currentDay === 0 && (currentHour < 3 || (currentHour === 3 && currentMinute === 0))) {
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 0, 0);
+    // If it's Sunday and before 10 PM, next run is today at 10 PM
+    if (currentDay === 0 && (currentHour < 22 || (currentHour === 22 && currentMinute === 0))) {
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 0, 0);
     }
 
     // Otherwise, next run is next Sunday at 3 AM

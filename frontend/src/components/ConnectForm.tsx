@@ -151,6 +151,16 @@ const ConnectForm = () => {
     setNonEvmErrors({});
   }, [user]);
 
+  // Scroll to email form when it's shown
+  useEffect(() => {
+    if (showEmailForm) {
+      const element = document.getElementById('email-form-section');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [showEmailForm]);
+
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
     if (isAuthenticated && user) {
@@ -943,6 +953,64 @@ const ConnectForm = () => {
 
       </div>
 
+      {/* Email Form - Moved here to be more visible */}
+      {showEmailForm && (
+        <div className="email-form" id="email-form-section">
+          <h3>Connect with Email</h3>
+          <div className="form-group">
+            <label htmlFor="email">Email Address *</label>
+            <input
+              type="email"
+              id="email"
+              value={emailForm.email}
+              onChange={(e) => setEmailForm(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="Enter your email address"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="name">Name (Optional)</label>
+            <input
+              type="text"
+              id="name"
+              value={emailForm.name}
+              onChange={(e) => setEmailForm(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter your name"
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={handleEmailConnect}
+              disabled={isLoading || connectStatus.email === 'connecting'}
+              className="submit-button"
+            >
+              {connectStatus.email === 'connecting' ? 'Connecting...' : 'Connect Email'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowEmailForm(false);
+                setEmailForm({ email: '', name: '' });
+                setConnectStatus(prev => {
+                  const { email, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              className="cancel-button"
+            >
+              Cancel
+            </button>
+          </div>
+          <p>
+            <strong>Note:</strong> Email will be used to send you important communications. You can unsubscribe at any time.
+          </p>
+          <p className="email-info">
+            <strong>Note:</strong> You will receive a verification email. Please check your inbox and click the verification link to complete the connection.
+          </p>
+        </div>
+      )}
+
       <div className="non-evm-addresses">
         <h3>Non-EVM Addresses</h3>
         <form onSubmit={handleNonEvmSubmit}>
@@ -1037,63 +1105,6 @@ const ConnectForm = () => {
         </form>
       </div>
 
-      {/* Email Form */}
-      {showEmailForm && (
-        <div className="email-form">
-          <h3>Connect with Email</h3>
-          <div className="form-group">
-            <label htmlFor="email">Email Address *</label>
-            <input
-              type="email"
-              id="email"
-              value={emailForm.email}
-              onChange={(e) => setEmailForm(prev => ({ ...prev, email: e.target.value }))}
-              placeholder="Enter your email address"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="name">Name (Optional)</label>
-            <input
-              type="text"
-              id="name"
-              value={emailForm.name}
-              onChange={(e) => setEmailForm(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter your name"
-            />
-          </div>
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={handleEmailConnect}
-              disabled={isLoading || connectStatus.email === 'connecting'}
-              className="submit-button"
-            >
-              {connectStatus.email === 'connecting' ? 'Connecting...' : 'Connect Email'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowEmailForm(false);
-                setEmailForm({ email: '', name: '' });
-                setConnectStatus(prev => {
-                  const { email, ...rest } = prev;
-                  return rest;
-                });
-              }}
-              className="cancel-button"
-            >
-              Cancel
-            </button>
-          </div>
-          <p>
-            <strong>Note:</strong> Email will be  used to send you important communications. You can unsubscribe at any time.
-          </p>
-          <p className="email-info">
-            <strong>Note:</strong> You will receive a verification email. Please check your inbox and click the verification link to complete the connection.
-          </p>
-        </div>
-      )}
 
       {/* Error Display */}
       {Object.entries(connectStatus).map(([provider, status]) =>

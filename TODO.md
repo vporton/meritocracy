@@ -89,8 +89,6 @@
 
 - TODO@P2 Implement tech support.
 
-- FIXME@P2 Email form is inserted below the content, often invisible.
-
 - TODO@P3 Science marketers and popularizers salaries.
 
 - TODO@P2 Esnure we enable all supported blockchains.

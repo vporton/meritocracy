@@ -126,6 +126,10 @@ export class BanVotingService {
         name: true,
         email: true,
         shareInGDP: true,
+        githubHandle: true,
+        bitbucketHandle: true,
+        gitlabHandle: true,
+        orcidId: true,
         _count: {
           select: {
             banVotesReceived: {
@@ -142,6 +146,10 @@ export class BanVotingService {
       name: user.name,
       email: user.email,
       shareInGDP: user.shareInGDP,
+      githubHandle: user.githubHandle,
+      bitbucketHandle: user.bitbucketHandle,
+      gitlabHandle: user.gitlabHandle,
+      orcidId: user.orcidId,
       voteCount: user._count.banVotesReceived
     }));
   }

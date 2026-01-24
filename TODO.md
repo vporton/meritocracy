@@ -122,3 +122,7 @@
 - TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).
 
 - TODO@P3 Run tasks in parallel.
+
+- FIXME@P2 "Start evaluation" button doesn't disappear after switching to Home tab.
+
+- TODO@P2 In Ban UI show user data (like GitHub profile link), for banners to know the user.

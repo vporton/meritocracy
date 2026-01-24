@@ -140,17 +140,96 @@ export class BanVotingService {
       }
     });
 
-    // Map to match the frontend expectations
-    return users.map(user => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      shareInGDP: user.shareInGDP,
-      githubHandle: user.githubHandle,
-      bitbucketHandle: user.bitbucketHandle,
-      gitlabHandle: user.gitlabHandle,
-      orcidId: user.orcidId,
-      voteCount: user._count.banVotesReceived
+    // Map to match the frontend expectations and include AI responses from logs
+    return await Promise.all(users.map(async (user) => {
+      // 1. Find the latest MedianRunner task for this user to get source task IDs
+      const medianTask = await prisma.task.findFirst({
+        where: {
+          runnerClassName: 'MedianRunner',
+          status: 'COMPLETED',
+          runnerData: {
+            contains: `"userId":${user.id}`
+          }
+        },
+        orderBy: { completedAt: 'desc' }
+      });
+
+      let aiResponses: any[] = [];
+
+      if (medianTask && medianTask.runnerData) {
+        try {
+          const medianData = JSON.parse(medianTask.runnerData);
+          const sourceTaskIds = medianData.sourceTaskIds || [];
+
+          if (sourceTaskIds.length > 0) {
+            // 2. Fetch logs for those source tasks
+            const logs = await prisma.openAILog.findMany({
+              where: {
+                taskId: { in: sourceTaskIds },
+                responseReceived: { not: null }
+              },
+              orderBy: { responseReceived: 'desc' }
+            });
+
+            aiResponses = logs.map(log => {
+              try {
+                const responseData = JSON.parse(log.responseData || '{}');
+                const sources: string[] = [];
+                let rationale = 'No rationale provided';
+
+                // Extract data from OpenAI's flexible-batches "output" array
+                responseData.output?.forEach((item: any) => {
+                  // 1. Extract sources from web_search_call (as requested)
+                  if (item.web_search_call?.action?.sources) {
+                    item.web_search_call.action.sources.forEach((s: any) => {
+                      if (s.url) sources.push(s.url);
+                    });
+                  }
+
+                  // 2. Extract rationale and additional sources from JSON content
+                  if (item.content) {
+                    item.content.forEach((c: any) => {
+                      if (c.type === 'text' && c.text) {
+                        try {
+                          const json = JSON.parse(c.text);
+                          if (json.why) rationale = json.why;
+                          if (json.sources && Array.isArray(json.sources)) {
+                            sources.push(...json.sources);
+                          }
+                        } catch (e) {
+                          // Not JSON or doesn't have the fields
+                        }
+                      }
+                    });
+                  }
+                });
+
+                return {
+                  text: rationale,
+                  sources: [...new Set(sources)]
+                };
+              } catch (e) {
+                return null;
+              }
+            }).filter(res => res !== null);
+          }
+        } catch (e) {
+          console.error(`Error parsing median task for user ${user.id}:`, e);
+        }
+      }
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        shareInGDP: user.shareInGDP,
+        githubHandle: user.githubHandle,
+        bitbucketHandle: user.bitbucketHandle,
+        gitlabHandle: user.gitlabHandle,
+        orcidId: user.orcidId,
+        voteCount: user._count.banVotesReceived,
+        aiResponses
+      };
     }));
   }
 

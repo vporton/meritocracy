@@ -69,8 +69,6 @@
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
 
-- TODO@P2 Appeals.
-
 - TODO@P2 Should we store the entire lists of Web sources, to ease appeals?
   At first, this looks like a good idea, but sources could easily be faked afterwards.
 

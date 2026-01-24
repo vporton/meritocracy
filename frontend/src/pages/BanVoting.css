@@ -106,7 +106,7 @@
 }
 
 /* Modal */
-.modal-overlay {
+.ban-voting-page .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -120,7 +120,7 @@
     backdrop-filter: blur(4px);
 }
 
-.modal-content {
+.ban-voting-page .modal-content {
     background: white;
     padding: 2rem;
     border-radius: 12px;

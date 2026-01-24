@@ -139,6 +139,7 @@
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -401,7 +402,7 @@
     margin: 1rem;
     padding: 1.5rem;
   }
-  
+
   .connect-button {
     padding: 0.875rem 1.25rem;
     font-size: 0.95rem;
@@ -434,18 +435,21 @@
   justify-content: center;
 }
 
-.modal-overlay {
+.wallet-selection-modal .modal-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
 }
 
-.modal-content {
+.wallet-selection-modal .modal-content {
   position: relative;
+  z-index: 10;
   background: white;
   border-radius: 12px;
   padding: 2rem;

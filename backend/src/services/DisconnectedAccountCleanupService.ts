@@ -29,6 +29,7 @@ export class DisconnectedAccountCleanupService {
    * - Never been banned (bannedTill is null - never had a ban)
    * - No KYC data (kycStatus and kycVotingStatus are null - never had any KYC verification)
    * - Not onboarded (onboarded is false)
+   * - No connected accounts (No OAuth handles, no blockchain addresses, and no verified email)
    * - Account created more than 30 days ago (grace period for new accounts)
    * 
    * SECURITY NOTES:
@@ -37,6 +38,7 @@ export class DisconnectedAccountCleanupService {
    * - Accounts with any KYC data (Receiver or Voting) are never deleted, as deleting KYC 
    *   would allow ban evasion through identity verification bypass.
    * - Onboarded users are never deleted as they have actively participated in the system.
+   * - Users with at least one external connection are preserved as they demonstrate intended use.
    * 
    * @param gracePeriodDays - Number of days to wait before considering an account disconnected (default: 30)
    * @param dryRun - If true, only count accounts that would be deleted without actually deleting them
@@ -145,6 +147,18 @@ export class DisconnectedAccountCleanupService {
           kycVotingStatus: null,
           // Not onboarded
           onboarded: false,
+          // No connected accounts (All must be null)
+          ethereumAddress: null,
+          solanaAddress: null,
+          bitcoinAddress: null,
+          polkadotAddress: null,
+          cosmosAddress: null,
+          stellarAddress: null,
+          orcidId: null,
+          githubHandle: null,
+          bitbucketHandle: null,
+          gitlabHandle: null,
+          emailVerified: false,
           // Past grace period
           createdAt: {
             lt: gracePeriodCutoff
@@ -310,6 +324,18 @@ export class DisconnectedAccountCleanupService {
           kycVotingStatus: null,
           // Not onboarded
           onboarded: false,
+          // No connected accounts
+          ethereumAddress: null,
+          solanaAddress: null,
+          bitcoinAddress: null,
+          polkadotAddress: null,
+          cosmosAddress: null,
+          stellarAddress: null,
+          orcidId: null,
+          githubHandle: null,
+          bitbucketHandle: null,
+          gitlabHandle: null,
+          emailVerified: false,
           createdAt: {
             lt: gracePeriodCutoff
           }

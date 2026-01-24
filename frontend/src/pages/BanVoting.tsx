@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
+import { worldGdpApi } from '../services/api';
 import './BanVoting.css';
 
 interface User {
@@ -46,6 +47,17 @@ export default function BanVoting() {
             return response.json();
         }
     });
+
+    // Fetch world GDP for dollar calculation
+    const { data: worldGdpData } = useQuery({
+        queryKey: ['world-gdp'],
+        queryFn: async () => {
+            const response = await worldGdpApi.get();
+            return response.data;
+        }
+    });
+
+    const worldGdp = worldGdpData?.data?.worldGdp;
 
     // Submit vote mutation
     const voteMutation = useMutation({
@@ -135,7 +147,12 @@ export default function BanVoting() {
                                     <div className="user-stats">
                                         <span className="stat">
                                             <span className="label">GDP Share:</span>
-                                            <span className="value">{user.shareInGDP ? `${(user.shareInGDP * 100).toFixed(4)}%` : 'N/A'}</span>
+                                            <span className="value">
+                                                {user.shareInGDP
+                                                    ? `${(user.shareInGDP * 100).toExponential(4)}%${worldGdp ? ` ($${(user.shareInGDP * worldGdp).toLocaleString()})` : ''}`
+                                                    : 'N/A'
+                                                }
+                                            </span>
                                         </span>
                                         <span className={`stat vote-stat ${user.voteCount > 0 ? 'has-votes' : ''}`}>
                                             <span className="label">Votes this week:</span>

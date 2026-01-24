@@ -227,6 +227,12 @@ export const adminApi = {
     api.post('/api/admin/trigger-distribution', {}, { headers: { 'x-admin-password': password } }),
 }
 
+// World GDP API
+export const worldGdpApi = {
+  get: (): Promise<AxiosResponse<{ success: boolean; data: { worldGdp: number; formatted: string; currency: string; lastUpdated: string } }>> =>
+    api.get('/api/global/gdp'),
+}
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,

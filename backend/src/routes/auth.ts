@@ -163,6 +163,39 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
       if (residenceCountry || existingUser.residenceCountry) updateData.residenceCountry = residenceCountry || existingUser.residenceCountry;
 
+      // Preserve boolean and numerical flags
+      updateData.onboarded = existingUser.onboarded || currentUser.onboarded;
+      updateData.emailVerified = existingUser.emailVerified || currentUser.emailVerified;
+      if (existingUser.shareInGDP !== null || currentUser.shareInGDP !== null) {
+        updateData.shareInGDP = Math.max(existingUser.shareInGDP || 0, currentUser.shareInGDP || 0);
+      }
+
+      // Preserve KYC Status (Receiver)
+      if (existingUser.kycStatus === 'APPROVED' || currentUser.kycStatus === 'APPROVED') {
+        updateData.kycStatus = 'APPROVED';
+        updateData.kycVerifiedAt = (existingUser.kycVerifiedAt && currentUser.kycVerifiedAt)
+          ? (existingUser.kycVerifiedAt > currentUser.kycVerifiedAt ? existingUser.kycVerifiedAt : currentUser.kycVerifiedAt)
+          : (existingUser.kycVerifiedAt || currentUser.kycVerifiedAt);
+        updateData.kycData = existingUser.kycData || currentUser.kycData;
+      } else if (existingUser.kycStatus === 'PENDING' || currentUser.kycStatus === 'PENDING') {
+        updateData.kycStatus = 'PENDING';
+      } else {
+        updateData.kycStatus = existingUser.kycStatus || currentUser.kycStatus;
+      }
+
+      // Preserve KYC Voting Status (Level 1)
+      if (existingUser.kycVotingStatus === 'APPROVED' || currentUser.kycVotingStatus === 'APPROVED') {
+        updateData.kycVotingStatus = 'APPROVED';
+        updateData.kycVotingVerifiedAt = (existingUser.kycVotingVerifiedAt && currentUser.kycVotingVerifiedAt)
+          ? (existingUser.kycVotingVerifiedAt > currentUser.kycVotingVerifiedAt ? existingUser.kycVotingVerifiedAt : currentUser.kycVotingVerifiedAt)
+          : (existingUser.kycVotingVerifiedAt || currentUser.kycVotingVerifiedAt);
+        updateData.kycVotingData = existingUser.kycVotingData || currentUser.kycVotingData;
+      } else if (existingUser.kycVotingStatus === 'PENDING' || currentUser.kycVotingStatus === 'PENDING') {
+        updateData.kycVotingStatus = 'PENDING';
+      } else {
+        updateData.kycVotingStatus = existingUser.kycVotingStatus || currentUser.kycVotingStatus;
+      }
+
       // If there's a current user that's different from the existing user,
       // merge the existing user's data into the current user and delete the existing user.
       return await prisma.$transaction(async (tx) => {
@@ -198,6 +231,30 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
         await tx.emailVerificationToken.updateMany({
           where: { userId: existingUser.id },
           data: { userId: currentUserId }
+        });
+
+        // Transfer KYC tokens
+        await tx.kycToken.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+
+        // Transfer pending transactions
+        await tx.pendingTransaction.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+
+        // Transfer ban votes cast by the user
+        await tx.banVote.updateMany({
+          where: { voterUserId: existingUser.id },
+          data: { voterUserId: currentUserId }
+        });
+
+        // Transfer ban votes received by the user
+        await tx.banVote.updateMany({
+          where: { targetUserId: existingUser.id },
+          data: { targetUserId: currentUserId }
         });
 
         // Delete the existing user (this will cascade delete any remaining related data)

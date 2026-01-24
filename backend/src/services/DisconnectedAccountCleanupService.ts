@@ -27,14 +27,16 @@ export class DisconnectedAccountCleanupService {
    * A disconnected account is defined as:
    * - No active sessions (all sessions expired)
    * - Never been banned (bannedTill is null - never had a ban)
-   * - No KYC data (kycStatus is null - never had KYC verification)
+   * - No KYC data (kycStatus and kycVotingStatus are null - never had any KYC verification)
+   * - Not onboarded (onboarded is false)
    * - Account created more than 30 days ago (grace period for new accounts)
    * 
    * SECURITY NOTES:
    * - Accounts that have ever been banned are never deleted, even if the ban has expired.
    *   This prevents ban evasion by disconnecting OAuth accounts and creating new ones.
-   * - Accounts with KYC data are never deleted, as deleting KYC would allow ban evasion
-   *   through identity verification bypass.
+   * - Accounts with any KYC data (Receiver or Voting) are never deleted, as deleting KYC 
+   *   would allow ban evasion through identity verification bypass.
+   * - Onboarded users are never deleted as they have actively participated in the system.
    * 
    * @param gracePeriodDays - Number of days to wait before considering an account disconnected (default: 30)
    * @param dryRun - If true, only count accounts that would be deleted without actually deleting them
@@ -45,7 +47,7 @@ export class DisconnectedAccountCleanupService {
     dryRun: boolean = false
   ): Promise<CleanupResult> {
     console.log(`🔄 Starting disconnected account cleanup (dryRun: ${dryRun}, gracePeriod: ${gracePeriodDays} days)`);
-    
+
     const result: CleanupResult = {
       success: false,
       deletedCount: 0,
@@ -108,13 +110,15 @@ export class DisconnectedAccountCleanupService {
       // Find users with KYC data (never delete these to prevent ban evasion)
       const kycUsers = await this.prisma.user.findMany({
         where: {
-          kycStatus: {
-            not: null
-          }
+          OR: [
+            { kycStatus: { not: null } },
+            { kycVotingStatus: { not: null } }
+          ]
         },
         select: {
           id: true,
-          kycStatus: true
+          kycStatus: true,
+          kycVotingStatus: true
         }
       });
 
@@ -135,9 +139,12 @@ export class DisconnectedAccountCleanupService {
           },
           // Never been banned (bannedTill is null - never had a ban)
           bannedTill: null,
-          // No KYC data (kycStatus is null - never had KYC verification)
+          // No KYC data (Both Receiver and Voting KYC must be null)
           // SECURITY: Deleting KYC would allow ban evasion through identity verification bypass
           kycStatus: null,
+          kycVotingStatus: null,
+          // Not onboarded
+          onboarded: false,
           // Past grace period
           createdAt: {
             lt: gracePeriodCutoff
@@ -179,16 +186,16 @@ export class DisconnectedAccountCleanupService {
 
       // Actually delete the disconnected accounts
       console.log('🗑️  Proceeding with account deletion...');
-      
+
       const userIdsToDelete = disconnectedUsers.map(user => user.id);
-      
+
       // Delete users in batches to avoid overwhelming the database
       const batchSize = 50;
       let deletedInThisBatch = 0;
-      
+
       for (let i = 0; i < userIdsToDelete.length; i += batchSize) {
         const batch = userIdsToDelete.slice(i, i + batchSize);
-        
+
         try {
           const deleteResult = await this.prisma.user.deleteMany({
             where: {
@@ -197,10 +204,10 @@ export class DisconnectedAccountCleanupService {
               }
             }
           });
-          
+
           deletedInThisBatch += deleteResult.count;
           console.log(`✅ Deleted batch ${Math.floor(i / batchSize) + 1}: ${deleteResult.count} accounts`);
-          
+
         } catch (error) {
           const errorMessage = `Failed to delete batch starting at index ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`;
           console.error(`❌ ${errorMessage}`);
@@ -215,7 +222,7 @@ export class DisconnectedAccountCleanupService {
       console.log(`🛡️  Preserved ${result.preservedBannedCount} banned accounts`);
       console.log(`🛡️  Preserved ${result.preservedKycCount} KYC accounts`);
       console.log(`📊 Details: ${result.details.disconnectedAccounts} disconnected, ${result.details.bannedAccounts} banned, ${result.details.kycAccounts} with KYC, ${result.details.accountsWithActiveSessions} with active sessions`);
-      
+
       if (result.errors.length > 0) {
         console.log('⚠️  Some errors occurred during cleanup:');
         result.errors.forEach(error => console.log(`  - ${error}`));
@@ -281,9 +288,10 @@ export class DisconnectedAccountCleanupService {
       }),
       this.prisma.user.count({
         where: {
-          kycStatus: {
-            not: null
-          }
+          OR: [
+            { kycStatus: { not: null } },
+            { kycVotingStatus: { not: null } }
+          ]
         }
       }),
       this.prisma.user.findMany({
@@ -297,9 +305,11 @@ export class DisconnectedAccountCleanupService {
           },
           // Never been banned (bannedTill is null - never had a ban)
           bannedTill: null,
-          // No KYC data (kycStatus is null - never had KYC verification)
-          // SECURITY: Deleting KYC would allow ban evasion through identity verification bypass
+          // No KYC data
           kycStatus: null,
+          kycVotingStatus: null,
+          // Not onboarded
+          onboarded: false,
           createdAt: {
             lt: gracePeriodCutoff
           }

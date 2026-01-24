@@ -220,7 +220,7 @@ export default function BanVoting() {
                             <form onSubmit={handleSubmitVote}>
                                 <div className="form-group">
                                     <label htmlFor="vote-message">
-                                        Reason for ban (Message)
+                                        Reason for ban (provide confirming links)
                                         {selectedUser.voteCount === 0 ? <span className="required-star">*</span> : <span className="optional-text"> (Optional)</span>}:
                                     </label>
                                     <textarea

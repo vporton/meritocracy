@@ -33,7 +33,7 @@ export default function BanVoting() {
         queryFn: async () => {
             const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/ban-voting`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
             if (!response.ok) {
@@ -50,7 +50,7 @@ export default function BanVoting() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 },
                 body: JSON.stringify({ targetUserId, message })
             });

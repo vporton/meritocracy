@@ -104,29 +104,40 @@ export class BanVotingService {
     const weekStartDate = this.getCurrentWeekStartDate();
 
     // Find all users who are "evaluated" (e.g. have a share in GDP or are onboarded)
-    // Adjust filter based on specific definition of "evaluated user"
     const users = await prisma.user.findMany({
       where: {
         AND: [
-          { shareInGDP: { gt: 0 } }, // Example: must have some GDP share
-          { bannedTill: null }       // Don't show already banned users? Or show them? Assuming active users.
+          {
+            OR: [
+              { shareInGDP: { gt: 0 } },
+              { onboarded: true }
+            ]
+          },
+          { bannedTill: null }
         ]
       },
       select: {
         id: true,
         name: true,
-        email: true, // Maybe mask this?
+        email: true,
         shareInGDP: true,
-        banVotesReceived: {
-          where: { weekStartDate }
+        _count: {
+          select: {
+            banVotesReceived: {
+              where: { weekStartDate }
+            }
+          }
         }
       }
     });
 
-    // Map to include vote count
+    // Map to match the frontend expectations
     return users.map(user => ({
-      ...user,
-      voteCount: user.banVotesReceived.length
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      shareInGDP: user.shareInGDP,
+      voteCount: user._count.banVotesReceived
     }));
   }
 

@@ -18,7 +18,7 @@ router.get('/', requireAuth, async (req, res): Promise<void> => {
 // Submit a ban vote
 router.post('/vote', requireAuth, async (req, res): Promise<void> => {
     try {
-        const voterId = (req as any).user.id;
+        const voterId = (req as any).userId;
         const { targetUserId, message } = req.body;
 
         if (!targetUserId) {

@@ -1,5 +1,3 @@
-- TODO@P2 Against prompt injection add random strings to output and JSON labels.
-
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH, GLRM payments.
 
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
@@ -120,5 +118,7 @@
 - DONE@P2 In Ban UI show user data (like GitHub profile link), for banners to know the user.
 
   - FIXME@P2 But the hacker may change this data to hide his identity.
+
+  - FIXME@P2 Don't show the user email here.
 
 - FIXME@P2 If I click "Verify Email Address" in verification email second time, it starts to query the backend repeatedly times per second.

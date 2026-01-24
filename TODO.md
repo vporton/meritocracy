@@ -117,6 +117,8 @@
 
 - FIXME@P2 "Start evaluation" button doesn't disappear after switching to Home tab.
 
-- TODO@P2 In Ban UI show user data (like GitHub profile link), for banners to know the user.
+- DONE@P2 In Ban UI show user data (like GitHub profile link), for banners to know the user.
+
+  - FIXME@P2 But the hacker may change this data to hide his identity.
 
 - FIXME@P2 If I click "Verify Email Address" in verification email second time, it starts to query the backend repeatedly times per second.

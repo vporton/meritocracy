@@ -10,6 +10,10 @@ interface User {
     email: string | null;
     shareInGDP: number | null;
     voteCount: number;
+    githubHandle?: string;
+    bitbucketHandle?: string;
+    gitlabHandle?: string;
+    orcidId?: string;
 }
 
 interface VoteResponse {
@@ -154,10 +158,42 @@ export default function BanVoting() {
                                                 }
                                             </span>
                                         </span>
+                                        {user.email && (
+                                            <span className="stat">
+                                                <span className="label">Email:</span>
+                                                <span className="value">{user.email}</span>
+                                            </span>
+                                        )}
                                         <span className={`stat vote-stat ${user.voteCount > 0 ? 'has-votes' : ''}`}>
                                             <span className="label">Votes this week:</span>
                                             <span className="value">{user.voteCount}</span>
                                         </span>
+                                    </div>
+                                    <div className="user-profiles">
+                                        {user.githubHandle && (
+                                            <a href={`https://github.com/${user.githubHandle}`} target="_blank" rel="noopener noreferrer" className="profile-link github" title="GitHub Profile">
+                                                <img src="/github-mark.svg" alt="GitHub" className="profile-icon" />
+                                                {user.githubHandle}
+                                            </a>
+                                        )}
+                                        {user.gitlabHandle && (
+                                            <a href={`https://gitlab.com/${user.gitlabHandle}`} target="_blank" rel="noopener noreferrer" className="profile-link gitlab" title="GitLab Profile">
+                                                <span className="profile-icon">🦊</span>
+                                                {user.gitlabHandle}
+                                            </a>
+                                        )}
+                                        {user.bitbucketHandle && (
+                                            <a href={`https://bitbucket.org/${user.bitbucketHandle}`} target="_blank" rel="noopener noreferrer" className="profile-link bitbucket" title="Bitbucket Profile">
+                                                <span className="profile-icon">🟦</span>
+                                                {user.bitbucketHandle}
+                                            </a>
+                                        )}
+                                        {user.orcidId && (
+                                            <a href={`https://orcid.org/${user.orcidId}`} target="_blank" rel="noopener noreferrer" className="profile-link orcid" title="ORCID Profile">
+                                                <span className="profile-icon">🆔</span>
+                                                {user.orcidId}
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                                 <button

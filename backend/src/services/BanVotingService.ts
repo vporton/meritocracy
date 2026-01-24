@@ -130,6 +130,12 @@ export class BanVotingService {
         bitbucketHandle: true,
         gitlabHandle: true,
         orcidId: true,
+        ethereumAddress: true,
+        solanaAddress: true,
+        bitcoinAddress: true,
+        polkadotAddress: true,
+        cosmosAddress: true,
+        stellarAddress: true,
         _count: {
           select: {
             banVotesReceived: {
@@ -227,6 +233,12 @@ export class BanVotingService {
         bitbucketHandle: user.bitbucketHandle,
         gitlabHandle: user.gitlabHandle,
         orcidId: user.orcidId,
+        ethereumAddress: user.ethereumAddress,
+        solanaAddress: user.solanaAddress,
+        bitcoinAddress: user.bitcoinAddress,
+        polkadotAddress: user.polkadotAddress,
+        cosmosAddress: user.cosmosAddress,
+        stellarAddress: user.stellarAddress,
         voteCount: user._count.banVotesReceived,
         aiResponses
       };

@@ -19,6 +19,12 @@ interface User {
     bitbucketHandle?: string;
     gitlabHandle?: string;
     orcidId?: string;
+    ethereumAddress?: string;
+    solanaAddress?: string;
+    bitcoinAddress?: string;
+    polkadotAddress?: string;
+    cosmosAddress?: string;
+    stellarAddress?: string;
     aiResponses?: AIResponse[];
 }
 
@@ -201,6 +207,28 @@ export default function BanVoting() {
                                                 {user.orcidId}
                                             </a>
                                         )}
+                                        {user.ethereumAddress && (
+                                            <a href={`https://etherscan.io/address/${user.ethereumAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link ethereum" title="Ethereum Address">
+                                                <span className="profile-icon">Ξ</span>
+                                                {user.ethereumAddress.slice(0, 6)}...{user.ethereumAddress.slice(-4)}
+                                            </a>
+                                        )}
+                                        {user.solanaAddress && (
+                                            <a href={`https://solscan.io/account/${user.solanaAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link solana" title="Solana Address">
+                                                <span className="profile-icon">◎</span>
+                                                {user.solanaAddress.slice(0, 4)}...{user.solanaAddress.slice(-4)}
+                                            </a>
+                                        )}
+                                        {user.bitcoinAddress && (
+                                            <a href={`https://mempool.space/address/${user.bitcoinAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Address">
+                                                <span className="profile-icon">₿</span>
+                                                {user.bitcoinAddress.slice(0, 4)}...{user.bitcoinAddress.slice(-4)}
+                                            </a>
+                                        )}
+                                        <a href={`/logs?userId=${user.id}`} target="_blank" rel="noopener noreferrer" className="profile-link audit-logs" title="Audit Logs">
+                                            <span className="profile-icon">📋</span>
+                                            Audit Logs
+                                        </a>
                                     </div>
                                     {user.aiResponses && user.aiResponses.length > 0 && (
                                         <div className="ai-rationale-link">
@@ -307,6 +335,6 @@ export default function BanVoting() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

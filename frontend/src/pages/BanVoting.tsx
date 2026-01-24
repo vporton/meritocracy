@@ -117,7 +117,7 @@ export default function BanVoting() {
             <div className="container">
                 <header className="page-header">
                     <h1>Ban Voting System</h1>
-                    <p className="subtitle">Vote to ban users who violate community standards. Weekly reset.</p>
+                    <p className="subtitle">Vote to ban users who do prompt injection or severe plagiarism. Weekly reset.</p>
                 </header>
 
                 {!isKycApproved && authUser && (

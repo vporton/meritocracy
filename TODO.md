@@ -122,3 +122,5 @@
   - FIXME@P2 But the hacker may change this data to hide his identity.
 
   - FIXME@P2 Don't show the user email here.
+
+- TODO@P2 Voting to unban (with higher quorum than to ban).

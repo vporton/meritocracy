@@ -22,16 +22,7 @@ export async function withRetry<T>(
             const status = error.status || error.statusCode || (error.response?.status);
 
             const isRateLimit =
-                errorMessage.includes('429') ||
-                errorMessage.toLowerCase().includes('too many requests') ||
                 status === 429 ||
-                // Alchemy specific messages can sometimes be in the message
-                errorMessage.toLowerCase().includes('rate limit') ||
-                // Network errors
-                errorMessage.toLowerCase().includes('fetch failed') ||
-                errorMessage.includes('ECONNRESET') ||
-                errorMessage.includes('ETIMEDOUT') ||
-                // Server errors
                 status === 502 ||
                 status === 503;
 

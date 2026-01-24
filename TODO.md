@@ -115,7 +115,7 @@
 
 - TODO@P2 Attack vector: Create many GitHub accounts each containing a prompt injection. It makes hard for people to vote against each one. Possible solution: Payments allocated only to KYC-verified accounts.
 
-- TODO@P2 If the sum to be paid is more than availiable minus gas cost, pay partially.
+- TODO@P2 If the sum to be paid is more than available minus gas cost, pay partially.
 
 - TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).
 

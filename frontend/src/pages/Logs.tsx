@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { logsApi, DBLogEntry, LogsFilter, LogStats, LogTypes } from '../services/api';
 import './Logs.css';
 import { Helmet } from 'react-helmet-async';
 import Canonical from '../components/Canonical';
 
 const Logs: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [logs, setLogs] = useState<DBLogEntry[]>([]);
   const [stats, setStats] = useState<LogStats | null>(null);
   const [logTypes, setLogTypes] = useState<LogTypes | null>(null);
@@ -19,8 +21,12 @@ const Logs: React.FC = () => {
   const [showMyLogs, setShowMyLogs] = useState(false);
 
   useEffect(() => {
+    const userId = searchParams.get('userId');
+    if (userId) {
+      setSelectedUserId(parseInt(userId));
+    }
     loadInitialData();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     loadLogs();

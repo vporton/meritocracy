@@ -1555,7 +1555,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
 
     // Handle different statuses according to Didit webhook format
-    if (status === 'Approved' && (isVotingFlow || aml?.status === 'Approved')) {
+    // Trust the main status 'Approved' as authoritative for the session
+    if (status === 'Approved') {
       if (isVotingFlow) {
         // Voting KYC Flow: Sets ONLY Voting Status
         updateData.kycVotingStatus = 'APPROVED';
@@ -1719,6 +1720,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     console.log('KYC status updated for user:', {
       userId: user.id,
       kycStatus: updateData.kycStatus,
+      incomingStatus: status, // DEBUG: Received status
+      incomingAmlStatus: aml?.status, // DEBUG: Received AML status
       sessionId: session?.id,
       diditSessionId: session_id,
       webhookType: webhook_type,

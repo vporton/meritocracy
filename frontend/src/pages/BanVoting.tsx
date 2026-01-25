@@ -225,7 +225,7 @@ export default function BanVoting() {
                                                 {user.bitcoinAddress.slice(0, 4)}...{user.bitcoinAddress.slice(-4)}
                                             </a>
                                         )}
-                                        <a href={`/logs?userId=${user.id}`} target="_blank" rel="noopener noreferrer" className="profile-link audit-logs" title="Audit Logs">
+                                        <a href={`/logs/${user.id}`} target="_blank" rel="noopener noreferrer" className="profile-link audit-logs" title="Audit Logs">
                                             <span className="profile-icon">📋</span>
                                             Audit Logs
                                         </a>

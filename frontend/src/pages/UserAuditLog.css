@@ -1,0 +1,136 @@
+.user-audit-log-page {
+    padding: 2rem 0;
+    min-height: 80vh;
+    background: #f7fafc;
+}
+
+.user-audit-log-page .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.user-audit-log-page .page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.user-audit-log-page .back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: #4c51bf;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.user-audit-log-page .back-link:hover {
+    text-decoration: underline;
+}
+
+.user-audit-log-page h1 {
+    font-size: 2.25rem;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.user-audit-log-page .subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+}
+
+.assessments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.assessment-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.assessment-header {
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.assessment-date {
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 600;
+}
+
+.assessment-label {
+    background: #ebf4ff;
+    color: #3182ce;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.assessment-content {
+    padding: 1.5rem;
+}
+
+.rationale-text h3,
+.sources-section h3 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    color: #4a5568;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    margin-top: 0;
+}
+
+.rationale-text p {
+    line-height: 1.7;
+    color: #2d3748;
+    white-space: pre-wrap;
+}
+
+.sources-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.sources-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sources-section li {
+    margin-bottom: 0.5rem;
+}
+
+.sources-section a {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.sources-section a:hover {
+    text-decoration: underline;
+}
+
+.loading,
+.error-message,
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+    color: #718096;
+    border: 1px solid #e2e8f0;
+}

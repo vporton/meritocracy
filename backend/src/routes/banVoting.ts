@@ -53,16 +53,18 @@ router.post('/vote', requireAuth, async (req, res): Promise<void> => {
     }
 });
 
-// Get votes for a specific user (optional, maybe for detail view)
-router.get('/:userId/votes', async (req, res): Promise<void> => {
+// Get AI assessments for a specific user
+router.get('/:userId/assessments', async (req, res): Promise<void> => {
     try {
         const targetId = Number(req.params.userId);
-        const votes = await BanVotingService.getBanVotes(targetId);
-        res.json(votes);
+        const assessments = await BanVotingService.getUserAssessments(targetId);
+        res.json(assessments);
     } catch (error: any) {
-        console.error('Error fetching votes:', error);
-        res.status(500).json({ error: 'Failed to fetch votes' });
+        console.error('Error fetching assessments:', error);
+        res.status(500).json({ error: 'Failed to fetch assessments' });
     }
 });
+
+// Get votes for a specific user (optional, maybe for detail view)
 
 export default router;

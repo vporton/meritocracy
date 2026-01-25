@@ -7,6 +7,8 @@ interface Assessment {
     text: string;
     sources: string[];
     timestamp: string;
+    isPending?: boolean;
+    isError?: boolean;
 }
 
 export default function UserAuditLog() {
@@ -43,41 +45,46 @@ export default function UserAuditLog() {
                         <div className="error-message">Failed to load research data.</div>
                     ) : assessments?.length === 0 ? (
                         <div className="empty-state">
-                            <p>No final research data found for this user.</p>
+                            <p>No research data found for this user.</p>
                         </div>
                     ) : (
-                        assessments?.map((assessment, index) => (
-                            <div key={index} className="assessment-card">
-                                <div className="assessment-header">
-                                    <span className="assessment-date">
-                                        {new Date(assessment.timestamp).toLocaleString()}
-                                    </span>
-                                    <span className="assessment-label badge-completed">
-                                        AI Research Assessment
-                                    </span>
-                                </div>
-                                <div className="assessment-content">
-                                    <div className="rationale-text">
-                                        <h3>Rationale</h3>
-                                        <p>{assessment.text}</p>
+                        assessments?.map((assessment, index) => {
+                            const status = assessment.isPending ? 'pending' : assessment.isError ? 'error' : 'completed';
+                            const badgeLabel = assessment.isPending ? 'Pending AI Analysis' : assessment.isError ? 'Research Error' : 'AI Research Assessment';
+
+                            return (
+                                <div key={index} className={`assessment-card status-${status}`}>
+                                    <div className="assessment-header">
+                                        <span className="assessment-date">
+                                            {new Date(assessment.timestamp).toLocaleString()}
+                                        </span>
+                                        <span className={`assessment-label badge-${status}`}>
+                                            {badgeLabel}
+                                        </span>
                                     </div>
-                                    {assessment.sources && assessment.sources.length > 0 && (
-                                        <div className="sources-section">
-                                            <h3>Research Sources</h3>
-                                            <ul>
-                                                {assessment.sources.map((source, sIndex) => (
-                                                    <li key={sIndex}>
-                                                        <a href={source} target="_blank" rel="noopener noreferrer">
-                                                            {source}
-                                                        </a>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                    <div className="assessment-content">
+                                        <div className={`rationale-text ${status}`}>
+                                            <h3>Rationale</h3>
+                                            <p>{assessment.text}</p>
                                         </div>
-                                    )}
+                                        {assessment.sources && assessment.sources.length > 0 && (
+                                            <div className="sources-section">
+                                                <h3>Research Sources</h3>
+                                                <ul>
+                                                    {assessment.sources.map((source, sIndex) => (
+                                                        <li key={sIndex}>
+                                                            <a href={source} target="_blank" rel="noopener noreferrer">
+                                                                {source}
+                                                            </a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>

@@ -265,8 +265,6 @@ export class BanVotingService {
                     try {
                       const json = JSON.parse(c.text);
                       if (json.why) rationale = json.why;
-                      else if (json.reason) rationale = json.reason;
-                      else if (json.rationale) rationale = json.rationale;
 
                       if (json.sources && Array.isArray(json.sources)) {
                         sources.push(...json.sources);

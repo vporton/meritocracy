@@ -19,10 +19,15 @@ router.get('/', async (req, res): Promise<void> => {
 router.post('/vote', requireAuth, async (req, res): Promise<void> => {
     try {
         const voterId = (req as any).userId;
-        const { targetUserId, message } = req.body;
+        const { targetUserId, message, type } = req.body;
 
         if (!targetUserId) {
             res.status(400).json({ error: 'Missing targetUserId' });
+            return;
+        }
+
+        if (type && type !== 'BAN' && type !== 'UNBAN') {
+            res.status(400).json({ error: 'Invalid vote type. Must be BAN or UNBAN.' });
             return;
         }
 
@@ -31,7 +36,7 @@ router.post('/vote', requireAuth, async (req, res): Promise<void> => {
             return;
         }
 
-        const vote = await BanVotingService.submitBanVote(voterId, Number(targetUserId), message);
+        const vote = await BanVotingService.submitBanVote(voterId, Number(targetUserId), message, type as 'BAN' | 'UNBAN');
 
         res.status(201).json({
             message: 'Vote submitted successfully',

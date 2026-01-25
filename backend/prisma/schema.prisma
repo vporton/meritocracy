@@ -65,6 +65,7 @@ model BanVote {
   voterUserId    Int
   targetUserId   Int
   message        String
+  type           String   @default("BAN") // "BAN" or "UNBAN"
   weekStartDate  DateTime // Start of the week this vote belongs to
   createdAt      DateTime @default(now())
   

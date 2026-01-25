@@ -24,22 +24,30 @@ export class BanVotingService {
   /**
    * Submit a ban vote against a user.
    */
-  static async submitBanVote(voterId: number, targetId: number, message: string) {
+  /**
+   * Submit a ban or unban vote.
+   */
+  static async submitBanVote(voterId: number, targetId: number, message: string, type: 'BAN' | 'UNBAN' = 'BAN') {
     // 1. Check if voter is eligible (Voting KYC Approved)
     const voter = await prisma.user.findUnique({ where: { id: voterId } });
     if (voter?.kycVotingStatus !== 'APPROVED') {
       throw new Error('User is not authorized to vote (Voting KYC required)');
     }
 
-    // 2. Check if target is an evaluated user (Has shareInGDP presumably, or just exists)
-    // The requirement says "evaluated users". We'll assume any user with shareInGDP > 0 is evaluated.
+    // 2. Check target
     const target = await prisma.user.findUnique({ where: { id: targetId } });
     if (!target) {
       throw new Error('Target user not found');
     }
 
-    // We can enforce "evaluated user" check strictly if needed:
-    // if (!target.shareInGDP) { throw new Error("Target is not an evaluated user"); }
+    // Unban specific check
+    const isBanned = target.bannedTill && target.bannedTill > new Date();
+    if (type === 'UNBAN' && !isBanned) {
+      throw new Error('Cannot vote to unban a user who is not currently banned.');
+    }
+
+    // Ban specific check? (Optional: prevent banning already banned users for less noise?)
+    // if (type === 'BAN' && isBanned) { throw new Error('User is already banned.'); }
 
     const weekStartDate = this.getCurrentWeekStartDate();
 
@@ -53,7 +61,7 @@ export class BanVotingService {
 
     // Requirement: First vote (opening a voting) requires a message
     if (existingVotesCount === 0 && (!message || message.trim() === '')) {
-      throw new Error('A message is required when starting a ban vote (opening the voting).');
+      throw new Error('A message is required when starting a vote (opening the voting).');
     }
 
     // 3. Create Vote (or fail if duplicate due to unique constraint)
@@ -62,18 +70,19 @@ export class BanVotingService {
         data: {
           voterUserId: voterId,
           targetUserId: targetId,
-          message: message || '', // Store empty string if message is optional and missing
+          message: message || '',
+          type,
           weekStartDate
         }
       });
 
-      // Check if this vote triggers a ban
-      await this.checkAndBanUser(targetId);
+      // Check if this vote triggers a ban/unban
+      await this.processVoteResult(targetId);
 
       return vote;
     } catch (error: any) {
       if (error.code === 'P2002') {
-        throw new Error('You have already voted against this user this week');
+        throw new Error('You have already voted regarding this user this week');
       }
       throw error;
     }
@@ -108,7 +117,7 @@ export class BanVotingService {
   static async getEvaluatedUsersWithVoteStats() {
     const weekStartDate = this.getCurrentWeekStartDate();
 
-    // Find all users who are "evaluated" (e.g. have a share in GDP or are onboarded)
+    // Find all users who are "evaluated"
     const users = await prisma.user.findMany({
       where: {
         AND: [
@@ -117,8 +126,8 @@ export class BanVotingService {
               { shareInGDP: { gt: 0 } },
               { onboarded: true }
             ]
-          },
-          { bannedTill: null }
+          }
+          // Removing { bannedTill: null } filter to allow seeing banned users for unbanning
         ]
       },
       select: {
@@ -126,6 +135,7 @@ export class BanVotingService {
         name: true,
         email: true,
         shareInGDP: true,
+        bannedTill: true, // Need this to know if they are banned
         githubHandle: true,
         bitbucketHandle: true,
         gitlabHandle: true,
@@ -136,35 +146,54 @@ export class BanVotingService {
         polkadotAddress: true,
         cosmosAddress: true,
         stellarAddress: true,
-        _count: {
-          select: {
-            banVotesReceived: {
-              where: { weekStartDate }
-            }
-          }
-        }
+        _count: false // We will aggregate manually
       }
     });
 
-    // Map to match the frontend expectations and include AI responses from logs
-    return await Promise.all(users.map(async (user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      shareInGDP: user.shareInGDP,
-      githubHandle: user.githubHandle,
-      bitbucketHandle: user.bitbucketHandle,
-      gitlabHandle: user.gitlabHandle,
-      orcidId: user.orcidId,
-      ethereumAddress: user.ethereumAddress,
-      solanaAddress: user.solanaAddress,
-      bitcoinAddress: user.bitcoinAddress,
-      polkadotAddress: user.polkadotAddress,
-      cosmosAddress: user.cosmosAddress,
-      stellarAddress: user.stellarAddress,
-      voteCount: user._count.banVotesReceived,
-      aiResponses: await this.getUserAssessments(user.id)
-    })));
+    // Aggregate votes by type for current week
+    const voteCounts = await prisma.banVote.groupBy({
+      by: ['targetUserId', 'type'],
+      where: { weekStartDate },
+      _count: { id: true }
+    });
+
+    // Create a map for quick lookup: targetId -> { BAN: count, UNBAN: count }
+    const votesMap = new Map<number, { BAN: number, UNBAN: number }>();
+    voteCounts.forEach(v => {
+      const current = votesMap.get(v.targetUserId) || { BAN: 0, UNBAN: 0 };
+      if (v.type === 'BAN') current.BAN = v._count.id;
+      if (v.type === 'UNBAN') current.UNBAN = v._count.id;
+      votesMap.set(v.targetUserId, current);
+    });
+
+    // Map to match the frontend expectations
+    return await Promise.all(users.map(async (user) => {
+      const votes = votesMap.get(user.id) || { BAN: 0, UNBAN: 0 };
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        shareInGDP: user.shareInGDP,
+        bannedTill: user.bannedTill,
+        isBanned: !!(user.bannedTill && user.bannedTill > new Date()),
+        githubHandle: user.githubHandle,
+        bitbucketHandle: user.bitbucketHandle,
+        gitlabHandle: user.gitlabHandle,
+        orcidId: user.orcidId,
+        ethereumAddress: user.ethereumAddress,
+        solanaAddress: user.solanaAddress,
+        bitcoinAddress: user.bitcoinAddress,
+        polkadotAddress: user.polkadotAddress,
+        cosmosAddress: user.cosmosAddress,
+        stellarAddress: user.stellarAddress,
+        banVoteCount: votes.BAN,
+        unbanVoteCount: votes.UNBAN,
+        // Legacy support
+        voteCount: votes.BAN + votes.UNBAN,
+        aiResponses: await this.getUserAssessments(user.id)
+      };
+    }));
   }
 
   /**
@@ -321,23 +350,21 @@ export class BanVotingService {
   }
 
   /**
-   * Check if a user should be banned based on votes.
-   * "Exact formulas for enough votes and quorum".
-   * 
-   * Proposed Formula:
-   * 1. Total Eligible Voters = Count of users with kycVotingStatus = 'APPROVED'.
-   * 2. Quorum = 10% of Total Eligible Voters (Min 3).
-   * 3. Condition: If Count(BanVotes) >= Quorum -> BAN.
+   * Check if a user should be banned or unbanned based on votes.
    */
-  static async checkAndBanUser(targetId: number) {
+  static async processVoteResult(targetId: number) {
     const weekStartDate = this.getCurrentWeekStartDate();
 
-    const votesCount = await prisma.banVote.count({
+    const votes = await prisma.banVote.findMany({
       where: {
         targetUserId: targetId,
         weekStartDate
-      }
+      },
+      select: { type: true }
     });
+
+    const banVotesCount = votes.filter(v => v.type === 'BAN').length;
+    const unbanVotesCount = votes.filter(v => v.type === 'UNBAN').length;
 
     const totalEligibleVoters = await prisma.user.count({
       where: {
@@ -345,30 +372,46 @@ export class BanVotingService {
       }
     });
 
-    // Formula definition
-    // For now, let's use a simple relative quorum
-    const QUORUM_PERCENTAGE = 0.10; // 10%
-    const MIN_QUORUM = 12;
+    // Quorum Definitions
+    const QUORUM_PERCENTAGE = 0.01; // 1%
+    const MIN_BAN_QUORUM = 12;
+    const MIN_UNBAN_QUORUM = 16; // Higher quorum for unban
 
-    const quorum = Math.max(MIN_QUORUM, Math.ceil(totalEligibleVoters * QUORUM_PERCENTAGE));
+    const banQuorum = Math.max(MIN_BAN_QUORUM, Math.ceil(totalEligibleVoters * QUORUM_PERCENTAGE));
+    const unbanQuorum = Math.max(MIN_UNBAN_QUORUM, Math.ceil(totalEligibleVoters * QUORUM_PERCENTAGE));
 
-    console.log(`Checking ban for User ${targetId}. Votes: ${votesCount}, Quorum Needed: ${quorum}`);
+    console.log(`Processing votes for User ${targetId}. Total Voters: ${totalEligibleVoters}`);
+    console.log(`BAN: ${banVotesCount}/${banQuorum}, UNBAN: ${unbanVotesCount}/${unbanQuorum}`);
 
-    if (votesCount >= quorum) {
-      // Ban the user
-      // Requirement doesn't specify duration. Setting to 1 year for now.
+    let actionTaken = false;
+
+    // Check for BAN
+    if (banVotesCount >= banQuorum) {
       const banDuration = new Date();
-      banDuration.setFullYear(banDuration.getFullYear() + 1);
+      banDuration.setFullYear(banDuration.getFullYear() + 1); // 1 year ban
 
       await prisma.user.update({
         where: { id: targetId },
-        data: {
-          bannedTill: banDuration
-        }
+        data: { bannedTill: banDuration }
       });
-      return { banned: true, votes: votesCount, quorum };
+      actionTaken = true;
     }
 
-    return { banned: false, votes: votesCount, quorum };
+    // Check for UNBAN (Takes precedence if met, or if met after ban? 
+    // If both happen in same transaction/week, unban should likely win or cancel out?
+    // Current logic: If unban meets quorum, we unban. If ban also met quorum, unban overwrites it effectively if checks run sequentially.
+    // However, if already banned, unban clears it.
+    if (unbanVotesCount >= unbanQuorum) {
+      await prisma.user.update({
+        where: { id: targetId },
+        data: { bannedTill: null }
+      });
+      actionTaken = true;
+    }
+
+    return {
+      actionTaken,
+      stats: { banVotesCount, unbanVotesCount, banQuorum, unbanQuorum }
+    };
   }
 }

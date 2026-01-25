@@ -115,11 +115,9 @@
 
 - FIXME@P2 "Start evaluation" button doesn't disappear after switching to Home tab.
 
-- DONE@P2 In Ban UI show user data (like GitHub profile link), for banners to know the user.
+- FIXME@P2 But the hacker may change his site to show wrong info in Audit Log.
 
-  - FIXME@P2 But the hacker may change this data to hide his identity.
-
-  - FIXME@P2 Don't show the user email here.
+- FIXME@P2 Don't show the user email here in Ban UI.
 
 - TODO@P2 Voting to unban (with higher quorum than to ban).
 

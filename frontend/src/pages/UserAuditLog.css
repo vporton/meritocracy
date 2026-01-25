@@ -68,8 +68,6 @@
 }
 
 .assessment-label {
-    background: #ebf4ff;
-    color: #3182ce;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
     font-size: 0.8rem;
@@ -77,8 +75,53 @@
     text-transform: uppercase;
 }
 
+.badge-completed {
+    background: #ebf4ff;
+    color: #3182ce;
+}
+
+.badge-pending {
+    background: #fffaf0;
+    color: #c05621;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.badge-error {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
 .assessment-content {
     padding: 1.5rem;
+}
+
+.rationale-text.pending p {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+.rationale-text.error p {
+    color: #e53e3e;
+}
+
+.empty-state p.small {
+    font-size: 0.9rem;
+    color: #a0aec0;
+    margin-top: 0.5rem;
 }
 
 .rationale-text h3,

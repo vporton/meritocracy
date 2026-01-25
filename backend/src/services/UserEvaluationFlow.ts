@@ -112,6 +112,7 @@ export class UserEvaluationFlow {
         status: TaskStatus.NOT_STARTED,
         runnerClassName: 'ScientistOnboardingRunner',
         runnerData: JSON.stringify({
+          userId: evaluationData.userId,
           userData: evaluationData.userData
         })
       }
@@ -158,6 +159,7 @@ export class UserEvaluationFlow {
         status: TaskStatus.NOT_STARTED,
         runnerClassName: 'RandomizePromptRunner',
         runnerData: JSON.stringify({
+          userId: evaluationData.userId,
           originalPrompt,
           userData: evaluationData.userData,
         })
@@ -191,6 +193,7 @@ export class UserEvaluationFlow {
         status: TaskStatus.NOT_STARTED,
         runnerClassName: 'WorthAssessmentRunner',
         runnerData: JSON.stringify({
+          userId: evaluationData.userId,
           userData: evaluationData.userData
         })
       }
@@ -225,6 +228,7 @@ export class UserEvaluationFlow {
         status: TaskStatus.NOT_STARTED,
         runnerClassName: 'PromptInjectionRunner',
         runnerData: JSON.stringify({
+          userId: evaluationData.userId,
           userData: evaluationData.userData,
           checkNumber: checkNumber,
           banDuration: '1y',

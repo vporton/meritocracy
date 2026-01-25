@@ -42,7 +42,9 @@ export default function UserAuditLog() {
                     ) : isError ? (
                         <div className="error-message">Failed to load research data.</div>
                     ) : assessments?.length === 0 ? (
-                        <div className="empty-state">No research data found for this user.</div>
+                        <div className="empty-state">
+                            <p>No final research data found for this user.</p>
+                        </div>
                     ) : (
                         assessments?.map((assessment, index) => (
                             <div key={index} className="assessment-card">
@@ -50,7 +52,9 @@ export default function UserAuditLog() {
                                     <span className="assessment-date">
                                         {new Date(assessment.timestamp).toLocaleString()}
                                     </span>
-                                    <span className="assessment-label">AI Research Assessment</span>
+                                    <span className="assessment-label badge-completed">
+                                        AI Research Assessment
+                                    </span>
                                 </div>
                                 <div className="assessment-content">
                                     <div className="rationale-text">

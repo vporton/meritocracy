@@ -240,57 +240,65 @@ export class BanVotingService {
 
           // 1. Check root level for common fields (e.g. from Fake Mode)
           if (response.why) rationale = response.why;
-          else if (response.reason) rationale = response.reason;
-          else if (response.rationale) rationale = response.rationale;
 
           if (response.sources && Array.isArray(response.sources)) {
             sources.push(...response.sources);
           }
 
-          // 2. If nothing at root, explore nested structures
-          if (!rationale) {
-            // The response structure can vary between raw OpenAI Response and what we store
-            // Typically it's the Output from flexible-batches which has an "output" array
-            const outputArr = response.output || (response.choices ? [response] : []);
+          // 2. Explore nested structures (OpenAI Output structure)
+          // The response structure typically has an "output" array
+          const outputArr = response.output || (response.choices ? [response] : []);
 
-            outputArr.forEach((item: any) => {
-              // Extract sources from web_search_call
-              if (item.web_search_call?.action?.sources) {
-                item.web_search_call.action.sources.forEach((s: any) => {
+          outputArr.forEach((item: any) => {
+            // Extract sources from web_search_call
+            if (item.type === 'web_search_call') {
+              if (item.action?.url) sources.push(item.action.url);
+              if (item.action?.sources) {
+                item.action.sources.forEach((s: any) => {
                   if (s.url) sources.push(s.url);
                 });
               }
-              // Extract rationale from content
-              if (item.content) {
-                item.content.forEach((c: any) => {
-                  if (c.type === 'text' && c.text) {
-                    try {
-                      const json = JSON.parse(c.text);
-                      if (json.why) rationale = json.why;
-                      else if (json.reason) rationale = json.reason;
-                      else if (json.rationale) rationale = json.rationale;
+            }
 
-                      if (json.sources && Array.isArray(json.sources)) {
-                        sources.push(...json.sources);
+            // Extract rationale and citations from message content
+            if (item.content) {
+              item.content.forEach((c: any) => {
+                // Support both 'text' and 'output_text' (new GPT-5 mini format)
+                if ((c.type === 'text' || c.type === 'output_text') && c.text) {
+                  // Extract citations from annotations if present
+                  if (c.annotations && Array.isArray(c.annotations)) {
+                    c.annotations.forEach((ann: any) => {
+                      if (ann.type === 'url_citation' && ann.url) {
+                        sources.push(ann.url);
                       }
-                    } catch (e) {
-                      if (!rationale) rationale = c.text;
-                    }
+                    });
                   }
-                });
-              } else if (item.choices?.[0]?.message?.content) {
-                // Standard chat completion structure
-                const content = item.choices[0].message.content;
-                try {
-                  const json = JSON.parse(content);
-                  if (json.why) rationale = json.why;
-                  if (json.sources && Array.isArray(json.sources)) sources.push(...json.sources);
-                } catch (e) {
-                  if (!rationale) rationale = content;
+
+                  // Try to parse the text as JSON to find hidden 'why'
+                  try {
+                    const json = JSON.parse(c.text);
+                    if (json.why) rationale = json.why;
+                    if (json.sources && Array.isArray(json.sources)) {
+                      sources.push(...json.sources);
+                    }
+                  } catch (e) {
+                    // Not JSON, or doesn't have 'why' - use as raw text if we don't have rationale yet
+                    if (!rationale) rationale = c.text;
+                  }
                 }
+              });
+            } else if (item.choices?.[0]?.message?.content) {
+              // Standard chat completion structure
+              const content = item.choices[0].message.content;
+              try {
+                const json = JSON.parse(content);
+                if (json.why) rationale = json.why;
+                if (json.sources && Array.isArray(json.sources)) sources.push(...json.sources);
+              } catch (e) {
+                if (!rationale) rationale = content;
               }
-            });
-          }
+            }
+          });
 
           results.push({
             text: rationale || 'No rationale available in stored response.',

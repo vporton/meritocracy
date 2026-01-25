@@ -168,73 +168,66 @@ export class BanVotingService {
   }
 
   /**
-   * Get all AI assessments for a specific user from logs
+   * Get all AI assessments for a specific user from tasks
    */
   static async getUserAssessments(userId: number) {
-    // Query ALL OpenAI logs directly by userId - includes in-progress, completed, and failed requests
-    const logs = await prisma.openAILog.findMany({
+    // Query WorthAssessmentRunner tasks
+    const tasks = await prisma.task.findMany({
       where: {
-        userId: userId,
+        runnerClassName: 'WorthAssessmentRunner',
+        runnerData: {
+          contains: `"userId":${userId}`
+        }
       },
       orderBy: { createdAt: 'desc' },
-      take: 50 // Show high volume of activity if present
+      take: 50
     });
 
-    return logs.map(log => {
-      // 1. Handle logs that haven't received a response yet (Pending)
-      if (!log.responseData) {
+    return tasks.map(task => {
+      if (!task.runnerData) {
         return {
-          text: 'Research in progress... The AI is currently searching for info or analyzing data.',
+          text: 'Research initialized...',
           sources: [],
-          timestamp: log.createdAt,
+          timestamp: task.createdAt,
           isPending: true
         };
       }
 
       try {
-        const responseData = JSON.parse(log.responseData);
-        const sources: string[] = [];
-        let rationale = '';
+        const runnerData = JSON.parse(task.runnerData);
 
-        // Extract using the "output" structure
-        responseData.output?.forEach((item: any) => {
-          if (item.web_search_call?.action?.sources) {
-            item.web_search_call.action.sources.forEach((s: any) => {
-              if (s.url) sources.push(s.url);
-            });
-          }
-          if (item.content) {
-            item.content.forEach((c: any) => {
-              if (c.type === 'text' && c.text) {
-                try {
-                  const json = JSON.parse(c.text);
-                  if (json.why) rationale = json.why;
-                  else if (json.reason) rationale = json.reason;
-                  else if (json.rationale) rationale = json.rationale;
+        // Handle pending state
+        if (task.status === 'NOT_STARTED' || task.status === 'INITIATED') {
+          return {
+            text: 'Research in progress... The AI is currently searching for info or analyzing data.',
+            sources: [],
+            timestamp: task.createdAt,
+            isPending: true
+          };
+        }
 
-                  if (json.sources && Array.isArray(json.sources)) {
-                    sources.push(...json.sources);
-                  }
-                } catch (e) {
-                  // If text is not JSON, it might be partial output or raw text
-                  if (!rationale) rationale = c.text;
-                }
-              }
-            });
-          }
-        });
+        // Handle cancelled/error state
+        if (task.status === 'CANCELLED') {
+          return {
+            text: `Research cancelled or failed: ${runnerData.error || runnerData.why || 'Unknown reason'}`,
+            sources: [],
+            timestamp: task.completedAt || task.updatedAt,
+            isError: true
+          };
+        }
 
+        // Handle completed state
         return {
-          text: rationale || 'No rationale available in technical log.',
-          sources: [...new Set(sources)],
-          timestamp: log.responseReceived || log.createdAt,
-          isError: !!log.errorMessage
+          text: runnerData.why || runnerData.rationale || runnerData.text || 'No rationale available.',
+          sources: Array.isArray(runnerData.sources) ? runnerData.sources : [],
+          timestamp: task.completedAt || task.updatedAt,
+          isError: false
         };
       } catch (e) {
         return {
-          text: `Log entry error: ${log.errorMessage || 'Unknown parsing error'}`,
+          text: `Task entry error: Unable to parse assessment data.`,
           sources: [],
-          timestamp: log.createdAt,
+          timestamp: task.createdAt,
           isError: true
         };
       }

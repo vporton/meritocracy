@@ -147,10 +147,14 @@ model Task {
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
 
+  isNeverDeleted  Boolean          @default(false)
+  isDeleted       Boolean          @default(false)
+
   @@index([status])
   @@index([runnerClassName])
   @@index([completedAt])
   @@index([lockTime])
+  @@index([isDeleted])
   @@map("tasks")
 }
 

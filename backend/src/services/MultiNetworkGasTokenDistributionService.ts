@@ -596,10 +596,14 @@ export class MultiNetworkGasTokenDistributionService {
 
           if (totalCostToken > remainingAmount + Number.EPSILON) {
             totalCostToken = remainingAmount;
-            dist.amountToken = Math.max(0, totalCostToken - gasCostToken);
+            // For the last user (partial payment), increase gas safety margin
+            // to ensure we don't run out of funds due to slight fluctuations
+            const safeGasCost = gasCostToken * 1.5;
+
+            dist.amountToken = Math.max(0, totalCostToken - safeGasCost);
 
             if (dist.amountToken <= 0 && totalCostToken > 0) {
-              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(6)} ${context.tokenSymbol}`;
+              estimationError = `Insufficient ${context.tokenSymbol} to cover safe gas cost of ${safeGasCost.toFixed(6)} ${context.tokenSymbol}`;
               shouldStopDueToGasCost = true;
             }
           }
@@ -859,10 +863,14 @@ export class MultiNetworkGasTokenDistributionService {
 
           if (totalCostToken > remainingAmount + Number.EPSILON) {
             totalCostToken = remainingAmount;
-            dist.amountToken = Math.max(0, totalCostToken - gasCostToken);
+            // For the last user (partial payment), increase gas safety margin
+            // to ensure we don't run out of funds due to slight fluctuations
+            const safeGasCost = gasCostToken * 1.5;
+
+            dist.amountToken = Math.max(0, totalCostToken - safeGasCost);
 
             if (dist.amountToken <= 0 && totalCostToken > 0) {
-              estimationError = `Insufficient ${context.tokenSymbol} to cover gas cost of ${gasCostToken.toFixed(6)} ${context.tokenSymbol}`;
+              estimationError = `Insufficient ${context.tokenSymbol} to cover safe gas cost of ${safeGasCost.toFixed(6)} ${context.tokenSymbol}`;
               shouldStopDueToGasCost = true;
             }
           }

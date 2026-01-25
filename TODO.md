@@ -67,9 +67,6 @@
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
 
-- TODO@P2 Should we store the entire lists of Web sources, to ease appeals?
-  At first, this looks like a good idea, but sources could easily be faked afterwards.
-
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
 - TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
@@ -95,8 +92,6 @@
 
 - FIXME@P3 It doesn't fit my phone Samsumg Salaxy A25 5G 90E7. Need help of a professional designer.
 
-- TODO@P2 KYC link from the email leads to Connect page with KYC button shown, but it should lead to KYC page directly.
-
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
@@ -107,8 +102,6 @@
 
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
-- TODO@P2 If the sum to be paid is more than available minus gas cost, pay partially.
-
 - TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).
 
 - TODO@P3 Run tasks in parallel.
@@ -118,7 +111,5 @@
 - FIXME@P2 But the hacker may change his site to show wrong info in Audit Log.
 
 - FIXME@P2 Don't show the user email here in Ban UI.
-
-- TODO@P2 Voting to unban (with higher quorum than to ban).
 
 - TODO@P2 Usage of non-batch mappings for ban summarization logs is wrong, because mappings can be batch.

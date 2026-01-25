@@ -217,9 +217,9 @@ export abstract class BaseRunner implements TaskRunner {
         }
       });
     } catch (error) {
-      this.log('error', `Failed to log OpenAI response`, { 
-        customId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.log('error', `Failed to log OpenAI response`, {
+        customId,
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -279,10 +279,10 @@ export abstract class BaseRunner implements TaskRunner {
   async initiateTask(taskId: number): Promise<void> {
     const runnerType = this.constructor.name;
     const logPrefix = this.shouldCheckCancelledDependencies() ? 'TaskRunner' : `${runnerType} (bypassing cancellation checks)`;
-    
+
     try {
       this.log('info', `🤖 Running ${logPrefix} for task ${taskId}`, { taskId });
-      
+
       // Get task data from database
       const task = await this.getTaskWithDependencies(taskId);
 
@@ -301,7 +301,7 @@ export abstract class BaseRunner implements TaskRunner {
 
       // Execute the specific logic
       await this.executeTask(task);
-      
+
       this.log('info', `✅ ${logPrefix} completed for task ${taskId}`, { taskId });
     } catch (error) {
       this.log('error', `❌ Error in ${logPrefix}`, { taskId, error: error instanceof Error ? error.message : String(error) });
@@ -375,7 +375,7 @@ export abstract class BaseRunner implements TaskRunner {
    * ```
    */
   protected areDependenciesCompleted(task: TaskWithDependencies): boolean {
-    const incompleteDependencies = task.dependencies.filter(dep => 
+    const incompleteDependencies = task.dependencies.filter(dep =>
       dep.dependency.status !== 'COMPLETED'
     );
     return incompleteDependencies.length === 0;
@@ -402,7 +402,7 @@ export abstract class BaseRunner implements TaskRunner {
    * ```
    */
   protected areAnyDependenciesCancelled(task: TaskWithDependencies): boolean {
-    const cancelledDependencies = task.dependencies.filter(dep => 
+    const cancelledDependencies = task.dependencies.filter(dep =>
       dep.dependency.status === 'CANCELLED'
     );
     return cancelledDependencies.length > 0;
@@ -482,12 +482,21 @@ export abstract class BaseRunner implements TaskRunner {
     try {
       const response = (await outputter.getOutput(customId))!;
 
+      // Persist the response in the mapping table for future lookups (e.g. Audit Logs)
+      try {
+        if ('storeResponseByCustomId' in store) {
+          await (store as any).storeResponseByCustomId({ customId, response });
+        }
+      } catch (storeError) {
+        this.log('warn', `Failed to store response in mapping table`, { customId, error: String(storeError) });
+      }
+
       const text = (response.output[response.output.length - 1]! as any).content[0].text;
       if (!text) {
         throw new OpenAIError('No response content received from OpenAI', customId);
       }
       const content = JSON.parse(text);
-      
+
       // Log the response to the database
       await this.logOpenAIResponse(customId, response, undefined);
 
@@ -521,7 +530,7 @@ export class MedianRunner extends BaseRunner {
 
     // Calculate median
     const median = worthValues.length === 0 ? 0 : this.calculateMedian(worthValues);
-    
+
     // Update User.shareInGDP with the calculated median
     const userId = this.data.userId;
     if (userId) {
@@ -532,24 +541,24 @@ export class MedianRunner extends BaseRunner {
             shareInGDP: median
           }
         });
-        
-        this.log('info', `📊 Updated User.shareInGDP`, { 
-          userId, 
+
+        this.log('info', `📊 Updated User.shareInGDP`, {
+          userId,
           shareInGDP: median,
-          taskId: task.id 
+          taskId: task.id
         });
       } catch (error) {
-        this.log('error', `Failed to update User.shareInGDP`, { 
-          userId, 
+        this.log('error', `Failed to update User.shareInGDP`, {
+          userId,
           error: error instanceof Error ? error.message : String(error),
-          taskId: task.id 
+          taskId: task.id
         });
         // Don't throw error - continue with task completion even if user update fails
       }
     } else if (!userId) {
       this.log('warn', `No userId provided, skipping User.shareInGDP update`, { taskId: task.id });
     }
-    
+
     // Store the result
     await TaskRunnerRegistry.completeTask(this.prisma, task.id, {
       medianWorth: median,
@@ -570,13 +579,13 @@ export class MedianRunner extends BaseRunner {
     const worthValues: number[] = [];
     let completedCount = 0;
     let cancelledCount = 0;
-    
+
     for (const dep of task.dependencies) {
       try {
         // Skip cancelled dependencies - they don't have valid data
         if (dep.dependency.status === 'CANCELLED') {
           cancelledCount++;
-          this.log('info', `Skipping cancelled dependency`, { 
+          this.log('info', `Skipping cancelled dependency`, {
             dependencyId: dep.dependency.id,
             runnerClassName: dep.dependency.runnerClassName
           });
@@ -585,7 +594,7 @@ export class MedianRunner extends BaseRunner {
 
         // Only process COMPLETED dependencies
         if (dep.dependency.status !== 'COMPLETED') {
-          this.log('warn', `Dependency not completed`, { 
+          this.log('warn', `Dependency not completed`, {
             dependencyId: dep.dependency.id,
             status: dep.dependency.status
           });
@@ -599,16 +608,16 @@ export class MedianRunner extends BaseRunner {
         }
 
         const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData);
-        
+
         if (!depData.customId || !dep.dependency.storeId) {
           this.log('warn', `Dependency missing customId or storeId`, { dependencyId: dep.dependency.id });
           continue;
         }
 
         // Get the result from the dependency
-        const response: WorthAssessmentResponse = await this.getOpenAIResult({ 
-          customId: depData.customId, 
-          storeId: dep.dependency.storeId 
+        const response: WorthAssessmentResponse = await this.getOpenAIResult({
+          customId: depData.customId,
+          storeId: dep.dependency.storeId
         });
 
         if (typeof response.worthAsFractionOfGDP === 'number') {
@@ -616,9 +625,9 @@ export class MedianRunner extends BaseRunner {
           completedCount++;
         }
       } catch (error) {
-        this.log('warn', `Failed to retrieve dependency result`, { 
-          dependencyId: dep.dependency.id, 
-          error: error instanceof Error ? error.message : String(error) 
+        this.log('warn', `Failed to retrieve dependency result`, {
+          dependencyId: dep.dependency.id,
+          error: error instanceof Error ? error.message : String(error)
         });
       }
     }
@@ -634,7 +643,7 @@ export class MedianRunner extends BaseRunner {
   private calculateMedian(values: number[]): number {
     const sorted = [...values].sort((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
-    
+
     if (sorted.length % 2 === 0) {
       return (sorted[mid - 1] + sorted[mid]) / 2;
     } else {
@@ -654,10 +663,10 @@ export class WorthThresholdCheckRunner extends BaseRunner {
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
     const threshold = this.data.threshold || DEFAULT_THRESHOLD;
-    
+
     // Get worth values from dependencies
     const worthValues = await this.processWorthDependencyResults(task);
-    
+
     if (worthValues.length === 0) {
       throw new DependencyError('No valid worth value found in dependencies', undefined, task.id, this.constructor.name);
     }
@@ -665,32 +674,32 @@ export class WorthThresholdCheckRunner extends BaseRunner {
     // Use the first worth value for threshold comparison
     const worthValue = worthValues[0];
     const exceedsThreshold = worthValue > threshold;
-    
+
     if (!exceedsThreshold) {
       // If threshold not exceeded, mark task as CANCELLED
       const { TaskRunnerRegistry } = await import('../types/task.js');
       await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, task.id);
-      
-      this.log('info', `🚫 Worth Threshold Check cancelled - threshold not exceeded`, { 
-        taskId: task.id, 
-        worthValue, 
+
+      this.log('info', `🚫 Worth Threshold Check cancelled - threshold not exceeded`, {
+        taskId: task.id,
+        worthValue,
         threshold
       });
       return;
     }
-    
+
     // Store the result
     await TaskRunnerRegistry.completeTask(this.prisma, task.id, {
-      worthValue, 
-      threshold, 
-      exceedsThreshold 
+      worthValue,
+      threshold,
+      exceedsThreshold
     });
 
-    this.log('info', `✅ Worth Threshold Check completed - threshold exceeded`, { 
-      taskId: task.id, 
-      worthValue, 
-      threshold, 
-      exceedsThreshold 
+    this.log('info', `✅ Worth Threshold Check completed - threshold exceeded`, {
+      taskId: task.id,
+      worthValue,
+      threshold,
+      exceedsThreshold
     });
   }
 
@@ -705,13 +714,13 @@ export class WorthThresholdCheckRunner extends BaseRunner {
       if (dep.dependency.runnerClassName === 'WorthAssessmentRunner') {
         const depData: TaskRunnerResult = JSON.parse(dep.dependency.runnerData!); // hack
         const response: WorthAssessmentResponse = await this.getOpenAIResult({
-          customId: depData.customId, 
+          customId: depData.customId,
           storeId: dep.dependency.storeId!
         });
         worthValues.push(response.worthAsFractionOfGDP);
       }
     }
-    
+
     return worthValues;
   }
 

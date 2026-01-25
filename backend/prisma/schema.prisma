@@ -104,6 +104,7 @@ model BatchMapping {
   id        Int      @id @default(autoincrement())
   customId  String   @unique
   batchId   Int
+  response  String?
   createdAt DateTime @default(now())
   batch     Batches  @relation(fields: [batchId], references: [id], onDelete: Cascade)
 

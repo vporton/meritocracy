@@ -648,6 +648,16 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
 
     try {
       const response = (await outputter.getOutput(customId))!;
+
+      // Persist the response in the mapping table for future lookups (e.g. Audit Logs)
+      try {
+        if ('storeResponseByCustomId' in store) {
+          await (store as any).storeResponseByCustomId({ customId, response });
+        }
+      } catch (storeError) {
+        this.log('error', `Failed to store response in mapping table`, { customId, error: String(storeError) });
+      }
+
       return response;
     } catch (error) {
       this.log('error', 'Failed to get full OpenAI response', { customId, error });

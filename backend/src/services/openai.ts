@@ -42,18 +42,18 @@ const DEFAULT_CONFIG: OpenAIConfig = {
 };
 
 abstract class OurClearer implements FlexibleStore {
-  constructor(protected readonly prisma: PrismaClient) {}
-  async init(): Promise<void> {}
+  constructor(protected readonly prisma: PrismaClient) { }
+  async init(): Promise<void> { }
   abstract getStoreId(): string;
   async clear(): Promise<void> {
     // Delete both batch and non-batch data, as necessary if the server switches between batch and non-batch modes.
     try {
-      await this.prisma.batches.delete({where: {id: parseInt(this.getStoreId())}});
+      await this.prisma.batches.delete({ where: { id: parseInt(this.getStoreId()) } });
     } catch (error) {
       // Ignore if batch doesn't exist
     }
     try {
-      await this.prisma.nonBatches.delete({where: {id: parseInt(this.getStoreId())}});
+      await this.prisma.nonBatches.delete({ where: { id: parseInt(this.getStoreId()) } });
     } catch (error) {
       // Ignore if non-batch doesn't exist
     }
@@ -67,7 +67,7 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
   async init(): Promise<void> {
     if (this.storeId !== undefined) throw "cannot initialize storeId second time";
     const batches = await this.prisma.batches.create({
-      data: {taskId: this.taskId}
+      data: { taskId: this.taskId }
     });
     this.storeId = batches.id.toString();
   }
@@ -91,6 +91,22 @@ class OurBatchStore extends OurClearer implements FlexibleBatchStore {
     });
     return mapping?.batchId?.toString();
   }
+  async storeResponseByCustomId(props: {
+    customId: string; response: OpenAI.Responses.Response;
+  }): Promise<void> {
+    await this.prisma.batchMapping.update({
+      where: { customId: props.customId },
+      data: {
+        response: JSON.stringify(props.response),
+      },
+    });
+  }
+  async getResponseByCustomId(customId: string): Promise<OpenAI.Responses.Response | undefined> {
+    const response = await this.prisma.batchMapping.findUnique({
+      where: { customId },
+    });
+    return response?.response ? JSON.parse(response.response) : undefined;
+  }
 }
 
 class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
@@ -100,7 +116,7 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   async init(): Promise<void> {
     if (this.storeId !== undefined) throw "cannot initialize storeId second time";
     const nonBatches = await this.prisma.nonBatches.create({
-      data: {taskId: this.taskId}
+      data: { taskId: this.taskId }
     });
     this.storeId = nonBatches.id.toString();
   }

@@ -171,7 +171,7 @@ export class BanVotingService {
    * Get all AI assessments for a specific user from tasks
    */
   static async getUserAssessments(userId: number) {
-    // Query WorthAssessmentRunner tasks
+    // 1. Find all WorthAssessmentRunner tasks for this user
     const tasks = await prisma.task.findMany({
       where: {
         runnerClassName: 'WorthAssessmentRunner',
@@ -179,59 +179,125 @@ export class BanVotingService {
           contains: `"userId":${userId}`
         }
       },
+      include: {
+        Batches: {
+          include: {
+            batchMappings: true
+          }
+        },
+        NonBatches: {
+          include: {
+            nonbatchMappings: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' },
       take: 50
     });
 
-    return tasks.map(task => {
-      if (!task.runnerData) {
-        return {
-          text: 'Research initialized...',
-          sources: [],
-          timestamp: task.createdAt,
-          isPending: true
-        };
-      }
+    const results: any[] = [];
 
-      try {
-        const runnerData = JSON.parse(task.runnerData);
+    for (const task of tasks) {
+      // Find all mappings associated with this task
+      const batchMappings = task.Batches.flatMap(b => b.batchMappings);
+      const nonbatchMappings = task.NonBatches.flatMap(nb => nb.nonbatchMappings);
 
-        // Handle pending state
+      const allMappings = [
+        ...batchMappings.map(m => ({ customId: m.customId, response: m.response, createdAt: m.createdAt })),
+        ...nonbatchMappings.map(m => ({ customId: m.customId, response: m.response, createdAt: m.createdAt }))
+      ];
+
+      if (allMappings.length === 0) {
+        // If no mappings yet, it might be pending
         if (task.status === 'NOT_STARTED' || task.status === 'INITIATED') {
-          return {
+          results.push({
             text: 'Research in progress... The AI is currently searching for info or analyzing data.',
             sources: [],
             timestamp: task.createdAt,
             isPending: true
-          };
+          });
         }
-
-        // Handle cancelled/error state
-        if (task.status === 'CANCELLED') {
-          return {
-            text: `Research cancelled or failed: ${runnerData.error || runnerData.why || 'Unknown reason'}`,
-            sources: [],
-            timestamp: task.completedAt || task.updatedAt,
-            isError: true
-          };
-        }
-
-        // Handle completed state
-        return {
-          text: runnerData.why || runnerData.rationale || runnerData.text || 'No rationale available.',
-          sources: Array.isArray(runnerData.sources) ? runnerData.sources : [],
-          timestamp: task.completedAt || task.updatedAt,
-          isError: false
-        };
-      } catch (e) {
-        return {
-          text: `Task entry error: Unable to parse assessment data.`,
-          sources: [],
-          timestamp: task.createdAt,
-          isError: true
-        };
+        continue;
       }
-    });
+
+      for (const mapping of allMappings) {
+        if (!mapping.response) {
+          if (task.status === 'NOT_STARTED' || task.status === 'INITIATED') {
+            results.push({
+              text: 'Research in progress... Response not yet stored.',
+              sources: [],
+              timestamp: mapping.createdAt,
+              isPending: true
+            });
+          }
+          continue;
+        }
+
+        try {
+          const response = JSON.parse(mapping.response);
+          const sources: string[] = [];
+          let rationale = '';
+
+          // The response structure can vary between raw OpenAI Response and what we store
+          // Typically it's the Output from flexible-batches which has an "output" array
+          const outputArr = response.output || (response.choices ? [response] : []);
+
+          outputArr.forEach((item: any) => {
+            // Extract sources from web_search_call
+            if (item.web_search_call?.action?.sources) {
+              item.web_search_call.action.sources.forEach((s: any) => {
+                if (s.url) sources.push(s.url);
+              });
+            }
+            // Extract rationale from content
+            if (item.content) {
+              item.content.forEach((c: any) => {
+                if (c.type === 'text' && c.text) {
+                  try {
+                    const json = JSON.parse(c.text);
+                    if (json.why) rationale = json.why;
+                    else if (json.reason) rationale = json.reason;
+                    else if (json.rationale) rationale = json.rationale;
+
+                    if (json.sources && Array.isArray(json.sources)) {
+                      sources.push(...json.sources);
+                    }
+                  } catch (e) {
+                    if (!rationale) rationale = c.text;
+                  }
+                }
+              });
+            } else if (item.choices?.[0]?.message?.content) {
+              // Standard chat completion structure
+              const content = item.choices[0].message.content;
+              try {
+                const json = JSON.parse(content);
+                if (json.why) rationale = json.why;
+                if (json.sources && Array.isArray(json.sources)) sources.push(...json.sources);
+              } catch (e) {
+                if (!rationale) rationale = content;
+              }
+            }
+          });
+
+          results.push({
+            text: rationale || 'No rationale available in stored response.',
+            sources: [...new Set(sources)],
+            timestamp: task.completedAt || mapping.createdAt,
+            isError: task.status === 'CANCELLED'
+          });
+        } catch (e) {
+          results.push({
+            text: `Error parsing stored response for assessment.`,
+            sources: [],
+            timestamp: mapping.createdAt,
+            isError: true
+          });
+        }
+      }
+    }
+
+    return results;
   }
 
   /**

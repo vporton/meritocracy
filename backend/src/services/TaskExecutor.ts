@@ -143,6 +143,7 @@ export class TaskExecutor {
     return await this.prisma.task.findMany({
       where: {
         status: TaskStatus.NOT_STARTED,
+        isDeleted: false,
         dependencies: {
           every: {
             dependency: {
@@ -245,6 +246,7 @@ export class TaskExecutor {
       const result = await this.prisma.task.updateMany({
         where: {
           id: taskId,
+          isDeleted: false,
           OR: [
             { lockTime: null },
             { lockTime: { lt: now } } // Lock has expired (older than 30 seconds)

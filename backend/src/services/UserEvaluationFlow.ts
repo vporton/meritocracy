@@ -192,6 +192,7 @@ export class UserEvaluationFlow {
       data: {
         status: TaskStatus.NOT_STARTED,
         runnerClassName: 'WorthAssessmentRunner',
+        isNeverDeleted: true,
         runnerData: JSON.stringify({
           userId: evaluationData.userId,
           userData: evaluationData.userData
@@ -296,7 +297,8 @@ export class UserEvaluationFlow {
         runnerData: {
           contains: `"userId":${userId}`
         },
-        status: TaskStatus.COMPLETED
+        status: TaskStatus.COMPLETED,
+        isDeleted: false
       },
       orderBy: {
         completedAt: 'desc'

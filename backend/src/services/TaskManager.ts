@@ -102,6 +102,7 @@ export class TaskManager {
             status: {
               in: [TaskStatus.NOT_STARTED, TaskStatus.INITIATED]
             },
+            isDeleted: false,
             dependencies: {
               every: {
                 dependency: {
@@ -344,15 +345,23 @@ export class TaskManager {
       // This uses a single efficient Prisma query instead of multiple queries
       const orphanedTasks = await this.prisma.task.findMany({
         where: {
+          isDeleted: false,
           status: {
             in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
           },
           dependents: {
             every: {
               task: {
-                status: {
-                  in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
-                }
+                OR: [
+                  {
+                    status: {
+                      in: [TaskStatus.COMPLETED, TaskStatus.CANCELLED]
+                    }
+                  },
+                  {
+                    isDeleted: true
+                  }
+                ]
               }
             }
           }
@@ -371,15 +380,19 @@ export class TaskManager {
 
       console.log(`Found ${orphanedTaskIds.length} orphaned dependency tasks to delete: ${orphanedTaskIds.join(', ')}`);
 
-      // Delete the orphaned tasks
-      // Note: Due to cascade delete, this will also remove the TaskDependency records
-      const deleteResult = await this.prisma.task.deleteMany({
+      // Soft delete the orphaned tasks
+      // We check for isNeverDeleted explicitly here as well, although updateMany would handle it if we add it to where clause
+      const deleteResult = await this.prisma.task.updateMany({
         where: {
           id: { in: orphanedTaskIds },
+          isNeverDeleted: false
         },
+        data: {
+          isDeleted: true
+        }
       });
 
-      console.log(`✅ Deleted ${deleteResult.count} orphaned dependency tasks`);
+      console.log(`✅ Soft deleted ${deleteResult.count} orphaned dependency tasks`);
       return deleteResult.count;
 
     } catch (error) {

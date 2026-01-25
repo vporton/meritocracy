@@ -19,42 +19,48 @@ export async function deleteTaskIfOrphaned(prisma: PrismaClient, taskId: number)
         const task = await prisma.task.findUnique({
             where: { id: taskId },
             include: {
-                dependents: true,
+                dependents: {
+                    include: {
+                        task: true
+                    }
+                },
                 dependencies: true
             }
         });
 
         if (!task) return;
+        if (task.isDeleted) return; // Already deleted
 
         // Check if task is finished
         // We use string comparison to avoid circular import of TaskStatus enum
         const isFinished = task.status === 'COMPLETED' || task.status === 'CANCELLED';
 
-        // "No other tasks depending on it" means dependents array is empty.
-        const hasNoDependents = task.dependents.length === 0;
+        // "No other tasks depending on it" means all dependents are deleted (or empty).
+        const hasNoActiveDependents = task.dependents.every(d => d.task.isDeleted);
 
-        if (isFinished && hasNoDependents) {
-            console.log(`Task ${taskId} is finished and has no dependents (leaf node). Deleting...`);
+        if (isFinished && hasNoActiveDependents) {
+            if (task.isNeverDeleted) {
+                console.log(`Task ${taskId} is finished and orphaned but marked as never deleted. Skipping.`);
+                return;
+            }
+
+            console.log(`Task ${taskId} is finished and has no active dependents (leaf node). Soft deleting...`);
 
             // Capture parent IDs (dependencies) before deleting the task.
             // We task.dependencies is an array of TaskDependency objects where 'dependencyId' is the parent task.
             // (Current task is 'taskId' in TaskDependency table, i.e., the dependent)
-            // Wait, let's verify schema intuition.
-            // If Task A depends on Task B.
-            // Dependency Record: taskId: A, dependencyId: B.
-            // In Task A object: 'dependencies' points to records where taskId = A.
-            // In Task B object: 'dependents' points to records where dependencyId = B.
 
             // So 'task.dependencies' list items where THIS task is the consumer.
             // We want to check the PROVIDERS (parents) after we delete ourselves.
             // The providers are in 'task.dependencies'.
             const parentIds = task.dependencies.map(d => d.dependencyId);
 
-            // Delete the current task
-            await prisma.task.delete({
-                where: { id: taskId }
+            // Soft delete the current task instead of hard delete
+            await prisma.task.update({
+                where: { id: taskId },
+                data: { isDeleted: true }
             });
-            console.log(`✅ Deleted task ${taskId}`);
+            console.log(`✅ Soft deleted task ${taskId}`);
 
             // Recursively check parents
             if (parentIds.length > 0) {

@@ -65,7 +65,7 @@ export class DBLogsService {
     // Apply pagination
     const offset = filter.offset || 0;
     const limit = filter.limit || 100;
-    
+
     return logs.slice(offset, offset + limit);
   }
 
@@ -81,15 +81,15 @@ export class DBLogsService {
    */
   private async getOpenAILogs(filter: LogsFilter): Promise<DBLogEntry[]> {
     const where: any = {};
-    
+
     if (filter.userId) {
       where.userId = filter.userId;
     }
-    
+
     if (filter.taskId) {
       where.taskId = filter.taskId;
     }
-    
+
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
       if (filter.startDate) {
@@ -160,19 +160,21 @@ export class DBLogsService {
    * Get Task execution logs
    */
   private async getTaskLogs(filter: LogsFilter): Promise<DBLogEntry[]> {
-    const where: any = {};
-    
+    const where: any = {
+      isDeleted: false
+    };
+
     if (filter.userId) {
       // Find tasks that contain this userId in their runnerData
       where.runnerData = {
         contains: `"userId":${filter.userId}`
       };
     }
-    
+
     if (filter.taskId) {
       where.id = filter.taskId;
     }
-    
+
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
       if (filter.startDate) {
@@ -218,7 +220,7 @@ export class DBLogsService {
         try {
           const runnerData = JSON.parse(task.runnerData);
           details.runnerData = runnerData;
-          
+
           // Extract user ID from runner data if present
           if (runnerData.userId) {
             details.userId = runnerData.userId;
@@ -257,11 +259,11 @@ export class DBLogsService {
    */
   private async getUserAccountLogs(filter: LogsFilter): Promise<DBLogEntry[]> {
     const where: any = {};
-    
+
     if (filter.userId) {
       where.id = filter.userId;
     }
-    
+
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
       if (filter.startDate) {
@@ -325,11 +327,11 @@ export class DBLogsService {
    */
   private async getSessionLogs(filter: LogsFilter): Promise<DBLogEntry[]> {
     const where: any = {};
-    
+
     if (filter.userId) {
       where.userId = filter.userId;
     }
-    
+
     if (filter.startDate || filter.endDate) {
       where.createdAt = {};
       if (filter.startDate) {
@@ -386,7 +388,7 @@ export class DBLogsService {
   }> {
     const [openaiCount, taskCount, userCount, sessionCount] = await Promise.all([
       this.prisma.openAILog.count(),
-      this.prisma.task.count(),
+      this.prisma.task.count({ where: { isDeleted: false } }),
       this.prisma.user.count(),
       this.prisma.session.count()
     ]);
@@ -416,7 +418,7 @@ export class DBLogsService {
     // Get recent activity (last 24 hours)
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     const recentActivity = await this.prisma.openAILog.count({
       where: {
         createdAt: {

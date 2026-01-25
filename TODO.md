@@ -113,5 +113,3 @@
 - FIXME@P2 But the hacker may change his site to show wrong info in Audit Log.
 
 - FIXME@P2 Don't show the user email here in Ban UI.
-
-- TODO@P2 Usage of non-batch mappings for ban summarization logs is wrong, because mappings can be batch.

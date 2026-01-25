@@ -171,38 +171,43 @@ export class BanVotingService {
    * Get all AI assessments for a specific user from logs
    */
   static async getUserAssessments(userId: number) {
-    // Query OpenAI logs directly by userId - this includes all research and assessments
+    // Query ALL OpenAI logs directly by userId - includes in-progress, completed, and failed requests
     const logs = await prisma.openAILog.findMany({
       where: {
         userId: userId,
-        responseData: { not: null } // Only show logs with a received response
       },
       orderBy: { createdAt: 'desc' },
-      take: 20 // Show a comprehensive history
+      take: 50 // Show high volume of activity if present
     });
 
     return logs.map(log => {
-      try {
-        const responseData = JSON.parse(log.responseData!);
-        const sources: string[] = [];
-        let rationale = 'No rationale provided';
+      // 1. Handle logs that haven't received a response yet (Pending)
+      if (!log.responseData) {
+        return {
+          text: 'Research in progress... The AI is currently searching for info or analyzing data.',
+          sources: [],
+          timestamp: log.createdAt,
+          isPending: true
+        };
+      }
 
-        // Extract using the "output" structure as requested
+      try {
+        const responseData = JSON.parse(log.responseData);
+        const sources: string[] = [];
+        let rationale = '';
+
+        // Extract using the "output" structure
         responseData.output?.forEach((item: any) => {
-          // Extract sources from web search calls
           if (item.web_search_call?.action?.sources) {
             item.web_search_call.action.sources.forEach((s: any) => {
               if (s.url) sources.push(s.url);
             });
           }
-          // Extract rationale from character text/JSON
           if (item.content) {
             item.content.forEach((c: any) => {
               if (c.type === 'text' && c.text) {
                 try {
                   const json = JSON.parse(c.text);
-                  // WorthAssessmentRunner prompt uses 'why', ScientistOnboarding might use something else
-                  // We'll prioritize 'why' and fall back to searching other text fields if needed.
                   if (json.why) rationale = json.why;
                   else if (json.reason) rationale = json.reason;
                   else if (json.rationale) rationale = json.rationale;
@@ -211,25 +216,29 @@ export class BanVotingService {
                     sources.push(...json.sources);
                   }
                 } catch (e) {
-                  // Not JSON, skip
+                  // If text is not JSON, it might be partial output or raw text
+                  if (!rationale) rationale = c.text;
                 }
               }
             });
           }
         });
 
-        // Skip items that have no rationale at all (some might be technical logs)
-        if (rationale === 'No rationale provided' && sources.length === 0) return null;
-
         return {
-          text: rationale,
+          text: rationale || 'No rationale available in technical log.',
           sources: [...new Set(sources)],
-          timestamp: log.responseReceived || log.createdAt
+          timestamp: log.responseReceived || log.createdAt,
+          isError: !!log.errorMessage
         };
       } catch (e) {
-        return null;
+        return {
+          text: `Log entry error: ${log.errorMessage || 'Unknown parsing error'}`,
+          sources: [],
+          timestamp: log.createdAt,
+          isError: true
+        };
       }
-    }).filter(res => res !== null);
+    });
   }
 
   /**

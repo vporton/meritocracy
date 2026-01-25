@@ -122,3 +122,5 @@
   - FIXME@P2 Don't show the user email here.
 
 - TODO@P2 Voting to unban (with higher quorum than to ban).
+
+- TODO@P2 Usage of non-batch mappings for ban summarization logs is wrong, because mappings can be batch.

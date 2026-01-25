@@ -594,7 +594,9 @@ export class MultiNetworkGasTokenDistributionService {
           // The total cost to the system is the original allocated amount (amount + gas)
           totalCostToken = originalAllocatedAmount;
 
-          if (totalCostToken > remainingAmount + Number.EPSILON) {
+          // If we are close to the limit (or exceeding it), we treat this as a "sweep" / partial payment
+          // and apply a safety buffer to the gas cost to prevent "insufficient funds" due to gas price fluctuations.
+          if (totalCostToken >= remainingAmount - 0.00001) {
             totalCostToken = remainingAmount;
             // For the last user (partial payment), increase gas safety margin
             // to ensure we don't run out of funds due to slight fluctuations
@@ -861,7 +863,9 @@ export class MultiNetworkGasTokenDistributionService {
           // The total cost to the system is the original allocated amount (amount + gas)
           totalCostToken = originalAllocatedAmount;
 
-          if (totalCostToken > remainingAmount + Number.EPSILON) {
+          // If we are close to the limit (or exceeding it), we treat this as a "sweep" / partial payment
+          // and apply a safety buffer to the gas cost to prevent "insufficient funds" due to gas price fluctuations.
+          if (totalCostToken >= remainingAmount - 0.00001) {
             totalCostToken = remainingAmount;
             // For the last user (partial payment), increase gas safety margin
             // to ensure we don't run out of funds due to slight fluctuations

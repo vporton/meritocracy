@@ -240,8 +240,6 @@ export class BanVotingService {
 
           // 1. Check root level for common fields (e.g. from Fake Mode)
           if (response.why) rationale = response.why;
-          else if (response.reason) rationale = response.reason;
-          else if (response.rationale) rationale = response.rationale;
 
           if (response.sources && Array.isArray(response.sources)) {
             sources.push(...response.sources);

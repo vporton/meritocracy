@@ -12,6 +12,7 @@ import OAuthCallback from './components/OAuthCallback'
 import VerifyEmail from './pages/VerifyEmail'
 import Admin from './pages/Admin'
 import BanVoting from './pages/BanVoting'
+import UserAuditLog from './pages/UserAuditLog'
 import './App.css'
 
 const queryClient = new QueryClient()
@@ -29,6 +30,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/logs" element={<Logs />} />
+                    <Route path="/logs/:userId" element={<UserAuditLog />} />
                     <Route path="/connect" element={<ConnectForm />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/admin" element={<Admin />} />

@@ -171,69 +171,60 @@ export class BanVotingService {
    * Get all AI assessments for a specific user from logs
    */
   static async getUserAssessments(userId: number) {
-    // 1. Find all completed MedianRunner tasks for this user
-    const medianTasks = await prisma.task.findMany({
-      where: {
-        runnerClassName: 'MedianRunner',
-        status: 'COMPLETED',
-        runnerData: {
-          contains: `"userId":${userId}`
-        }
-      },
-      orderBy: { completedAt: 'desc' }
-    });
-
-    const allSourceTaskIds = new Set<number>();
-    medianTasks.forEach(task => {
-      try {
-        const data = JSON.parse(task.runnerData || '{}');
-        const ids = data.sourceTaskIds || [];
-        ids.forEach((id: number) => allSourceTaskIds.add(id));
-      } catch (e) { }
-    });
-
-    if (allSourceTaskIds.size === 0) return [];
-
-    // 2. Fetch logs for those source tasks
+    // Query OpenAI logs directly by userId - this includes all research and assessments
     const logs = await prisma.openAILog.findMany({
       where: {
-        taskId: { in: Array.from(allSourceTaskIds) },
-        responseReceived: { not: null }
+        userId: userId,
+        responseData: { not: null } // Only show logs with a received response
       },
-      orderBy: { responseReceived: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: 20 // Show a comprehensive history
     });
 
     return logs.map(log => {
       try {
-        const responseData = JSON.parse(log.responseData || '{}');
+        const responseData = JSON.parse(log.responseData!);
         const sources: string[] = [];
         let rationale = 'No rationale provided';
 
+        // Extract using the "output" structure as requested
         responseData.output?.forEach((item: any) => {
+          // Extract sources from web search calls
           if (item.web_search_call?.action?.sources) {
             item.web_search_call.action.sources.forEach((s: any) => {
               if (s.url) sources.push(s.url);
             });
           }
+          // Extract rationale from character text/JSON
           if (item.content) {
             item.content.forEach((c: any) => {
               if (c.type === 'text' && c.text) {
                 try {
                   const json = JSON.parse(c.text);
+                  // WorthAssessmentRunner prompt uses 'why', ScientistOnboarding might use something else
+                  // We'll prioritize 'why' and fall back to searching other text fields if needed.
                   if (json.why) rationale = json.why;
+                  else if (json.reason) rationale = json.reason;
+                  else if (json.rationale) rationale = json.rationale;
+
                   if (json.sources && Array.isArray(json.sources)) {
                     sources.push(...json.sources);
                   }
-                } catch (e) { }
+                } catch (e) {
+                  // Not JSON, skip
+                }
               }
             });
           }
         });
 
+        // Skip items that have no rationale at all (some might be technical logs)
+        if (rationale === 'No rationale provided' && sources.length === 0) return null;
+
         return {
           text: rationale,
           sources: [...new Set(sources)],
-          timestamp: log.responseReceived
+          timestamp: log.responseReceived || log.createdAt
         };
       } catch (e) {
         return null;

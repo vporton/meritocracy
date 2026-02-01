@@ -131,4 +131,5 @@
   * JW JOHNSON FAMILY - The Quarry https://www.quarrylp.com/contact - contacted 1 Feb 2026
   * AMY & MENG FOUNDATION - didn't found email
   * Claytor Family Charitable Foundation - didn't found email
+  * THE MARILYN AND JEFFREY KATZENBERG - contacted Jeffrey Katzenberg through LinkedIn
   * TODO

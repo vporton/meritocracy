@@ -128,4 +128,4 @@
 * Mozilla Foundation: Fellowship Program https://www.mozillafoundation.org/en/what-we-do/grantmaking/fellowship/2026-nominations-request/ - submitted 10 Jan 2026 - submitted Letter of Intent 17 Jan 2026
 * https://grant-finder.zeffy.com
   * SEMPRA FOUNDATION https://www.semprafoundation.org/contact-us - emailed 1 Feb 2026
-  * TODO
+  * JW JOHNSON FAMILY - The Quarry https://www.quarrylp.com/contact - contacted 1 Feb 2026

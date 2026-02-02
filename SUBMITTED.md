@@ -134,4 +134,11 @@
   * THE MARILYN AND JEFFREY KATZENBERG - contacted Jeffrey Katzenberg through LinkedIn
   * THE JEWISH COMMUNITY FOUNDATION CHARITABLE FUND https://www.jewishfoundationla.org/grant-recipients/ - we aren't in their focus areas
   * Thrasher Koffey Foundation - didn't found email
+  * MARIANNE E & PETER A GLEICH FOUNDATION - didn't found email
+  * Roger & Joyce Nussbaum Foundation - didn't found email
+  * The Glenn and Lucille Hampton Daniel Foundation - didn't found email
+  * MARCIA BRADY TUCKER FOUNDATION INC https://www.mbtf.org - "Consequently, the MBTF does not distribute application forms"
+  * Mikkelson Foundation - no suitable grant program
+  * HAROLD L WYMAN FOUNDATION INC - no email found
+  * EDWARD JONES FOUNDATION - no suitable program
   * TODO

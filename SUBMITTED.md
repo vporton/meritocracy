@@ -142,4 +142,8 @@
   * HAROLD L WYMAN FOUNDATION INC - no email found
   * EDWARD JONES FOUNDATION - no suitable program
   * DEAN M GRAHAM FOUNDATION - no email found
+  * Grodzins Fund - no email found
+  * OCONNOR FAMILY FOUNDATION - no email found
+  * MAPLES FAMILY FOUNDATION - not found
+  * Woodbury Foundation - city-specific
   * TODO

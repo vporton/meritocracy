@@ -151,4 +151,12 @@
     * MILO BEKINS FOUNDATION - no email found
     * JOSEPH STANLEY LEEDS CHARITABLE - no email found
     * Hypertext Foundation - contacted 2 Feb 2026
+    * JOHN AND CATHERINE FARAHI - no email found
+    * THE ALORA CHARITABLE FOUNDATION - no email found
+    * The McMurry Foundation - "communities Wyoming and Natrona County"
+    * FUND FOR ART SCIENCE AND TECHNOLOGY - "does not accept unsolicited proposals for grant funding"
+    * Kelly Gene Cook Sr Charitable Foundation https://kgccf.smapply.org - not on topic
+    * CH FOUNDATION INC - not on topic
+    * Gertrude B & Mortimer May Foundation - no email found
+    * Peters Family Foundation 
     * TODO

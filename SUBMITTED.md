@@ -132,4 +132,6 @@
   * AMY & MENG FOUNDATION - didn't found email
   * Claytor Family Charitable Foundation - didn't found email
   * THE MARILYN AND JEFFREY KATZENBERG - contacted Jeffrey Katzenberg through LinkedIn
+  * THE JEWISH COMMUNITY FOUNDATION CHARITABLE FUND https://www.jewishfoundationla.org/grant-recipients/ - we aren't in their focus areas
+  * Thrasher Koffey Foundation - didn't found email
   * TODO

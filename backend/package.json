@@ -13,7 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "test": "npm run test:integration",
-    "test:integration": "mocha tests/*"
+    "test:integration": "node --loader ts-node/esm ../node_modules/mocha/bin/mocha --extensions ts tests/*.ts"
   },
   "dependencies": {
     "@cosmjs/proto-signing": "0.34.0",

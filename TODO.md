@@ -1,4 +1,4 @@
-- TODO@P1 Use https://cline.bot/pricing
+- TODO@P1 Use https://cline.bot/pricing | Kilo
 
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 

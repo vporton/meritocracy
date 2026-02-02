@@ -87,7 +87,7 @@ class PaymentTestMockAdapter implements GasTokenNetworkAdapter {
   }
 }
 
-function assert(condition: boolean, message: string): void {
+function assert(condition: unknown, message: string): void {
   if (!condition) {
     throw new Error(message);
   }
@@ -105,7 +105,7 @@ async function cleanupTestState(): Promise<void> {
   await prisma.gasTokenReserve.deleteMany({});
   await prisma.pendingTransaction.deleteMany({});
   await prisma.systemSecret.deleteMany({ where: { name: { contains: 'TESTPAY' } } });
-  await prisma.user.deleteMany({ where: { email: { startsWith: TEST_EMAIL_PREFIX } } });
+  await prisma.user.deleteMany({ where: { email: { startsWith: 'test-' } } });
 }
 
 async function createTestUser(overrides: Partial<User>): Promise<User> {
@@ -244,6 +244,7 @@ async function runTests(): Promise<void> {
     console.error('❌ Payment cycle tests failed:', error);
     process.exitCode = 1;
   } finally {
+    await cleanupTestState();
     await prisma.$disconnect();
   }
 }

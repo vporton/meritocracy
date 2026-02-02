@@ -507,14 +507,14 @@ export class MultiNetworkGasTokenDistributionService {
 
     let remainingAmount = distributions.reduce((sum, dist) => sum + dist.amountToken, 0);
 
-    for (const dist of distributions) {
-      try {
-        if (remainingAmount <= 0) {
-          break;
-        }
+        for (const dist of distributions) {
+          try {
+            if (remainingAmount <= 0) {
+              break;
+            }
 
-        const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
-        if (user?.kycStatus !== 'APPROVED') {
+            const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
+            if (user?.kycStatus !== 'APPROVED') {
           const kycError = 'KYC_REQUIRED';
           // Critical change: Do NOT reserve funds for user if KYC not passed.
           // result.reservedAmount += dist.amountToken; // REMOVED
@@ -572,6 +572,7 @@ export class MultiNetworkGasTokenDistributionService {
         let estimationError: string | undefined;
         let shouldStopDueToGasCost = false;
         let totalCostToken = dist.amountToken;
+        let reservedAmountToken = dist.amountToken;
 
         let estimate: GasTransferEstimate | undefined;
         try {
@@ -590,9 +591,10 @@ export class MultiNetworkGasTokenDistributionService {
           // The user pays for gas, so we subtract it from their distribution
           const originalAllocatedAmount = dist.amountToken;
           dist.amountToken = Math.max(0, originalAllocatedAmount - gasCostToken);
-
-          // The total cost to the system is the original allocated amount (amount + gas)
           totalCostToken = originalAllocatedAmount;
+
+          // Keep amount after gas cost handy for reservation bookkeeping
+          reservedAmountToken = dist.amountToken;
 
           // If we are close to the limit (or exceeding it), we treat this as a "sweep" / partial payment
           // and apply a safety buffer to the gas cost to prevent "insufficient funds" due to gas price fluctuations.
@@ -624,7 +626,7 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         if (estimationError) {
-          result.reservedAmount += dist.amountToken;
+          result.reservedAmount += reservedAmountToken;
 
           await this.prisma.$transaction([
             this.prisma.gasTokenDistribution.updateMany({
@@ -640,11 +642,11 @@ export class MultiNetworkGasTokenDistributionService {
               data: {
                 userId: dist.userId,
                 network: context.networkId,
-                amount: dist.amountToken,
-                backlogAmount: dist.backlogAmount,
-                amountUsd: 0,
-                status: 'DEFERRED',
-                errorMessage: estimationError,
+               amount: reservedAmountToken,
+               backlogAmount: dist.backlogAmount,
+               amountUsd: 0,
+               status: 'DEFERRED',
+               errorMessage: estimationError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
                 tokenDecimals: context.tokenDecimals
@@ -841,6 +843,7 @@ export class MultiNetworkGasTokenDistributionService {
         let estimationError: string | undefined;
         let shouldStopDueToGasCost = false;
         let totalCostToken = dist.amountToken;
+        let reservedAmountToken = dist.amountToken;
 
         let estimate: GasTransferEstimate | undefined;
         try {
@@ -863,6 +866,8 @@ export class MultiNetworkGasTokenDistributionService {
           // The total cost to the system is the original allocated amount (amount + gas)
           totalCostToken = originalAllocatedAmount;
 
+          reservedAmountToken = dist.amountToken;
+
           // If we are close to the limit (or exceeding it), we treat this as a "sweep" / partial payment
           // and apply a safety buffer to the gas cost to prevent "insufficient funds" due to gas price fluctuations.
           if (totalCostToken >= remainingAmount - 0.00001) {
@@ -872,6 +877,8 @@ export class MultiNetworkGasTokenDistributionService {
             const safeGasCost = gasCostToken * 1.5;
 
             dist.amountToken = Math.max(0, totalCostToken - safeGasCost);
+
+            reservedAmountToken = dist.amountToken;
 
             if (dist.amountToken <= 0 && totalCostToken > 0) {
               estimationError = `Insufficient ${context.tokenSymbol} to cover safe gas cost of ${safeGasCost.toFixed(6)} ${context.tokenSymbol}`;
@@ -895,7 +902,7 @@ export class MultiNetworkGasTokenDistributionService {
         if (estimationError) {
           result.reservedAmount += dist.amountToken;
 
-          await this.prisma.$transaction([
+        await this.prisma.$transaction([
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
@@ -909,7 +916,7 @@ export class MultiNetworkGasTokenDistributionService {
               data: {
                 userId: dist.userId,
                 network: context.networkId,
-                amount: dist.amountToken,
+                amount: reservedAmountToken,
                 backlogAmount: dist.backlogAmount,
                 amountUsd: 0,
                 status: 'DEFERRED',
@@ -980,7 +987,7 @@ export class MultiNetworkGasTokenDistributionService {
             console.log(`⏭️ [${context.networkName}] Skipping duplicate transaction for user ${dist.userId}`);
           }
         } catch (error) {
-          result.reservedAmount += dist.amountToken;
+          result.reservedAmount += reservedAmountToken;
           remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
 
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';

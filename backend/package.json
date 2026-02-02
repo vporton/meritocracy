@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "test:integration": "tsx tests/crypto-distribution.test.ts"
+    "test": "npm run test:integration",
+    "test:integration": "mocha tests/*"
   },
   "dependencies": {
     "@cosmjs/proto-signing": "0.34.0",
@@ -66,6 +67,7 @@
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "@types/uuid": "^10.0.0",
+    "mocha": "^11.7.5",
     "nodemon": "^3.0.2",
     "prisma": "^6.19.1",
     "ts-node": "^10.9.2",

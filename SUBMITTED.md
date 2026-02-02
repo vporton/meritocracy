@@ -150,4 +150,5 @@
     * SHEN FAMILY BRIGHT FUTURE FOUNDATION INC - scholarships
     * MILO BEKINS FOUNDATION - no email found
     * JOSEPH STANLEY LEEDS CHARITABLE - no email found
+    * Hypertext Foundation - contacted 2 Feb 2026
     * TODO

@@ -126,3 +126,37 @@
 * Ashoka https://www.ashoka.org - submitted 15 Dec 2025
 * SparkDeSci https://spark-science.org/ - waiver for under-resourced teams, but the site does not work.
 * Mozilla Foundation: Fellowship Program https://www.mozillafoundation.org/en/what-we-do/grantmaking/fellowship/2026-nominations-request/ - submitted 10 Jan 2026 - submitted Letter of Intent 17 Jan 2026
+* https://grant-finder.zeffy.com
+  * Science
+    * SEMPRA FOUNDATION https://www.semprafoundation.org/contact-us - emailed 1 Feb 2026
+    * JW JOHNSON FAMILY - The Quarry https://www.quarrylp.com/contact - contacted 1 Feb 2026
+    * AMY & MENG FOUNDATION - didn't found email
+    * Claytor Family Charitable Foundation - didn't found email
+    * THE MARILYN AND JEFFREY KATZENBERG - contacted Jeffrey Katzenberg through LinkedIn
+    * THE JEWISH COMMUNITY FOUNDATION CHARITABLE FUND https://www.jewishfoundationla.org/grant-recipients/ - we aren't in their focus areas
+    * Thrasher Koffey Foundation - didn't found email
+    * MARIANNE E & PETER A GLEICH FOUNDATION - didn't found email
+    * Roger & Joyce Nussbaum Foundation - didn't found email
+    * The Glenn and Lucille Hampton Daniel Foundation - didn't found email
+    * MARCIA BRADY TUCKER FOUNDATION INC https://www.mbtf.org - "Consequently, the MBTF does not distribute application forms"
+    * Mikkelson Foundation - no suitable grant program
+    * HAROLD L WYMAN FOUNDATION INC - no email found
+    * EDWARD JONES FOUNDATION - no suitable program
+    * DEAN M GRAHAM FOUNDATION - no email found
+    * Grodzins Fund - no email found
+    * OCONNOR FAMILY FOUNDATION - no email found
+    * MAPLES FAMILY FOUNDATION - not found
+    * Woodbury Foundation - city-specific
+    * SHEN FAMILY BRIGHT FUTURE FOUNDATION INC - scholarships
+    * MILO BEKINS FOUNDATION - no email found
+    * JOSEPH STANLEY LEEDS CHARITABLE - no email found
+    * Hypertext Foundation - contacted 2 Feb 2026
+    * JOHN AND CATHERINE FARAHI - no email found
+    * THE ALORA CHARITABLE FOUNDATION - no email found
+    * The McMurry Foundation - "communities Wyoming and Natrona County"
+    * FUND FOR ART SCIENCE AND TECHNOLOGY - "does not accept unsolicited proposals for grant funding"
+    * Kelly Gene Cook Sr Charitable Foundation https://kgccf.smapply.org - not on topic
+    * CH FOUNDATION INC - not on topic
+    * Gertrude B & Mortimer May Foundation - no email found
+    * Peters Family Foundation 
+    * TODO

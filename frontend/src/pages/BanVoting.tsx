@@ -171,12 +171,6 @@ export default function BanVoting() {
                                                 }
                                             </span>
                                         </span>
-                                        {user.email && (
-                                            <span className="stat">
-                                                <span className="label">Email:</span>
-                                                <span className="value">{user.email}</span>
-                                            </span>
-                                        )}
                                         <span className={`stat vote-stat ${user.voteCount > 0 ? 'has-votes' : ''}`}>
                                             <span className="label">Votes this week:</span>
                                             <span className="value">{user.voteCount}</span>

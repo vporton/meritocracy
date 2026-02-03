@@ -1,5 +1,3 @@
-- TODO@P1 Use https://cline.bot/pricing | https://Kilo.ai
-
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 
 - TODO@P3 ICP blockchain, Solana, Bitcoin, BCH, GLRM payments.

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import type { User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import type { TokenType } from '../types/token.js';
 import { multiNetworkEthereumService } from './MultiNetworkEthereumService.js';
 import type {
@@ -274,6 +274,77 @@ export class MultiNetworkGasTokenDistributionService {
     };
   }
 
+  private normalizeTokenAddress(tokenAddress: unknown): string | null {
+    if (typeof tokenAddress !== 'string') return null;
+    const trimmed = tokenAddress.trim();
+    if (!trimmed) return null;
+    return trimmed.toLowerCase();
+  }
+
+  /**
+   * Token identity is based on tokenAddress when available.
+   * NOTE: Some older DB rows might have tokenAddress=NULL. For those, we fall back to tokenSymbol.
+   */
+  private buildTokenWhere(context: GasTokenNetworkContext): Prisma.GasTokenReserveWhereInput {
+    const tokenAddress = this.normalizeTokenAddress(
+      (context as unknown as { tokenAddress?: string | null }).tokenAddress
+    );
+
+    const base = {
+      network: context.networkId,
+      tokenType: context.tokenType
+    };
+
+    // If tokenAddress is missing, explicitly query tokenAddress=NULL and fall back to tokenSymbol.
+    if (!tokenAddress) {
+      return {
+        ...base,
+        tokenAddress: null,
+        tokenSymbol: context.tokenSymbol
+      };
+    }
+
+    // Prefer tokenAddress match (case-insensitive), but also support legacy rows without tokenAddress.
+    return {
+      ...base,
+      OR: [
+        { tokenAddress: { equals: tokenAddress, mode: 'insensitive' } },
+        { tokenAddress: null, tokenSymbol: context.tokenSymbol }
+      ]
+    };
+  }
+
+  private buildDistributionTokenWhere(
+    context: GasTokenNetworkContext
+  ): Prisma.GasTokenDistributionWhereInput {
+    const tokenAddress = this.normalizeTokenAddress(
+      (context as unknown as { tokenAddress?: string | null }).tokenAddress
+    );
+
+    const base: Prisma.GasTokenDistributionWhereInput = {
+      network: context.networkId,
+      tokenType: context.tokenType
+    };
+
+    // If tokenAddress is missing, explicitly match legacy rows with tokenAddress=NULL and the same symbol.
+    if (!tokenAddress) {
+      return {
+        ...base,
+        tokenAddress: null,
+        tokenSymbol: context.tokenSymbol
+      };
+    }
+
+    // Prefer tokenAddress match (case-insensitive), but also support legacy rows without tokenAddress.
+    return {
+      ...base,
+      OR: [
+        { tokenAddress: { equals: tokenAddress, mode: 'insensitive' } },
+        { tokenAddress: null, tokenSymbol: context.tokenSymbol }
+      ]
+    };
+  }
+
   /**
    * Fetch users eligible for distribution.
    * CRITICAL: This method filters out users who are currently banned.
@@ -303,38 +374,45 @@ export class MultiNetworkGasTokenDistributionService {
   }
 
   private async getTokenReserve(context: GasTokenNetworkContext): Promise<number> {
-    const reserve = await this.prisma.gasTokenReserve.findUnique({
-      where: {
-        network_tokenSymbol_tokenType: {
-          network: context.networkId,
-          tokenSymbol: context.tokenSymbol, // TODO@P2: Use tokenAddress instead.
-          tokenType: context.tokenType
-        }
-      }
+    const reserve = await this.prisma.gasTokenReserve.findFirst({
+      where: this.buildTokenWhere(context),
+      orderBy: { id: 'desc' }
     });
     return reserve ? Number(reserve.totalReserve) : 0;
   }
 
   private async updateGasTokenReserve(context: GasTokenNetworkContext, amount: number): Promise<void> {
-    await this.prisma.gasTokenReserve.upsert({
-      where: {
-        network_tokenSymbol_tokenType: {
-          network: context.networkId,
+    const tokenAddress = this.normalizeTokenAddress(
+      (context as unknown as { tokenAddress?: string | null }).tokenAddress
+    );
+
+    const existing = await this.prisma.gasTokenReserve.findFirst({
+      where: this.buildTokenWhere(context),
+      orderBy: { id: 'desc' }
+    });
+
+    if (existing) {
+      await this.prisma.gasTokenReserve.update({
+        where: { id: existing.id },
+        data: {
+          totalReserve: amount,
+          lastDistribution: new Date(),
+          tokenDecimals: context.tokenDecimals,
           tokenSymbol: context.tokenSymbol,
-          tokenType: context.tokenType
+          tokenAddress
         }
-      },
-      update: {
-        totalReserve: amount,
-        lastDistribution: new Date(),
-        tokenDecimals: context.tokenDecimals
-      },
-      create: {
+      });
+      return;
+    }
+
+    await this.prisma.gasTokenReserve.create({
+      data: {
         network: context.networkId,
         totalReserve: amount,
         lastDistribution: new Date(),
         tokenType: context.tokenType,
         tokenSymbol: context.tokenSymbol,
+        tokenAddress,
         tokenDecimals: context.tokenDecimals
       }
     });
@@ -418,9 +496,7 @@ export class MultiNetworkGasTokenDistributionService {
       const backlogSums = await this.prisma.gasTokenDistribution.groupBy({
         by: ['userId'],
         where: {
-          network: context.networkId,
-          tokenSymbol: context.tokenSymbol,
-          tokenType: context.tokenType,
+          ...this.buildDistributionTokenWhere(context),
           status: { in: ['DEFERRED', 'FAILED'] }
         },
         _sum: {
@@ -510,6 +586,9 @@ export class MultiNetworkGasTokenDistributionService {
     context: GasTokenNetworkContext,
     distributions: DistributionFiber[]
   ): Promise<NetworkDistributionResult> {
+    const tokenAddress = this.normalizeTokenAddress(
+      (context as unknown as { tokenAddress?: string | null }).tokenAddress
+    );
     const result: NetworkDistributionResult = {
       networkId: context.networkId,
       networkName: context.networkName,
@@ -551,8 +630,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -574,6 +652,7 @@ export class MultiNetworkGasTokenDistributionService {
                 errorMessage: kycError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -660,8 +739,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -677,6 +755,7 @@ export class MultiNetworkGasTokenDistributionService {
                errorMessage: estimationError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -702,8 +781,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -719,6 +797,7 @@ export class MultiNetworkGasTokenDistributionService {
                 transactionHash: transferResult.transactionHash,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -739,8 +818,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -756,6 +834,7 @@ export class MultiNetworkGasTokenDistributionService {
                 errorMessage,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -792,6 +871,9 @@ export class MultiNetworkGasTokenDistributionService {
     context: GasTokenNetworkContext,
     distributions: DistributionFiber[]
   ): Promise<NetworkDistributionResult> {
+    const tokenAddress = this.normalizeTokenAddress(
+      (context as unknown as { tokenAddress?: string | null }).tokenAddress
+    );
     const result: NetworkDistributionResult = {
       networkId: context.networkId,
       networkName: context.networkName,
@@ -833,8 +915,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -850,6 +931,7 @@ export class MultiNetworkGasTokenDistributionService {
                 errorMessage: kycError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -941,8 +1023,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -958,6 +1039,7 @@ export class MultiNetworkGasTokenDistributionService {
                 errorMessage: estimationError,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -991,8 +1073,7 @@ export class MultiNetworkGasTokenDistributionService {
               this.prisma.gasTokenDistribution.updateMany({
                 where: {
                   userId: dist.userId,
-                  network: context.networkId,
-                  tokenSymbol: context.tokenSymbol,
+                  ...this.buildDistributionTokenWhere(context),
                   status: { in: ['DEFERRED', 'FAILED'] }
                 },
                 data: { status: 'PROCESSED' }
@@ -1008,6 +1089,7 @@ export class MultiNetworkGasTokenDistributionService {
                   transactionHash: txHash,
                   tokenType: context.tokenType,
                   tokenSymbol: context.tokenSymbol,
+                  tokenAddress,
                   tokenDecimals: context.tokenDecimals
                 }
               })
@@ -1031,8 +1113,7 @@ export class MultiNetworkGasTokenDistributionService {
             this.prisma.gasTokenDistribution.updateMany({
               where: {
                 userId: dist.userId,
-                network: context.networkId,
-                tokenSymbol: context.tokenSymbol,
+                ...this.buildDistributionTokenWhere(context),
                 status: { in: ['DEFERRED', 'FAILED'] }
               },
               data: { status: 'PROCESSED' }
@@ -1048,6 +1129,7 @@ export class MultiNetworkGasTokenDistributionService {
                 errorMessage,
                 tokenType: context.tokenType,
                 tokenSymbol: context.tokenSymbol,
+                tokenAddress,
                 tokenDecimals: context.tokenDecimals
               }
             })
@@ -1492,14 +1574,9 @@ export class MultiNetworkGasTokenDistributionService {
     entry: AdapterContextEntry
   ): Promise<ReserveStatusEntry> {
     const { adapter, context } = entry;
-    const reserveRow = await this.prisma.gasTokenReserve.findUnique({
-      where: {
-        network_tokenSymbol_tokenType: {
-          network: context.networkId,
-          tokenSymbol: context.tokenSymbol, // TODO@P2: Use tokenAddress instead.
-          tokenType: context.tokenType
-        }
-      }
+    const reserveRow = await this.prisma.gasTokenReserve.findFirst({
+      where: this.buildTokenWhere(context),
+      orderBy: { id: 'desc' }
     });
 
     let walletBalance = 0;
@@ -1580,14 +1657,9 @@ export class MultiNetworkGasTokenDistributionService {
     const { adapter, context } = entry;
 
     // 1. Get info from DB
-    const reserveRow = await this.prisma.gasTokenReserve.findUnique({
-      where: {
-        network_tokenSymbol_tokenType: {
-          network: context.networkId,
-          tokenSymbol: context.tokenSymbol,
-          tokenType: context.tokenType
-        }
-      }
+    const reserveRow = await this.prisma.gasTokenReserve.findFirst({
+      where: this.buildTokenWhere(context),
+      orderBy: { id: 'desc' }
     });
 
     const reserveAmount = reserveRow ? Number(reserveRow.totalReserve) : 0;

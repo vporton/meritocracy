@@ -29,7 +29,7 @@ interface UserGdpShareData {
   formatted?: string;
 }
 
-function Home() {
+export default function Home() {
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -501,5 +501,3 @@ function Home() {
     </div>
   )
 }
-
-export default Home

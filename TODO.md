@@ -106,3 +106,5 @@
 - FIXME@P2 Don't show the user email here in Ban UI.
 
 - TODO@P3 Show Audit Logs as Markdown.
+
+- TODO@P3 After evaluation show Audit Logs, not Logs.

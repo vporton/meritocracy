@@ -103,5 +103,3 @@
 
 
 - TODO@P3 Show Audit Logs as Markdown.
-
-- TODO@P3 After evaluation show Audit Logs, not Logs.

@@ -106,8 +106,7 @@ export class DBLogsService {
         user: {
           select: {
             id: true,
-            name: true,
-            email: true
+            name: true
           }
         },
         task: {
@@ -193,8 +192,7 @@ export class DBLogsService {
             user: {
               select: {
                 id: true,
-                name: true,
-                email: true
+                name: true
               }
             }
           }
@@ -301,23 +299,22 @@ export class DBLogsService {
       timestamp: user.createdAt,
       userId: user.id,
       action: 'User Account',
-      details: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        ethereumAddress: user.ethereumAddress,
-        orcidId: user.orcidId,
-        githubHandle: user.githubHandle,
-        bitbucketHandle: user.bitbucketHandle,
-        gitlabHandle: user.gitlabHandle,
-        shareInGDP: user.shareInGDP,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        bannedTill: user.bannedTill,
-        lastPaymentAmount: user.lastPaymentAmount,
-        recentSessions: user.sessions.length,
-        recentOpenAILogs: user.openaiLogs.length
-      },
+        details: {
+          id: user.id,
+          name: user.name,
+          ethereumAddress: user.ethereumAddress,
+          orcidId: user.orcidId,
+          githubHandle: user.githubHandle,
+          bitbucketHandle: user.bitbucketHandle,
+          gitlabHandle: user.gitlabHandle,
+          shareInGDP: user.shareInGDP,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          bannedTill: user.bannedTill,
+          lastPaymentAmount: user.lastPaymentAmount,
+          recentSessions: user.sessions.length,
+          recentOpenAILogs: user.openaiLogs.length
+        },
       status: user.bannedTill && user.bannedTill > new Date() ? 'banned' : 'active'
     }));
   }
@@ -345,13 +342,12 @@ export class DBLogsService {
     const sessions = await this.prisma.session.findMany({
       where,
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
+          user: {
+            select: {
+              id: true,
+              name: true
+            }
           }
-        }
       },
       orderBy: {
         createdAt: 'desc'

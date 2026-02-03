@@ -62,9 +62,6 @@
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
-- TODO@P2 When switching Global/national fund, immediately remove blockchain addresses from the screen,
-  not to confuse the user.
-
 - FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
@@ -90,8 +87,6 @@
 
 - TODO@P2 Esnure we enable all supported blockchains.
 
-- FIXME@P2 Don't publish emails of users in public logs. [Most likely fixed.]
-
 - FIXME@P3 It doesn't fit my phone Samsumg Salaxy A25 5G 90E7. Need help of a professional designer.
 
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
@@ -104,10 +99,10 @@
 
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
-- TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).
-
 - TODO@P3 Run tasks in parallel.
 
 - FIXME@P2 "Start evaluation" button doesn't disappear after switching to Home tab.
 
 - FIXME@P2 Don't show the user email here in Ban UI.
+
+- TODO@P3 Show Audit Logs as Markdown.

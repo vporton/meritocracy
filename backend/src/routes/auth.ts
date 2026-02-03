@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { ethers } from 'ethers';
 import { getCurrentUserFromToken } from '../middleware/auth.js';
 import EmailService from '../services/EmailService.js';
+import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -257,8 +258,12 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
           data: { targetUserId: currentUserId }
         });
 
-        // Delete the existing user (this will cascade delete any remaining related data)
-        await tx.user.delete({ where: { id: existingUser.id } });
+        // Legal requirement: user logs must remain for potential lawsuits, so we soft-delete instead of dropping rows.
+        const deletionTimestamp = new Date();
+        await tx.user.update({
+          where: { id: existingUser.id },
+          data: makeUserSoftDeletePayload(deletionTimestamp)
+        });
 
         // Update the current user with merged data
         return await tx.user.update({
@@ -1922,4 +1927,3 @@ router.delete('/sessions/cleanup', async (req, res) => {
 });
 
 export default router;
-

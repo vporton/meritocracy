@@ -45,6 +45,8 @@ function MultiNetworkGasBalances() {
     try {
       setLoading(true)
       setError(null)
+      setNetworkStatus(null)
+      setLoadingNetworks({})
 
       const queryParams = currentScope === 'COUNTRY' ? `?country=${currentCountry}` : '';
 

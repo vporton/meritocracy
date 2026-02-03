@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { makeUserSoftDeletePayload } from './userDeletionUtils.js';
 
 export interface CleanupResult {
   success: boolean;
@@ -131,6 +132,7 @@ export class DisconnectedAccountCleanupService {
       // Find disconnected accounts (no active sessions, never been banned, no KYC data, past grace period)
       const disconnectedUsers = await this.prisma.user.findMany({
         where: {
+          isDeleted: false,
           // No active sessions
           sessions: {
             none: {
@@ -191,45 +193,49 @@ export class DisconnectedAccountCleanupService {
         console.log(`  - User ${user.id}: ${user.name || user.email || 'Unknown'} (created ${daysSinceCreation} days ago, onboarded: ${user.onboarded})`);
       });
 
-      if (dryRun) {
-        console.log('🔍 DRY RUN: Would delete the above accounts');
-        result.deletedCount = disconnectedUsers.length;
-        result.success = true;
-        return result;
-      }
-
-      // Actually delete the disconnected accounts
-      console.log('🗑️  Proceeding with account deletion...');
-
-      const userIdsToDelete = disconnectedUsers.map(user => user.id);
-
-      // Delete users in batches to avoid overwhelming the database
-      const batchSize = 50;
-      let deletedInThisBatch = 0;
-
-      for (let i = 0; i < userIdsToDelete.length; i += batchSize) {
-        const batch = userIdsToDelete.slice(i, i + batchSize);
-
-        try {
-          const deleteResult = await this.prisma.user.deleteMany({
-            where: {
-              id: {
-                in: batch
-              }
-            }
-          });
-
-          deletedInThisBatch += deleteResult.count;
-          console.log(`✅ Deleted batch ${Math.floor(i / batchSize) + 1}: ${deleteResult.count} accounts`);
-
-        } catch (error) {
-          const errorMessage = `Failed to delete batch starting at index ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-          console.error(`❌ ${errorMessage}`);
-          result.errors.push(errorMessage);
+        if (dryRun) {
+          console.log('🔍 DRY RUN: Would delete the above accounts');
+          result.deletedCount = disconnectedUsers.length;
+          result.success = true;
+          return result;
         }
-      }
 
-      result.deletedCount = deletedInThisBatch;
+        // Actually delete the disconnected accounts
+        console.log('🗑️  Proceeding with account deletion...');
+
+        const userIdsToDelete = disconnectedUsers.map(user => user.id);
+
+        // Delete users in batches to avoid overwhelming the database
+        const batchSize = 50;
+        let deletedInThisBatch = 0;
+        const deletionTimestamp = new Date();
+        const deletionPayload = makeUserSoftDeletePayload(deletionTimestamp);
+
+        for (let i = 0; i < userIdsToDelete.length; i += batchSize) {
+          const batch = userIdsToDelete.slice(i, i + batchSize);
+
+          try {
+            // Legal requirement: user logs must stay for potential lawsuits, so we soft-delete rows instead of hard deletes.
+            const updateResult = await this.prisma.user.updateMany({
+              where: {
+                id: {
+                  in: batch
+                }
+              },
+              data: deletionPayload
+            });
+
+            deletedInThisBatch += updateResult.count;
+            console.log(`✅ Soft-deleted batch ${Math.floor(i / batchSize) + 1}: ${updateResult.count} accounts`);
+
+          } catch (error) {
+            const errorMessage = `Failed to delete batch starting at index ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            console.error(`❌ ${errorMessage}`);
+            result.errors.push(errorMessage);
+          }
+        }
+
+        result.deletedCount = deletedInThisBatch;
       result.success = result.errors.length === 0;
 
       console.log(`✅ Cleanup completed: ${result.deletedCount} accounts deleted`);

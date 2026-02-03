@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '../middleware/auth.js';
 import { validateNonEvmAddresses } from '../utils/addressValidation.js';
+import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -238,8 +239,11 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    await prisma.user.delete({
+    const deletionTimestamp = new Date();
+    // Legal requirement: User logs must be preserved for potential lawsuits, so we soft-delete instead of removing rows.
+    await prisma.user.update({
       where: { id: parseInt(id as string) },
+      data: makeUserSoftDeletePayload(deletionTimestamp)
     });
 
     res.status(204).send();

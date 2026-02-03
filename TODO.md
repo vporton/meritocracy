@@ -99,8 +99,6 @@
 
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
-- TODO@P2 Check whether deleting a user deletes his/her logs (may need for lawsuits).
-
 - TODO@P3 Run tasks in parallel.
 
 - FIXME@P2 "Start evaluation" button doesn't disappear after switching to Home tab.

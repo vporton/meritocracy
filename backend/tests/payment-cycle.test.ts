@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { MultiNetworkGasTokenDistributionService } from '../src/services/MultiNetworkGasTokenDistributionService.js';
+import { describe, it, before, beforeEach, after, afterEach } from 'mocha';
 import type {
   GasTokenNetworkAdapter,
   GasTokenNetworkContext,
@@ -147,6 +148,7 @@ async function testMultiplePaymentCycles(): Promise<void> {
 
   const userA = await createTestUser({ shareInGDP: 1 });
   const userB = await createTestUser({ shareInGDP: 2 });
+  service.overrideEligibleUsers([userA, userB]);
 
   const resultCycle1 = await service.processMultiNetworkDistribution();
   const cycle1Records = await prisma.gasTokenDistribution.findMany({
@@ -154,7 +156,7 @@ async function testMultiplePaymentCycles(): Promise<void> {
     orderBy: { id: 'asc' }
   });
 
-  assert(cycle1Records.length === 2, 'Cycle 1 should have recorded exactly two distributions.');
+  assert(cycle1Records.length === 2, 'Cycle 1 should have recorded exactly two distributions for the test users.');
 
   const userARecord1 = cycle1Records.find(record => record.userId === userA.id)!;
   const userBRecord1 = cycle1Records.find(record => record.userId === userB.id)!;
@@ -211,6 +213,7 @@ async function testHighGasCostDefersPayments(): Promise<void> {
   adapter.setGasCost(networkId, 0.003);
 
   const service = new MultiNetworkGasTokenDistributionService(prisma, [adapter]);
+
   const user = await createTestUser({ shareInGDP: 1 });
 
   const result = await service.processMultiNetworkDistribution();
@@ -232,21 +235,32 @@ async function testHighGasCostDefersPayments(): Promise<void> {
   console.log('✅ High gas cost guardrail yields deferred distribution as expected.');
 }
 
-async function runTests(): Promise<void> {
-  console.log('🚀 Starting payment cycle test suite...');
-  try {
+describe('Payment cycle integration', function (this: Mocha.Suite) {
+  // Prisma + network adapters can be slow on CI / cold starts
+  this.timeout(120_000);
+
+  before(async () => {
     await cleanupTestState();
-    await testMultiplePaymentCycles();
+  });
+
+  beforeEach(async () => {
     await cleanupTestState();
-    await testHighGasCostDefersPayments();
-    console.log('🎉 All payment cycle tests passed.');
-  } catch (error) {
-    console.error('❌ Payment cycle tests failed:', error);
-    process.exitCode = 1;
-  } finally {
+  });
+
+  afterEach(async () => {
+    await cleanupTestState();
+  });
+
+  after(async () => {
     await cleanupTestState();
     await prisma.$disconnect();
-  }
-}
+  });
 
-runTests();
+  it('distributes correctly across multiple cycles', async () => {
+    await testMultiplePaymentCycles();
+  });
+
+  it('defers payments when gas cost is prohibitive', async () => {
+    await testHighGasCostDefersPayments();
+  });
+});

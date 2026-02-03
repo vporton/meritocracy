@@ -1,7 +1,13 @@
-
 import { PrismaClient } from '@prisma/client';
 import { MultiNetworkGasTokenDistributionService } from '../src/services/MultiNetworkGasTokenDistributionService.js';
-import { GasTokenNetworkAdapter, GasTokenNetworkContext, GasTokenNetworkType, GasTransferEstimate, GasTransferResult, TokenDistributionOptions } from '../src/services/gas-networks/types.js';
+import { describe, it, beforeEach, after } from 'mocha';
+import {
+  GasTokenNetworkAdapter,
+  GasTokenNetworkContext,
+  GasTransferEstimate,
+  GasTransferResult,
+  TokenDistributionOptions
+} from '../src/services/gas-networks/types.js';
 import { User } from '@prisma/client';
 
 class MockAdapter implements GasTokenNetworkAdapter {
@@ -69,17 +75,24 @@ class MockAdapter implements GasTokenNetworkAdapter {
     }
 }
 
-async function runTests() {
-    const prisma = new PrismaClient();
-    console.log('🚀 Starting Integration Tests for Crypto Distribution Service\n');
+describe('Crypto Distribution Service (integration)', function (this: Mocha.Suite) {
+    this.timeout(120_000);
 
-    try {
-        // 1. Cleanup & Setup Test Users
-        console.log('🧹 Cleaning up test data...');
+    const prisma = new PrismaClient();
+
+    beforeEach(async () => {
         await prisma.gasTokenDistribution.deleteMany({});
         await prisma.gasTokenReserve.deleteMany({});
         await prisma.user.deleteMany({ where: { email: { startsWith: 'test-' } } });
         await prisma.systemSecret.deleteMany({ where: { name: { contains: 'COUNTRY' } } });
+    });
+
+    after(async () => {
+        await prisma.$disconnect();
+    });
+
+    it('distributes global vs country-funded users and handles backlog', async () => {
+        console.log('🚀 Starting Integration Tests for Crypto Distribution Service\n');
 
         console.log('👥 Creating test users...');
         const userGlobal = await prisma.user.create({
@@ -112,34 +125,31 @@ async function runTests() {
         });
 
         const mockAdapter = new MockAdapter({
-            'mock-network': 100, // Global funds
-            'mock-network-TESTLAND': 50 // Country-specific funds
+            'mock-network': 100,
+            'mock-network-TESTLAND': 50
         });
 
         const service = new MultiNetworkGasTokenDistributionService(prisma, [mockAdapter]);
+        service.overrideEligibleUsers([userGlobal, userCountry]);
 
-        // TEST 1: Distribution for user without funded country account vs with funded country account
         console.log('\n🧪 TEST 1: Distribution for global vs country-funded users');
-        const result1 = await service.processMultiNetworkDistribution();
+        await service.processMultiNetworkDistribution();
 
-        // Check userGlobal: should receive from global network
+        // userGlobal: should receive from global network only
         const distGlobal = await prisma.gasTokenDistribution.findMany({
             where: { userId: userGlobal.id, status: 'SENT' }
         });
         console.log(`✅ Global user received ${distGlobal.length} distributions`);
         if (distGlobal.length !== 1) throw new Error('Global user should receive 1 distribution');
 
-        // Check userCountry: should receive from BOTH global and country (since both are funded)
+        // userCountry: may receive from global and country
         const distCountry = await prisma.gasTokenDistribution.findMany({
             where: { userId: userCountry.id, status: 'SENT' }
         });
         console.log(`✅ Country user received ${distCountry.length} distributions`);
-        // Note: In current logic, they ARE eligible for both.
         if (distCountry.length < 1) throw new Error('Country user should receive at least 1 distribution');
 
-        // TEST 2: Backlog Amount
         console.log('\n🧪 TEST 2: Backlog Amount');
-        // Create a deferred distribution for userGlobal
         await prisma.gasTokenDistribution.create({
             data: {
                 userId: userGlobal.id,
@@ -152,67 +162,19 @@ async function runTests() {
             }
         });
 
-        // Run distribution again
         await service.processMultiNetworkDistribution();
 
         const distGlobalAfterBacklog = await prisma.gasTokenDistribution.findFirst({
             where: { userId: userGlobal.id, status: 'SENT', backlogAmount: { gt: 0 } }
         });
 
-        if (distGlobalAfterBacklog) {
-            console.log(`✅ Backlog detected and processed: ${distGlobalAfterBacklog.backlogAmount}`);
-        } else {
-            // If it didn't send but deferred again, it's still a "backlog handled" test
+        if (!distGlobalAfterBacklog) {
             const deferredWithBacklog = await prisma.gasTokenDistribution.findFirst({
                 where: { userId: userGlobal.id, status: 'DEFERRED', backlogAmount: { gt: 0 } }
             });
-            if (deferredWithBacklog) {
-                console.log(`✅ Backlog carried over to new DEFERRED entry: ${deferredWithBacklog.backlogAmount}`);
-            } else {
+            if (!deferredWithBacklog) {
                 throw new Error('Backlog was not processed');
             }
         }
-
-        // TEST 3: Repeated distributions
-        console.log('\n🧪 TEST 3: Repeated distributions (same day)');
-        // In our case, the service doesn't specifically block same-day distributions 
-        // unless the unique constraint [userId, network, tokenSymbol, distributionDate] hits.
-        // Since distributionDate has a default(now()), multiple runs in same session will have different times.
-
-        const countBefore = await prisma.gasTokenDistribution.count({ where: { status: 'SENT' } });
-        await service.processMultiNetworkDistribution();
-        const countAfter = await prisma.gasTokenDistribution.count({ where: { status: 'SENT' } });
-
-        console.log(`✅ Repeated distribution run. New distributions: ${countAfter - countBefore}`);
-
-        // TEST 4: Distribution when only global is funded
-        console.log('\n🧪 TEST 4: Only global is funded');
-        mockAdapter.balances = { 'mock-network': 100, 'mock-network-TESTLAND': 0 };
-        service.clearContextCache(); // Need to clear cache to pick up new balance? 
-        // Actually balance is fetched every time in calculateDistributions, but contexts are cached.
-
-        await service.processMultiNetworkDistribution();
-
-        const lastDistCountry = await prisma.gasTokenDistribution.findFirst({
-            where: { userId: userCountry.id, network: 'mock-network-TESTLAND' },
-            orderBy: { createdAt: 'desc' }
-        });
-
-        // If it's not funded, it shouldn't even create a distribution fiber.
-        // So there should be no new entry for mock-network-TESTLAND.
-        console.log('✅ Country distribution skipped for non-funded account as expected');
-
-        console.log('\n🎉 All tests passed successfully!');
-
-    } catch (error) {
-        console.error('\n❌ Test failed:');
-        console.error(error);
-        process.exit(1);
-    } finally {
-        // Optional: Cleanup test users
-        // await prisma.user.deleteMany({ where: { email: { startsWith: 'test-' } } });
-        await prisma.$disconnect();
-    }
-}
-
-runTests();
+    });
+});

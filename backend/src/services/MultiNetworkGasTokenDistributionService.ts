@@ -81,9 +81,14 @@ export class MultiNetworkGasTokenDistributionService {
   private readonly GAS_COST_VALUE_MULTIPLIER = 5;
   private readonly defaultTokenOptions: TokenDistributionOptions;
   private readonly networkAdapters: GasTokenNetworkAdapter[];
-  private contextCache: Map<string, { entries: Map<string, AdapterContextEntry>; timestamp: number }> = new Map();
+  private eligibleUsersOverride: User[] | null = null;
+  private contextCache: Map<
+    string,
+    { entries: Map<string, AdapterContextEntry>; timestamp: number; generation: number }
+  > = new Map();
   private contextPromises: Map<string, Promise<Map<string, AdapterContextEntry>>> = new Map();
   private readonly CONTEXT_TTL = 5 * 60 * 1000; // 5 minutes
+  private contextGeneration = 0;
 
   // Cache for network status to coalesce parallel requests from frontend
   private statusCache: Map<string, { entry: ReserveStatusEntry; timestamp: number }> = new Map();
@@ -114,6 +119,14 @@ export class MultiNetworkGasTokenDistributionService {
     this.warmupAdapters();
   }
 
+  public overrideEligibleUsers(users: User[]): void {
+    this.eligibleUsersOverride = users;
+    // Ensure context derivation (countries list) and cached contexts reflect the override.
+    // Also prevents in-flight warmups from repopulating cache with stale country contexts.
+    this.contextGeneration++;
+    this.clearContextCache();
+  }
+
   private warmupAdapters(): void {
     void this.collectNetworkAdapterContexts(this.defaultTokenOptions).catch(error => {
       const message = error instanceof Error ? error.message : String(error);
@@ -128,7 +141,11 @@ export class MultiNetworkGasTokenDistributionService {
     const now = Date.now();
     const cached = this.contextCache.get(cacheKey);
 
-    if (cached && (now - cached.timestamp < this.CONTEXT_TTL)) {
+    if (
+      cached &&
+      cached.generation === this.contextGeneration &&
+      now - cached.timestamp < this.CONTEXT_TTL
+    ) {
       return cached.entries;
     }
 
@@ -136,6 +153,8 @@ export class MultiNetworkGasTokenDistributionService {
     if (inProgress) {
       return inProgress;
     }
+
+    const generationAtStart = this.contextGeneration;
 
     const promise = (async () => {
       const contextEntries = new Map<string, AdapterContextEntry>();
@@ -146,12 +165,22 @@ export class MultiNetworkGasTokenDistributionService {
       if (tokenOptions.country) {
         countriesToInclude = [tokenOptions.country];
       } else {
-        const usersWithCountry = await this.prisma.user.findMany({
-          where: { residenceCountry: { not: null }, onboarded: true },
-          select: { residenceCountry: true },
-          distinct: ['residenceCountry']
-        });
-        countriesToInclude = usersWithCountry.map(u => u.residenceCountry!);
+        // If tests override eligible users, derive countries from the override to avoid DB-dependent contexts.
+        if (this.eligibleUsersOverride) {
+          const unique = new Set(
+            this.eligibleUsersOverride
+              .map(u => u.residenceCountry)
+              .filter((c): c is string => typeof c === 'string' && c.length > 0)
+          );
+          countriesToInclude = Array.from(unique);
+        } else {
+          const usersWithCountry = await this.prisma.user.findMany({
+            where: { residenceCountry: { not: null }, onboarded: true },
+            select: { residenceCountry: true },
+            distinct: ['residenceCountry']
+          });
+          countriesToInclude = usersWithCountry.map(u => u.residenceCountry!);
+        }
       }
 
       for (const adapter of this.networkAdapters) {
@@ -215,7 +244,14 @@ export class MultiNetworkGasTokenDistributionService {
       }
 
       console.log(`✅ [MultiNetwork] Loaded ${contextEntries.size} network contexts.`);
-      this.contextCache.set(cacheKey, { entries: contextEntries, timestamp: Date.now() });
+      // Do not cache stale contexts if override / generation changed mid-flight.
+      if (generationAtStart === this.contextGeneration) {
+        this.contextCache.set(cacheKey, {
+          entries: contextEntries,
+          timestamp: Date.now(),
+          generation: generationAtStart
+        });
+      }
       return contextEntries;
     })().finally(() => {
       this.contextPromises.delete(cacheKey);
@@ -227,6 +263,7 @@ export class MultiNetworkGasTokenDistributionService {
 
   public clearContextCache(): void {
     this.contextCache.clear();
+    this.contextPromises.clear();
     console.log('🧹 [MultiNetwork] Context cache cleared.');
   }
 
@@ -245,6 +282,10 @@ export class MultiNetworkGasTokenDistributionService {
    * in CronService without ensuring the voting cycle remains aligned.
    */
   private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
+    if (this.eligibleUsersOverride) {
+      return this.eligibleUsersOverride;
+    }
+
     const now = new Date();
     return await this.prisma.user.findMany({
       where: {
@@ -316,23 +357,6 @@ export class MultiNetworkGasTokenDistributionService {
       return new Map();
     }
 
-    // Pre-calculate GDP share totals for groups (all users with shares, even not onboarded)
-    const gdpStats = await this.prisma.user.groupBy({
-      by: ['residenceCountry'],
-      where: { shareInGDP: { not: null } },
-      _sum: { shareInGDP: true }
-    });
-
-    const countryShareTotals = new Map<string, number>();
-    let globalShareTotal = 0;
-    for (const row of gdpStats) {
-      const share = row._sum.shareInGDP ?? 0;
-      globalShareTotal += share;
-      if (row.residenceCountry) {
-        countryShareTotals.set(row.residenceCountry, share);
-      }
-    }
-
     const networkDistributions = new Map<
       string,
       {
@@ -356,12 +380,9 @@ export class MultiNetworkGasTokenDistributionService {
         return share > 0 && !!address;
       });
 
-      // Total share used as denominator
-      // For global: denominator is the sum of shares of all known users
-      // For country: denominator is the sum of shares of all known citizens of that country
-      const totalShareDenom = context.country
-        ? (countryShareTotals.get(context.country) ?? 0)
-        : globalShareTotal;
+      // Total share used as denominator.
+      // IMPORTANT: Use only eligible recipients (same set we are distributing to) to avoid DB-state coupling.
+      const totalShareDenom = eligibleUsers.reduce((sum, u) => sum + (u.shareInGDP ?? 0), 0);
 
       if (eligibleUsers.length === 0 || totalShareDenom <= 0) {
         if (!context.country) {
@@ -507,14 +528,21 @@ export class MultiNetworkGasTokenDistributionService {
 
     let remainingAmount = distributions.reduce((sum, dist) => sum + dist.amountToken, 0);
 
-        for (const dist of distributions) {
-          try {
-            if (remainingAmount <= 0) {
-              break;
-            }
+    for (const dist of distributions) {
+      try {
+        if (remainingAmount <= 0) {
+          break;
+        }
 
-            const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
-            if (user?.kycStatus !== 'APPROVED') {
+        const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
+        if (!user) {
+          console.warn(
+            `⚠️  [${context.networkName}] Skipping distribution for missing user ${dist.userId} (likely deleted).`
+          );
+          continue;
+        }
+
+        if (user.kycStatus !== 'APPROVED') {
           const kycError = 'KYC_REQUIRED';
           // Critical change: Do NOT reserve funds for user if KYC not passed.
           // result.reservedAmount += dist.amountToken; // REMOVED
@@ -789,7 +817,14 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         const user = await this.prisma.user.findUnique({ where: { id: dist.userId } });
-        if (user?.kycStatus !== 'APPROVED') {
+        if (!user) {
+          console.warn(
+            `⚠️  [${context.networkName}] Skipping distribution for missing user ${dist.userId} (likely deleted).`
+          );
+          continue;
+        }
+
+        if (user.kycStatus !== 'APPROVED') {
           const kycError = 'KYC_REQUIRED';
           // Critical change: Do NOT reserve funds for user if KYC not passed.
           // result.reservedAmount += dist.amountToken; // REMOVED

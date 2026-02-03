@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import api, { usersApi } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
 import MultiNetworkGasBalances from '../components/MultiNetworkGasBalances'
@@ -30,7 +30,8 @@ interface UserGdpShareData {
 }
 
 function Home() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, refreshUser } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
   const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
@@ -167,6 +168,11 @@ function Home() {
       })
 
       if (response.data.success) {
+        try {
+          await refreshUser()
+        } catch (err) {
+          console.error('Failed to refresh user after starting evaluation:', err)
+        }
         // Redirect to logs page to see the progress
         navigate('/logs')
       } else {
@@ -201,6 +207,20 @@ function Home() {
     if (!user) return false
     return user.kycStatus === 'APPROVED'
   }
+
+  useEffect(() => {
+    console.log(
+      '[Home] user onboarded:', user?.onboarded,
+      'isAuthenticated:', isAuthenticated,
+      'path:', window.location.pathname
+    )
+  }, [user?.onboarded, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated && location.pathname === '/') {
+      refreshUser().catch(err => console.error('Failed to refresh user on home navigation:', err))
+    }
+  }, [isAuthenticated, location.pathname, refreshUser])
 
   if (loading) {
     return <div className="loading">Checking server status...</div>

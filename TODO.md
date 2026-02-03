@@ -101,8 +101,4 @@
 
 - TODO@P3 Run tasks in parallel.
 
-- FIXME@P2 "Start evaluation" button doesn't disappear after switching to Home tab.
-
-- FIXME@P2 Don't show the user email here in Ban UI.
-
 - TODO@P3 Show Audit Logs as Markdown.

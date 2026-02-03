@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api, { usersApi, LeaderboardEntry } from '../services/api'
 
 interface LeaderboardProps {
@@ -134,7 +135,20 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
               {getRankIcon(entry.rank)}
             </div>
             <div className="col-name">
-              {entry.name}
+              <Link
+                to={`/logs/${entry.userId}`}
+                style={{
+                  marginRight: '0.5rem',
+                  fontSize: '0.85em',
+                  textDecoration: 'underline',
+                  whiteSpace: 'nowrap'
+                }}
+                aria-label={`Audit Logs for user ${entry.userId}`}
+                title={`View Audit Logs for User #${entry.userId}`}
+              >
+                Audit Logs
+              </Link>
+              <span title={`User #${entry.userId}: ${entry.name}`}>{entry.name}</span>
             </div>
             <div className="col-share">
               <span className="share-percent">{entry.shareInGDP} of GDP</span>

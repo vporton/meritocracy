@@ -497,3 +497,42 @@
 .response-sources a:hover {
     text-decoration: underline;
 }
+.rationale-modal .markdown-content p,
+.rationale-modal .markdown-content ul,
+.rationale-modal .markdown-content ol,
+.rationale-modal .markdown-content pre {
+    margin: 0 0 0.75rem;
+}
+
+.rationale-modal .markdown-content h1,
+.rationale-modal .markdown-content h2,
+.rationale-modal .markdown-content h3 {
+    margin: 0 0 0.75rem;
+    color: #1a202c;
+}
+
+.rationale-modal .markdown-content ul,
+.rationale-modal .markdown-content ol {
+    padding-left: 1.5rem;
+}
+
+.rationale-modal .markdown-content code {
+    background: #edf2f7;
+    border-radius: 4px;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.9em;
+}
+
+.rationale-modal .markdown-content pre {
+    background: #1a202c;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    overflow-x: auto;
+}
+
+.rationale-modal .markdown-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}

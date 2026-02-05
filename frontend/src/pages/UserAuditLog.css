@@ -140,6 +140,63 @@
     white-space: pre-wrap;
 }
 
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: #2d3748;
+}
+
+.markdown-content p {
+    line-height: 1.7;
+    color: #2d3748;
+    white-space: pre-wrap;
+    margin: 0 0 1rem;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+    margin: 0 0 1rem 1.5rem;
+    color: #2d3748;
+}
+
+.markdown-content li {
+    margin-bottom: 0.4rem;
+}
+
+.markdown-content code {
+    background: #edf2f7;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.markdown-content pre {
+    margin: 0 0 1rem;
+    padding: 0.9rem;
+    background: #1a202c;
+    color: #edf2f7;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+.markdown-content pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+.markdown-content a {
+    color: #5a67d8;
+    text-decoration: none;
+}
+
+.markdown-content a:hover {
+    text-decoration: underline;
+}
+
 .sources-section {
     margin-top: 2rem;
     padding-top: 1.5rem;

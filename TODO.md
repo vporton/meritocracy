@@ -4,11 +4,7 @@
 
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 
-- TODO@P3 Display GitHub logo on GitHub button instead of an arbitrary Unicode symbol.
-
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
-
-- TODO@P3 Remove tasks after finishing.
 
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
@@ -57,20 +53,13 @@
 
 - TODO@P2 Use a defense pattern similar to that in the 2025 paper Robustness via Referencing: ask the LLM to tag which part of its output corresponds to which instruction, then reject outputs that reference instructions not issued by your system.
 
-- TODO@P3 Claude as an alternative with up to 75% discount: https://www.anthropic.com/news/claude-for-nonprofits
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
-- FIXME@P3 It doesn't fit width of my phone screen, apparently because of the leaderboard table.
-
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
-
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
 - TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
-
-- TODO@P3 Add "Copy" buttons near blockchain addresses.
 
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
 
@@ -100,5 +89,3 @@
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
 - TODO@P3 Run tasks in parallel.
-
-- TODO@P3 Show Audit Logs as Markdown.

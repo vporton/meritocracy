@@ -42,6 +42,18 @@ function MultiNetworkGasBalances() {
   const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
 
+  const shortenAddress = (value: string, startLength = 6, endLength = 4) => {
+    if (!value || value === 'N/A') {
+      return value
+    }
+
+    if (value.length <= startLength + endLength + 3) {
+      return value
+    }
+
+    return `${value.slice(0, startLength)}...${value.slice(-endLength)}`
+  }
+
   const copyAddress = async (address: string, networkKey: string) => {
     try {
       await navigator.clipboard.writeText(address)
@@ -295,6 +307,7 @@ function MultiNetworkGasBalances() {
             networkInfo.gasPriceFormatted ??
             'N/A'
           const address = networkInfo.address ?? 'N/A'
+          const shortAddress = shortenAddress(address)
           const balanceDisplay = balanceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${balanceFormatted} ${tokenSymbol}`
@@ -348,8 +361,11 @@ function MultiNetworkGasBalances() {
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Address:</strong>{" "}
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
-                      {address}
+                    <span
+                      style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                      title={address !== 'N/A' ? address : undefined}
+                    >
+                      {shortAddress}
                     </span>
                     {address !== 'N/A' && (
                       <button

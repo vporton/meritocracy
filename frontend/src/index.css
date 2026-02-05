@@ -286,6 +286,15 @@ button:focus-visible {
 }
 
 
+.audit-link {
+  display: inline-block;
+}
+
+.leaderboard-name {
+  overflow-wrap: anywhere;
+}
+
+
 .nav-toggle {
   display: none;
 }
@@ -301,7 +310,10 @@ button:focus-visible {
 @media (max-width: 768px) {
   /* Navigation */
   #root {
-    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    padding: 0.75rem;
+    box-sizing: border-box;
   }
 
   .nav {
@@ -376,6 +388,16 @@ button:focus-visible {
     grid-column: 2;
     grid-row: 1;
     font-size: 1rem;
+  }
+
+  .audit-link {
+    margin-right: 0.3rem;
+    font-size: 0.8em;
+    white-space: normal;
+  }
+
+  .leaderboard-name {
+    white-space: normal;
   }
 
   .col-share {

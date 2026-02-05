@@ -58,6 +58,12 @@
     font-size: 1.2rem;
   }
 
+  .github-logo {
+    width: 1.2rem;
+    height: 1.2rem;
+    filter: brightness(0) invert(1);
+  }
+
   /* Provider-specific styles */
   .ethereum-button {
     background: linear-gradient(135deg, #627eea, #4f46e5);

@@ -57,8 +57,6 @@
 
 - TODO@P2 Use a defense pattern similar to that in the 2025 paper Robustness via Referencing: ask the LLM to tag which part of its output corresponds to which instruction, then reject outputs that reference instructions not issued by your system.
 
-- TODO@P3 Claude as an alternative with up to 75% discount: h ttps://www.anthropic.com/news/claude-for-nonprofits
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 

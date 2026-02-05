@@ -46,6 +46,7 @@ export default function BanVoting() {
     const [voteMessage, setVoteMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
     const isKycApproved = authUser?.kycVotingStatus === 'APPROVED';
 
@@ -116,6 +117,20 @@ export default function BanVoting() {
         setSelectedUser(user);
         setVoteMessage('');
         setError(null);
+    };
+
+
+
+    const copyAddress = async (address: string) => {
+        try {
+            await navigator.clipboard.writeText(address);
+            setCopiedAddress(address);
+            setTimeout(() => setCopiedAddress(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy address:', err);
+            setError('Failed to copy address. Please try again.');
+            setTimeout(() => setError(null), 3000);
+        }
     };
 
     const handleSubmitVote = (e: React.FormEvent) => {
@@ -202,22 +217,37 @@ export default function BanVoting() {
                                             </a>
                                         )}
                                         {user.ethereumAddress && (
-                                            <a href={`https://etherscan.io/address/${user.ethereumAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link ethereum" title="Ethereum Address">
-                                                <span className="profile-icon">Ξ</span>
-                                                {user.ethereumAddress.slice(0, 6)}...{user.ethereumAddress.slice(-4)}
-                                            </a>
+                                            <div className="address-chip">
+                                                <a href={`https://etherscan.io/address/${user.ethereumAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link ethereum" title="Ethereum Address">
+                                                    <span className="profile-icon">Ξ</span>
+                                                    {user.ethereumAddress.slice(0, 6)}...{user.ethereumAddress.slice(-4)}
+                                                </a>
+                                                <button type="button" className="copy-address-button" onClick={() => copyAddress(user.ethereumAddress)}>
+                                                    {copiedAddress === user.ethereumAddress ? 'Copied!' : 'Copy'}
+                                                </button>
+                                            </div>
                                         )}
                                         {user.solanaAddress && (
-                                            <a href={`https://solscan.io/account/${user.solanaAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link solana" title="Solana Address">
-                                                <span className="profile-icon">◎</span>
-                                                {user.solanaAddress.slice(0, 4)}...{user.solanaAddress.slice(-4)}
-                                            </a>
+                                            <div className="address-chip">
+                                                <a href={`https://solscan.io/account/${user.solanaAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link solana" title="Solana Address">
+                                                    <span className="profile-icon">◎</span>
+                                                    {user.solanaAddress.slice(0, 4)}...{user.solanaAddress.slice(-4)}
+                                                </a>
+                                                <button type="button" className="copy-address-button" onClick={() => copyAddress(user.solanaAddress)}>
+                                                    {copiedAddress === user.solanaAddress ? 'Copied!' : 'Copy'}
+                                                </button>
+                                            </div>
                                         )}
                                         {user.bitcoinAddress && (
-                                            <a href={`https://mempool.space/address/${user.bitcoinAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Address">
-                                                <span className="profile-icon">₿</span>
-                                                {user.bitcoinAddress.slice(0, 4)}...{user.bitcoinAddress.slice(-4)}
-                                            </a>
+                                            <div className="address-chip">
+                                                <a href={`https://mempool.space/address/${user.bitcoinAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Address">
+                                                    <span className="profile-icon">₿</span>
+                                                    {user.bitcoinAddress.slice(0, 4)}...{user.bitcoinAddress.slice(-4)}
+                                                </a>
+                                                <button type="button" className="copy-address-button" onClick={() => copyAddress(user.bitcoinAddress)}>
+                                                    {copiedAddress === user.bitcoinAddress ? 'Copied!' : 'Copy'}
+                                                </button>
+                                            </div>
                                         )}
                                         <a href={`/logs/${user.id}`} target="_blank" rel="noopener noreferrer" className="profile-link audit-logs" title="Audit Logs">
                                             <span className="profile-icon">📋</span>

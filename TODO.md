@@ -94,5 +94,3 @@
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
 - TODO@P3 Run tasks in parallel.
-
-- TODO@P3 Show Audit Logs as Markdown.

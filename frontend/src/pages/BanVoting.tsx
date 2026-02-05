@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { worldGdpApi } from '../services/api';
 import './BanVoting.css';
+import { markdownToHtml } from '../utils/markdown';
 
 interface AIResponse {
     text: string;
@@ -329,12 +330,15 @@ export default function BanVoting() {
                     <div className="modal-overlay" onClick={() => setViewAiRationaleUser(null)}>
                         <div className="modal-content rationale-modal" onClick={e => e.stopPropagation()}>
                             <button className="close-button" onClick={() => setViewAiRationaleUser(null)}>×</button>
-                            <h2>AI Rationale for {viewAiRationaleUser.name || `User #${viewAiRationaleUser.id}`}</h2>
+                            <h2>AI Rationale for {viewAiRationaleUser.name || `User #${viewAiRationaleUser.id}`} (Markdown)</h2>
                             <div className="ai-responses-list">
                                 {viewAiRationaleUser.aiResponses?.map((response, index) => (
                                     <div key={index} className="ai-response-item">
                                         <div className="response-header">Assessment #{index + 1}</div>
-                                        <div className="response-text">{response.text}</div>
+                                        <div
+                                            className="response-text markdown-content"
+                                            dangerouslySetInnerHTML={{ __html: markdownToHtml(response.text) }}
+                                        />
                                         {response.sources && response.sources.length > 0 && (
                                             <div className="response-sources">
                                                 <h4>Sources:</h4>

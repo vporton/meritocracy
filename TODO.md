@@ -8,8 +8,6 @@
 
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
 
-- TODO@P3 Remove tasks after finishing.
-
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
 - TODO@P3 Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.

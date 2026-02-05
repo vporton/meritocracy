@@ -37,9 +37,20 @@ function MultiNetworkGasBalances() {
   const [loading, setLoading] = useState(true)
   const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
+  const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
 
   const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
+
+  const copyAddress = async (address: string, networkKey: string) => {
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopiedAddressKey(networkKey)
+      setTimeout(() => setCopiedAddressKey(null), 2000)
+    } catch (error) {
+      console.error('Failed to copy address:', error)
+    }
+  }
 
   const fetchMultiNetworkStatus = async (currentScope: 'GLOBAL' | 'COUNTRY', currentCountry: string) => {
     try {
@@ -340,6 +351,24 @@ function MultiNetworkGasBalances() {
                     <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
                       {address}
                     </span>
+                    {address !== 'N/A' && (
+                      <button
+                        type="button"
+                        onClick={() => copyAddress(address, networkName)}
+                        style={{
+                          marginLeft: '0.5rem',
+                          padding: '0.2rem 0.5rem',
+                          fontSize: '0.75rem',
+                          background: copiedAddressKey === networkName ? '#10b981' : '#374151',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {copiedAddressKey === networkName ? 'Copied!' : 'Copy'}
+                      </button>
+                    )}
                   </p>
                 </div>
               </div>

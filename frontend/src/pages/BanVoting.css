@@ -309,6 +309,30 @@
     border-top: 1px dashed #e2e8f0;
 }
 
+
+.address-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.copy-address-button {
+    border: 1px solid #cbd5e0;
+    background: #ffffff;
+    color: #4a5568;
+    border-radius: 6px;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.copy-address-button:hover {
+    background: #e2e8f0;
+    border-color: #a0aec0;
+}
+
 .profile-link {
     display: flex;
     align-items: center;

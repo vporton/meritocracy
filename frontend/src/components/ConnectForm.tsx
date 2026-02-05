@@ -916,7 +916,7 @@ const ConnectForm = () => {
           onClick={() => handleOAuthConnect('github')}
           disabled={isLoading || connectStatus.github === 'processing' || connectStatus.github === 'disconnecting'}
         >
-          <span className="connect-icon">👨‍💻</span>
+          <img src="/github-mark.svg" alt="GitHub" className="connect-icon github-logo" />
           {getButtonText('github')}
         </button>
 

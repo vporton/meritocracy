@@ -269,6 +269,7 @@ button:focus-visible {
 }
 
 .col-name {
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

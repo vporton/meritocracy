@@ -75,8 +75,6 @@
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
 
-- TODO@P3 In the leadeboard, `Name` is centered but names are left-aligned. Fix it.
-
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
 - TODO@P3 Run tasks in parallel.

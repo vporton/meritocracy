@@ -393,7 +393,7 @@ function MultiNetworkGasBalances() {
                         {addressEntries.map((entry, index) => {
                           const addressKey = `${networkName}-${entry.label}-${index}`
                           const shortAddress = shortenAddress(entry.address)
-                          const canCopy = entry.address !== 'N/A'
+                          const canCopy = entry.address !== 'N/A' && entry.address !== 'Not set'
                           return (
                             <li key={addressKey} style={{ marginBottom: '0.25rem' }}>
                               <span style={{ fontWeight: 600 }}>{entry.label}:</span>{' '}

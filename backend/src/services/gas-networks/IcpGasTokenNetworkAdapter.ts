@@ -23,7 +23,7 @@ type IcpNetworkConfig = {
 const normalizeAddressEntries = (entries: DisplayAddress[]): { label: string; address: string }[] => {
   return entries.map(entry => ({
     label: entry.label,
-    address: entry.address?.trim() || 'N/A'
+    address: entry.address?.trim() || 'Not set'
   }));
 };
 
@@ -69,7 +69,7 @@ const readIcpNetworkConfigs = async (): Promise<IcpNetworkConfig[]> => {
       networkName: 'ckBTC (ICP)',
       tokenSymbol: 'ckBTC',
       tokenDecimals: 8,
-      walletAddress: ckbtcTokenAddress ?? ckbtcIcpAddress,
+      walletAddress: ckbtcIcpAddress ?? ckbtcTokenAddress,
       displayAddresses: normalizeAddressEntries([
         { label: 'Token-native address', address: ckbtcTokenAddress },
         { label: 'ICP wallet address', address: ckbtcIcpAddress }
@@ -81,7 +81,7 @@ const readIcpNetworkConfigs = async (): Promise<IcpNetworkConfig[]> => {
       networkName: 'ckETH (ICP)',
       tokenSymbol: 'ckETH',
       tokenDecimals: 18,
-      walletAddress: ckethTokenAddress ?? ckethIcpAddress,
+      walletAddress: ckethIcpAddress ?? ckethTokenAddress,
       displayAddresses: normalizeAddressEntries([
         { label: 'Token-native address', address: ckethTokenAddress },
         { label: 'ICP wallet address', address: ckethIcpAddress }
@@ -93,7 +93,7 @@ const readIcpNetworkConfigs = async (): Promise<IcpNetworkConfig[]> => {
       networkName: 'ckUSDC (ICP)',
       tokenSymbol: 'ckUSDC',
       tokenDecimals: 6,
-      walletAddress: ckusdcTokenAddress ?? ckusdcIcpAddress,
+      walletAddress: ckusdcIcpAddress ?? ckusdcTokenAddress,
       displayAddresses: normalizeAddressEntries([
         { label: 'Token-native address', address: ckusdcTokenAddress },
         { label: 'ICP wallet address', address: ckusdcIcpAddress }
@@ -105,7 +105,7 @@ const readIcpNetworkConfigs = async (): Promise<IcpNetworkConfig[]> => {
       networkName: 'ckEURC (ICP)',
       tokenSymbol: 'ckEURC',
       tokenDecimals: 6,
-      walletAddress: ckeurcTokenAddress ?? ckeurcIcpAddress,
+      walletAddress: ckeurcIcpAddress ?? ckeurcTokenAddress,
       displayAddresses: normalizeAddressEntries([
         { label: 'Token-native address', address: ckeurcTokenAddress },
         { label: 'ICP wallet address', address: ckeurcIcpAddress }

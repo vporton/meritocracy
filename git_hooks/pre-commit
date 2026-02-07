@@ -2,6 +2,8 @@
 
 set -e
 
+npm test
+
 cd backend
 . ./.env
 npx prisma migrate status

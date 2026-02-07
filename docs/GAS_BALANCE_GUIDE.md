@@ -17,6 +17,18 @@ The system supports the following networks:
 - **base** - Base (Coinbase L2) - Coinbase's L2
 - **sepolia** - Sepolia Testnet - For testing
 - **localhost** - Local Development - For local development
+- **solana-mainnet** - Solana (SOL)
+- **bitcoin-mainnet** - Bitcoin (BTC)
+- **bch-mainnet** - Bitcoin Cash (BCH)
+- **polkadot-mainnet** - Polkadot (DOT)
+- **cosmoshub-mainnet** - Cosmos Hub (ATOM)
+- **stellar-public** - Stellar (XLM)
+- **icp-mainnet** - Internet Computer (ICP)
+- **ckbtc-icp** - ckBTC (ICP)
+- **cketh-icp** - ckETH (ICP)
+- **ckusdc-icp** - ckUSDC (ICP)
+- **ckeurc-icp** - ckEURC (ICP)
+- **glrm-mainnet** - GLRM
 
 ## Quick Start
 
@@ -60,6 +72,9 @@ ETHEREUM_OPTIMISM_ENABLED=true
 ETHEREUM_BASE_ENABLED=true
 ETHEREUM_SEPOLIA_ENABLED=false
 ETHEREUM_LOCALHOST_ENABLED=false
+
+# Wallet addresses for ICP/ck tokens, BCH, and GLRM are stored in the SystemSecret table
+# (e.g., ICP_WALLET_ADDRESS, CKBTC_NATIVE_ADDRESS, CKBTC_ICP_ADDRESS, BCH_WALLET_ADDRESS).
 
 # Provide RPC URLs (replace YOUR_PROJECT_ID with your actual Infura/Alchemy project ID)
 ETHEREUM_MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID

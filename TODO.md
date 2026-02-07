@@ -55,6 +55,7 @@
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
+
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
 - TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚

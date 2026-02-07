@@ -214,7 +214,8 @@ export class StellarGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       const config = this.ensureEnabledConfig();
       const server = this.getServer(config);
       const baseFee = await this.resolveBaseFee(server, config);
-      const gasCostToken = stroopsToToken(baseFee, context.nativeTokenDecimals);
+      const operationCount = 1;
+      const gasCostToken = stroopsToToken(baseFee * operationCount, context.nativeTokenDecimals);
 
       if (amountToken <= gasCostToken) {
         return {

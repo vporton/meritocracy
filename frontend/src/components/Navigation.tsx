@@ -41,6 +41,13 @@ function Navigation() {
             Logs
           </Link>
           <Link
+            to="/treasury"
+            className={`nav-link ${isActive('/treasury') ? 'active' : ''}`}
+            onClick={closeMenu}
+          >
+            Treasury
+          </Link>
+          <Link
             to="/ban-voting"
             className={`nav-link ${isActive('/ban-voting') ? 'active' : ''}`}
             onClick={closeMenu}

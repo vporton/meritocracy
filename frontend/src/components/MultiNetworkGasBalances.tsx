@@ -316,9 +316,20 @@ function MultiNetworkGasBalances() {
             networkInfo.gasPriceFormatted ??
             'N/A'
           const address = networkInfo.address ?? 'N/A'
+          const icpWalletAddress = networkStatus.networks['icp-mainnet']?.address
           const addressEntries =
             networkInfo.displayAddresses && networkInfo.displayAddresses.length > 0
-              ? networkInfo.displayAddresses
+              ? networkInfo.displayAddresses.map(entry => {
+                if (
+                  entry.label === 'ICP wallet address' &&
+                  (entry.address === 'Not set' || entry.address === 'N/A') &&
+                  icpWalletAddress &&
+                  icpWalletAddress !== 'N/A'
+                ) {
+                  return { ...entry, address: icpWalletAddress }
+                }
+                return entry
+              })
               : address !== 'N/A'
                 ? [{ label: 'Address', address }]
                 : []

@@ -37,9 +37,13 @@ The automated distribution service currently supports native gas tokens on:
 - Ethereum family networks (Mainnet, Polygon, Arbitrum, Optimism, Base, Celo, Sepolia, Localhost)
 - Solana (SOL)
 - Bitcoin (BTC)
+- Bitcoin Cash (BCH)
 - Polkadot (DOT)
 - Cosmos Hub (ATOM)
 - Stellar (XLM)
+- Internet Computer (ICP)
+- ckBTC, ckETH, ckUSDC, ckEURC (ICP)
+- GLRM
 
 ## 📁 Project Structure
 

@@ -14,7 +14,9 @@ import {
   cosmosGasTokenNetworkAdapter,
   polkadotGasTokenNetworkAdapter,
   solanaGasTokenNetworkAdapter,
-  stellarGasTokenNetworkAdapter
+  stellarGasTokenNetworkAdapter,
+  icpGasTokenNetworkAdapter,
+  manualGasTokenNetworkAdapter
 } from './gas-networks/index.js';
 import { systemSecretService } from './SystemSecretService.js';
 import emailService from './EmailService.js';
@@ -65,6 +67,7 @@ type ReserveStatusEntry = {
   name?: string;
   chainId?: number;
   address?: string;
+  displayAddresses?: { label: string; address: string }[];
   balance?: string;
   gasPrice?: string;
   balanceFormatted?: string;
@@ -109,7 +112,9 @@ export class MultiNetworkGasTokenDistributionService {
         bitcoinGasTokenNetworkAdapter,
         cosmosGasTokenNetworkAdapter,
         polkadotGasTokenNetworkAdapter,
-        stellarGasTokenNetworkAdapter
+        stellarGasTokenNetworkAdapter,
+        icpGasTokenNetworkAdapter,
+        manualGasTokenNetworkAdapter
       ];
 
     this.defaultTokenOptions = {
@@ -1603,7 +1608,8 @@ export class MultiNetworkGasTokenDistributionService {
       lastDistribution: reserveRow?.lastDistribution ?? null,
       adapterType: context.adapterType,
       networkName: context.networkName,
-      address: context.walletAddress
+      address: context.walletAddress,
+      displayAddresses: context.displayAddresses
     };
   }
 
@@ -1677,7 +1683,8 @@ export class MultiNetworkGasTokenDistributionService {
       lastDistribution,
       adapterType: context.adapterType,
       networkName: context.networkName,
-      address: context.walletAddress
+      address: context.walletAddress,
+      displayAddresses: context.displayAddresses
     };
 
     // 3. Supplement with live blockchain info
@@ -1779,7 +1786,8 @@ export class MultiNetworkGasTokenDistributionService {
         networkId: sanitized.networkId!,
         networkName: sanitized.networkName!,
         adapterType: sanitized.adapterType!,
-        walletAddress: sanitized.walletAddress
+        walletAddress: sanitized.walletAddress,
+        displayAddresses: sanitized.displayAddresses
       };
     });
   }

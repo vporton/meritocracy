@@ -5,3 +5,5 @@ export * from './BitcoinGasTokenNetworkAdapter.js';
 export * from './PolkadotGasTokenNetworkAdapter.js';
 export * from './CosmosGasTokenNetworkAdapter.js';
 export * from './StellarGasTokenNetworkAdapter.js';
+export * from './IcpGasTokenNetworkAdapter.js';
+export * from './ManualGasTokenNetworkAdapter.js';

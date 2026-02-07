@@ -1,7 +1,16 @@
 import type { User } from '@prisma/client';
 import type { TokenDescriptor, TokenType } from '../../types/token.js';
 
-export type GasTokenNetworkType = 'EVM' | 'SOLANA' | 'BITCOIN' | 'POLKADOT' | 'COSMOS' | 'STELLAR' | 'MOCK'; // MOCK is for testing.
+export type GasTokenNetworkType =
+  | 'EVM'
+  | 'SOLANA'
+  | 'BITCOIN'
+  | 'POLKADOT'
+  | 'COSMOS'
+  | 'STELLAR'
+  | 'ICP'
+  | 'MANUAL'
+  | 'MOCK'; // MOCK is for testing.
 
 export interface TokenDistributionOptions {
   tokenType?: TokenType;
@@ -15,6 +24,7 @@ export interface GasTokenNetworkContext extends TokenDescriptor {
   nativeTokenSymbol: string;
   nativeTokenDecimals: number;
   walletAddress?: string;
+  displayAddresses?: { label: string; address: string }[];
   defaultGasCostToken?: number;
   /**
    * Secret field - MUST NOT be sent to the frontend.

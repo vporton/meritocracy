@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api, { usersApi } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
-import MultiNetworkGasBalances from '../components/MultiNetworkGasBalances'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
@@ -250,8 +249,6 @@ export default function Home() {
           </div>
         )}
       </div>
-      <MultiNetworkGasBalances />
-
       <div className="card">
         <h3>🌍 World Economy</h3>
         {worldGdp ? (

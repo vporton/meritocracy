@@ -13,6 +13,7 @@ import VerifyEmail from './pages/VerifyEmail'
 import Admin from './pages/Admin'
 import BanVoting from './pages/BanVoting'
 import UserAuditLog from './pages/UserAuditLog'
+import Treasury from './pages/Treasury'
 import './App.css'
 
 const queryClient = new QueryClient()
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/ban-voting" element={<BanVoting />} />
+                    <Route path="/treasury" element={<Treasury />} />
                     {/* Redirect old login route to new connect route */}
                     <Route path="/login" element={<Navigate to="/connect" replace />} />
                     <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />

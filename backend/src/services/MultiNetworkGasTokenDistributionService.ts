@@ -43,12 +43,8 @@ export interface NetworkDistributionResult {
 }
 
 export interface MultiNetworkDistributionResult {
-  totalDistributedAmount: number;
-  totalReservedAmount: number;
   networkResults: Map<string, NetworkDistributionResult>;
   errors: string[];
-  totalDistributed: number;
-  totalReserved: number;
 }
 
 type ReserveStatusEntry = {
@@ -1319,8 +1315,6 @@ export class MultiNetworkGasTokenDistributionService {
     try {
       const networkDistributions = await this.calculateDistributions(tokenOptions);
       const networkResults = new Map<string, NetworkDistributionResult>();
-      let totalDistributedAmount = 0;
-      let totalReservedAmount = 0;
       const errors: string[] = [];
 
       const networkPromises = Array.from(networkDistributions.entries()).map(
@@ -1351,9 +1345,6 @@ export class MultiNetworkGasTokenDistributionService {
               distributions
             );
             networkResults.set(networkId, networkResult);
-            totalDistributedAmount += networkResult.distributedAmount;
-            totalReservedAmount += networkResult.reservedAmount;
-
             errors.push(
               ...networkResult.errors.map(error => `[${context.networkName}] ${error} `)
             );
@@ -1368,17 +1359,11 @@ export class MultiNetworkGasTokenDistributionService {
       await Promise.all(networkPromises);
 
       const result: MultiNetworkDistributionResult = {
-        totalDistributedAmount,
-        totalReservedAmount,
-        totalDistributed: totalDistributedAmount,
-        totalReserved: totalReservedAmount,
         networkResults,
         errors
       };
 
       console.log('📊 Multi-network gas token distribution completed:');
-      console.log(`  💰 Total distributed: ${totalDistributedAmount.toFixed(6)} tokens`);
-      console.log(`  🏦 Total reserved: ${totalReservedAmount.toFixed(6)} tokens`);
 
       for (const [, networkResult] of networkResults) {
         console.log(
@@ -1403,10 +1388,6 @@ export class MultiNetworkGasTokenDistributionService {
       console.error('💥 Fatal error in multi-network gas token distribution:', errorMessage);
 
       return {
-        totalDistributedAmount: 0,
-        totalReservedAmount: 0,
-        totalDistributed: 0,
-        totalReserved: 0,
         networkResults: new Map(),
         errors: [errorMessage]
       };
@@ -1429,8 +1410,6 @@ export class MultiNetworkGasTokenDistributionService {
     try {
       const networkDistributions = await this.calculateDistributions(tokenOptions);
       const networkResults = new Map<string, NetworkDistributionResult>();
-      let totalDistributedAmount = 0;
-      let totalReservedAmount = 0;
       const errors: string[] = [];
 
       const networkPromises = Array.from(networkDistributions.entries()).map(
@@ -1462,9 +1441,6 @@ export class MultiNetworkGasTokenDistributionService {
               distributions
             );
             networkResults.set(networkId, networkResult);
-            totalDistributedAmount += networkResult.distributedAmount;
-            totalReservedAmount += networkResult.reservedAmount;
-
             errors.push(
               ...networkResult.errors.map(error => `[${context.networkName}] ${error} `)
             );
@@ -1479,17 +1455,11 @@ export class MultiNetworkGasTokenDistributionService {
       await Promise.all(networkPromises);
 
       const result: MultiNetworkDistributionResult = {
-        totalDistributedAmount,
-        totalReservedAmount,
-        totalDistributed: totalDistributedAmount,
-        totalReserved: totalReservedAmount,
         networkResults,
         errors
       };
 
       console.log('📊 [TWO-STAGE] Multi-network gas token distribution (Stage 1) completed:');
-      console.log(`  📝 Total prepared: ${totalDistributedAmount.toFixed(6)} tokens`);
-      console.log(`  🏦 Total reserved: ${totalReservedAmount.toFixed(6)} tokens`);
 
       for (const [, networkResult] of networkResults) {
         console.log(
@@ -1516,10 +1486,6 @@ export class MultiNetworkGasTokenDistributionService {
       console.error('💥 Fatal error in multi-network gas token distribution (Stage 1):', errorMessage);
 
       return {
-        totalDistributedAmount: 0,
-        totalReservedAmount: 0,
-        totalDistributed: 0,
-        totalReserved: 0,
         networkResults: new Map(),
         errors: [errorMessage]
       };

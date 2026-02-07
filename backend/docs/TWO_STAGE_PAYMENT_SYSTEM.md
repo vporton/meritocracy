@@ -57,7 +57,6 @@ model PendingTransaction {
 const result = await multiNetworkGasTokenDistributionService
   .processMultiNetworkDistributionTwoStage();
 
-console.log(`Prepared ${result.totalDistributedAmount} tokens for execution`);
 ```
 
 ### Stage 2: Execute Pending Transactions
@@ -174,7 +173,6 @@ console.log('🔄 Stage 1: Preparing transactions...');
 const prepared = await multiNetworkGasTokenDistributionService
   .processMultiNetworkDistributionTwoStage();
 
-console.log(`📝 Prepared ${prepared.totalDistributedAmount} tokens`);
 console.log(`📊 Networks: ${prepared.networkResults.size}`);
 
 // Stage 2: Execute pending transactions

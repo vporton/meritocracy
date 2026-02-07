@@ -128,7 +128,6 @@ if (locked.count > 0) {
 const prepared = await multiNetworkGasTokenDistributionService
   .processMultiNetworkDistributionTwoStage();
 
-console.log(`Prepared ${prepared.totalDistributedAmount} tokens`);
 
 // Stage 2: Execute pending transactions
 const executed = await multiNetworkGasTokenDistributionService

@@ -274,8 +274,6 @@ router.post('/run-distribution', async (req, res) => {
 
     res.json({
       data: {
-        totalDistributed: result.totalDistributed,
-        totalReserved: result.totalReserved,
         networkResults: Object.fromEntries(result.networkResults),
         errors: result.errors,
         token: {

@@ -156,8 +156,6 @@ export class CronService {
         if (!isEnabled) {
           console.log('🚫 Gas distribution is currently disabled via admin setting.');
           return {
-            totalDistributedAmount: 0,
-            totalReservedAmount: 0,
             networkResults: new Map(),
             errors: ['Gas distribution is disabled.']
           };
@@ -167,8 +165,6 @@ export class CronService {
       const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
 
       console.log('✅ Weekly multi-network token distribution completed');
-      console.log(`💰 Total distributed: ${result.totalDistributedAmount.toFixed(6)} tokens`);
-      console.log(`🏦 Total reserved: ${result.totalReservedAmount.toFixed(6)} tokens`);
 
       for (const [networkName, networkResult] of result.networkResults) {
         console.log(

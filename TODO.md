@@ -41,13 +41,7 @@
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
-- TODO@P3 https://DonateHelper.com for requesting donations from Russia.
-
-- TODO@P3 Funds for individual countries, disbursed, when the user migrates.
-
 - TODO@P3 Ability to re-onboard a user, especially if his/her account was empty.
-
-- TODO@P3 Less info on homepage.
 
 - TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.
 
@@ -57,6 +51,7 @@
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
 - FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
+
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
 - TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
@@ -76,15 +71,9 @@
 
 - TODO@P2 Esnure we enable all supported blockchains.
 
-- FIXME@P3 It doesn't fit my phone Samsumg Salaxy A25 5G 90E7. Need help of a professional designer.
-
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
-
-- TODO@P3 In the leadeboard, `Name` is centered but names are left-aligned. Fix it.
-
-- TODO@P3 `🏦 Total reserved:` in logs is a nonsense: It sums tokens of different kinds.
 
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 

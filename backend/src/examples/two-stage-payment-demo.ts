@@ -23,8 +23,6 @@ async function runTwoStagePaymentDemo() {
         .processMultiNetworkDistributionTwoStage();
 
     console.log('\n📊 Stage 1 Results:');
-    console.log(`  ✅ Prepared: ${prepared.totalDistributedAmount.toFixed(6)} tokens`);
-    console.log(`  🏦 Reserved: ${prepared.totalReservedAmount.toFixed(6)} tokens`);
     console.log(`  🌐 Networks: ${prepared.networkResults.size}`);
     console.log(`  ❌ Errors: ${prepared.errors.length}`);
 

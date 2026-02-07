@@ -16,6 +16,7 @@ interface NetworkInfo {
   gasPrice?: string;
   balance?: string;
   address?: string;
+  displayAddresses?: { label: string; address: string }[];
   balanceFormatted?: string;
   gasPriceFormatted?: string;
   availableForDistribution?: number;
@@ -219,8 +220,16 @@ function MultiNetworkGasBalances() {
             <li>localhost - Local Development</li>
             <li>solana-mainnet - Solana (SOL)</li>
             <li>bitcoin-mainnet - Bitcoin (BTC)</li>
+            <li>bch-mainnet - Bitcoin Cash (BCH)</li>
             <li>polkadot-mainnet - Polkadot (DOT)</li>
             <li>cosmoshub-mainnet - Cosmos Hub (ATOM)</li>
+            <li>stellar-public - Stellar (XLM)</li>
+            <li>icp-mainnet - Internet Computer (ICP)</li>
+            <li>ckbtc-icp - ckBTC (ICP)</li>
+            <li>cketh-icp - ckETH (ICP)</li>
+            <li>ckusdc-icp - ckUSDC (ICP)</li>
+            <li>ckeurc-icp - ckEURC (ICP)</li>
+            <li>glrm-mainnet - GLRM</li>
           </ul>
         </div>
       </div>
@@ -307,7 +316,12 @@ function MultiNetworkGasBalances() {
             networkInfo.gasPriceFormatted ??
             'N/A'
           const address = networkInfo.address ?? 'N/A'
-          const shortAddress = shortenAddress(address)
+          const addressEntries =
+            networkInfo.displayAddresses && networkInfo.displayAddresses.length > 0
+              ? networkInfo.displayAddresses
+              : address !== 'N/A'
+                ? [{ label: 'Address', address }]
+                : []
           const balanceDisplay = balanceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${balanceFormatted} ${tokenSymbol}`
@@ -359,33 +373,49 @@ function MultiNetworkGasBalances() {
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Gas Price:</strong> {gasPriceDisplay}
                   </p>
-                  <p style={{ margin: '0.25rem 0', color: '#888' }}>
-                    <strong>Address:</strong>{" "}
-                    <span
-                      style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
-                      title={address !== 'N/A' ? address : undefined}
-                    >
-                      {shortAddress}
-                    </span>
-                    {address !== 'N/A' && (
-                      <button
-                        type="button"
-                        onClick={() => copyAddress(address, networkName)}
-                        style={{
-                          marginLeft: '0.5rem',
-                          padding: '0.2rem 0.5rem',
-                          fontSize: '0.75rem',
-                          background: copiedAddressKey === networkName ? '#10b981' : '#374151',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {copiedAddressKey === networkName ? 'Copied!' : 'Copy'}
-                      </button>
+                  <div style={{ margin: '0.25rem 0', color: '#888' }}>
+                    <strong>Address{addressEntries.length > 1 ? 'es' : ''}:</strong>
+                    {addressEntries.length === 0 ? (
+                      <span style={{ marginLeft: '0.5rem' }}>N/A</span>
+                    ) : (
+                      <ul style={{ margin: '0.25rem 0 0 1rem', padding: 0, listStyle: 'none' }}>
+                        {addressEntries.map((entry, index) => {
+                          const addressKey = `${networkName}-${entry.label}-${index}`
+                          const shortAddress = shortenAddress(entry.address)
+                          const canCopy = entry.address !== 'N/A' && entry.address !== 'Not set'
+                          return (
+                            <li key={addressKey} style={{ marginBottom: '0.25rem' }}>
+                              <span style={{ fontWeight: 600 }}>{entry.label}:</span>{' '}
+                              <span
+                                style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                                title={canCopy ? entry.address : undefined}
+                              >
+                                {shortAddress}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => copyAddress(entry.address, addressKey)}
+                                disabled={!canCopy}
+                                style={{
+                                  marginLeft: '0.5rem',
+                                  padding: '0.2rem 0.5rem',
+                                  fontSize: '0.75rem',
+                                  background: copiedAddressKey === addressKey ? '#10b981' : '#374151',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: canCopy ? 'pointer' : 'not-allowed',
+                                  opacity: canCopy ? 1 : 0.6
+                                }}
+                              >
+                                {copiedAddressKey === addressKey ? 'Copied!' : 'Copy'}
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
 

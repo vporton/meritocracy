@@ -41,8 +41,6 @@
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
-- TODO@P3 https://DonateHelper.com for requesting donations from Russia.
-
 - TODO@P3 Ability to re-onboard a user, especially if his/her account was empty.
 
 - TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.

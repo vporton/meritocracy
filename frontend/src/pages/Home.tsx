@@ -2,17 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api, { usersApi } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
-import MultiNetworkGasBalances from '../components/MultiNetworkGasBalances'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
-
-interface ServerStatus {
-  status?: string;
-  version?: string;
-  message?: string;
-  error?: string;
-}
 
 interface WorldGdpData {
   worldGdp: number;
@@ -33,30 +25,12 @@ export default function Home() {
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null)
   const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
   const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [copySuccess, setCopySuccess] = useState(false)
   const [onboardingLoading, setOnboardingLoading] = useState(false)
   const [showOnboardingConfirm, setShowOnboardingConfirm] = useState(false)
-
-  useEffect(() => {
-    const checkServerStatus = async () => {
-      try {
-        const response = await api.get('/')
-        setServerStatus(response.data)
-      } catch (error) {
-        console.log('Failed to connect to server:', error)
-        setServerStatus({ error: 'Failed to connect to server' })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkServerStatus()
-  }, [])
 
   useEffect(() => {
     const fetchPrimaryNetworkAddress = async () => {
@@ -222,10 +196,6 @@ export default function Home() {
     }
   }, [isAuthenticated, location.pathname, refreshUser])
 
-  if (loading) {
-    return <div className="loading">Checking server status...</div>
-  }
-
   return (
     <div>
       <Helmet>
@@ -235,23 +205,6 @@ export default function Home() {
       <Canonical baseUrl="https://merit.science-dao.org" />
       <h1>Welcome to Meritocracy App <span style={{ color: 'red' }}>⚠️This is a beta version</span></h1>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
-      <div className="card">
-        <h3>Server Status</h3>
-        {serverStatus?.error ? (
-          <div className="error">
-            ❌ {serverStatus.error}
-            <br />
-            <small>Make sure the backend server is running on port 3001</small>
-          </div>
-        ) : (
-          <div>
-            <p>✅ <strong>Status:</strong> {serverStatus?.status}</p>
-            <p>📦 <strong>Version:</strong> {serverStatus?.version}</p>
-          </div>
-        )}
-      </div>
-      <MultiNetworkGasBalances />
-
       <div className="card">
         <h3>🌍 World Economy</h3>
         {worldGdp ? (

@@ -235,7 +235,7 @@ function MultiNetworkGasBalances() {
       <h3>🌐 Multi-Network Gas Balances</h3>
 
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <label style={{ color: '#fff' }}>Fund Source:</label>
+        <label>Fund Source:</label>
         <select
           value={scope === 'GLOBAL' ? 'GLOBAL' : selectedCountry}
           onChange={(e) => {

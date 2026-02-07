@@ -320,16 +320,15 @@ function MultiNetworkGasBalances() {
           const addressEntries =
             networkInfo.displayAddresses && networkInfo.displayAddresses.length > 0
               ? networkInfo.displayAddresses.map(entry => {
-                const normalizedAddress = entry.address === 'Not set' ? 'N/A' : entry.address
                 if (
                   entry.label === 'ICP wallet address' &&
-                  normalizedAddress === 'N/A' &&
+                  (entry.address === 'Not set' || entry.address === 'N/A') &&
                   icpWalletAddress &&
                   icpWalletAddress !== 'N/A'
                 ) {
                   return { ...entry, address: icpWalletAddress }
                 }
-                return { ...entry, address: normalizedAddress }
+                return entry
               })
               : address !== 'N/A'
                 ? [{ label: 'Address', address }]
@@ -394,7 +393,7 @@ function MultiNetworkGasBalances() {
                         {addressEntries.map((entry, index) => {
                           const addressKey = `${networkName}-${entry.label}-${index}`
                           const shortAddress = shortenAddress(entry.address)
-                          const canCopy = entry.address !== 'N/A'
+                          const canCopy = entry.address !== 'N/A' && entry.address !== 'Not set'
                           return (
                             <li key={addressKey} style={{ marginBottom: '0.25rem' }}>
                               <span style={{ fontWeight: 600 }}>{entry.label}:</span>{' '}

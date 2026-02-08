@@ -1487,9 +1487,9 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     }
 
     // Signature is valid, proceed with processing
-    console.log('Didit KYC callback received and verified:', rawBody);
+    console.log('Didit KYC callback received and verified:', JSON.stringify(rawBody));
 
-    const { session_id, status, webhook_type, vendor_data, decision, aml, workflow_id } = rawBody;
+    const { session_id, status, webhook_type, vendor_data, decision, aml_screenings: aml, workflow_id } = rawBody;
 
     if (!session_id) {
       console.error('No session_id in Didit callback');
@@ -1526,7 +1526,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       });
 
       // Create a new user for this KYC session
-      const kycData = decision?.id_verification;
+      const kycData = decision?.id_verifications?.[0];
       let userName: string | null = null;
       let userEmail = null;
 
@@ -1621,8 +1621,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
 
       // Store additional verification data if available
-      if (decision && decision.id_verification) {
-        const idData = decision.id_verification;
+      if (decision && decision.id_verifications?.[0]) {
+        const idData = decision.id_verifications?.[0];
 
         console.log(`KYC first/last name 2: ${idData.first_name} ${idData.last_name}`);
         // Store user name from KYC verification data

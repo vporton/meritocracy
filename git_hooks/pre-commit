@@ -7,4 +7,7 @@ npm test
 cd backend
 . ./.env
 npx prisma migrate status
-npx prisma migrate diff --shadow-database-url="$DATABASE_URL" --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code
+
+# TODO@P2: This does not work:
+# export SHADOW_DATABASE_URL="postgresql://user:pass@localhost:5432/prisma_shadow"
+# npx prisma migrate diff --shadow-database-url="$SHADOW_DATABASE_URL" --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code

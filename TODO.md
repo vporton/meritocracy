@@ -74,5 +74,3 @@
 - TODO@P3 Run tasks in parallel.
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
-
-- TODO@P2 Don't allow to commit, if not all DB migrations have been created.

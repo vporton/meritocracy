@@ -4,6 +4,7 @@ import bs58 from 'bs58';
 import { decodeAddress } from '@polkadot/util-crypto';
 import { fromBech32 } from '@cosmjs/encoding';
 import { StrKey } from 'stellar-sdk';
+import { Principal } from '@dfinity/principal';
 
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
 
@@ -126,12 +127,31 @@ export const isValidCosmosAddress = (value: string): boolean => {
   }
 };
 
+export const isValidIcpAddress = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (/^[0-9a-fA-F]{64}$/.test(trimmed)) {
+    return true;
+  }
+
+  try {
+    Principal.fromText(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export type NonEvmAddressInput = {
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
+  icpAddress?: string | null;
 };
 
 export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, string>>;
@@ -139,7 +159,14 @@ export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, strin
 export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAddressErrors => {
   const errors: NonEvmAddressErrors = {};
 
-  const { solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress, stellarAddress } = addresses;
+  const {
+    solanaAddress,
+    bitcoinAddress,
+    polkadotAddress,
+    cosmosAddress,
+    stellarAddress,
+    icpAddress
+  } = addresses;
 
   if (solanaAddress && solanaAddress.trim() && !isValidSolanaAddress(solanaAddress)) {
     errors.solanaAddress = 'Invalid Solana address format.';
@@ -162,6 +189,10 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
     if (!/^G[A-Z2-7]{55}$/.test(trimmed) || !StrKey.isValidEd25519PublicKey(trimmed)) {
       errors.stellarAddress = 'Invalid Stellar address format.';
     }
+  }
+
+  if (icpAddress && icpAddress.trim() && !isValidIcpAddress(icpAddress)) {
+    errors.icpAddress = 'Invalid ICP address format.';
   }
 
   return errors;

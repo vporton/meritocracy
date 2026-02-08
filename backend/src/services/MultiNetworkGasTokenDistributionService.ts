@@ -14,7 +14,8 @@ import {
   cosmosGasTokenNetworkAdapter,
   polkadotGasTokenNetworkAdapter,
   solanaGasTokenNetworkAdapter,
-  stellarGasTokenNetworkAdapter
+  stellarGasTokenNetworkAdapter,
+  icpGasTokenNetworkAdapter
 } from './gas-networks/index.js';
 import { systemSecretService } from './SystemSecretService.js';
 import emailService from './EmailService.js';
@@ -105,7 +106,8 @@ export class MultiNetworkGasTokenDistributionService {
         bitcoinGasTokenNetworkAdapter,
         cosmosGasTokenNetworkAdapter,
         polkadotGasTokenNetworkAdapter,
-        stellarGasTokenNetworkAdapter
+        stellarGasTokenNetworkAdapter,
+        icpGasTokenNetworkAdapter
       ];
 
     this.defaultTokenOptions = {

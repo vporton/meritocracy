@@ -2,6 +2,8 @@ const BASE58_REGEX = /^[1-9A-HJ-NP-Za-km-z]+$/;
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
 const STELLAR_ADDRESS_REGEX = /^G[A-Z2-7]{55}$/;
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const ICP_ACCOUNT_ID_REGEX = /^[0-9a-fA-F]{64}$/;
+const ICP_PRINCIPAL_REGEX = /^[a-z0-9-]{5,63}$/;
 
 const hasBech32Prefix = (value: string, prefixes: string[]): boolean => {
   const normalized = value.toLowerCase();
@@ -123,12 +125,26 @@ export const isValidStellarAddress = (value: string): boolean => {
   }
 };
 
+export const isValidIcpAddress = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (ICP_ACCOUNT_ID_REGEX.test(trimmed)) {
+    return true;
+  }
+
+  return ICP_PRINCIPAL_REGEX.test(trimmed);
+};
+
 export type NonEvmAddressInput = {
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
+  icpAddress?: string | null;
 };
 
 export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, string>>;
@@ -136,7 +152,14 @@ export type NonEvmAddressErrors = Partial<Record<keyof NonEvmAddressInput, strin
 export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAddressErrors => {
   const errors: NonEvmAddressErrors = {};
 
-  const { solanaAddress, bitcoinAddress, polkadotAddress, cosmosAddress, stellarAddress } = addresses;
+  const {
+    solanaAddress,
+    bitcoinAddress,
+    polkadotAddress,
+    cosmosAddress,
+    stellarAddress,
+    icpAddress
+  } = addresses;
 
   if (solanaAddress && solanaAddress.trim() && !isValidSolanaAddress(solanaAddress)) {
     errors.solanaAddress = 'Invalid Solana address format.';
@@ -156,6 +179,10 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
 
   if (stellarAddress && stellarAddress.trim() && !isValidStellarAddress(stellarAddress)) {
     errors.stellarAddress = 'Invalid Stellar address format.';
+  }
+
+  if (icpAddress && icpAddress.trim() && !isValidIcpAddress(icpAddress)) {
+    errors.icpAddress = 'Invalid ICP address format.';
   }
 
   return errors;

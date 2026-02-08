@@ -218,7 +218,8 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       bitcoinAddress,
       polkadotAddress,
       cosmosAddress,
-      stellarAddress
+      stellarAddress,
+      icpAddress
     } = req.body;
     const authenticatedUserId = (req as any).userId;
 
@@ -233,7 +234,8 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       bitcoinAddress,
       polkadotAddress,
       cosmosAddress,
-      stellarAddress
+      stellarAddress,
+      icpAddress
     });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -253,7 +255,8 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
         ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
         ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
-        ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null })
+        ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null }),
+        ...(icpAddress !== undefined && { icpAddress: icpAddress?.trim() ? icpAddress.trim() : null })
       },
     });
 

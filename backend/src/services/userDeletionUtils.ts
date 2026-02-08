@@ -9,6 +9,7 @@ export function makeUserSoftDeletePayload(deletionTimestamp: Date) {
     polkadotAddress: null,
     cosmosAddress: null,
     stellarAddress: null,
+    icpAddress: null,
     orcidId: null,
     githubHandle: null,
     bitbucketHandle: null,

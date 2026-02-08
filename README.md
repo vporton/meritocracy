@@ -4,7 +4,7 @@
 
 (For the most functioning version, you may see the `stable` branch.)
 
-"Meritocracy" (in full: "AI Internet-Meritocracy", or AIIM) is an app that gathers crypto donations and distributes them among scientists and free software developers.
+"Meritocracy" (in full: "AI Internet-Meritocracy", or AIIM) is an app that gathers crypto donations and distributes them among scientists, free software developers, and science marketers/popularizers whose salaries are based on their impact in promoting science (especially under-represented areas and discoveries).
 
 See [the site](https://science-dao.org/meritocracy/) for more information.
 

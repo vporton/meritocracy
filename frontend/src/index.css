@@ -241,7 +241,7 @@ button:focus-visible {
   display: grid;
   grid-template-columns: 60px 1fr auto;
   gap: 0.5rem;
-  align-items: center;
+  align-items: baseline;
   padding: 0.5rem;
   background-color: #2a2a2a;
   border-radius: 4px;
@@ -252,8 +252,7 @@ button:focus-visible {
 
 .leaderboard-header .col-rank,
 .leaderboard-header .col-name {
-  display: flex;
-  align-items: center;
+  display: block;
 }
 
 .leaderboard-row {

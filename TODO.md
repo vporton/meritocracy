@@ -74,3 +74,5 @@
 - TODO@P3 Run tasks in parallel.
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
+
+- TODO@P2 Ensure that disconnecting KYC Level 1 does not create broken Level 2.

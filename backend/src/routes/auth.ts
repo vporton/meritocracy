@@ -1526,7 +1526,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       });
 
       // Create a new user for this KYC session
-      const kycData = decision?.id_verification;
+      const kycData = decision?.id_verifications?.[0];
       let userName: string | null = null;
       let userEmail = null;
 
@@ -1540,17 +1540,12 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         } else if (kycData.last_name) {
           userName = kycData.last_name;
         }
-
-        if (kycData.email) {
-          userEmail = kycData.email;
-        }
       }
 
       // Create new user
       user = await prisma.user.create({
         data: {
           name: userName,
-          email: userEmail,
           ethereumAddress: null,
           orcidId: null,
           githubHandle: null,

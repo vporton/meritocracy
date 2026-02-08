@@ -66,6 +66,7 @@ const ConnectForm = () => {
     polkadotAddress: '',
     cosmosAddress: '',
     stellarAddress: '',
+    icpAddress: '',
   });
   const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
@@ -138,6 +139,7 @@ const ConnectForm = () => {
         polkadotAddress: user.polkadotAddress ?? '',
         cosmosAddress: user.cosmosAddress ?? '',
         stellarAddress: user.stellarAddress ?? '',
+        icpAddress: user.icpAddress ?? '',
       });
     } else {
       setNonEvmForm({
@@ -146,6 +148,7 @@ const ConnectForm = () => {
         polkadotAddress: '',
         cosmosAddress: '',
         stellarAddress: '',
+        icpAddress: '',
       });
     }
     setNonEvmErrors({});
@@ -173,6 +176,7 @@ const ConnectForm = () => {
       if (user.polkadotAddress) connectedProviders.push({ name: 'Polkadot', value: user.polkadotAddress });
       if (user.cosmosAddress) connectedProviders.push({ name: 'Cosmos', value: user.cosmosAddress });
       if (user.stellarAddress) connectedProviders.push({ name: 'Stellar', value: user.stellarAddress });
+      if (user.icpAddress) connectedProviders.push({ name: 'ICP', value: user.icpAddress });
       if (user.orcidId) connectedProviders.push({ name: 'ORCID', value: user.orcidId });
       if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
       if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
@@ -665,6 +669,7 @@ const ConnectForm = () => {
         polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
         cosmosAddress: nonEvmForm.cosmosAddress.trim() || null,
         stellarAddress: nonEvmForm.stellarAddress.trim() || null,
+        icpAddress: nonEvmForm.icpAddress.trim() || null,
       });
 
       await refreshUser();
@@ -685,7 +690,7 @@ const ConnectForm = () => {
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
       const detailErrors = error?.response?.data?.details;
       if (detailErrors && typeof detailErrors === 'object') {
-        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress'] as const;
+        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress', 'icpAddress'] as const;
         const mappedErrors: NonEvmAddressErrors = {};
         for (const key of recognizedKeys) {
           const value = (detailErrors as Record<string, unknown>)[key];
@@ -1082,6 +1087,20 @@ const ConnectForm = () => {
             />
             {nonEvmErrors.stellarAddress && (
               <p className="error-message">{nonEvmErrors.stellarAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="icpAddress">ICP Address</label>
+            <input
+              type="text"
+              id="icpAddress"
+              value={nonEvmForm.icpAddress}
+              onChange={handleNonEvmChange('icpAddress')}
+              placeholder="Enter your ICP account ID or principal"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+            {nonEvmErrors.icpAddress && (
+              <p className="error-message">{nonEvmErrors.icpAddress}</p>
             )}
           </div>
           <div className="form-actions">

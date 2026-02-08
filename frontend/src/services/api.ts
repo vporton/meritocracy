@@ -29,6 +29,7 @@ interface User {
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
+  icpAddress?: string | null;
   orcidId?: string;
   githubHandle?: string;
   bitbucketHandle?: string;
@@ -80,6 +81,7 @@ interface UpdateUserData {
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
+  icpAddress?: string | null;
 }
 
 interface UpdatePostData {

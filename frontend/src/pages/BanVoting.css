@@ -403,6 +403,12 @@
     border-color: #f7931a;
 }
 
+.profile-link.icp:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
 .profile-link.audit-logs:hover {
     background: #4a5568;
     color: white;

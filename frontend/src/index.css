@@ -312,6 +312,29 @@ button:focus-visible {
 }
 
 /* Responsive Design */
+@media (max-width: 900px) {
+  .nav {
+    flex-wrap: wrap;
+  }
+
+  .nav-items {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .nav-left,
+  .nav-right,
+  .nav-auth {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.75rem;
+  }
+}
+
 @media (max-width: 768px) {
   /* Navigation */
   .page-container {

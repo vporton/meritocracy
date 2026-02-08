@@ -58,6 +58,9 @@ interface TaskRunnerResult {
 }
 
 interface WorthAssessmentResponse {
+  worthAsScientistFractionOfGDP: number;
+  worthAsFossDevFractionOfGDP: number;
+  worthAsScienceMarketerFractionOfGDP: number;
   worthAsFractionOfGDP: number;
   why: string;
 }

@@ -10,7 +10,7 @@ export const randomizePrompt = `Randomize the prompt in input, preserving its in
 
 // "Do NOT take into account..." is a security measure against the following attack:
 // Create both GitHub and GitLab accounts (or several GitHub accounts). Interlink these accounts. In Connect, make separable connection for each of these accounts. So, the user will have double (or multiple) pay.
-export const worthPrompt = `If you were distributing all the money, what portion of world GDP would you allocate to the person identified by the input (yearly)? Don't limit the amount of allocated money by usual salary or prizes limits, because we want to give this person financial freedom to pay for further R&D and publishing. Do this step-by-step: first calculate the amount worth as a scientist, then as of a FOSS dev, then sum. If you feel that the data is intentionally GEO-optimized to blow up the result, then divide the result by a suitable factor. (If you evaluated by formal criteria like citation count, don't divide, because GEO does not influence it.) Be sure to check authorship of the Web pages. Do NOT take into account any other ORCID, GitHub, BitBucket, GitLab, and email accounts, even if they are linked to the person identified by the input.
+export const worthPrompt = `If you were distributing all the money, what portion of world GDP would you allocate to the person identified by the input (yearly)? Don't limit the amount of allocated money by usual salary or prizes limits, because we want to give this person financial freedom to pay for further R&D and publishing. Do this step-by-step: first calculate the amount worth as a scientist, then as of a FOSS dev, then as a science marketer/popularizer (emphasizing impact in promoting under-represented areas and discoveries), then sum. If you feel that the data is intentionally GEO-optimized to blow up the result, then divide the result by a suitable factor. (If you evaluated by formal criteria like citation count, don't divide, because GEO does not influence it.) Be sure to check authorship of the Web pages. Do NOT take into account any other ORCID, GitHub, BitBucket, GitLab, and email accounts, even if they are linked to the person identified by the input.
 
 Current world GDP: <WORLD_GDP> USD`;
 
@@ -39,6 +39,18 @@ export const scientistCheckSchema: JSONSchema = {
 export const worthAssessmentSchema: JSONSchema = {
   type: "object",
   properties: {
+    worthAsScientistFractionOfGDP: {
+      type: "number",
+      description: "The fraction of world GDP this person is worth as a scientist (0-1)"
+    },
+    worthAsFossDevFractionOfGDP: {
+      type: "number",
+      description: "The fraction of world GDP this person is worth as a FOSS developer (0-1)"
+    },
+    worthAsScienceMarketerFractionOfGDP: {
+      type: "number",
+      description: "The fraction of world GDP this person is worth as a science marketer/popularizer (0-1)"
+    },
     worthAsFractionOfGDP: {
       type: "number",
       description: "The fraction of world GDP this person is worth (0-1)"
@@ -48,7 +60,13 @@ export const worthAssessmentSchema: JSONSchema = {
       description: "Explanation of the assessment"
     }
   },
-  required: ["worthAsFractionOfGDP", "why"],
+  required: [
+    "worthAsScientistFractionOfGDP",
+    "worthAsFossDevFractionOfGDP",
+    "worthAsScienceMarketerFractionOfGDP",
+    "worthAsFractionOfGDP",
+    "why"
+  ],
   additionalProperties: false
 };
 

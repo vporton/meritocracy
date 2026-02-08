@@ -26,8 +26,7 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: block;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -310,7 +309,7 @@ button:focus-visible {
 /* Responsive Design */
 @media (max-width: 768px) {
   /* Navigation */
-  #root {
+  .page-container {
     width: 100%;
     max-width: 100%;
     padding: 0.75rem;

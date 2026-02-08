@@ -54,8 +54,6 @@
 
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
-- TODO@P3 deprecated stellar-sdk@12.3.0: ⚠️ This package has moved to @stellar/stellar-sdk! 🚚
-
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
 
 - TODO@P3 Multi-AI agentic framework https://www.openresponses.org
@@ -66,10 +64,6 @@
   - Russia: Нужна красивая и понятная презентация на Русском без всплывашки с просьбой доната для начала, показать Гос. выгоду от использовния, посчитать цену внедрения, показать реальные примеры УЖЕ существующие, писать надо в профильные комитеты ГД и министерств, 3-5 лет доработок и после всех согласований если очень поезет то может быть что-то будут точечно тестировать
 
 - TODO@P2 Implement tech support.
-
-- TODO@P3 Science marketers and popularizers salaries.
-
-- TODO@P2 Esnure we enable all supported blockchains.
 
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
 

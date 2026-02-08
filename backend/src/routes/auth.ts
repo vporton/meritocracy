@@ -1506,6 +1506,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
 
       // Extract user information from KYC data if available
       if (kycData) {
+        console.log(`KYC first/last name: ${kycData.first_name} ${kycData.last_name}`);
         if (kycData.first_name && kycData.last_name) {
           userName = `${kycData.first_name} ${kycData.last_name}`.trim();
         } else if (kycData.first_name) {

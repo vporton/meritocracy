@@ -138,6 +138,9 @@ interface ScientistCheckResponse {
 }
 
 interface WorthAssessmentResponse {
+  worthAsScientistFractionOfGDP: number;
+  worthAsFossDevFractionOfGDP: number;
+  worthAsScienceMarketerFractionOfGDP: number;
   worthAsFractionOfGDP: number;
   why: string;
 }
@@ -388,6 +391,9 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         break;
       case 'WorthAssessmentRunner':
         fakeResponse = {
+          worthAsScientistFractionOfGDP: 0.0004,
+          worthAsFossDevFractionOfGDP: 0.0004,
+          worthAsScienceMarketerFractionOfGDP: 0.0002,
           worthAsFractionOfGDP: 0.001, // 0.1% of GDP
           why: 'Fake mode: Always return 0.1% of GDP'
         };

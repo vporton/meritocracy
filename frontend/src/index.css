@@ -250,6 +250,12 @@ button:focus-visible {
   font-weight: bold;
 }
 
+.leaderboard-header .col-rank,
+.leaderboard-header .col-name {
+  display: flex;
+  align-items: center;
+}
+
 .leaderboard-row {
   display: grid;
   grid-template-columns: 60px 1fr auto;

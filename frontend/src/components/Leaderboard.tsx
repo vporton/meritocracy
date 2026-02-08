@@ -105,7 +105,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <p>📊 No GDP shares have been calculated yet</p>
           <p style={{ fontSize: '0.9rem', color: '#888' }}>
-            Complete your profile and evaluation to see the leaderboard
+            The leaderboard is visible to everyone once GDP shares are available
           </p>
         </div>
       </div>

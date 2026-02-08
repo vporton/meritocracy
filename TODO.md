@@ -76,3 +76,5 @@
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
 
 - TODO@P2 Don't allow to commit, if not all DB migrations have been created.
+
+- FIXME@P2 Why I am shown as `User 3` when KYC Level 1 has already passed?

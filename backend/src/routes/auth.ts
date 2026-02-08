@@ -1526,7 +1526,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       });
 
       // Create a new user for this KYC session
-      const kycData = decision?.id_verifications?.[0];
+      const kycData = decision?.id_verification;
       let userName: string | null = null;
       let userEmail = null;
 

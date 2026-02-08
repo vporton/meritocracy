@@ -39,7 +39,7 @@ const readStellarConfig = (): StellarNetworkConfig => {
     nativeDecimals: 7,
     horizonUrl: process.env.STELLAR_HORIZON_URL,
     walletAddress: undefined,
-    secretKey: undefined,
+    secretKey: process.env.STELLAR_SECRET_KEY,
     networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.PUBLIC,
     baseFeeStroops
   };

@@ -1366,6 +1366,32 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
       return;
     }
 
+    if (provider === 'votingKyc') {
+      if (user.kycVotingStatus !== 'APPROVED') {
+        res.status(400).json({ error: 'KYC Level 1 not verified' });
+        return;
+      }
+
+      const updateData = {
+        kycVotingStatus: null,
+        kycVotingVerifiedAt: null,
+        kycVotingRejectedAt: null,
+        kycVotingRejectionReason: null,
+        kycVotingData: null
+      };
+
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: updateData
+      });
+
+      res.json({
+        message: 'KYC Level 1 disconnected successfully',
+        user: updatedUser
+      });
+      return;
+    }
+
     // Determine which field to clear based on provider
     const providerFields: Record<string, string> = {
       ethereum: 'ethereumAddress',

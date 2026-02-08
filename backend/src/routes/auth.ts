@@ -1624,6 +1624,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       if (decision && decision.id_verification) {
         const idData = decision.id_verification;
 
+        console.log(`KYC first/last name 2: ${idData.first_name} ${idData.last_name}`);
         // Store user name from KYC verification data
         if (idData.first_name && idData.last_name) {
           updateData.name = `${idData.first_name} ${idData.last_name}`.trim();

@@ -9,6 +9,49 @@ const prisma = new PrismaClient();
 
 // Remove duplicate auth middleware - now imported from shared module
 
+type KycNameData = {
+  firstName?: string;
+  lastName?: string;
+  first_name?: string;
+  last_name?: string;
+};
+
+type LeaderboardUser = {
+  id: number;
+  name: string | null;
+  kycVotingData: string | null;
+  kycData: string | null;
+};
+
+function extractKycName(kycData: string | null): string | null {
+  if (!kycData) return null;
+  try {
+    const parsed = JSON.parse(kycData) as KycNameData;
+    const firstName = parsed.firstName ?? parsed.first_name;
+    const lastName = parsed.lastName ?? parsed.last_name;
+    const name = [firstName, lastName].filter(Boolean).join(' ').trim();
+    return name || null;
+  } catch (error) {
+    console.warn('Failed to parse KYC data for display name:', error);
+    return null;
+  }
+}
+
+function getLeaderboardDisplayName(user: LeaderboardUser): string {
+  const hasPlaceholderName = Boolean(user.name && /^User \d+$/.test(user.name));
+  if (user.name && !hasPlaceholderName) {
+    return user.name;
+  }
+
+  const kycVotingName = extractKycName(user.kycVotingData);
+  if (kycVotingName) return kycVotingName;
+
+  const kycName = extractKycName(user.kycData);
+  if (kycName) return kycName;
+
+  return user.name || `User ${user.id}`;
+}
+
 // GET /api/users - Get all users
 router.get('/', async (req, res): Promise<void> => {
   try {
@@ -34,6 +77,8 @@ router.get('/leaderboard', async (req, res): Promise<void> => {
       select: {
         id: true,
         name: true,
+        kycVotingData: true,
+        kycData: true,
         shareInGDP: true,
         // Don't include email for privacy
       },
@@ -46,7 +91,7 @@ router.get('/leaderboard', async (req, res): Promise<void> => {
     const leaderboard = users.map((user, index) => ({
       rank: index + 1,
       userId: user.id,
-      name: user.name || `User ${user.id}`,
+      name: getLeaderboardDisplayName(user),
       shareInGDP: user.shareInGDP!,
     }));
 

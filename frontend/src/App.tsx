@@ -27,30 +27,32 @@ function App() {
             <BrowserRouter>
               <div className="App">
                 <Navigation />
-                <main>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/logs" element={<Logs />} />
-                    <Route path="/logs/:userId" element={<UserAuditLog />} />
-                    <Route path="/connect" element={<ConnectForm />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/ban-voting" element={<BanVoting />} />
-                    <Route path="/treasury" element={<Treasury />} />
-                    {/* Redirect old login route to new connect route */}
-                    <Route path="/login" element={<Navigate to="/connect" replace />} />
-                    <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
-                    <Route path="/auth/orcid/callback" element={<OAuthCallback provider="orcid" />} />
-                    <Route path="/auth/bitbucket/callback" element={<OAuthCallback provider="bitbucket" />} />
-                    <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
-                  </Routes>
-                </main>
+                <div className="page-container">
+                  <main>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/logs" element={<Logs />} />
+                      <Route path="/logs/:userId" element={<UserAuditLog />} />
+                      <Route path="/connect" element={<ConnectForm />} />
+                      <Route path="/verify-email" element={<VerifyEmail />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/ban-voting" element={<BanVoting />} />
+                      <Route path="/treasury" element={<Treasury />} />
+                      {/* Redirect old login route to new connect route */}
+                      <Route path="/login" element={<Navigate to="/connect" replace />} />
+                      <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
+                      <Route path="/auth/orcid/callback" element={<OAuthCallback provider="orcid" />} />
+                      <Route path="/auth/bitbucket/callback" element={<OAuthCallback provider="bitbucket" />} />
+                      <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
+                    </Routes>
+                  </main>
+                  <p>
+                    <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
+                    <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
+                    <a href="https://science-dao.org/contact/">Contact</a>
+                  </p>
+                </div>
               </div>
-              <p>
-                <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
-                <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
-                <a href="https://science-dao.org/contact/">Contact</a>
-              </p>
             </BrowserRouter>
           </AuthProvider>
         </QueryClientProvider>

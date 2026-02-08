@@ -65,8 +65,6 @@
 
 - TODO@P2 Implement tech support.
 
-- TODO@P2 Ensure we enable all supported blockchains.
-
 - FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.

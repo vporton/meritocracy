@@ -7,3 +7,4 @@ npm test
 cd backend
 . ./.env
 npx prisma migrate status
+npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code

@@ -314,19 +314,15 @@ button:focus-visible {
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .nav {
     flex-wrap: wrap;
-    padding: 0.75rem;
   }
 
   .nav-items {
     flex-wrap: wrap;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
     gap: 0.5rem 0.75rem;
-    width: 100%;
   }
 
   .nav-left,
@@ -334,19 +330,10 @@ button:focus-visible {
   .nav-auth {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
   }
 
   .nav-link {
     padding: 0.4rem 0.75rem;
-  }
-
-  .nav-user {
-    max-width: 12rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 

@@ -1440,6 +1440,68 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
 });
 
 // Didit KYC callback endpoint with webhook signature verification
+type DiditNormalizedPayload = {
+  rawPayload: any;
+  metadata: Record<string, any>;
+  sessionId?: string;
+  workflowId?: string;
+  status?: string;
+  webhookType?: string;
+  vendorData?: string;
+  decision?: any;
+  aml?: any;
+};
+
+function normalizeDiditPayload(rawBody: any): DiditNormalizedPayload {
+  const payload = rawBody?.data ?? rawBody?.payload ?? rawBody ?? {};
+  const metadata = payload?.metadata ?? rawBody?.metadata ?? {};
+  const sessionData = payload?.session ?? rawBody?.session ?? {};
+
+  const sessionId =
+    payload?.session_id ??
+    payload?.sessionId ??
+    sessionData?.id ??
+    rawBody?.session_id ??
+    rawBody?.sessionId;
+
+  const workflowId =
+    payload?.workflow_id ??
+    payload?.workflowId ??
+    sessionData?.workflow_id ??
+    sessionData?.workflowId ??
+    rawBody?.workflow_id ??
+    rawBody?.workflowId;
+
+  const status =
+    payload?.status ??
+    payload?.verification_status ??
+    sessionData?.status ??
+    rawBody?.status ??
+    rawBody?.verification_status;
+
+  const webhookType =
+    payload?.webhook_type ??
+    rawBody?.webhook_type ??
+    payload?.event ??
+    rawBody?.event;
+
+  const vendorData = payload?.vendor_data ?? rawBody?.vendor_data;
+  const decision = payload?.decision ?? payload?.verification?.decision ?? rawBody?.decision;
+  const aml = payload?.aml ?? payload?.screening?.aml ?? rawBody?.aml;
+
+  return {
+    rawPayload: payload,
+    metadata,
+    sessionId,
+    workflowId,
+    status,
+    webhookType,
+    vendorData,
+    decision,
+    aml
+  };
+}
+
 router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
   try {
     // Get the raw request body for signature verification
@@ -1447,8 +1509,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const rawBodyString = (req as any).rawBody;
 
     // Get headers for signature verification
-    const signature = req.get('X-Signature');
-    const timestamp = req.get('X-Timestamp');
+    const signature = req.get('X-Signature') || req.get('X-Didit-Signature') || req.get('Didit-Signature');
+    const timestamp = req.get('X-Timestamp') || req.get('X-Didit-Timestamp') || req.get('Didit-Timestamp');
     const webhookSecretKey = process.env.DIDIT_WEBHOOK_KEY;
 
     // Ensure all required data is present
@@ -1489,9 +1551,18 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     // Signature is valid, proceed with processing
     console.log('Didit KYC callback received and verified:', rawBody);
 
-    const { session_id, status, webhook_type, vendor_data, decision, aml, workflow_id } = rawBody;
+    const {
+      sessionId: diditSessionId,
+      status,
+      webhookType: webhook_type,
+      vendorData: vendor_data,
+      decision,
+      aml,
+      workflowId: workflow_id,
+      metadata
+    } = normalizeDiditPayload(rawBody);
 
-    if (!session_id) {
+    if (!diditSessionId) {
       console.error('No session_id in Didit callback');
       res.status(400).json({ error: 'session_id is required' });
       return;
@@ -1502,7 +1573,6 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     let user;
 
     // The session_id should be in the metadata from the Didit callback
-    const metadata = rawBody.metadata;
     const sessionId = metadata?.session_id;
 
     if (sessionId) {
@@ -1518,7 +1588,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
 
     if (!user) {
       console.log('Session not found, creating new user for KYC webhook:', {
-        session_id,
+        session_id: diditSessionId,
         vendor_data,
         sessionId,
         webhook_type,
@@ -1526,7 +1596,10 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       });
 
       // Create a new user for this KYC session
-      const kycData = decision?.id_verifications?.[0];
+      const kycData =
+        decision?.id_verification ??
+        decision?.id_verifications?.[0] ??
+        decision?.verification_data?.id_verification;
       let userName: string | null = null;
       let userEmail = null;
 
@@ -1580,10 +1653,11 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const updateData: any = {};
 
     const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
+    const normalizedStatus = status?.toLowerCase();
 
     // Handle different statuses according to Didit webhook format
     // Trust the main status 'Approved' as authoritative for the session
-    if (status === 'Approved') {
+    if (normalizedStatus === 'approved') {
       if (isVotingFlow) {
         // Voting KYC Flow: Sets ONLY Voting Status
         updateData.kycVotingStatus = 'APPROVED';
@@ -1621,8 +1695,8 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
 
       // Store additional verification data if available
-      if (decision && decision.id_verification) {
-        const idData = decision.id_verification;
+      const idData = decision?.id_verification ?? decision?.id_verifications?.[0] ?? decision?.verification_data?.id_verification;
+      if (idData) {
 
         // Store user name from KYC verification data
         if (idData.first_name && idData.last_name) {
@@ -1661,7 +1735,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           updateData.kycData = kycDataStr;
         }
       }
-    } else if (status === 'Declined' || aml?.status === 'Rejected') {
+    } else if (normalizedStatus === 'declined' || aml?.status === 'Rejected' || aml?.status === 'REJECTED') {
       const reason = 'Verification declined by Didit';
       if (isVotingFlow) {
         updateData.kycVotingStatus = 'REJECTED';
@@ -1688,17 +1762,18 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
 
       // Send OFAC report only for AML rejections (sanctions screening)
-      if (aml?.status === 'Rejected') {
+      if (aml?.status === 'Rejected' || aml?.status === 'REJECTED') {
         try {
-          const kycData = decision?.id_verification ? {
-            documentType: decision.id_verification.document_type,
-            documentNumber: decision.id_verification.document_number,
-            firstName: decision.id_verification.first_name,
-            lastName: decision.id_verification.last_name,
-            dateOfBirth: decision.id_verification.date_of_birth,
-            nationality: decision.id_verification.nationality,
-            issuingState: decision.id_verification.issuing_state,
-            personalNumber: decision.id_verification.document_number
+          const idData = decision?.id_verification ?? decision?.id_verifications?.[0] ?? decision?.verification_data?.id_verification;
+          const kycData = idData ? {
+            documentType: idData.document_type,
+            documentNumber: idData.document_number,
+            firstName: idData.first_name,
+            lastName: idData.last_name,
+            dateOfBirth: idData.date_of_birth,
+            nationality: idData.nationality,
+            issuingState: idData.issuing_state,
+            personalNumber: idData.document_number
           } : null;
 
           const emailSent = await EmailService.sendOFACReport(user, kycData, aml, rejectionReason);
@@ -1712,10 +1787,10 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           // Don't fail the entire KYC callback if email fails
         }
       }
-    } else if (status === 'In Review') {
+    } else if (normalizedStatus === 'in review' || normalizedStatus === 'in_review') {
       if (isVotingFlow) updateData.kycVotingStatus = 'PENDING';
       else updateData.kycStatus = 'PENDING';
-    } else if (status === 'Abandoned') {
+    } else if (normalizedStatus === 'abandoned' || normalizedStatus === 'expired') {
       if (isVotingFlow) updateData.kycVotingStatus = 'ABANDONED';
       else updateData.kycStatus = 'ABANDONED';
     }
@@ -1750,7 +1825,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       incomingStatus: status, // DEBUG: Received status
       incomingAmlStatus: aml?.status, // DEBUG: Received AML status
       sessionId: session?.id,
-      diditSessionId: session_id,
+      diditSessionId,
       webhookType: webhook_type,
       newUserCreated: !sessionId || session?.id !== sessionId,
       originalSessionId: sessionId
@@ -1857,8 +1932,10 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       return;
     }
 
+    const diditBaseUrl = process.env.DIDIT_API_BASE_URL || 'https://verification.didit.me/v3';
+
     // Call Didit API to initiate KYC session
-    const diditResponse = await fetch('https://verification.didit.me/v2/session/', {
+    const diditResponse = await fetch(`${diditBaseUrl}/session/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1886,8 +1963,10 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
     }
 
     const diditData: any = await diditResponse.json();
+    const diditUrl = diditData.url || diditData.session_url || diditData.redirect_url || diditData?.data?.url || diditData?.data?.session_url;
+    const diditSessionId = diditData.session_id || diditData.id || diditData?.data?.id || diditData?.data?.session_id;
 
-    if (!diditData.url) {
+    if (!diditUrl) {
       console.error('Didit API response missing URL:', diditData);
       res.status(500).json({ error: 'Invalid response from KYC service' });
       return;
@@ -1907,8 +1986,8 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
     });
 
     const response: any = {
-      url: diditData.url,
-      sessionId: diditData.session_id || null
+      url: diditUrl,
+      sessionId: diditSessionId || null
     };
 
     // If we established a new session (was unauthenticated), return it

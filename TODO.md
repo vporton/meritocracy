@@ -74,3 +74,11 @@
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
 
 - TODO@P3 `Disconnect Receiver KYC before disconnecting KYC Level 1` makes no sense.
+
+- TODO@P3 Audit logs display numeric data, too.
+
+- TODO@P3 Write at the Treasury page how we accept donations.
+
+- TODO@P3 Move GitHub link to the footer.
+
+- TODO@P2 Send a email to every registered user, when ban voting starts. (When the site grows, needs to reduce quantity of emails.)

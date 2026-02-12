@@ -1,8 +1,8 @@
 import type { User } from '@prisma/client';
 import { createPrivateKey } from 'crypto';
-import { HttpAgent } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
-import { Principal } from '@dfinity/principal';
+import { HttpAgent } from '@icp-sdk/core/agent';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
+import { Principal } from '@icp-sdk/core/principal';
 import { AccountIdentifier, LedgerCanister } from '@dfinity/ledger-icp';
 import type {
   GasTokenNetworkAdapter,
@@ -75,7 +75,7 @@ const ed25519IdentityFromPem = (pem: string): Ed25519KeyIdentity => {
     throw new Error('[ICP] Invalid Ed25519 private key length');
   }
 
-  return Ed25519KeyIdentity.fromSecretKey(secretKey.buffer.slice(secretKey.byteOffset, secretKey.byteOffset + secretKey.byteLength));
+  return Ed25519KeyIdentity.fromSecretKey(secretKey);
 };
 
 export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
@@ -128,7 +128,7 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     if (!this.ledger) {
       this.ledger = LedgerCanister.create({
         agent: this.getAgent(config),
-        canisterId: config.ledgerCanisterId
+        canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID)
       });
     }
     return this.ledger;
@@ -268,8 +268,8 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     }
 
     const accountIdentifier = this.resolveAccountIdentifier(recipientAddress);
-    const amount = { e8s: BigInt(amountE8s) };
-    const fee = { e8s: BigInt(config.transferFeeE8s) };
+    const amount = BigInt(amountE8s);
+    const fee = BigInt(config.transferFeeE8s);
 
     const blockHeight = await withRetry(
       () =>

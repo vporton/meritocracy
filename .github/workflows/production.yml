@@ -71,4 +71,4 @@ jobs:
           #MY_MACHINE_IDS="$(flyctl m list -a meritocracy --json | jq -r '.[].id')" && \
           #  flyctl m start $MY_MACHINE_IDS -a meritocracy
           # The following starts just one machine :-(
-          curl -o/dev/null https://merit.science-dao.org:445
+          #curl -o/dev/null https://merit.science-dao.org:445  # only takes GitHub Actions time

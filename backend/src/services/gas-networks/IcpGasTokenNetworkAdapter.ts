@@ -4,6 +4,7 @@ import { HttpAgent } from '@icp-sdk/core/agent';
 import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { Principal } from '@icp-sdk/core/principal';
 import { AccountIdentifier, LedgerCanister } from '@dfinity/ledger-icp';
+import { systemSecretService } from '../SystemSecretService.js';
 import type {
   GasTokenNetworkAdapter,
   GasTokenNetworkContext,
@@ -22,8 +23,6 @@ interface IcpNetworkConfig {
   host?: string;
   ledgerCanisterId?: string;
   walletAddress?: string;
-  identityPem?: string;
-  identityPemBase64?: string;
   transferFeeE8s: number;
 }
 
@@ -46,8 +45,6 @@ const readIcpConfig = (): IcpNetworkConfig => {
     host: process.env.ICP_HOST ?? DEFAULT_ICP_HOST,
     ledgerCanisterId: process.env.ICP_LEDGER_CANISTER_ID ?? DEFAULT_ICP_LEDGER_CANISTER_ID,
     walletAddress: process.env.ICP_WALLET_ADDRESS,
-    identityPem: process.env.ICP_IDENTITY_PEM,
-    identityPemBase64: process.env.ICP_IDENTITY_PEM_BASE64,
     transferFeeE8s
   };
 };
@@ -95,39 +92,31 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     if (!config.ledgerCanisterId) {
       throw new Error('[ICP] ICP_LEDGER_CANISTER_ID not configured');
     }
-    if (!config.identityPem && !config.identityPemBase64) {
-      throw new Error('[ICP] ICP_IDENTITY_PEM or ICP_IDENTITY_PEM_BASE64 not configured');
-    }
     return config;
   }
 
-  private getIdentity(config: IcpNetworkConfig): Ed25519KeyIdentity {
+  private async getIdentity(): Promise<Ed25519KeyIdentity> {
     if (!this.identity) {
-      const pem = config.identityPemBase64
-        ? Buffer.from(config.identityPemBase64, 'base64').toString('utf-8')
-        : config.identityPem;
-      if (!pem) {
-        throw new Error('[ICP] Missing identity PEM');
-      }
+      const pem = await systemSecretService.ensureSecretInDb('ICP_IDENTITY_PEM');
       this.identity = ed25519IdentityFromPem(pem);
     }
     return this.identity;
   }
 
-  private getAgent(config: IcpNetworkConfig): HttpAgent {
+  private async getAgent(config: IcpNetworkConfig): Promise<HttpAgent> {
     if (!this.agent) {
       this.agent = new HttpAgent({
         host: config.host,
-        identity: this.getIdentity(config)
+        identity: await this.getIdentity()
       });
     }
     return this.agent;
   }
 
-  private getLedger(config: IcpNetworkConfig): LedgerCanister {
+  private async getLedger(config: IcpNetworkConfig): Promise<LedgerCanister> {
     if (!this.ledger) {
       this.ledger = LedgerCanister.create({
-        agent: this.getAgent(config),
+        agent: await this.getAgent(config),
         canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID)
       });
     }
@@ -167,8 +156,8 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       return [];
     }
 
-    if (!config.ledgerCanisterId || !config.host || (!config.identityPem && !config.identityPemBase64)) {
-      console.warn('⚠️  [ICP] Missing ICP ledger or identity configuration, skipping.');
+    if (!config.ledgerCanisterId || !config.host) {
+      console.warn('⚠️  [ICP] Missing ICP ledger configuration, skipping.');
       return [];
     }
 
@@ -187,18 +176,18 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
         tokenDecimals: config.nativeDecimals,
         nativeTokenSymbol: config.nativeSymbol,
         nativeTokenDecimals: config.nativeDecimals,
-        walletAddress: config.walletAddress ?? this.resolveWalletAddress(config),
+        walletAddress: config.walletAddress ?? (await this.resolveWalletAddress(config)),
         defaultGasCostToken: fromE8s(config.transferFeeE8s)
       }
     ];
   }
 
-  private resolveWalletAddress(config: IcpNetworkConfig): string | undefined {
+  private async resolveWalletAddress(config: IcpNetworkConfig): Promise<string | undefined> {
     if (config.walletAddress) {
       return config.walletAddress;
     }
     try {
-      const principal = this.getIdentity(config).getPrincipal();
+      const principal = (await this.getIdentity()).getPrincipal();
       const accountIdentifier = this.getAccountIdentifierForPrincipal(principal);
       return this.formatAccountIdentifier(accountIdentifier);
     } catch (error) {
@@ -210,8 +199,8 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
 
   async getWalletBalance(context: GasTokenNetworkContext): Promise<number> {
     const config = this.ensureEnabledConfig();
-    const ledger = this.getLedger(config);
-    const walletAddress = context.walletAddress ?? this.resolveWalletAddress(config);
+    const ledger = await this.getLedger(config);
+    const walletAddress = context.walletAddress ?? (await this.resolveWalletAddress(config));
     if (!walletAddress) {
       throw new Error('[ICP] Wallet address not configured');
     }
@@ -261,7 +250,7 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     amountToken: number
   ): Promise<GasTransferResult> {
     const config = this.ensureEnabledConfig();
-    const ledger = this.getLedger(config);
+    const ledger = await this.getLedger(config);
     const amountE8s = toE8s(amountToken);
     if (amountE8s <= 0) {
       throw new Error('[ICP] Transfer amount must be greater than zero');

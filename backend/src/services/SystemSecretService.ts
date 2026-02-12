@@ -6,7 +6,7 @@ import { mnemonicGenerate, cryptoWaitReady } from '@polkadot/util-crypto';
 import { ECPairFactory } from 'ecpair';
 import * as tinysecp from 'tiny-secp256k1';
 import bs58 from 'bs58';
-import { webcrypto } from 'node:crypto';
+import { generateKeyPairSync, webcrypto } from 'node:crypto';
 import process from 'process';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -43,7 +43,8 @@ export class SystemSecretService {
             'STELLAR_SECRET_KEY',
             'POLKADOT_SECRET_URI',
             'BITCOIN_WIF',
-            'COSMOS_MNEMONIC'
+            'COSMOS_MNEMONIC',
+            'ICP_IDENTITY_PEM'
         ];
 
         for (const name of essentialSecrets) {
@@ -90,6 +91,24 @@ export class SystemSecretService {
         return value;
     }
 
+    public async ensureSecretInDb(name: string, defaultValue?: string): Promise<string> {
+        const existing = await prisma.systemSecret.findUnique({
+            where: { name },
+        });
+        if (existing?.value?.trim()) {
+            return existing.value;
+        }
+
+        const value = defaultValue || this.generateSecretForName(name);
+        await (prisma as any).systemSecret.upsert({
+            where: { name },
+            update: { value },
+            create: { name, value }
+        });
+
+        return value;
+    }
+
     private generateSecretForName(name: string): string {
         if (name === 'ETHEREUM_PRIVATE_KEY') {
             return generatePrivateKey();
@@ -111,6 +130,10 @@ export class SystemSecretService {
         }
         if (name === 'COSMOS_MNEMONIC') {
             return mnemonicGenerate();
+        }
+        if (name === 'ICP_IDENTITY_PEM') {
+            const { privateKey } = generateKeyPairSync('ed25519');
+            return privateKey.export({ format: 'pem', type: 'pkcs8' }).toString();
         }
 
         // Generic fallback: random hex

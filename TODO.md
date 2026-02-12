@@ -82,3 +82,7 @@
 - TODO@P3 Move GitHub link to the footer.
 
 - TODO@P2 Send a email to every registered user, when ban voting starts. (When the site grows, needs to reduce quantity of emails.)
+
+- TODO@P3 Google Analytics for such things as user registration.
+
+- FIXME@P1 It seems not to recalcute worth of users.

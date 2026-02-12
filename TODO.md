@@ -84,3 +84,5 @@
 - TODO@P2 Send a email to every registered user, when ban voting starts. (When the site grows, needs to reduce quantity of emails.)
 
 - TODO@P3 Google Analytics for such things as user registration.
+
+- TODO@P3 In Audit Logs separate las-assessment and old logs.

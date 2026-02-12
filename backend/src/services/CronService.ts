@@ -225,16 +225,10 @@ export class CronService {
     console.log('🔄 Starting bi-monthly evaluation process...');
 
     try {
-      // Find onboarded users who were updated more than a month ago
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
+      // Find every onboarded user for re-worth assessment
       const eligibleUsers = await this.prisma.user.findMany({
         where: {
-          onboarded: true,
-          updatedAt: {
-            lt: oneMonthAgo
-          }
+          onboarded: true
         },
         select: {
           id: true,

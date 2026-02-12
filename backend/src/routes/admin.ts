@@ -83,4 +83,24 @@ router.post('/trigger-distribution', authAdmin, async (req, res) => {
     }
 });
 
+/**
+ * POST /api/admin/trigger-re-worth-assessment
+ * Manually trigger re-worth-assessment for all onboarded users
+ */
+router.post('/trigger-re-worth-assessment', authAdmin, async (_req, res) => {
+    try {
+        const result = await cronService.runBiMonthlyEvaluation();
+        res.json({
+            message: 'Re-worth-assessment triggered successfully',
+            result
+        });
+    } catch (error) {
+        console.error('Error triggering re-worth-assessment:', error);
+        res.status(500).json({
+            error: 'Failed to trigger re-worth-assessment',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
 export default router;

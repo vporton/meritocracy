@@ -227,6 +227,8 @@ export const adminApi = {
     api.post('/api/admin/toggle-distribution', { enabled }, { headers: { 'x-admin-password': password } }),
   triggerDistribution: (password: string): Promise<AxiosResponse<{ message: string; result: any }>> =>
     api.post('/api/admin/trigger-distribution', {}, { headers: { 'x-admin-password': password } }),
+  triggerReWorthAssessment: (password: string): Promise<AxiosResponse<{ message: string; result: any }>> =>
+    api.post('/api/admin/trigger-re-worth-assessment', {}, { headers: { 'x-admin-password': password } }),
 }
 
 // World GDP API

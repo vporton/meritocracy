@@ -251,7 +251,12 @@ export class CronService {
 
       if (eligibleUsers.length === 0) {
         console.log('ℹ️  No users eligible for bi-monthly evaluation');
-        return;
+        return {
+          eligibleUsers: 0,
+          successful: 0,
+          failed: 0,
+          errors: [] as string[]
+        };
       }
 
       // Process each eligible user
@@ -284,7 +289,7 @@ export class CronService {
           results.successful++;
 
           const taskManager = new TaskManager(this.prisma);
-          const success = await taskManager.runAllPendingTasks();
+          await taskManager.runAllPendingTasks();
 
         } catch (error) {
           const errorMessage = `Failed to create evaluation flow for user ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -302,6 +307,13 @@ export class CronService {
         console.log('  🚨 Errors:');
         results.errors.forEach(error => console.log(`    - ${error}`));
       }
+
+      return {
+        eligibleUsers: eligibleUsers.length,
+        successful: results.successful,
+        failed: results.failed,
+        errors: results.errors
+      };
 
     } catch (error) {
       console.error('💥 Fatal error in bi-monthly evaluation process:', error);

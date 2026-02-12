@@ -1,0 +1,288 @@
+import type { User } from '@prisma/client';
+import { createPrivateKey } from 'crypto';
+import { HttpAgent } from '@icp-sdk/core/agent';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
+import { Principal } from '@icp-sdk/core/principal';
+import { AccountIdentifier, LedgerCanister } from '@dfinity/ledger-icp';
+import { systemSecretService } from '../SystemSecretService.js';
+import type {
+  GasTokenNetworkAdapter,
+  GasTokenNetworkContext,
+  GasTransferEstimate,
+  GasTransferResult,
+  TokenDistributionOptions
+} from './types.js';
+import { withRetry } from '../../utils/retry.js';
+
+interface IcpNetworkConfig {
+  enabled: boolean;
+  networkId: string;
+  networkName: string;
+  nativeSymbol: string;
+  nativeDecimals: number;
+  host?: string;
+  ledgerCanisterId?: string;
+  walletAddress?: string;
+  transferFeeE8s: number;
+}
+
+const DEFAULT_ICP_LEDGER_CANISTER_ID = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
+const DEFAULT_ICP_HOST = 'https://ic0.app';
+
+const readIcpConfig = (): IcpNetworkConfig => {
+  const transferFeeE8sRaw = Number(process.env.ICP_TRANSFER_FEE_E8S ?? 10000);
+  const transferFeeE8s =
+    Number.isFinite(transferFeeE8sRaw) && transferFeeE8sRaw > 0
+      ? Math.floor(transferFeeE8sRaw)
+      : 10000;
+
+  return {
+    enabled: process.env.ICP_ENABLED === 'true',
+    networkId: 'icp-mainnet',
+    networkName: 'Internet Computer',
+    nativeSymbol: 'ICP',
+    nativeDecimals: 8,
+    host: process.env.ICP_HOST ?? DEFAULT_ICP_HOST,
+    ledgerCanisterId: process.env.ICP_LEDGER_CANISTER_ID ?? DEFAULT_ICP_LEDGER_CANISTER_ID,
+    walletAddress: process.env.ICP_WALLET_ADDRESS,
+    transferFeeE8s
+  };
+};
+
+const toE8s = (amountToken: number): number => Math.round(amountToken * 1e8);
+
+const fromE8s = (amountE8s: number): number => amountE8s / 1e8;
+
+const ED25519_PKCS8_DER_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
+
+const ed25519IdentityFromPem = (pem: string): Ed25519KeyIdentity => {
+  const privateKeyObject = createPrivateKey({ key: pem, format: 'pem' });
+  const privateKeyDer = privateKeyObject.export({ format: 'der', type: 'pkcs8' });
+  const privateKeyBuffer = Buffer.isBuffer(privateKeyDer)
+    ? privateKeyDer
+    : Buffer.from(privateKeyDer as ArrayBuffer);
+
+  const prefix = privateKeyBuffer.subarray(0, ED25519_PKCS8_DER_PREFIX.length);
+  if (!prefix.equals(ED25519_PKCS8_DER_PREFIX)) {
+    throw new Error('[ICP] Unsupported Ed25519 private key format');
+  }
+
+  const secretKey = privateKeyBuffer.subarray(ED25519_PKCS8_DER_PREFIX.length);
+  if (secretKey.length !== 32) {
+    throw new Error('[ICP] Invalid Ed25519 private key length');
+  }
+
+  return Ed25519KeyIdentity.fromSecretKey(secretKey);
+};
+
+export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
+  readonly type = 'ICP';
+  private agent?: HttpAgent;
+  private ledger?: LedgerCanister;
+  private identity?: Ed25519KeyIdentity;
+
+  private ensureEnabledConfig(): IcpNetworkConfig {
+    const config = readIcpConfig();
+    if (!config.enabled) {
+      throw new Error('[ICP] Network disabled');
+    }
+    if (!config.host) {
+      throw new Error('[ICP] ICP_HOST not configured');
+    }
+    if (!config.ledgerCanisterId) {
+      throw new Error('[ICP] ICP_LEDGER_CANISTER_ID not configured');
+    }
+    return config;
+  }
+
+  private async getIdentity(): Promise<Ed25519KeyIdentity> {
+    if (!this.identity) {
+      const pem = await systemSecretService.ensureSecretInDb('ICP_IDENTITY_PEM');
+      this.identity = ed25519IdentityFromPem(pem);
+    }
+    return this.identity;
+  }
+
+  private async getAgent(config: IcpNetworkConfig): Promise<HttpAgent> {
+    if (!this.agent) {
+      this.agent = new HttpAgent({
+        host: config.host,
+        identity: await this.getIdentity()
+      });
+    }
+    return this.agent;
+  }
+
+  private async getLedger(config: IcpNetworkConfig): Promise<LedgerCanister> {
+    if (!this.ledger) {
+      this.ledger = LedgerCanister.create({
+        agent: await this.getAgent(config),
+        canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID)
+      });
+    }
+    return this.ledger;
+  }
+
+  private formatAccountIdentifier(accountIdentifier: AccountIdentifier): string {
+    const maybeHex = (accountIdentifier as unknown as { toHex?: () => string }).toHex;
+    if (maybeHex) {
+      return maybeHex.call(accountIdentifier);
+    }
+    return accountIdentifier.toString();
+  }
+
+  private getAccountIdentifierForPrincipal(principal: Principal): AccountIdentifier {
+    const creator = AccountIdentifier as unknown as {
+      fromPrincipal: (args: { principal: Principal }) => AccountIdentifier;
+    };
+    return creator.fromPrincipal({ principal });
+  }
+
+  private resolveAccountIdentifier(address: string): AccountIdentifier {
+    const trimmed = address.trim();
+    if (/^[0-9a-fA-F]{64}$/.test(trimmed)) {
+      const creator = AccountIdentifier as unknown as {
+        fromHex: (value: string) => AccountIdentifier;
+      };
+      return creator.fromHex(trimmed);
+    }
+    const principal = Principal.fromText(trimmed);
+    return this.getAccountIdentifierForPrincipal(principal);
+  }
+
+  async getNetworkContexts(tokenOptions: TokenDistributionOptions): Promise<GasTokenNetworkContext[]> {
+    const config = readIcpConfig();
+    if (!config.enabled) {
+      return [];
+    }
+
+    if (!config.ledgerCanisterId || !config.host) {
+      console.warn('⚠️  [ICP] Missing ICP ledger configuration, skipping.');
+      return [];
+    }
+
+    if (tokenOptions.tokenType && tokenOptions.tokenType !== 'NATIVE') {
+      console.warn(`⚠️  [ICP] Token type ${tokenOptions.tokenType} not supported, skipping.`);
+      return [];
+    }
+
+    return [
+      {
+        adapterType: this.type,
+        networkId: config.networkId,
+        networkName: config.networkName,
+        tokenType: 'NATIVE',
+        tokenSymbol: config.nativeSymbol,
+        tokenDecimals: config.nativeDecimals,
+        nativeTokenSymbol: config.nativeSymbol,
+        nativeTokenDecimals: config.nativeDecimals,
+        walletAddress: config.walletAddress ?? (await this.resolveWalletAddress(config)),
+        defaultGasCostToken: fromE8s(config.transferFeeE8s)
+      }
+    ];
+  }
+
+  private async resolveWalletAddress(config: IcpNetworkConfig): Promise<string | undefined> {
+    if (config.walletAddress) {
+      return config.walletAddress;
+    }
+    try {
+      const principal = (await this.getIdentity()).getPrincipal();
+      const accountIdentifier = this.getAccountIdentifierForPrincipal(principal);
+      return this.formatAccountIdentifier(accountIdentifier);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  [ICP] Failed to derive wallet address: ${message}`);
+      return config.walletAddress;
+    }
+  }
+
+  async getWalletBalance(context: GasTokenNetworkContext): Promise<number> {
+    const config = this.ensureEnabledConfig();
+    const ledger = await this.getLedger(config);
+    const walletAddress = context.walletAddress ?? (await this.resolveWalletAddress(config));
+    if (!walletAddress) {
+      throw new Error('[ICP] Wallet address not configured');
+    }
+    const accountIdentifier = this.resolveAccountIdentifier(walletAddress);
+    const balance = await withRetry(
+      () => ledger.accountBalance({ accountIdentifier }),
+      { taskName: 'ICP accountBalance' }
+    );
+    const balanceValue = balance as unknown as { e8s?: bigint; toE8s?: () => bigint };
+    const e8s = balanceValue.toE8s ? balanceValue.toE8s() : balanceValue.e8s ?? BigInt(0);
+    return fromE8s(Number(e8s));
+  }
+
+  formatAmount(context: GasTokenNetworkContext, amountToken: number): string {
+    return amountToken.toLocaleString('en-US', {
+      useGrouping: false,
+      maximumFractionDigits: context.tokenDecimals
+    });
+  }
+
+  getRecipientAddress(user: User): string | null {
+    return (user as User & { icpAddress?: string | null }).icpAddress ?? null;
+  }
+
+  async estimateTransfer(
+    context: GasTokenNetworkContext,
+    recipientAddress: string,
+    amountToken: number
+  ): Promise<GasTransferEstimate> {
+    try {
+      const config = this.ensureEnabledConfig();
+      const amountE8s = toE8s(amountToken);
+      if (amountE8s <= 0) {
+        return { deferReason: 'Transfer amount too small' };
+      }
+      this.resolveAccountIdentifier(recipientAddress);
+      return { gasCostToken: fromE8s(config.transferFeeE8s) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown ICP estimation error';
+      return { deferReason: message };
+    }
+  }
+
+  async sendTransfer(
+    context: GasTokenNetworkContext,
+    recipientAddress: string,
+    amountToken: number
+  ): Promise<GasTransferResult> {
+    const config = this.ensureEnabledConfig();
+    const ledger = await this.getLedger(config);
+    const amountE8s = toE8s(amountToken);
+    if (amountE8s <= 0) {
+      throw new Error('[ICP] Transfer amount must be greater than zero');
+    }
+
+    const accountIdentifier = this.resolveAccountIdentifier(recipientAddress);
+    const amount = BigInt(amountE8s);
+    const fee = BigInt(config.transferFeeE8s);
+
+    const blockHeight = await withRetry(
+      () =>
+        ledger.transfer({
+          to: accountIdentifier,
+          amount,
+          fee,
+          memo: BigInt(0)
+        }),
+      { taskName: 'ICP transfer' }
+    );
+
+    return { transactionHash: String(blockHeight) };
+  }
+
+  async deriveAddress(privateKey: string): Promise<string> {
+    const pem = privateKey.trim().startsWith('-----BEGIN')
+      ? privateKey
+      : Buffer.from(privateKey, 'base64').toString('utf-8');
+    const identity = ed25519IdentityFromPem(pem);
+    const principal = identity.getPrincipal();
+    const accountIdentifier = this.getAccountIdentifierForPrincipal(principal);
+    return this.formatAccountIdentifier(accountIdentifier);
+  }
+}
+
+export const icpGasTokenNetworkAdapter = new IcpGasTokenNetworkAdapter();

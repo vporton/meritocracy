@@ -10,6 +10,7 @@ const Admin: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [triggering, setTriggering] = useState(false);
+    const [reassessing, setReassessing] = useState(false);
 
     useEffect(() => {
         if (password) {
@@ -67,6 +68,29 @@ const Admin: React.FC = () => {
             });
         } finally {
             setTriggering(false);
+        }
+    };
+
+    const triggerReWorthAssessment = async () => {
+        setReassessing(true);
+        setMessage(null);
+        try {
+            const response = await adminApi.triggerReWorthAssessment(password);
+            const successful = response.data?.result?.successful ?? 0;
+            const failed = response.data?.result?.failed ?? 0;
+            const eligibleUsers = response.data?.result?.eligibleUsers ?? 0;
+            setMessage({
+                text: `${response.data.message}. Eligible: ${eligibleUsers}, successful: ${successful}, failed: ${failed}.`,
+                type: 'success'
+            });
+            checkStatus();
+        } catch (error: any) {
+            setMessage({
+                text: `Failed: ${error.response?.data?.error || error.message || 'Unknown error'}`,
+                type: 'error'
+            });
+        } finally {
+            setReassessing(false);
         }
     };
 
@@ -150,9 +174,16 @@ const Admin: React.FC = () => {
                         <button
                             className="trigger-button"
                             onClick={triggerDistribution}
-                            disabled={triggering}
+                            disabled={triggering || reassessing}
                         >
                             {triggering ? 'Running Distribution...' : 'Run Distribution Now'}
+                        </button>
+                        <button
+                            className="trigger-button reassess-button"
+                            onClick={triggerReWorthAssessment}
+                            disabled={triggering || reassessing}
+                        >
+                            {reassessing ? 'Running Re-worth-assessment...' : 'Run Re-worth-assessment for Onboarded Users'}
                         </button>
                     </div>
 
@@ -165,6 +196,16 @@ const Admin: React.FC = () => {
                         <div className="loader-container">
                             <div className="loader"></div>
                             <p>The distribution process is running. This may take a few minutes depending on the number of users and networks.</p>
+                        </div>
+                    </div>
+                )}
+
+                {reassessing && (
+                    <div className="admin-card processing-card">
+                        <h2>Processing Re-worth-assessment</h2>
+                        <div className="loader-container">
+                            <div className="loader"></div>
+                            <p>The reassessment process is running for all onboarded users. This may take several minutes.</p>
                         </div>
                     </div>
                 )}

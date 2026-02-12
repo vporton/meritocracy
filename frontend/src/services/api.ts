@@ -29,6 +29,7 @@ interface User {
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
+  icpAddress?: string | null;
   orcidId?: string;
   githubHandle?: string;
   bitbucketHandle?: string;
@@ -80,6 +81,7 @@ interface UpdateUserData {
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
+  icpAddress?: string | null;
 }
 
 interface UpdatePostData {
@@ -225,6 +227,8 @@ export const adminApi = {
     api.post('/api/admin/toggle-distribution', { enabled }, { headers: { 'x-admin-password': password } }),
   triggerDistribution: (password: string): Promise<AxiosResponse<{ message: string; result: any }>> =>
     api.post('/api/admin/trigger-distribution', {}, { headers: { 'x-admin-password': password } }),
+  triggerReWorthAssessment: (password: string): Promise<AxiosResponse<{ message: string; result: any }>> =>
+    api.post('/api/admin/trigger-re-worth-assessment', {}, { headers: { 'x-admin-password': password } }),
 }
 
 // World GDP API

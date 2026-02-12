@@ -18,6 +18,10 @@
   "dependencies": {
     "@cosmjs/proto-signing": "0.34.0",
     "@cosmjs/stargate": "0.34.0",
+    "@dfinity/agent": "^0.20.2",
+    "@dfinity/identity": "^0.20.2",
+    "@dfinity/ledger-icp": "^9.1.0",
+    "@dfinity/principal": "^0.20.2",
     "@polkadot/api": "^16.4.9",
     "@polkadot/keyring": "^13.5.7",
     "@polkadot/util-crypto": "^13.5.7",

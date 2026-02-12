@@ -4,105 +4,105 @@ app = 'meritocracy'
 primary_region = 'iad'
 
 [deploy]
-  strategy = "rolling" # "bluegreen" # TODO@P3: Neither makes zero downtime :-(
-  max_unavailable = 1
+strategy = "rolling" # "bluegreen" # TODO@P3: Neither makes zero downtime :-(
+max_unavailable = 1
 
 [build]
 
 [env]
-  API_URL = 'https://merit.science-dao.org:445'
-  BITBUCKET_CLIENT_ID = 'PFdcCeTaGXXY723bfBuTe3deVJDstaf2'
-  BITCOIN_ENABLED = 'true'
-  BITCOIN_RPC_PASSWORD = ''
-  BITCOIN_RPC_URL = 'http://localhost:8332'
-  BITCOIN_RPC_USERNAME = ''
-  ETHEREUM_MAINNET_ENABLED = 'true'
-  ETHEREUM_CELO_ENABLED = 'true'
-  ETHEREUM_CELO_RPC_URL = 'https://celo-json-rpc.stakely.io'
-  ETHEREUM_POLYGON_ENABLED = 'true'
-  ETHEREUM_ARBITRUM_ENABLED = 'true'
-  ETHEREUM_OPTIMISM_ENABLED = 'true'
-  ETHEREUM_BASE_ENABLED = 'true'
-  MEZO_ENABLED = 'true'
-  COSMOS_ENABLED = 'true'
-  COSMOS_RPC_URL = 'https://cosmos-rpc.publicnode.com:443'
-  DIDIT_APP_ID = 'a4efc76a-f3bf-4e99-84c2-859718ad1827'
-  DIDIT_WORKFLOW_RECEIVING_ID = '08d10959-db0e-485f-a21f-f20d347d992a'
-  DIDIT_WORKFLOW_VOTING_ID = '00514a1a-aa74-47a6-a50f-fe4722952b86'
-  FRONTEND_URL = 'https://merit.science-dao.org'
-  GITHUB_CLIENT_ID = 'Iv23liACVkYe3qylnSpT'
-  GITLAB_CLIENT_ID = '8a8b4b40b8d3d78ccde78b4c80ffd69db99ca6f022a42ac0159ab21c8d148da6'
-  HEDERA_ENABLED = 'true'
-  HEDERA_RPC_URL = 'https://mainnet.hashio.io/api'
-  ETHEREUM_SEPOLIA_ENABLED = 'true'
-  # ETHEREUM_LOCALHOST_ENABLED = 'true'
-  INSTALLATION_UID = 'be98a57d-2dd6-4088-9b85-b232fd4bdb65'
-  # MEZO_TESTNET_ENABLED = 'true'
-  # MEZO_TESTNET_RPC_URL = 'https://rpc.test.mezo.org'
-  NODE_ENV = 'production'
-  OPENAI_FLEX_MODE = 'nonbatch'
-  OPENAI_MODEL = 'gpt-5-mini'
-  OPENAI_NO_REASONING = 'yes'
-  OPENAI_OVERRIDE_MAX_TOOL_CALLS = '6'
-  OPENAI_OVERRIDE_REASONING_EFFORT = 'medium'
-  OPEN_AI_FAKE = 'false'
-  ORCID_CLIENT_ID = 'APP-CNFU262DB2VL0XQ3'
-  ORCID_DOMAIN = 'orcid.org'
-  POLKADOT_ENABLED = 'true'
-  POLKADOT_RPC_URL = 'https://rpc.polkadot.io'
-  PORT = '3001'
-  SKIP_KYC = 'false'
-  SMTP_HOST = 'smtp-relay.brevo.com'
-  SMTP_PORT = '587'
-  SMTP_SECURE = 'false'
-  SMTP_SENDER_EMAIL = 'noreply@vporton.name'
-  SMTP_USER = 'porton.victor@gmail.com'
-  SOLANA_ENABLED = 'true'
-  SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
-  STELLAR_ENABLED = 'true'
-  STELLAR_HORIZON_URL = 'https://horizon.stellar.org'
-  STELLAR_NETWORK_PASSPHRASE = 'Public Global Stellar Network ; September 2015'
+API_URL = 'https://merit.science-dao.org:445'
+BITBUCKET_CLIENT_ID = 'PFdcCeTaGXXY723bfBuTe3deVJDstaf2'
+BITCOIN_ENABLED = 'true'
+BITCOIN_RPC_PASSWORD = ''
+BITCOIN_RPC_URL = 'http://localhost:8332'
+BITCOIN_RPC_USERNAME = ''
+ETHEREUM_MAINNET_ENABLED = 'true'
+ETHEREUM_CELO_ENABLED = 'true'
+ETHEREUM_CELO_RPC_URL = 'https://celo-json-rpc.stakely.io'
+ETHEREUM_POLYGON_ENABLED = 'true'
+ETHEREUM_ARBITRUM_ENABLED = 'true'
+ETHEREUM_OPTIMISM_ENABLED = 'true'
+ETHEREUM_BASE_ENABLED = 'true'
+MEZO_ENABLED = 'true'
+COSMOS_ENABLED = 'true'
+COSMOS_RPC_URL = 'https://cosmos-rpc.publicnode.com:443'
+DIDIT_APP_ID = 'a4efc76a-f3bf-4e99-84c2-859718ad1827'
+DIDIT_WORKFLOW_RECEIVING_ID = '08d10959-db0e-485f-a21f-f20d347d992a'
+DIDIT_WORKFLOW_VOTING_ID = '00514a1a-aa74-47a6-a50f-fe4722952b86'
+FRONTEND_URL = 'https://merit.science-dao.org'
+GITHUB_CLIENT_ID = 'Iv23liACVkYe3qylnSpT'
+GITLAB_CLIENT_ID = '8a8b4b40b8d3d78ccde78b4c80ffd69db99ca6f022a42ac0159ab21c8d148da6'
+HEDERA_ENABLED = 'true'
+HEDERA_RPC_URL = 'https://mainnet.hashio.io/api'
+ETHEREUM_SEPOLIA_ENABLED = 'true'
+# ETHEREUM_LOCALHOST_ENABLED = 'true'
+INSTALLATION_UID = 'be98a57d-2dd6-4088-9b85-b232fd4bdb65'
+# MEZO_TESTNET_ENABLED = 'true'
+# MEZO_TESTNET_RPC_URL = 'https://rpc.test.mezo.org'
+NODE_ENV = 'production'
+OPENAI_FLEX_MODE = 'nonbatch'
+OPENAI_MODEL = 'gpt-5-mini'
+OPENAI_NO_REASONING = 'yes'
+OPENAI_OVERRIDE_MAX_TOOL_CALLS = '6'
+OPENAI_OVERRIDE_REASONING_EFFORT = 'medium'
+OPEN_AI_FAKE = 'false'
+ORCID_CLIENT_ID = 'APP-CNFU262DB2VL0XQ3'
+ORCID_DOMAIN = 'orcid.org'
+POLKADOT_ENABLED = 'true'
+POLKADOT_RPC_URL = 'https://rpc.polkadot.io'
+PORT = '3001'
+SKIP_KYC = 'false'
+SMTP_HOST = 'smtp-relay.brevo.com'
+SMTP_PORT = '587'
+SMTP_SECURE = 'false'
+SMTP_SENDER_EMAIL = 'noreply@vporton.name'
+SMTP_USER = 'porton.victor@gmail.com'
+SOLANA_ENABLED = 'true'
+SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
+STELLAR_ENABLED = 'true'
+STELLAR_HORIZON_URL = 'https://horizon.stellar.org'
+STELLAR_NETWORK_PASSPHRASE = 'Public Global Stellar Network ; September 2015'
 
 [[services]]
-  protocol = ''
-  internal_port = 4173
-  auto_stop_machines = 'suspend'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+protocol = ''
+internal_port = 4173
+auto_stop_machines = 'suspend'
+auto_start_machines = true
+min_machines_running = 0
+processes = ['app']
 
-  [[services.ports]]
-    port = 80
-    handlers = ['http']
-    force_https = true
+[[services.ports]]
+port = 80
+handlers = ['http']
+force_https = true
 
-  [[services.ports]]
-    port = 443
-    handlers = ['tls', 'http']
+[[services.ports]]
+port = 443
+handlers = ['tls', 'http']
 
-  [[services.tcp_checks]]
-    interval = '2s'
-    timeout = '2s'
-    grace_period = '60s'
+[[services.tcp_checks]]
+interval = '2s'
+timeout = '2s'
+grace_period = '60s'
 
 [[services]]
-  protocol = ''
-  internal_port = 3001
-  auto_stop_machines = 'suspend'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+protocol = ''
+internal_port = 3001
+auto_stop_machines = 'suspend'
+auto_start_machines = true
+min_machines_running = 0
+processes = ['app']
 
-  [[services.ports]]
-    port = 445
-    handlers = ['tls', 'http']
+[[services.ports]]
+port = 445
+handlers = ['tls', 'http']
 
-  [[services.tcp_checks]]
-    interval = '2s'
-    timeout = '2s'
-    grace_period = '60s'
+[[services.tcp_checks]]
+interval = '2s'
+timeout = '2s'
+grace_period = '60s'
 
 [[vm]]
-  memory = '512mb'
-  cpus = 1
-  memory_mb = 512
+memory = '512mb'
+cpus = 1
+memory_mb = 512

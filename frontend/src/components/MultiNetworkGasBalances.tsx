@@ -221,6 +221,7 @@ function MultiNetworkGasBalances() {
             <li>bitcoin-mainnet - Bitcoin (BTC)</li>
             <li>polkadot-mainnet - Polkadot (DOT)</li>
             <li>cosmoshub-mainnet - Cosmos Hub (ATOM)</li>
+            <li>icp-mainnet - Internet Computer (ICP)</li>
           </ul>
         </div>
       </div>

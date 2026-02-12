@@ -146,6 +146,7 @@ export class BanVotingService {
         polkadotAddress: true,
         cosmosAddress: true,
         stellarAddress: true,
+        icpAddress: true,
         _count: false // We will aggregate manually
       }
     });
@@ -187,6 +188,7 @@ export class BanVotingService {
         polkadotAddress: user.polkadotAddress,
         cosmosAddress: user.cosmosAddress,
         stellarAddress: user.stellarAddress,
+        icpAddress: user.icpAddress,
         banVoteCount: votes.BAN,
         unbanVoteCount: votes.UNBAN,
         // Legacy support

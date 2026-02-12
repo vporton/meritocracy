@@ -26,6 +26,7 @@ interface User {
     polkadotAddress?: string;
     cosmosAddress?: string;
     stellarAddress?: string;
+    icpAddress?: string;
     aiResponses?: AIResponse[];
 }
 
@@ -247,6 +248,17 @@ export default function BanVoting() {
                                                 </a>
                                                 <button type="button" className="copy-address-button" onClick={() => copyAddress(user.bitcoinAddress)}>
                                                     {copiedAddress === user.bitcoinAddress ? 'Copied!' : 'Copy'}
+                                                </button>
+                                            </div>
+                                        )}
+                                        {user.icpAddress && (
+                                            <div className="address-chip">
+                                                <a href={`https://dashboard.internetcomputer.org/account/${user.icpAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link icp" title="ICP Address">
+                                                    <span className="profile-icon">∞</span>
+                                                    {user.icpAddress.slice(0, 6)}...{user.icpAddress.slice(-4)}
+                                                </a>
+                                                <button type="button" className="copy-address-button" onClick={() => copyAddress(user.icpAddress)}>
+                                                    {copiedAddress === user.icpAddress ? 'Copied!' : 'Copy'}
                                                 </button>
                                             </div>
                                         )}

@@ -175,6 +175,10 @@
     flex-grow: 1;
 }
 
+.reassess-button {
+    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+}
+
 .trigger-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;

@@ -1,6 +1,6 @@
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 
-- TODO@P3 ICP blockchain, BCH, GLRM payments.
+- TODO@P3 BCH, GLRM payments.
 
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 
@@ -72,8 +72,13 @@
 - TODO@P3 Run tasks in parallel.
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
-<<<<<<< HEAD
-
-- TODO@P2 Ensure that disconnecting KYC Level 1 does not create broken Level 2.
 
 - TODO@P3 `Disconnect Receiver KYC before disconnecting KYC Level 1` makes no sense.
+
+- TODO@P3 Audit logs display numeric data, too.
+
+- TODO@P3 Write at the Treasury page how we accept donations.
+
+- TODO@P3 Move GitHub link to the footer.
+
+- TODO@P2 Send a email to every registered user, when ban voting starts. (When the site grows, needs to reduce quantity of emails.)

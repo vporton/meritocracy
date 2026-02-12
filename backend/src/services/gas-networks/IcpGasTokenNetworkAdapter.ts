@@ -1,4 +1,5 @@
 import type { User } from '@prisma/client';
+import { createPrivateKey } from 'crypto';
 import { HttpAgent } from '@dfinity/agent';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
@@ -55,6 +56,28 @@ const toE8s = (amountToken: number): number => Math.round(amountToken * 1e8);
 
 const fromE8s = (amountE8s: number): number => amountE8s / 1e8;
 
+const ED25519_PKCS8_DER_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
+
+const ed25519IdentityFromPem = (pem: string): Ed25519KeyIdentity => {
+  const privateKeyObject = createPrivateKey({ key: pem, format: 'pem' });
+  const privateKeyDer = privateKeyObject.export({ format: 'der', type: 'pkcs8' });
+  const privateKeyBuffer = Buffer.isBuffer(privateKeyDer)
+    ? privateKeyDer
+    : Buffer.from(privateKeyDer as ArrayBuffer);
+
+  const prefix = privateKeyBuffer.subarray(0, ED25519_PKCS8_DER_PREFIX.length);
+  if (!prefix.equals(ED25519_PKCS8_DER_PREFIX)) {
+    throw new Error('[ICP] Unsupported Ed25519 private key format');
+  }
+
+  const secretKey = privateKeyBuffer.subarray(ED25519_PKCS8_DER_PREFIX.length);
+  if (secretKey.length !== 32) {
+    throw new Error('[ICP] Invalid Ed25519 private key length');
+  }
+
+  return Ed25519KeyIdentity.fromSecretKey(secretKey.buffer.slice(secretKey.byteOffset, secretKey.byteOffset + secretKey.byteLength));
+};
+
 export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'ICP';
   private agent?: HttpAgent;
@@ -86,7 +109,7 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       if (!pem) {
         throw new Error('[ICP] Missing identity PEM');
       }
-      this.identity = Ed25519KeyIdentity.fromPem(pem);
+      this.identity = ed25519IdentityFromPem(pem);
     }
     return this.identity;
   }
@@ -259,14 +282,14 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       { taskName: 'ICP transfer' }
     );
 
-    return { transactionHash: blockHeight.toString() };
+    return { transactionHash: String(blockHeight) };
   }
 
   async deriveAddress(privateKey: string): Promise<string> {
     const pem = privateKey.trim().startsWith('-----BEGIN')
       ? privateKey
       : Buffer.from(privateKey, 'base64').toString('utf-8');
-    const identity = Ed25519KeyIdentity.fromPem(pem);
+    const identity = ed25519IdentityFromPem(pem);
     const principal = identity.getPrincipal();
     const accountIdentifier = this.getAccountIdentifierForPrincipal(principal);
     return this.formatAccountIdentifier(accountIdentifier);

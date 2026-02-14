@@ -1,4 +1,4 @@
-# GDP Share Feature Implementation
+# Recommended (yearly) Salary Feature Implementation
 
 ## Overview
 This feature allows users to view their personal portion of world GDP (if assigned) through both the API and frontend interface.
@@ -24,7 +24,7 @@ This feature allows users to view their personal portion of world GDP (if assign
 }
 ```
 
-#### Response for No GDP Share
+#### Response for No Recommended (yearly) Salary
 ```json
 {
   "success": true,

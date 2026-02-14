@@ -123,7 +123,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
         <div className="leaderboard-header">
           <div className="col-rank">Rank</div>
           <div className="col-name">Name</div>
-          <div className="col-share">GDP Share</div>
+          <div className="col-share">Recommended (yearly) Salary</div>
         </div>
 
         {displayEntries.map((entry) => (

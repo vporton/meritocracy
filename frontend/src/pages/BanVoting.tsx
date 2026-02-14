@@ -180,7 +180,7 @@ export default function BanVoting() {
                                     <h3>{user.name || `User #${user.id}`}</h3>
                                     <div className="user-stats">
                                         <span className="stat">
-                                            <span className="label">GDP Share:</span>
+                                            <span className="label">Recommended (yearly) Salary:</span>
                                             <span className="value">
                                                 {user.shareInGDP
                                                     ? `${(user.shareInGDP * 100).toExponential(4)}%${worldGdp ? ` ($${(user.shareInGDP * worldGdp).toLocaleString()})` : ''}`

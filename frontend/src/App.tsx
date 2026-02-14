@@ -49,7 +49,11 @@ function App() {
                   <p>
                     <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
                     <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
-                    <a href="https://science-dao.org/contact/">Contact</a>
+                    <a href="https://science-dao.org/contact/">Contact</a> |{"  "}
+                    <a href="https://github.com/vporton/meritocracy" title="Meritocracy on GitHub">
+                      <img src="/github-mark.svg" alt="GitHub" width="20" height="20" style={{ verticalAlign: 'middle' }} />
+                      <span style={{ marginLeft: '0.25rem' }}>GitHub</span>
+                    </a>
                   </p>
                 </div>
               </div>

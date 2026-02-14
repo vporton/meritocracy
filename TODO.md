@@ -79,7 +79,6 @@
 
 - TODO@P3 Write at the Treasury page how we accept donations.
 
-- TODO@P3 Move GitHub link to the footer.
 
 - TODO@P2 Send a email to every registered user, when ban voting starts. (When the site grows, needs to reduce quantity of emails.)
 

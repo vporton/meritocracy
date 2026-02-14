@@ -104,12 +104,6 @@ function Navigation() {
               )}
             </div>
           )}
-          <Link
-            to="https://github.com/vporton/meritocracy"
-            onClick={closeMenu}
-          >
-            <img src="/github-mark.svg" alt="GitHub" width="20" height="20" />
-          </Link>
         </div>
       </div>
     </nav>

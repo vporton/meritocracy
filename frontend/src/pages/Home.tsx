@@ -224,7 +224,7 @@ export default function Home() {
           <h3>💼 Your Economic Share</h3>
           {userGdpShare.shareInGDP !== null ? (
             <div>
-              <p>🎯 <strong>Your GDP Share:</strong>{" "}
+              <p>🎯 <strong>Your Recommended (yearly) Salary:</strong>{" "}
                 {userGdpShare.shareInGDP.toString()}{" = "}
                 {worldGdp ? `$${(userGdpShare.shareInGDP * worldGdp.worldGdp).toLocaleString()}` : "Calculating..."}</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
@@ -233,7 +233,7 @@ export default function Home() {
             </div>
           ) : (
             <div>
-              <p>⏳ <strong>Your GDP Share:</strong> Not yet calculated</p>
+              <p>⏳ <strong>Your Recommended (yearly) Salary:</strong> Not yet calculated</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
                 Complete your profile and evaluation to receive your economic share calculation
               </p>

@@ -86,3 +86,7 @@
 - TODO@P3 Google Analytics for such things as user registration.
 
 - TODO@P3 In Audit Logs separate las-assessment and old logs.
+
+- TODO@P2 Science marketers to be extended to free software.
+
+- TODO@P3: calculate total recommended salary, average and median recommended salary.

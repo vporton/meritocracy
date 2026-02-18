@@ -5,6 +5,7 @@ import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
+import { text } from 'stream/consumers'
 
 interface WorldGdpData {
   worldGdp: number;
@@ -199,11 +200,71 @@ export default function Home() {
   return (
     <div>
       <Helmet>
-        <title>Meritocracy App - AI decides how much you earn (for scientists and FOSS devs). Free to use.</title>
-        <meta name="description" content="Meritocracy App - AI decides how much you earn (for scientists and FOSS devs). Free to use." />
+        <title>Meritocracy DAO – Funding Scientists & Open-Source</title>
+        <meta name="description" content="Meritocracy is a DeSci DAO that funds scientists and open-source developers through transparent governance. " />
+        <script type="application/ld+json">
+        {`
+{
+  "@context": "https://schema.org",
+  "@graph": [
+   {
+      "@type": "Organization",
+      "@id": "https://merit.science-dao.org/#organization",
+      "name": "Meritocracy",
+      "url": "https://merit.science-dao.org",
+      "description": "A decentralized science (DeSci) DAO that funds scientists and open-source developers through transparent governance.",
+      "logo": "https://merit.science-dao.org/logo.png",
+      "sameAs": [
+        "https://science-dao.org"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://merit.science-dao.org/#website",
+      "url": "https://merit.science-dao.org",
+      "name": "Meritocracy DAO",
+      "description": "A decentralized funding platform for scientists and open-source developers.",
+      "publisher": {
+        "@id": "https://merit.science-dao.org/#organization"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://merit.science-dao.org/#webpage",
+      "url": "https://merit.science-dao.org",
+      "name": "Meritocracy: DAO for Funding Scientists and Open-Source Developers",
+      "description": "Meritocracy is a decentralized science DAO that distributes funding to scientists and open-source developers based on measurable contributions.",
+      "isPartOf": {
+        "@id": "https://merit.science-dao.org/#website"
+      },
+      "about": {
+        "@id": "https://merit.science-dao.org/#software"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://merit.science-dao.org/#software",
+      "name": "Meritocracy",
+      "applicationCategory": "BlockchainApplication",
+      "operatingSystem": "Web",
+      "url": "https://merit.science-dao.org",
+      "description": "A decentralized science DAO platform that funds scientists and open-source developers through transparent governance and voting.",
+      "creator": {
+        "@id": "https://merit.science-dao.org/#organization"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+  ]
+}`}
+        </script>
       </Helmet>
       <Canonical baseUrl="https://merit.science-dao.org" />
-      <h1>Welcome to Meritocracy App <span style={{ color: 'red' }}>⚠️This is a beta version</span></h1>
+      <h1>Meritocracy: A DAO<sup><a href='https://science-dao.org/dao-status/'>*</a></sup> for Funding Scientists and Open-Source Developers</h1>
+      <p>Meritocracy is a decentralized science (DeSci) DAO that distributes funding to scientists and open-source developers based on measurable contributions. The system uses transparent voting, reputation signals, and on-chain records to allocate resources without traditional grant committees.</p>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
       <div className="card">
         <h3>🌍 World Economy</h3>
@@ -451,6 +512,25 @@ export default function Home() {
           </div>
         </div>
       )}
+      <div style={{textAlign: 'left'}}>
+        <h2>What is AI Internet-Meritocracy?</h2>
+        <p>Meritocracy is a decentralized science DAO that funds researchers through transparent governance.</p>
+        <p>Meritocracy is:</p>
+        <ul>
+          <li>A decentralized funding platform</li>
+          <li>Built as a DeSci DAO</li>
+          <li>Focused on science and open-source software</li>
+          <li>Governed by contributors instead of institutions</li>
+        </ul>
+        <h2>How Meritocracy Works</h2>
+        <p>The app asks the AI, what portion of the global GDP a user is worth based on analyzing his/her Web accounts, and then gives him/her the proportional share of donated funds.</p>
+        <h2>Who Can Apply</h2>
+        <p>Everybody who has published any research or software can apply. Science degree is <em>not</em> required.</p>
+        <h2>How Funding Decisions Are Made</h2>
+        <p>Funding decisions are made by an AI, whose reasonings are transparently published in Audit Logs. AI is oversaw by voters to prevent scams such as prompt injections, banning a user.</p>
+        <h2>About the Organization</h2>
+        <p>Meritocracy is an initiative of World Science DAO, a decentralized organization working on open scientific funding models.</p>
+      </div>
     </div>
   )
 }

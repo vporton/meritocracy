@@ -88,3 +88,5 @@
 - TODO@P3: calculate total recommended salary, average and median recommended salary.
 
 - FIXME@P2 Isn't Polygon gas MATIC rather than displayed POL?
+
+- FIXME@P3 The homepage has `<h3>` directly inside `<h1>`. That's wrong.

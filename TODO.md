@@ -1,6 +1,6 @@
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 
-- TODO@P3 BCH, GLRM payments.
+- TODO@P3 GLRM payments.
 
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 

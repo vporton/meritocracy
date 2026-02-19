@@ -147,6 +147,7 @@ export class BanVotingService {
         cosmosAddress: true,
         stellarAddress: true,
         icpAddress: true,
+        bitcoinCashAddress: true,
         _count: false // We will aggregate manually
       }
     });
@@ -189,6 +190,7 @@ export class BanVotingService {
         cosmosAddress: user.cosmosAddress,
         stellarAddress: user.stellarAddress,
         icpAddress: user.icpAddress,
+        bitcoinCashAddress: user.bitcoinCashAddress,
         banVoteCount: votes.BAN,
         unbanVoteCount: votes.UNBAN,
         // Legacy support

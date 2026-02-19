@@ -214,12 +214,13 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     const {
       email,
       name,
-      solanaAddress,
-      bitcoinAddress,
-      polkadotAddress,
-      cosmosAddress,
-      stellarAddress,
-      icpAddress
+    solanaAddress,
+    bitcoinAddress,
+    bitcoinCashAddress,
+    polkadotAddress,
+    cosmosAddress,
+    stellarAddress,
+    icpAddress
     } = req.body;
     const authenticatedUserId = (req as any).userId;
 
@@ -232,6 +233,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     const validationErrors = validateNonEvmAddresses({
       solanaAddress,
       bitcoinAddress,
+      bitcoinCashAddress,
       polkadotAddress,
       cosmosAddress,
       stellarAddress,
@@ -253,6 +255,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         ...(name !== undefined && { name }),
         ...(solanaAddress !== undefined && { solanaAddress: solanaAddress?.trim() ? solanaAddress.trim() : null }),
         ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
+        ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress?.trim() ? bitcoinCashAddress.trim() : null }),
         ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
         ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
         ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null }),

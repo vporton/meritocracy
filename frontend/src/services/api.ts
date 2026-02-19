@@ -26,6 +26,7 @@ interface User {
   ethereumAddress?: string;
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
+  bitcoinCashAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
@@ -78,6 +79,7 @@ interface UpdateUserData {
   name?: string;
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
+  bitcoinCashAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;

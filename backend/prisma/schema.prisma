@@ -15,6 +15,7 @@ model User {
   ethereumAddress         String?                  @unique
   solanaAddress           String?
   bitcoinAddress          String?
+  bitcoinCashAddress      String?
   polkadotAddress         String?
   cosmosAddress           String?
   stellarAddress          String?

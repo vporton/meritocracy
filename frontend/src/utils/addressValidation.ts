@@ -1,5 +1,7 @@
 const BASE58_REGEX = /^[1-9A-HJ-NP-Za-km-z]+$/;
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
+const CASHADDR_PREFIXES = ['bitcoincash', 'bchtest', 'bchreg'];
+const CASHADDR_CHARSET_REGEX = BECH32_CHARSET_REGEX;
 const STELLAR_ADDRESS_REGEX = /^G[A-Z2-7]{55}$/;
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const ICP_ACCOUNT_ID_REGEX = /^[0-9a-fA-F]{64}$/;
@@ -52,6 +54,47 @@ export const isValidBitcoinAddress = (value: string): boolean => {
     BASE58_REGEX.test(trimmed) &&
     /^[13mn]/.test(trimmed)
   );
+};
+
+const extractCashAddressParts = (value: string): { prefix: string; payload: string } | null => {
+  const normalized = value.toLowerCase();
+  const separatorIndex = normalized.lastIndexOf(':');
+  if (separatorIndex <= 0 || separatorIndex === normalized.length - 1) {
+    return null;
+  }
+
+  const prefix = normalized.slice(0, separatorIndex);
+  const payload = normalized.slice(separatorIndex + 1);
+  if (!payload) {
+    return null;
+  }
+
+  return { prefix, payload };
+};
+
+export const isValidBitcoinCashAddress = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  const cashParts = extractCashAddressParts(trimmed);
+  if (cashParts) {
+    if (!CASHADDR_PREFIXES.includes(cashParts.prefix)) {
+      return false;
+    }
+    if (!CASHADDR_CHARSET_REGEX.test(cashParts.payload)) {
+      return false;
+    }
+    return cashParts.payload.length >= 8 && cashParts.payload.length <= 200;
+  }
+
+  const normalized = trimmed.toLowerCase();
+  if (CASHADDR_CHARSET_REGEX.test(normalized) && normalized.length >= 8 && normalized.length <= 200) {
+    return true;
+  }
+
+  return isValidBitcoinAddress(trimmed);
 };
 
 export const isValidPolkadotAddress = (value: string): boolean => {
@@ -141,6 +184,7 @@ export const isValidIcpAddress = (value: string): boolean => {
 export type NonEvmAddressInput = {
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
+  bitcoinCashAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
@@ -155,6 +199,7 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
   const {
     solanaAddress,
     bitcoinAddress,
+    bitcoinCashAddress,
     polkadotAddress,
     cosmosAddress,
     stellarAddress,
@@ -167,6 +212,10 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
 
   if (bitcoinAddress && bitcoinAddress.trim() && !isValidBitcoinAddress(bitcoinAddress)) {
     errors.bitcoinAddress = 'Invalid Bitcoin address format.';
+  }
+
+  if (bitcoinCashAddress && bitcoinCashAddress.trim() && !isValidBitcoinCashAddress(bitcoinCashAddress)) {
+    errors.bitcoinCashAddress = 'Invalid Bitcoin Cash address format.';
   }
 
   if (polkadotAddress && polkadotAddress.trim() && !isValidPolkadotAddress(polkadotAddress)) {

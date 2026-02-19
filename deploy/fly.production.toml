@@ -13,6 +13,7 @@ max_unavailable = 1
 API_URL = 'https://merit.science-dao.org:445'
 BITBUCKET_CLIENT_ID = 'PFdcCeTaGXXY723bfBuTe3deVJDstaf2'
 BITCOIN_ENABLED = 'true'
+ENABLE_BCH = 'true'
 BITCOIN_RPC_PASSWORD = ''
 BITCOIN_RPC_URL = 'http://localhost:8332'
 BITCOIN_RPC_USERNAME = ''

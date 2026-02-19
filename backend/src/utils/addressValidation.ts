@@ -7,6 +7,9 @@ import { StrKey } from 'stellar-sdk';
 import { Principal } from '@dfinity/principal';
 
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
+const CASHADDR_PREFIXES = ['bitcoincash', 'bchtest', 'bchreg'];
+
+const CASHADDR_CHARSET_REGEX = BECH32_CHARSET_REGEX;
 
 const doubleSha256 = (data: Uint8Array): Buffer => {
   const first = createHash('sha256').update(data).digest();
@@ -95,6 +98,47 @@ export const isValidBitcoinAddress = (value: string): boolean => {
   return isValidBase58Check(trimmed);
 };
 
+const extractCashAddressParts = (value: string): { prefix: string; payload: string } | null => {
+  const lower = value.toLowerCase();
+  const separatorIndex = lower.lastIndexOf(':');
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  const prefix = lower.slice(0, separatorIndex);
+  const payload = lower.slice(separatorIndex + 1);
+  if (!payload) {
+    return null;
+  }
+
+  return { prefix, payload };
+};
+
+export const isValidBitcoinCashAddress = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  const cashParts = extractCashAddressParts(trimmed);
+  if (cashParts) {
+    if (!CASHADDR_PREFIXES.includes(cashParts.prefix)) {
+      return false;
+    }
+    if (!CASHADDR_CHARSET_REGEX.test(cashParts.payload)) {
+      return false;
+    }
+    return cashParts.payload.length >= 8 && cashParts.payload.length <= 200;
+  }
+
+  const normalized = trimmed.toLowerCase();
+  if (CASHADDR_CHARSET_REGEX.test(normalized) && normalized.length >= 8 && normalized.length <= 200) {
+    return true;
+  }
+
+  return isValidBitcoinAddress(trimmed);
+};
+
 export const isValidPolkadotAddress = (value: string): boolean => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -148,6 +192,7 @@ export const isValidIcpAddress = (value: string): boolean => {
 export type NonEvmAddressInput = {
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
+  bitcoinCashAddress?: string | null;
   polkadotAddress?: string | null;
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
@@ -174,6 +219,10 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
 
   if (bitcoinAddress && bitcoinAddress.trim() && !isValidBitcoinAddress(bitcoinAddress)) {
     errors.bitcoinAddress = 'Invalid Bitcoin address format.';
+  }
+
+  if (bitcoinCashAddress && bitcoinCashAddress.trim() && !isValidBitcoinCashAddress(bitcoinCashAddress)) {
+    errors.bitcoinCashAddress = 'Invalid Bitcoin Cash address format.';
   }
 
   if (polkadotAddress && polkadotAddress.trim() && !isValidPolkadotAddress(polkadotAddress)) {

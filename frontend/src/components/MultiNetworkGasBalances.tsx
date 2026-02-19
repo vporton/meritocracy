@@ -219,6 +219,7 @@ function MultiNetworkGasBalances() {
             <li>localhost - Local Development</li>
             <li>solana-mainnet - Solana (SOL)</li>
             <li>bitcoin-mainnet - Bitcoin (BTC)</li>
+            <li>bitcoin-cash-mainnet - Bitcoin Cash (BCH)</li>
             <li>polkadot-mainnet - Polkadot (DOT)</li>
             <li>cosmoshub-mainnet - Cosmos Hub (ATOM)</li>
             <li>icp-mainnet - Internet Computer (ICP)</li>

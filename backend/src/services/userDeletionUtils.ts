@@ -6,6 +6,7 @@ export function makeUserSoftDeletePayload(deletionTimestamp: Date) {
     ethereumAddress: null,
     solanaAddress: null,
     bitcoinAddress: null,
+    bitcoinCashAddress: null,
     polkadotAddress: null,
     cosmosAddress: null,
     stellarAddress: null,

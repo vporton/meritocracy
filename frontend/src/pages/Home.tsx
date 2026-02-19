@@ -201,7 +201,7 @@ export default function Home() {
     <div>
       <Helmet>
         <title>Meritocracy DAO – Funding Scientists & Open-Source</title>
-        <meta name="description" content="Meritocracy is a DeSci DAO that funds scientists and open-source developers through transparent governance. " />
+        <meta name="description" content="Meritocracy is a DeSci DAO that funds scientists and open-source developers through transparent governance." />
         <script type="application/ld+json">
         {`
 {

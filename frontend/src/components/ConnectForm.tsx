@@ -63,6 +63,7 @@ const ConnectForm = () => {
   const [nonEvmForm, setNonEvmForm] = useState({
     solanaAddress: '',
     bitcoinAddress: '',
+    bitcoinCashAddress: '',
     polkadotAddress: '',
     cosmosAddress: '',
     stellarAddress: '',
@@ -136,6 +137,7 @@ const ConnectForm = () => {
       setNonEvmForm({
         solanaAddress: user.solanaAddress ?? '',
         bitcoinAddress: user.bitcoinAddress ?? '',
+        bitcoinCashAddress: user.bitcoinCashAddress ?? '',
         polkadotAddress: user.polkadotAddress ?? '',
         cosmosAddress: user.cosmosAddress ?? '',
         stellarAddress: user.stellarAddress ?? '',
@@ -145,6 +147,7 @@ const ConnectForm = () => {
       setNonEvmForm({
         solanaAddress: '',
         bitcoinAddress: '',
+        bitcoinCashAddress: '',
         polkadotAddress: '',
         cosmosAddress: '',
         stellarAddress: '',
@@ -173,6 +176,7 @@ const ConnectForm = () => {
       if (user.ethereumAddress) connectedProviders.push({ name: 'Ethereum', value: user.ethereumAddress });
       if (user.solanaAddress) connectedProviders.push({ name: 'Solana', value: user.solanaAddress });
       if (user.bitcoinAddress) connectedProviders.push({ name: 'Bitcoin', value: user.bitcoinAddress });
+      if (user.bitcoinCashAddress) connectedProviders.push({ name: 'Bitcoin Cash', value: user.bitcoinCashAddress });
       if (user.polkadotAddress) connectedProviders.push({ name: 'Polkadot', value: user.polkadotAddress });
       if (user.cosmosAddress) connectedProviders.push({ name: 'Cosmos', value: user.cosmosAddress });
       if (user.stellarAddress) connectedProviders.push({ name: 'Stellar', value: user.stellarAddress });
@@ -666,6 +670,7 @@ const ConnectForm = () => {
       await usersApi.update(user.id, {
         solanaAddress: nonEvmForm.solanaAddress.trim() || null,
         bitcoinAddress: nonEvmForm.bitcoinAddress.trim() || null,
+        bitcoinCashAddress: nonEvmForm.bitcoinCashAddress.trim() || null,
         polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
         cosmosAddress: nonEvmForm.cosmosAddress.trim() || null,
         stellarAddress: nonEvmForm.stellarAddress.trim() || null,
@@ -690,7 +695,7 @@ const ConnectForm = () => {
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
       const detailErrors = error?.response?.data?.details;
       if (detailErrors && typeof detailErrors === 'object') {
-        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress', 'icpAddress'] as const;
+        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'bitcoinCashAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress', 'icpAddress'] as const;
         const mappedErrors: NonEvmAddressErrors = {};
         for (const key of recognizedKeys) {
           const value = (detailErrors as Record<string, unknown>)[key];
@@ -1045,6 +1050,20 @@ const ConnectForm = () => {
             />
             {nonEvmErrors.bitcoinAddress && (
               <p className="error-message">{nonEvmErrors.bitcoinAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="bitcoinCashAddress">Bitcoin Cash Address</label>
+            <input
+              type="text"
+              id="bitcoinCashAddress"
+              value={nonEvmForm.bitcoinCashAddress}
+              onChange={handleNonEvmChange('bitcoinCashAddress')}
+              placeholder="Enter your Bitcoin Cash address"
+              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
+            />
+            {nonEvmErrors.bitcoinCashAddress && (
+              <p className="error-message">{nonEvmErrors.bitcoinCashAddress}</p>
             )}
           </div>
           <div className="form-group">

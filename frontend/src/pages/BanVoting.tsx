@@ -23,6 +23,7 @@ interface User {
     ethereumAddress?: string;
     solanaAddress?: string;
     bitcoinAddress?: string;
+    bitcoinCashAddress?: string;
     polkadotAddress?: string;
     cosmosAddress?: string;
     stellarAddress?: string;
@@ -248,6 +249,17 @@ export default function BanVoting() {
                                                 </a>
                                                 <button type="button" className="copy-address-button" onClick={() => copyAddress(user.bitcoinAddress)}>
                                                     {copiedAddress === user.bitcoinAddress ? 'Copied!' : 'Copy'}
+                                                </button>
+                                            </div>
+                                        )}
+                                        {user.bitcoinCashAddress && (
+                                            <div className="address-chip">
+                                                <a href={`https://explorer.bitcoin.com/bch/address/${user.bitcoinCashAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Cash Address">
+                                                    <span className="profile-icon">BCH</span>
+                                                    {user.bitcoinCashAddress.slice(0, 4)}...{user.bitcoinCashAddress.slice(-4)}
+                                                </a>
+                                                <button type="button" className="copy-address-button" onClick={() => copyAddress(user.bitcoinCashAddress)}>
+                                                    {copiedAddress === user.bitcoinCashAddress ? 'Copied!' : 'Copy'}
                                                 </button>
                                             </div>
                                         )}

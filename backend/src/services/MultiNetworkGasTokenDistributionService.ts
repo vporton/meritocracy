@@ -10,6 +10,7 @@ import type {
 } from './gas-networks/types.js';
 import {
   bitcoinGasTokenNetworkAdapter,
+  bitcoinCashGasTokenNetworkAdapter,
   evmGasTokenNetworkAdapter,
   cosmosGasTokenNetworkAdapter,
   polkadotGasTokenNetworkAdapter,
@@ -104,6 +105,7 @@ export class MultiNetworkGasTokenDistributionService {
         evmGasTokenNetworkAdapter,
         solanaGasTokenNetworkAdapter,
         bitcoinGasTokenNetworkAdapter,
+        bitcoinCashGasTokenNetworkAdapter,
         cosmosGasTokenNetworkAdapter,
         polkadotGasTokenNetworkAdapter,
         stellarGasTokenNetworkAdapter,
@@ -1902,7 +1904,7 @@ export class MultiNetworkGasTokenDistributionService {
     const attemptAmounts = [baseAmount, baseAmount * 10];
     const recipientAddress =
       context.walletAddress ??
-      (context.adapterType === 'BITCOIN' ? '1BoatSLRHtKNngkdXEeobR76b53LETtpyT' : undefined);
+      ((context.adapterType === 'BITCOIN' || context.adapterType === 'BITCOIN_CASH') ? '1BoatSLRHtKNngkdXEeobR76b53LETtpyT' : undefined);
 
     if (!recipientAddress) {
       return undefined;

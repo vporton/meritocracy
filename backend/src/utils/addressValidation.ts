@@ -207,6 +207,7 @@ export const validateNonEvmAddresses = (addresses: NonEvmAddressInput): NonEvmAd
   const {
     solanaAddress,
     bitcoinAddress,
+    bitcoinCashAddress,
     polkadotAddress,
     cosmosAddress,
     stellarAddress,

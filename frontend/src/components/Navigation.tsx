@@ -66,7 +66,7 @@ function Navigation() {
             className='nav-link'
             onClick={closeMenu}
           >
-            Donate
+            Donate / Support
           </Link>
           <Link
             to="https://science-dao.org/meritocracy-help/"

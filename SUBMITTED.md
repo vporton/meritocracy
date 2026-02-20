@@ -163,3 +163,11 @@
 * University of Liverpool https://liverpool.ac.uk - contacted on a partnership 7 Feb 2026 - TODO: My site is broken during submission.
 * We Make Change https://app.wemakechange.org - submitted 14 Feb 2026
 * OSV Fellowship https://osv.llc - applied 14 Feb 2026
+* https://www.google.com/search?q=crypto+grants
+  * https://blockchaingrants.org
+    * AI: `Find grants for an AI-based funds distribution protocol between scientists and free software developers.`
+      * https://www.base.org/build - https://docs.google.com/forms/d/e/1FAIpQLSfXuEzmiAzRhie_z9raFCF1BXweXgVt18o-DvBuRRgyTygL2A/viewform - submitted 20 Feb 2026 ("will only reach out if you are selected")
+    * TODO (The site is broken.)
+  * https://hashlock.com/blog/top-50-grants-for-crypto-and-web3-projects-a-complete-list
+    * TODO
+  * TODO

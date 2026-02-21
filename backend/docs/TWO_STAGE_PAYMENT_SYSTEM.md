@@ -7,6 +7,8 @@ This implementation splits every payment into two stages to ensure reliability a
 1. **Stage 1: Calculate & Store** - Compute transaction hash and store transaction data in the database
 2. **Stage 2: Execute** - Read stored transactions from DB and execute them on the blockchain
 
+For the proposed cadence that coordinates worth assessment, ban/unban voting, and fast compensation, see `backend/docs/TIMING_PLAN_WORTH_VOTING_PAYMENTS.md`.
+
 ## Key Features
 
 ### Prevents Double Execution

@@ -267,7 +267,7 @@ export default function Home() {
       <p>Meritocracy is a decentralized science (DeSci) DAO that distributes funding to scientists and open-source developers based on measurable contributions. The system uses transparent voting, reputation signals, and on-chain records to allocate resources without traditional grant committees.</p>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
       <div className="card">
-        <h3>🌍 World Economy</h3>
+        <h2>🌍 World Economy</h2>
         {worldGdp ? (
           <div>
             <p>💰 <strong>World GDP:</strong> {worldGdp.formatted} {worldGdp.currency}</p>
@@ -282,7 +282,7 @@ export default function Home() {
 
       {userGdpShare && (
         <div className="card">
-          <h3>💼 Your Economic Share</h3>
+          <h2>💼 Your Economic Share</h2>
           {userGdpShare.shareInGDP !== null ? (
             <div>
               <p>🎯 <strong>Your Recommended (yearly) Salary:</strong>{" "}
@@ -308,7 +308,7 @@ export default function Home() {
       {/* Onboarding Section */}
       {isAuthenticated && user && (
         <div className="card">
-          <h3>🚀 Start Your Evaluation</h3>
+          <h2>🚀 Start Your Evaluation</h2>
           {user.onboarded ? (
             <div style={{
               padding: '1rem',
@@ -446,9 +446,9 @@ export default function Home() {
             width: '90%',
             boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
           }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>
+            <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>
               ⚠️ Confirm Onboarding Start
-            </h3>
+            </h2>
             <div style={{
               padding: '1rem',
               background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',

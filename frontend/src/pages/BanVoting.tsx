@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { worldGdpApi } from '../services/api';
+import { Helmet } from 'react-helmet-async';
 import './BanVoting.css';
 import { markdownToHtml } from '../utils/markdown';
 
@@ -144,8 +145,15 @@ export default function BanVoting() {
     };
 
     return (
-        <div className="ban-voting-page">
-            <div className="container">
+    <div className="ban-voting-page">
+      <Helmet>
+        <title>Ban Voting · Meritocracy Platform</title>
+        <meta
+          name="description"
+          content="Participate in Meritocracy's ban voting to flag or reverse bans on accounts suspected of prompt injection or severe plagiarism."
+        />
+      </Helmet>
+      <div className="container">
                 <header className="page-header">
                     <h1>Ban Voting System</h1>
                     <p className="subtitle">Vote to ban users who do <em>prompt injection</em> or <em>severe plagiarism</em>. Weekly reset.</p>

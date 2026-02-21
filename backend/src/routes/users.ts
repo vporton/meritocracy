@@ -214,13 +214,14 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     const {
       email,
       name,
-    solanaAddress,
-    bitcoinAddress,
-    bitcoinCashAddress,
-    polkadotAddress,
-    cosmosAddress,
-    stellarAddress,
-    icpAddress
+      solanaAddress,
+      bitcoinAddress,
+      bitcoinCashAddress,
+      polkadotAddress,
+      cosmosAddress,
+      stellarAddress,
+      icpAddress,
+      votingPleaUnsubscribed
     } = req.body;
     const authenticatedUserId = (req as any).userId;
 
@@ -248,6 +249,11 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
+    let normalizedVotingPleaPreference = votingPleaUnsubscribed;
+    if (typeof normalizedVotingPleaPreference === 'string') {
+      normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
+    }
+
     const user = await prisma.user.update({
       where: { id: parseInt(id as string) },
       data: {
@@ -259,7 +265,8 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
         ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
         ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null }),
-        ...(icpAddress !== undefined && { icpAddress: icpAddress?.trim() ? icpAddress.trim() : null })
+        ...(icpAddress !== undefined && { icpAddress: icpAddress?.trim() ? icpAddress.trim() : null }),
+        ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
       },
     });
 

@@ -280,6 +280,53 @@
     text-align: left;
   }
 
+  .voting-plea-preference {
+    margin-bottom: 2rem;
+    padding: 1.25rem;
+    background: #fdf2f8;
+    border-radius: 8px;
+    border: 1px solid #f9a8d4;
+  }
+
+  .voting-plea-preference h3 {
+    margin: 0 0 0.35rem 0;
+    color: #be185d;
+    font-size: 1.1rem;
+  }
+
+  .voting-plea-preference .preference-description {
+    margin: 0;
+    color: #581c87;
+    font-size: 0.95rem;
+  }
+
+  .voting-plea-preference .voting-plea-warning {
+    margin: 0.6rem 0;
+    color: #b91c1c;
+    font-weight: 600;
+  }
+
+  .voting-plea-button {
+    margin-top: 0.6rem;
+    padding: 0.85rem 1.25rem;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #c026d3, #9333ea);
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .voting-plea-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .voting-plea-error {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+  }
+
   /* Onboarded notice styles */
   .onboarded-notice {
     padding: 1rem;

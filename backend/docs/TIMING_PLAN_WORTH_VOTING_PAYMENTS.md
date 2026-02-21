@@ -58,6 +58,7 @@ Recommended windows:
 
 Use existing components with minimal structural changes:
 - `BanVotingService`: keep weekly quorum grouping; add case state + timestamps.
+- Voting pleas: when the first ban or unban vote starts, broadcast a plea to verified-email users unless they have set `votingPleaUnsubscribed`; the notice should warn that if people don't vote, scammers can take all their money.
 - `CronService`: add high-frequency payout/compensation jobs.
 - `PendingTransactionService`: use idempotent stage-1/stage-2 flow for both regular and compensation payouts.
 - Add a ledger table for held slices (example statuses: `HELD_FOR_REVIEW`, `RELEASED_AFTER_UNBAN`, `FORFEITED_AFTER_CONFIRMED_BAN`).

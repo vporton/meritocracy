@@ -44,6 +44,7 @@ interface User {
   kycRejectionReason?: string;
   createdAt: string;
   updatedAt: string;
+  votingPleaUnsubscribed?: boolean;
   // KYC Voting fields
   kycVotingStatus?: string;
   kycVotingVerifiedAt?: string;
@@ -84,6 +85,7 @@ interface UpdateUserData {
   cosmosAddress?: string | null;
   stellarAddress?: string | null;
   icpAddress?: string | null;
+  votingPleaUnsubscribed?: boolean;
 }
 
 interface UpdatePostData {

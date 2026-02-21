@@ -11,6 +11,7 @@ model User {
   id                      Int                      @id @default(autoincrement())
   email                   String?                  @unique
   emailVerified           Boolean                  @default(false)
+  votingPleaUnsubscribed   Boolean                  @default(false)
   name                    String?
   ethereumAddress         String?                  @unique
   solanaAddress           String?

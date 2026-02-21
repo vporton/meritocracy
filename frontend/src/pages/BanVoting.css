@@ -31,6 +31,15 @@
     font-size: 1.1rem;
 }
 
+.plan-link-row {
+    margin-top: 0.6rem;
+}
+
+.plan-link-row a {
+    color: #2b6cb0;
+    text-decoration: underline;
+}
+
 .users-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

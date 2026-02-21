@@ -13,13 +13,17 @@ export class CronService {
   private disconnectedAccountCleanupService: DisconnectedAccountCleanupService;
   private cronJob: cron.ScheduledTask | null = null;
   private weeklyGasDistributionJob: cron.ScheduledTask | null = null;
+  private compensationPayoutJob: cron.ScheduledTask | null = null;
   private monthlyCleanupJob: cron.ScheduledTask | null = null;
+  private readonly distributionIntervalWeeks: 1 | 2;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.userEvaluationFlow = new UserEvaluationFlow(prisma);
     this.multiNetworkGasTokenDistributionService = multiNetworkGasTokenDistributionService;
     this.disconnectedAccountCleanupService = new DisconnectedAccountCleanupService(prisma);
+    const interval = Number(process.env.GAS_DISTRIBUTION_INTERVAL_WEEKS ?? '1');
+    this.distributionIntervalWeeks = interval === 2 ? 2 : 1;
   }
 
   /**
@@ -62,11 +66,11 @@ export class CronService {
 
   /**
    * Start the weekly cron job for gas token distribution.
-   * Runs every Sunday at 22:00 UTC (End of the week).
+   * Runs every Sunday at 20:00 UTC (End of the week).
    * 
    * CRITICAL: This timing is synchronized with the weekly ban voting system.
    * Voting begins at the beginning of the week (Monday 00:00) and distribution
-   * happens at the end (Sunday 22:00) to ensure that users who are voted to be
+   * happens at the end (Sunday 20:00) to ensure that users who are voted to be
    * banned during the week are excluded from that week's distribution.
    * Do not change this timing without ensuring the BanVotingService cycle is also updated.
    */
@@ -76,13 +80,13 @@ export class CronService {
       return;
     }
 
-    // Cron expression: "0 22 * * 0" means:
+    // Cron expression: "0 20 * * 0" means:
     // - 0 minutes
-    // - 22 hours (10 PM)
+    // - 20 hours (8 PM)
     // - Every day of month
     // - Every month
     // - 0 = Sunday
-    this.weeklyGasDistributionJob = cron.schedule('0 22 * * 0', async () => {
+    this.weeklyGasDistributionJob = cron.schedule('0 20 * * 0', async () => {
       console.log('🕐 Weekly gas token distribution cron job triggered (End of Week)');
       await this.runWeeklyGasDistribution();
     }, {
@@ -90,7 +94,28 @@ export class CronService {
     });
 
     this.weeklyGasDistributionJob.start();
-    console.log('✅ Weekly gas distribution cron job started (runs every Sunday at 3:00 AM UTC)');
+    console.log('✅ Weekly gas distribution cron job started (runs every Sunday at 20:00 UTC)');
+  }
+
+  /**
+   * Start hourly compensation payout runner.
+   * This releases held balances quickly after a user is unbanned.
+   */
+  startCompensationPayoutCron() {
+    if (this.compensationPayoutJob) {
+      console.log('⚠️  Compensation payout cron job is already running');
+      return;
+    }
+
+    this.compensationPayoutJob = cron.schedule('0 * * * *', async () => {
+      console.log('🕐 Compensation payout cron job triggered');
+      await this.runCompensationPayouts();
+    }, {
+      timezone: 'UTC'
+    });
+
+    this.compensationPayoutJob.start();
+    console.log('✅ Compensation payout cron job started (runs hourly at minute 0 UTC)');
   }
 
   /**
@@ -101,6 +126,14 @@ export class CronService {
       this.weeklyGasDistributionJob.stop();
       this.weeklyGasDistributionJob = null;
       console.log('⏹️  Weekly gas distribution cron job stopped');
+    }
+  }
+
+  stopCompensationPayoutCron() {
+    if (this.compensationPayoutJob) {
+      this.compensationPayoutJob.stop();
+      this.compensationPayoutJob = null;
+      console.log('⏹️  Compensation payout cron job stopped');
     }
   }
 
@@ -162,7 +195,19 @@ export class CronService {
         }
       }
 
-      const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistribution();
+      if (!force && this.distributionIntervalWeeks === 2 && !this.shouldRunCurrentWeek()) {
+        console.log('⏭️  Biweekly mode active: skipping this week regular payout cycle.');
+        return {
+          networkResults: new Map(),
+          errors: [] as string[],
+          skippedByBiweeklySchedule: true
+        };
+      }
+
+      // Stage 1: prepare in a single weekly/biweekly batch.
+      const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistributionTwoStage();
+      // Stage 2: execute batch right away.
+      const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
 
       console.log('✅ Weekly multi-network token distribution completed');
 
@@ -177,9 +222,72 @@ export class CronService {
         result.errors.forEach(error => console.log(`  - ${error}`));
       }
 
-      return result;
+      if (execution.errors.length > 0) {
+        console.log('⚠️  Some execution errors occurred:');
+        execution.errors.forEach(error => console.log(`  - ${error}`));
+      }
+
+      return {
+        ...result,
+        execution
+      };
     } catch (error) {
       console.error('💥 Fatal error in weekly multi-network token distribution process:', error);
+      throw error;
+    }
+  }
+
+  async runCompensationPayouts() {
+    console.log('🔄 Running compensation payout flow...');
+
+    try {
+      const dueUsers = await this.prisma.user.findMany({
+        where: {
+          compensationDueAt: { lte: new Date() },
+          onboarded: true,
+          OR: [
+            { bannedTill: null },
+            { bannedTill: { lt: new Date() } }
+          ],
+          paymentHoldStartedAt: null
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (dueUsers.length === 0) {
+        console.log('ℹ️  No due compensation payouts found');
+        return {
+          dueUsers: 0,
+          released: 0,
+          skipped: 0,
+          errors: [] as string[]
+        };
+      }
+
+      const userIds = dueUsers.map(u => u.id);
+      const release = await this.multiNetworkGasTokenDistributionService.releaseHeldCompensationForUsers(userIds);
+      const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
+
+      await this.prisma.user.updateMany({
+        where: {
+          id: { in: userIds }
+        },
+        data: {
+          compensationDueAt: null
+        }
+      });
+
+      return {
+        dueUsers: dueUsers.length,
+        released: release.released,
+        skipped: release.skipped,
+        releaseErrors: release.errors,
+        execution
+      };
+    } catch (error) {
+      console.error('💥 Fatal error in compensation payout flow:', error);
       throw error;
     }
   }
@@ -328,7 +436,12 @@ export class CronService {
       weeklyGasDistribution: {
         isRunning: this.weeklyGasDistributionJob !== null,
         nextRun: this.weeklyGasDistributionJob ? this.getNextWeeklyRunTime() : null,
-        schedule: '0 22 * * 0 (Every Sunday at 22:00 UTC)'
+        schedule: `0 20 * * 0 (Every Sunday at 20:00 UTC, interval=${this.distributionIntervalWeeks} week(s))`
+      },
+      compensationPayout: {
+        isRunning: this.compensationPayoutJob !== null,
+        nextRun: this.compensationPayoutJob ? this.getNextHourlyRunTime() : null,
+        schedule: '0 * * * * (Hourly at minute 0 UTC)'
       },
       monthlyCleanup: {
         isRunning: this.monthlyCleanupJob !== null,
@@ -397,17 +510,41 @@ export class CronService {
     // Calculate days until next Sunday
     const daysUntilSunday = currentDay === 0 ? 7 : (7 - currentDay);
 
-    // If it's Sunday and before 10 PM, next run is today at 10 PM
-    if (currentDay === 0 && (currentHour < 22 || (currentHour === 22 && currentMinute === 0))) {
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 0, 0);
+    // If it's Sunday and before 8 PM, next run is today at 8 PM
+    if (currentDay === 0 && (currentHour < 20 || (currentHour === 20 && currentMinute === 0))) {
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0, 0);
     }
 
-    // Otherwise, next run is next Sunday at 3 AM
+    // Otherwise, next run is next Sunday at 8 PM
     const nextRun = new Date(now);
     nextRun.setDate(now.getDate() + daysUntilSunday);
-    nextRun.setHours(3, 0, 0, 0);
+    nextRun.setHours(20, 0, 0, 0);
 
     return nextRun;
+  }
+
+  private getNextHourlyRunTime(): Date | null {
+    if (!this.compensationPayoutJob) return null;
+
+    const now = new Date();
+    const next = new Date(now);
+    next.setUTCMinutes(0, 0, 0);
+    next.setUTCHours(next.getUTCHours() + 1);
+    return next;
+  }
+
+  private shouldRunCurrentWeek(referenceDate: Date = new Date()): boolean {
+    // ISO week number parity decides biweekly runs.
+    const week = this.getIsoWeekNumber(referenceDate);
+    return week % 2 === 0;
+  }
+
+  private getIsoWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   }
 
   /**
@@ -438,6 +575,7 @@ export class CronService {
   destroy() {
     this.stopBiMonthlyEvaluationCron();
     this.stopWeeklyGasDistributionCron();
+    this.stopCompensationPayoutCron();
     this.stopMonthlyCleanupCron();
   }
 }

@@ -127,6 +127,12 @@ export class MultiNetworkGasTokenDistributionService {
     this.clearContextCache();
   }
 
+  public clearEligibleUsersOverride(): void {
+    this.eligibleUsersOverride = null;
+    this.contextGeneration++;
+    this.clearContextCache();
+  }
+
   private warmupAdapters(): void {
     void this.collectNetworkAdapterContexts(this.defaultTokenOptions).catch(error => {
       const message = error instanceof Error ? error.message : String(error);
@@ -346,31 +352,31 @@ export class MultiNetworkGasTokenDistributionService {
   }
 
   /**
-   * Fetch users eligible for distribution.
-   * CRITICAL: This method filters out users who are currently banned.
-   * This timing is synchronized with the weekly ban voting system (see BanVotingService).
-   * Do not change the exclusion of banned users or the weekly distribution timing 
-   * in CronService without ensuring the voting cycle remains aligned.
+   * Fetch users eligible for distribution calculations.
+   * Users currently blocked by ban/review are handled downstream by deferring their payout,
+   * so their owed amount can be released quickly after unban.
    */
   private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
     if (this.eligibleUsersOverride) {
       return this.eligibleUsersOverride;
     }
 
-    const now = new Date();
     return await this.prisma.user.findMany({
       where: {
         onboarded: true,
-        shareInGDP: { not: null },
-        OR: [
-          { bannedTill: null },
-          { bannedTill: { lt: now } }
-        ]
+        shareInGDP: { not: null }
       },
       orderBy: {
         shareInGDP: 'desc'
       }
     });
+  }
+
+  private isUserPaymentBlocked(user: User): boolean {
+    const now = new Date();
+    const isBanned = !!(user.bannedTill && user.bannedTill > now);
+    const isUnderReview = !!user.paymentHoldStartedAt;
+    return isBanned || isUnderReview;
   }
 
   private async getTokenReserve(context: GasTokenNetworkContext): Promise<number> {
@@ -618,6 +624,44 @@ export class MultiNetworkGasTokenDistributionService {
           console.warn(
             `⚠️  [${context.networkName}] Skipping distribution for missing user ${dist.userId} (likely deleted).`
           );
+          continue;
+        }
+
+        if (this.isUserPaymentBlocked(user)) {
+          const holdReason = user.bannedTill && user.bannedTill > new Date()
+            ? 'BANNED_HOLD'
+            : 'UNDER_REVIEW_HOLD';
+
+          result.reservedAmount += dist.amountToken;
+
+          await this.prisma.$transaction([
+            this.prisma.gasTokenDistribution.updateMany({
+              where: {
+                userId: dist.userId,
+                ...this.buildDistributionTokenWhere(context),
+                status: { in: ['DEFERRED', 'FAILED'] }
+              },
+              data: { status: 'PROCESSED' }
+            }),
+            this.prisma.gasTokenDistribution.create({
+              data: {
+                userId: dist.userId,
+                network: context.networkId,
+                amount: dist.amountToken,
+                backlogAmount: dist.backlogAmount,
+                amountUsd: 0,
+                status: 'DEFERRED',
+                errorMessage: holdReason,
+                tokenType: context.tokenType,
+                tokenSymbol: context.tokenSymbol,
+                tokenAddress,
+                tokenDecimals: context.tokenDecimals
+              }
+            })
+          ]);
+
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${holdReason}`);
           continue;
         }
 
@@ -903,6 +947,44 @@ export class MultiNetworkGasTokenDistributionService {
           console.warn(
             `⚠️  [${context.networkName}] Skipping distribution for missing user ${dist.userId} (likely deleted).`
           );
+          continue;
+        }
+
+        if (this.isUserPaymentBlocked(user)) {
+          const holdReason = user.bannedTill && user.bannedTill > new Date()
+            ? 'BANNED_HOLD'
+            : 'UNDER_REVIEW_HOLD';
+
+          result.reservedAmount += dist.amountToken;
+
+          await this.prisma.$transaction([
+            this.prisma.gasTokenDistribution.updateMany({
+              where: {
+                userId: dist.userId,
+                ...this.buildDistributionTokenWhere(context),
+                status: { in: ['DEFERRED', 'FAILED'] }
+              },
+              data: { status: 'PROCESSED' }
+            }),
+            this.prisma.gasTokenDistribution.create({
+              data: {
+                userId: dist.userId,
+                network: context.networkId,
+                amount: dist.amountToken,
+                backlogAmount: dist.backlogAmount,
+                amountUsd: 0,
+                status: 'DEFERRED',
+                errorMessage: holdReason,
+                tokenType: context.tokenType,
+                tokenSymbol: context.tokenSymbol,
+                tokenAddress,
+                tokenDecimals: context.tokenDecimals
+              }
+            })
+          ]);
+
+          remainingAmount = Math.max(0, remainingAmount - dist.amountToken);
+          console.log(`⏳ [${context.networkName}] Deferred distribution for user ${dist.userId}: ${holdReason}`);
           continue;
         }
 
@@ -1307,6 +1389,133 @@ export class MultiNetworkGasTokenDistributionService {
     console.log(`  ⏭️  Skipped: ${results.skipped} `);
 
     return results;
+  }
+
+  async releaseHeldCompensationForUsers(
+    userIds: number[]
+  ): Promise<{
+    released: number;
+    skipped: number;
+    errors: string[];
+  }> {
+    const uniqueUserIds = Array.from(new Set(userIds)).filter(id => Number.isInteger(id) && id > 0);
+    if (uniqueUserIds.length === 0) {
+      return { released: 0, skipped: 0, errors: [] };
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: uniqueUserIds },
+        onboarded: true
+      }
+    });
+    const userById = new Map(users.map(user => [user.id, user]));
+
+    const holdRows = await this.prisma.gasTokenDistribution.groupBy({
+      by: ['userId', 'network', 'tokenType', 'tokenSymbol', 'tokenAddress', 'tokenDecimals'],
+      where: {
+        userId: { in: uniqueUserIds },
+        status: { in: ['DEFERRED', 'FAILED'] },
+        amount: { gt: 0 }
+      },
+      _sum: {
+        amount: true
+      }
+    });
+
+    if (holdRows.length === 0) {
+      return { released: 0, skipped: 0, errors: [] };
+    }
+
+    const contextEntries = await this.collectNetworkAdapterContexts(this.resolveTokenOptions());
+    let released = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const row of holdRows) {
+      const amount = Number(row._sum.amount ?? 0);
+      if (amount <= 0) {
+        skipped++;
+        continue;
+      }
+
+      const user = userById.get(row.userId);
+      if (!user) {
+        skipped++;
+        continue;
+      }
+
+      const entry = contextEntries.get(row.network);
+      if (!entry) {
+        skipped++;
+        errors.push(`No adapter/context found for network ${row.network}`);
+        continue;
+      }
+
+      if (this.isUserPaymentBlocked(user)) {
+        skipped++;
+        continue;
+      }
+
+      const recipientAddress = entry.adapter.getRecipientAddress(user);
+      if (!recipientAddress) {
+        skipped++;
+        errors.push(`No recipient address for user ${row.userId} on ${row.network}`);
+        continue;
+      }
+
+      try {
+        const txHash = await pendingTransactionService.storeTransaction({
+          userId: row.userId,
+          network: row.network,
+          recipientAddress,
+          amount,
+          backlogAmount: amount,
+          tokenType: row.tokenType as TokenType,
+          tokenSymbol: row.tokenSymbol,
+          tokenDecimals: row.tokenDecimals
+        });
+
+        if (!txHash) {
+          skipped++;
+          continue;
+        }
+
+        await this.prisma.$transaction([
+          this.prisma.gasTokenDistribution.updateMany({
+            where: {
+              userId: row.userId,
+              network: row.network,
+              status: { in: ['DEFERRED', 'FAILED'] }
+            },
+            data: { status: 'PROCESSED' }
+          }),
+          this.prisma.gasTokenDistribution.create({
+            data: {
+              userId: row.userId,
+              network: row.network,
+              amount,
+              backlogAmount: amount,
+              amountUsd: 0,
+              status: 'PENDING',
+              transactionHash: txHash,
+              errorMessage: 'COMPENSATION_RELEASE',
+              tokenType: row.tokenType,
+              tokenSymbol: row.tokenSymbol,
+              tokenAddress: row.tokenAddress,
+              tokenDecimals: row.tokenDecimals
+            }
+          })
+        ]);
+
+        released++;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`Failed to prepare compensation for user ${row.userId} on ${row.network}: ${message}`);
+      }
+    }
+
+    return { released, skipped, errors };
   }
 
 

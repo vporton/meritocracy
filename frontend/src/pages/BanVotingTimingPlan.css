@@ -1,0 +1,39 @@
+.timing-plan-page {
+  padding: 2rem 0;
+}
+
+.timing-plan-container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.timing-plan-header h1 {
+  margin-bottom: 0.5rem;
+}
+
+.timing-plan-container section {
+  margin-top: 1.25rem;
+}
+
+.timing-plan-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.timing-plan-container th,
+.timing-plan-container td {
+  border: 1px solid #d6dde7;
+  padding: 0.55rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.timing-plan-container th {
+  background: #f4f7fb;
+}
+
+.timing-plan-back {
+  margin-top: 1.5rem;
+}

@@ -76,6 +76,19 @@ export class BanVotingService {
         }
       });
 
+      // Start payment hold as soon as a BAN case is opened.
+      if (type === 'BAN') {
+        await prisma.user.updateMany({
+          where: {
+            id: targetId,
+            paymentHoldStartedAt: null
+          },
+          data: {
+            paymentHoldStartedAt: new Date()
+          }
+        });
+      }
+
       // Check if this vote triggers a ban/unban
       await this.processVoteResult(targetId);
 
@@ -396,7 +409,11 @@ export class BanVotingService {
 
       await prisma.user.update({
         where: { id: targetId },
-        data: { bannedTill: banDuration }
+        data: {
+          bannedTill: banDuration,
+          paymentHoldStartedAt: new Date(),
+          compensationDueAt: null
+        }
       });
       actionTaken = true;
     }
@@ -408,7 +425,11 @@ export class BanVotingService {
     if (unbanVotesCount >= unbanQuorum) {
       await prisma.user.update({
         where: { id: targetId },
-        data: { bannedTill: null }
+        data: {
+          bannedTill: null,
+          paymentHoldStartedAt: null,
+          compensationDueAt: new Date()
+        }
       });
       actionTaken = true;
     }

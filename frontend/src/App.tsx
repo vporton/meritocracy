@@ -12,6 +12,7 @@ import OAuthCallback from './components/OAuthCallback'
 import VerifyEmail from './pages/VerifyEmail'
 import Admin from './pages/Admin'
 import BanVoting from './pages/BanVoting'
+import BanVotingTimingPlan from './pages/BanVotingTimingPlan'
 import UserAuditLog from './pages/UserAuditLog'
 import Treasury from './pages/Treasury'
 import './App.css'
@@ -37,6 +38,7 @@ function App() {
                       <Route path="/verify-email" element={<VerifyEmail />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/ban-voting" element={<BanVoting />} />
+                      <Route path="/ban-voting/timing-plan" element={<BanVotingTimingPlan />} />
                       <Route path="/treasury" element={<Treasury />} />
                       {/* Redirect old login route to new connect route */}
                       <Route path="/login" element={<Navigate to="/connect" replace />} />

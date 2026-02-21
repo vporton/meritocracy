@@ -28,6 +28,8 @@ model User {
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   bannedTill              DateTime?
+  paymentHoldStartedAt    DateTime?
+  compensationDueAt       DateTime?
   lastPaymentAmount       Decimal?
   shareInGDP              Float?
   isDeleted               Boolean                  @default(false)
@@ -58,6 +60,8 @@ model User {
   @@index([onboarded])
   @@index([onboarded, shareInGDP(sort: Desc)])
   @@index([shareInGDP])
+  @@index([paymentHoldStartedAt])
+  @@index([compensationDueAt])
   @@index([kycStatus])
   @@index([cosmosAddress])
   @@index([icpAddress])

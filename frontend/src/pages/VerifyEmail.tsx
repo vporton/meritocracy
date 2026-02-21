@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Helmet } from 'react-helmet-async';
 import './VerifyEmail.css';
 
 const VerifyEmail = () => {
@@ -75,6 +76,13 @@ const VerifyEmail = () => {
 
   return (
     <div className="verify-email">
+      <Helmet>
+        <title>Email Verification · Meritocracy Platform</title>
+        <meta
+          name="description"
+          content="Track the status of your Meritocracy email verification and resend the verification link if necessary."
+        />
+      </Helmet>
       <div className="verify-email-container">
         <h1>Email Verification</h1>
 

@@ -1,8 +1,16 @@
+import { Helmet } from 'react-helmet-async';
 import './BanVotingTimingPlan.css';
 
 export default function BanVotingTimingPlan() {
   return (
     <div className="timing-plan-page">
+      <Helmet>
+        <title>Ban Voting Timing Plan · Meritocracy Platform</title>
+        <meta
+          name="description"
+          content="Explore the timing plan for Meritocracy's worth assessments, ban/unban votes, and payment schedules."
+        />
+      </Helmet>
       <div className="timing-plan-container">
         <header className="timing-plan-header">
           <h1>Timing Plan: Worth Assessment, Ban/Unban Voting, and Payments</h1>

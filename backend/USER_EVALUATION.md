@@ -14,6 +14,8 @@ The user evaluation system creates a flow graph of tasks that:
 6. **Median Calculation**: Calculates the median from all completed worth assessments
 7. **Security Response**: Immediately bans users and cancels remaining tasks if injection is detected by the `PromptInjectionRunner`.
 
+For a proposed end-to-end timing cadence that combines worth assessment, ban/unban voting, and payment/compensation windows, see `backend/docs/TIMING_PLAN_WORTH_VOTING_PAYMENTS.md`.
+
 **Key Features:**
 - **Partial Execution**: Tasks can be cancelled early based on conditions
 - **Optimization**: Skips redundant checks when injection is already detected

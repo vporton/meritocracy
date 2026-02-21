@@ -1,7 +1,5 @@
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
 
-- TODO@P3 GLRM payments.
-
 - TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
 
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
@@ -78,8 +76,6 @@
 - TODO@P3 Audit logs display numeric data, too.
 
 - TODO@P3 Write at the Treasury page how we accept donations.
-
-- TODO@P2 Send a email to every registered user, when ban voting starts. (When the site grows, needs to reduce quantity of emails.)
 
 - TODO@P3 Google Analytics for such things as user registration.
 

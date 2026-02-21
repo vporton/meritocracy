@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import emailService from './EmailService.js';
 
 const prisma = new PrismaClient();
 
@@ -65,6 +66,7 @@ export class BanVotingService {
     }
 
     // 3. Create Vote (or fail if duplicate due to unique constraint)
+    const isFirstVote = existingVotesCount === 0;
     try {
       const vote = await prisma.banVote.create({
         data: {
@@ -75,6 +77,26 @@ export class BanVotingService {
           weekStartDate
         }
       });
+
+      const targetDisplayName = target.name || `User ${target.id}`;
+
+      if (isFirstVote) {
+        emailService.sendVotingPleaEmail(targetDisplayName, type)
+          .catch(error => console.error('Voting plea email failed', error));
+      }
+
+      // Start payment hold as soon as a BAN case is opened.
+      if (type === 'BAN') {
+        await prisma.user.updateMany({
+          where: {
+            id: targetId,
+            paymentHoldStartedAt: null
+          },
+          data: {
+            paymentHoldStartedAt: new Date()
+          }
+        });
+      }
 
       // Check if this vote triggers a ban/unban
       await this.processVoteResult(targetId);
@@ -396,7 +418,11 @@ export class BanVotingService {
 
       await prisma.user.update({
         where: { id: targetId },
-        data: { bannedTill: banDuration }
+        data: {
+          bannedTill: banDuration,
+          paymentHoldStartedAt: new Date(),
+          compensationDueAt: null
+        }
       });
       actionTaken = true;
     }
@@ -408,7 +434,11 @@ export class BanVotingService {
     if (unbanVotesCount >= unbanQuorum) {
       await prisma.user.update({
         where: { id: targetId },
-        data: { bannedTill: null }
+        data: {
+          bannedTill: null,
+          paymentHoldStartedAt: null,
+          compensationDueAt: new Date()
+        }
       });
       actionTaken = true;
     }

@@ -71,6 +71,8 @@ const ConnectForm = () => {
   });
   const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
+  const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
+  const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
 
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -228,6 +230,41 @@ const ConnectForm = () => {
     return null;
   };
 
+  const renderVotingPleaPreference = () => {
+    if (!isAuthenticated || !user) {
+      return null;
+    }
+
+    const isSubscribed = !user.votingPleaUnsubscribed;
+
+    return (
+      <div className="voting-plea-preference">
+        <h3>🗳️ Voting Pleas</h3>
+        <p className="preference-description">
+          {isSubscribed
+            ? 'We will email you once when a ban or unban vote is opened so you can weigh in.'
+            : 'You have opted out of voting plea emails. You can re-subscribe at any time.'}
+        </p>
+        <p className="voting-plea-warning">
+          If you don’t vote, scammers can take all your money.
+        </p>
+        <button
+          type="button"
+          onClick={handleVotingPleaToggle}
+          disabled={votingPleaUpdating}
+          className="voting-plea-button"
+        >
+          {votingPleaUpdating
+            ? 'Updating...'
+            : isSubscribed ? 'Unsubscribe from voting pleas' : 'Resubscribe to voting pleas'}
+        </button>
+        {votingPleaError && (
+          <p className="error-message voting-plea-error">{votingPleaError}</p>
+        )}
+      </div>
+    );
+  };
+
   // Helper function to disconnect a provider
   const handleDisconnect = async (provider: string) => {
     try {
@@ -256,6 +293,23 @@ const ConnectForm = () => {
     } catch (error: any) {
       console.error('Disconnect error:', error);
       setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.message }));
+    }
+  };
+
+  const handleVotingPleaToggle = async () => {
+    if (!user) return;
+    setVotingPleaError(null);
+    setVotingPleaUpdating(true);
+    try {
+      await usersApi.update(user.id, {
+        votingPleaUnsubscribed: !user.votingPleaUnsubscribed
+      });
+      await refreshUser();
+    } catch (error: any) {
+      console.error('Voting plea preference update failed:', error);
+      setVotingPleaError(error.response?.data?.error || error.message || 'Failed to update voting preferences');
+    } finally {
+      setVotingPleaUpdating(false);
     }
   };
 
@@ -858,6 +912,7 @@ const ConnectForm = () => {
       <h2>Connect to Meritocracy Platform</h2>
 
       {renderConnectedStatus()}
+      {renderVotingPleaPreference()}
 
       <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas).</p>
 

@@ -134,6 +134,9 @@ async function initializeApp() {
     // Start the weekly gas token distribution cron job
     cronService.startWeeklyGasDistributionCron();
 
+    // Start the hourly compensation payout cron job
+    cronService.startCompensationPayoutCron();
+
     // Start the monthly disconnected account cleanup cron job
     cronService.startMonthlyCleanupCron();
 

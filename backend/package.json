@@ -58,7 +58,7 @@
     "stellar-sdk": "^12.3.0",
     "tiny-secp256k1": "^2.2.4",
     "uuid": "^11.1.0",
-    "viem": "^2.21.0"
+    "viem": "^2.46.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

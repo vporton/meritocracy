@@ -5,7 +5,7 @@ Status: Proposed (documentation plan, not yet implemented)
 ## Goals
 - Give voters enough time to ban scammers before disputed funds leave the treasury.
 - Give enough time to unban wrongly banned users.
-- Keep payments fast for normal users.
+- Keep gas/resource usage low.
 - Ensure a wrongly banned user gets full compensation quickly after unban.
 
 ## Time Structure (UTC)
@@ -15,8 +15,8 @@ Status: Proposed (documentation plan, not yet implemented)
 | Full worth assessment | Every 2 months | High-quality baseline of `shareInGDP` |
 | Light worth refresh | Weekly, Monday 01:00 | Catch significant changes between full runs |
 | Vote week anchor | Monday 00:00 | Reset weekly quorum bucket (`weekStartDate`) |
-| Regular payout preparation (Stage 1) | Every 6 hours | Fast recurring payouts for non-disputed users |
-| Payout execution (Stage 2) | Every 15 minutes | Fast drain of pending transactions |
+| Regular payout preparation (Stage 1) | Weekly (Sunday 20:00) or biweekly | Low-gas recurring payouts for non-disputed users |
+| Payout execution (Stage 2) | Immediately after Stage 1, single batch | Minimize transaction overhead |
 | Compensation payout runner | Hourly | Release held money quickly after unban |
 | Vote week close/reporting | Sunday 20:00 | Close weekly reporting, carry unresolved cases |
 
@@ -39,6 +39,9 @@ Recommended windows:
 - Never freeze payments globally because of one dispute.
 - Only disputed users are temporarily held in escrow.
 - Escrowed money must stay attributable by user and epoch.
+- Default payout mode: weekly.
+- Optional payout mode for lower gas budgets: biweekly.
+- Use one batch execution per payout cycle (not many runs per day).
 - Unban must trigger priority payout:
   - `compensation = all held slices + any missed slices during the ban period`
   - target SLA: submit pending tx within 15 minutes; execute within 1 hour.
@@ -49,7 +52,7 @@ Recommended windows:
 - Scammers can be blocked quickly: first BAN vote starts hold, quorum creates immediate ban.
 - Voters get time to correct mistakes: dedicated unban window plus appeal window.
 - Wrongly banned users are made whole quickly: no waiting for next weekly payout.
-- Regular users still get frequent payouts: every 6 hours, not weekly.
+- Regular users are paid on a gas-efficient weekly (or biweekly) cycle.
 
 ## Data/Implementation Notes
 
@@ -66,4 +69,4 @@ Use existing components with minimal structural changes:
 3. Wednesday 10:00: unban quorum reached -> user returns to `ACTIVE`.
 4. Wednesday <=11:00: compensation runner releases full held amount.
 
-Result: user is fully compensated shortly after unban, while scammers can be blocked before payout.
+Result: user is fully compensated shortly after unban, while standard payouts stay weekly/biweekly to reduce gas costs.

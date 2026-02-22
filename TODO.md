@@ -86,3 +86,5 @@
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - FIXME@P2 Snyk vulnerabilities.
+
+- TODO@P3 `eslint` should be in main `package.json` not in `frontend/package.json`.

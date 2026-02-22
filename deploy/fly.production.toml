@@ -108,3 +108,4 @@ grace_period = '60s'
 memory = '512mb'
 cpus = 1
 memory_mb = 512
+swap_size_mb = 512

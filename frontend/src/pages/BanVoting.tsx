@@ -207,32 +207,32 @@ export default function BanVoting() {
                                     </div>
                                     <div className="user-profiles">
                                         {user.githubHandle && (
-                                            <a href={`https://github.com/${user.githubHandle}`} target="_blank" rel="noopener noreferrer" className="profile-link github" title="GitHub Profile">
+                                            <a href={`https://github.com/${encodeURIComponent(user.githubHandle)}`} target="_blank" rel="noopener noreferrer" className="profile-link github" title="GitHub Profile">
                                                 <img src="/github-mark.svg" alt="GitHub" className="profile-icon" />
                                                 {user.githubHandle}
                                             </a>
                                         )}
                                         {user.gitlabHandle && (
-                                            <a href={`https://gitlab.com/${user.gitlabHandle}`} target="_blank" rel="noopener noreferrer" className="profile-link gitlab" title="GitLab Profile">
+                                            <a href={`https://gitlab.com/${encodeURIComponent(user.gitlabHandle)}`} target="_blank" rel="noopener noreferrer" className="profile-link gitlab" title="GitLab Profile">
                                                 <span className="profile-icon">🦊</span>
                                                 {user.gitlabHandle}
                                             </a>
                                         )}
                                         {user.bitbucketHandle && (
-                                            <a href={`https://bitbucket.org/${user.bitbucketHandle}`} target="_blank" rel="noopener noreferrer" className="profile-link bitbucket" title="Bitbucket Profile">
+                                            <a href={`https://bitbucket.org/${encodeURIComponent(user.bitbucketHandle)}`} target="_blank" rel="noopener noreferrer" className="profile-link bitbucket" title="Bitbucket Profile">
                                                 <span className="profile-icon">🟦</span>
                                                 {user.bitbucketHandle}
                                             </a>
                                         )}
                                         {user.orcidId && (
-                                            <a href={`https://orcid.org/${user.orcidId}`} target="_blank" rel="noopener noreferrer" className="profile-link orcid" title="ORCID Profile">
+                                            <a href={`https://orcid.org/${encodeURIComponent(user.orcidId)}`} target="_blank" rel="noopener noreferrer" className="profile-link orcid" title="ORCID Profile">
                                                 <span className="profile-icon">🆔</span>
                                                 {user.orcidId}
                                             </a>
                                         )}
                                         {user.ethereumAddress && (
                                             <div className="address-chip">
-                                                <a href={`https://etherscan.io/address/${user.ethereumAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link ethereum" title="Ethereum Address">
+                                                <a href={`https://etherscan.io/address/${encodeURIComponent(user.ethereumAddress)}`} target="_blank" rel="noopener noreferrer" className="profile-link ethereum" title="Ethereum Address">
                                                     <span className="profile-icon">Ξ</span>
                                                     {user.ethereumAddress.slice(0, 6)}...{user.ethereumAddress.slice(-4)}
                                                 </a>
@@ -243,7 +243,7 @@ export default function BanVoting() {
                                         )}
                                         {user.solanaAddress && (
                                             <div className="address-chip">
-                                                <a href={`https://solscan.io/account/${user.solanaAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link solana" title="Solana Address">
+                                                <a href={`https://solscan.io/account/${encodeURIComponent(user.solanaAddress)}`} target="_blank" rel="noopener noreferrer" className="profile-link solana" title="Solana Address">
                                                     <span className="profile-icon">◎</span>
                                                     {user.solanaAddress.slice(0, 4)}...{user.solanaAddress.slice(-4)}
                                                 </a>
@@ -254,7 +254,7 @@ export default function BanVoting() {
                                         )}
                                         {user.bitcoinAddress && (
                                             <div className="address-chip">
-                                                <a href={`https://mempool.space/address/${user.bitcoinAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Address">
+                                                <a href={`https://mempool.space/address/${encodeURIComponent(user.bitcoinAddress)}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Address">
                                                     <span className="profile-icon">₿</span>
                                                     {user.bitcoinAddress.slice(0, 4)}...{user.bitcoinAddress.slice(-4)}
                                                 </a>
@@ -265,7 +265,7 @@ export default function BanVoting() {
                                         )}
                                         {user.bitcoinCashAddress && (
                                             <div className="address-chip">
-                                                <a href={`https://explorer.bitcoin.com/bch/address/${user.bitcoinCashAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Cash Address">
+                                                <a href={`https://explorer.bitcoin.com/bch/address/${encodeURIComponent(user.bitcoinCashAddress)}`} target="_blank" rel="noopener noreferrer" className="profile-link bitcoin" title="Bitcoin Cash Address">
                                                     <span className="profile-icon">BCH</span>
                                                     {user.bitcoinCashAddress.slice(0, 4)}...{user.bitcoinCashAddress.slice(-4)}
                                                 </a>
@@ -276,7 +276,7 @@ export default function BanVoting() {
                                         )}
                                         {user.icpAddress && (
                                             <div className="address-chip">
-                                                <a href={`https://dashboard.internetcomputer.org/account/${user.icpAddress}`} target="_blank" rel="noopener noreferrer" className="profile-link icp" title="ICP Address">
+                                                <a href={`https://dashboard.internetcomputer.org/account/${encodeURIComponent(user.icpAddress)}`} target="_blank" rel="noopener noreferrer" className="profile-link icp" title="ICP Address">
                                                     <span className="profile-icon">∞</span>
                                                     {user.icpAddress.slice(0, 6)}...{user.icpAddress.slice(-4)}
                                                 </a>
@@ -380,7 +380,7 @@ export default function BanVoting() {
                                                 <ul>
                                                     {response.sources.map((source, sIndex) => (
                                                         <li key={sIndex}>
-                                                            <a href={source} target="_blank" rel="noopener noreferrer">{source}</a>
+                                                            <a href={encodeURIComponent(source)} target="_blank" rel="noopener noreferrer">{source}</a>
                                                         </li>
                                                     ))}
                                                 </ul>

@@ -222,6 +222,17 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       stellarAddress,
       icpAddress,
       votingPleaUnsubscribed
+    }: {
+      email: string,
+      name: string,
+      solanaAddress: string,
+      bitcoinAddress: string,
+      bitcoinCashAddress: string,
+      polkadotAddress: string,
+      cosmosAddress: string,
+      stellarAddress: string,
+      icpAddress: string,
+      votingPleaUnsubscribed: string
     } = req.body;
     const authenticatedUserId = (req as any).userId;
 
@@ -249,7 +260,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    let normalizedVotingPleaPreference = votingPleaUnsubscribed;
+    let normalizedVotingPleaPreference: string | boolean = votingPleaUnsubscribed; // TODO@P3: Use one type, not two.
     if (typeof normalizedVotingPleaPreference === 'string') {
       normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
     }

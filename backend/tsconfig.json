@@ -31,6 +31,12 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "openai": [
+        "../node_modules/openai"
+      ],
+      "openai/*": [
+        "../node_modules/openai/*"
       ]
     },
     "allowSyntheticDefaultImports": true,

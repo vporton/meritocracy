@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:25-alpine3.22
 
 RUN apk update
 RUN apk add openssl

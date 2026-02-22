@@ -88,3 +88,5 @@
 - FIXME@P2 Snyk vulnerabilities.
 
 - TODO@P3 `eslint` should be in main `package.json` not in `frontend/package.json`.
+
+- TODO@P3 `@dfinity/principal` probably should be in `backend/`.

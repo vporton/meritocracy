@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { CronService } from '../services/CronService.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 const cronService = new CronService(prisma);
 
 // Note: Start/stop/run endpoints have been removed for security reasons.

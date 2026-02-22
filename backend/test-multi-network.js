@@ -5,11 +5,11 @@
  * This script tests the basic functionality without actually sending transactions
  */
 
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './dist/lib/prisma.js';
 import { multiNetworkEthereumService } from './dist/services/MultiNetworkEthereumService.js';
 import { MultiNetworkGasTokenDistributionService } from './dist/services/MultiNetworkGasTokenDistributionService.js';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function testMultiNetworkSystem() {
   console.log('🧪 Testing Multi-Network Gas Token Distribution System\n');

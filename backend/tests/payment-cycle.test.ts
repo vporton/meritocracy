@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { MultiNetworkGasTokenDistributionService } from '../src/services/MultiNetworkGasTokenDistributionService.js';
 import { describe, it, before, beforeEach, after, afterEach } from 'mocha';
@@ -7,8 +6,9 @@ import type {
   GasTokenNetworkContext,
   GasTransferEstimate
 } from '../src/services/gas-networks/types.js';
+import { createPrismaClient } from '../src/lib/prisma.js';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const TEST_EMAIL_PREFIX = 'test-payment-';
 
 interface TransferRecord {

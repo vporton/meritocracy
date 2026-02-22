@@ -79,10 +79,12 @@
 
 - TODO@P3 Google Analytics for such things as user registration.
 
-- TODO@P3 In Audit Logs separate las-assessment and old logs.
+- TODO@P3 In Audit Logs separate last assessment and old logs.
 
 - TODO@P3: calculate total recommended salary, average and median recommended salary.
 
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - FIXME@P2 Snyk vulnerabilities.
+
+- TODO@P3 `eslint` should be in main `package.json` not in `frontend/package.json`.

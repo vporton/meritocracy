@@ -1,11 +1,10 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '../middleware/auth.js';
 import { validateNonEvmAddresses } from '../utils/addressValidation.js';
 import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
+import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Remove duplicate auth middleware - now imported from shared module
 

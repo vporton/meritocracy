@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-import type { Prisma, User } from '@prisma/client';
+import type { PrismaClient, Prisma, User } from '@prisma/client';
 import type { TokenType } from '../types/token.js';
 import { multiNetworkEthereumService } from './MultiNetworkEthereumService.js';
 import type {
@@ -21,6 +20,7 @@ import {
 import { systemSecretService } from './SystemSecretService.js';
 import emailService from './EmailService.js';
 import { pendingTransactionService } from './PendingTransactionService.js';
+import { prisma } from '../lib/prisma.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -2145,5 +2145,5 @@ export class MultiNetworkGasTokenDistributionService {
 }
 
 // Export singleton instance
-export const multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(new PrismaClient());
+export const multiNetworkGasTokenDistributionService = new MultiNetworkGasTokenDistributionService(prisma);
 export default MultiNetworkGasTokenDistributionService;

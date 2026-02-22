@@ -1,11 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { multiNetworkGasTokenDistributionService } from '../services/MultiNetworkGasTokenDistributionService.js';
 import type { TokenDistributionOptions } from '../services/gas-networks/types.js';
 import { multiNetworkEthereumService } from '../services/MultiNetworkEthereumService.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') return undefined;

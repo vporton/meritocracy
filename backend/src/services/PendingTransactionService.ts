@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 
 export interface TransactionData {
     userId: number;
@@ -264,5 +265,5 @@ export class PendingTransactionService {
 }
 
 // Export singleton instance
-export const pendingTransactionService = new PendingTransactionService(new PrismaClient());
+export const pendingTransactionService = new PendingTransactionService(prisma);
 export default PendingTransactionService;

@@ -18,13 +18,6 @@ echo "Setting up worktree: $WORKTREE_PATH"
 
 # Uncomment and modify as needed:
 
-# FIXME@P2:
-# Copy environment files
-# if [ -f "$REPO_PATH/.env" ]; then
-#     cp "$REPO_PATH/.env" "$WORKTREE_PATH/.env"
-#     echo "Copied .env"
-# fi
-
 # Install dependencies (Node.js)
 if [ -f "$WORKTREE_PATH/package.json" ]; then
     cd "$WORKTREE_PATH"
@@ -34,13 +27,6 @@ fi
 cp backend/env.example backend/.env
 cp frontend/env.example frontend/.env
 
-# FIXME@P2: Connect to a PostgreSQL DB.
 cd backend && npx prisma generate
-
-# Install dependencies (Python)
-# if [ -f "$WORKTREE_PATH/requirements.txt" ]; then
-#     cd "$WORKTREE_PATH"
-#     pip install -r requirements.txt
-# fi
 
 echo "Setup complete!"

@@ -4,10 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'prisma/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is required for Prisma operations');
+  throw new Error(
+    'DATABASE_URL environment variable (pointing to a PostgreSQL database) is required for Prisma operations',
+  );
 }
 
 export default defineConfig({

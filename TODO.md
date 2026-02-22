@@ -84,3 +84,5 @@
 - TODO@P3: calculate total recommended salary, average and median recommended salary.
 
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
+
+- FIXME@P2 Snyk vulnerabilities.

@@ -93,3 +93,5 @@
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.
+
+- TODO@P3 Update World GDP regularly.

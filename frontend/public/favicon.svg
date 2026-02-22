@@ -1,0 +1,25 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="faviconTitle">
+  <title id="faviconTitle">Meritocracy icon</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="60%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#34d399" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#bg)" />
+  <path
+    d="M18 44 L26 26 L32 32 L38 18 L46 36 L50 32 L54 44"
+    stroke="url(#accent)"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <circle cx="22" cy="46" r="4" fill="#fff" opacity="0.8" />
+  <circle cx="42" cy="46" r="4" fill="#fff" opacity="0.8" />
+</svg>

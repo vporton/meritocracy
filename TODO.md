@@ -90,3 +90,6 @@
 - TODO@P3 `eslint` should be in main `package.json` not in `frontend/package.json`.
 
 - TODO@P3 `@dfinity/principal` probably should be in `backend/`.
+
+- TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
+  So, now acceleration is off.

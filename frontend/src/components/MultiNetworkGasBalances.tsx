@@ -170,7 +170,6 @@ function MultiNetworkGasBalances() {
   if (loading && !networkStatus) {
     return (
       <div className="card">
-        <h3>🌐 Multi-Network Gas Balances</h3>
         <div className="loading">Loading network status...</div>
       </div>
     )
@@ -179,7 +178,6 @@ function MultiNetworkGasBalances() {
   if (error) {
     return (
       <div className="card">
-        <h3>🌐 Multi-Network Gas Balances</h3>
         <div className="error">
           ❌ {error}
           <br />
@@ -192,7 +190,6 @@ function MultiNetworkGasBalances() {
   if (!networkStatus || networkStatus.enabledNetworks.length === 0) {
     return (
       <div className="card">
-        <h3>🌐 Multi-Network Gas Balances</h3>
         <div style={{
           padding: '1rem',
           background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
@@ -234,8 +231,6 @@ function MultiNetworkGasBalances() {
 
   return (
     <div className="card">
-      <h3>🌐 Multi-Network Gas Balances</h3>
-
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <label>Fund Source:</label>
         <select

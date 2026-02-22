@@ -158,7 +158,7 @@ export default function BanVoting() {
                     <h1>Ban Voting System</h1>
                     <p className="subtitle">Vote to ban users who do <em>prompt injection</em> or <em>severe plagiarism</em>. Weekly reset.</p>
                     <p className="subtitle plan-link-row">
-                        <a href="/ban-voting/timing-plan">View payout and ban/unban timing plan (HTML)</a>
+                        <a href="/ban-voting/timing-plan">View payout and ban/unban timing plan</a>
                     </p>
                 </header>
 

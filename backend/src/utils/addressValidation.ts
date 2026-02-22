@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import bs58 from 'bs58';
 import { decodeAddress } from '@polkadot/util-crypto';
 import { fromBech32 } from '@cosmjs/encoding';
-import { StrKey } from 'stellar-sdk';
+import { StrKey } from '@stellar/stellar-sdk';
 // NOTE: We avoid importing '@dfinity/principal' directly so the code works even
 // when the package is not installed (e.g. in limited build environments).
 

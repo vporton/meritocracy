@@ -6,7 +6,7 @@ import type {
   GasTransferResult,
   TokenDistributionOptions
 } from './types.js';
-import { Asset, Keypair, Networks, Operation, Horizon, StrKey, TransactionBuilder } from 'stellar-sdk';
+import { Asset, Keypair, Networks, Operation, Horizon, StrKey, TransactionBuilder } from '@stellar/stellar-sdk';
 const { Server } = Horizon;
 import { withRetry } from '../../utils/retry.js';
 

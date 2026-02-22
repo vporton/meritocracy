@@ -28,5 +28,4 @@ RUN npm install
 RUN cd backend && npx prisma generate
 RUN npm run build
 
-CMD ["npm", "start"]
-# CMD ["sleep", "inf"]
+ENTRYPOINT [ "./scripts/fly.io-entrypooint.sh" ]

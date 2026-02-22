@@ -16,6 +16,9 @@ const openai = new OpenAI({
   fetch: fetch as any,
 });
 
+// Ensure downstream libraries see the same instance type even if multiple openai copies exist in node_modules.
+const openaiForFlex = openai as any;
+
 /**
  * OpenAI Service Configuration
  */
@@ -156,15 +159,15 @@ export async function createAIBatchStore(storeId: string | undefined, taskId: nu
 
 export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
   const result = openAIFlexMode === 'batch' ?
-    new FlexibleOpenAIBatch(openai, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
-    new FlexibleOpenAINonBatch(openai, "/v1/responses", store as FlexibleNonBatchStore);
+    new FlexibleOpenAIBatch(openaiForFlex, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
+    new FlexibleOpenAINonBatch(openaiForFlex, "/v1/responses", store as FlexibleNonBatchStore);
   await result.init();
   return result;
 }
 
 export async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
   const result = openAIFlexMode === 'batch' ?
-    new FlexibleOpenAIBatchOutput(openai, store as FlexibleBatchStore) :
+    new FlexibleOpenAIBatchOutput(openaiForFlex, store as FlexibleBatchStore) :
     new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);
   // await result.init();
   return result;

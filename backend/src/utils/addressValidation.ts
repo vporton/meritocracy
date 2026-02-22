@@ -4,7 +4,8 @@ import bs58 from 'bs58';
 import { decodeAddress } from '@polkadot/util-crypto';
 import { fromBech32 } from '@cosmjs/encoding';
 import { StrKey } from 'stellar-sdk';
-import { Principal } from '@dfinity/principal';
+// NOTE: We avoid importing '@dfinity/principal' directly so the code works even
+// when the package is not installed (e.g. in limited build environments).
 
 const BECH32_CHARSET_REGEX = /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/;
 const CASHADDR_PREFIXES = ['bitcoincash', 'bchtest', 'bchreg'];
@@ -14,6 +15,51 @@ const CASHADDR_CHARSET_REGEX = BECH32_CHARSET_REGEX;
 const doubleSha256 = (data: Uint8Array): Buffer => {
   const first = createHash('sha256').update(data).digest();
   return createHash('sha256').update(first).digest();
+};
+
+const ICP_BASE32_ALPHABET = 'abcdefghijklmnopqrstuvwxyz234567';
+const ICP_TEXT_REGEX = /^([a-z2-7]{5}-)*[a-z2-7]{3,5}$/;
+
+const base32Decode = (value: string): Uint8Array | null => {
+  let bits = 0;
+  let buffer = 0;
+  const output: number[] = [];
+
+  for (const char of value) {
+    const index = ICP_BASE32_ALPHABET.indexOf(char);
+    if (index === -1) {
+      return null;
+    }
+
+    buffer = (buffer << 5) | index;
+    bits += 5;
+
+    if (bits >= 8) {
+      bits -= 8;
+      output.push((buffer >> bits) & 0xff);
+    }
+  }
+
+  // Reject if there are leftover meaningful bits (invalid padding situation)
+  if (bits > 0 && (buffer & ((1 << bits) - 1)) !== 0) {
+    return null;
+  }
+
+  return Uint8Array.from(output);
+};
+
+const isValidIcpPrincipalText = (value: string): boolean => {
+  const normalized = value.toLowerCase();
+  if (!ICP_TEXT_REGEX.test(normalized)) {
+    return false;
+  }
+
+  // Remove dashes and validate base32 payload.
+  const payload = normalized.replace(/-/g, '');
+  const decoded = base32Decode(payload);
+
+  // Principal text encodes a 4-byte checksum plus data, so anything shorter than 5 bytes is invalid.
+  return !!decoded && decoded.length >= 5;
 };
 
 const isValidBase58Check = (value: string): boolean => {
@@ -181,12 +227,7 @@ export const isValidIcpAddress = (value: string): boolean => {
     return true;
   }
 
-  try {
-    Principal.fromText(trimmed);
-    return true;
-  } catch {
-    return false;
-  }
+  return isValidIcpPrincipalText(trimmed);
 };
 
 export type NonEvmAddressInput = {

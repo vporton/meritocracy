@@ -1,10 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { DisconnectedAccountCleanupService } from '../services/DisconnectedAccountCleanupService.js';
-import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '../middleware/auth.js';
+import { prisma } from '../lib/prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 const cleanupService = new DisconnectedAccountCleanupService(prisma);
 
 /**

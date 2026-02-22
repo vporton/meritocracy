@@ -1,10 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { DBLogsService, LogsFilter } from '../services/DBLogsService.js';
 import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
+import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const dbLogsService = new DBLogsService(prisma);
 
 // Remove duplicate auth middleware - now imported from shared module

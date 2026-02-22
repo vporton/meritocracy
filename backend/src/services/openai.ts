@@ -1,15 +1,14 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { assert } from 'console';
 import { FlexibleBatchStore, FlexibleNonBatchStore, FlexibleOpenAIBatch, FlexibleBatchStoreCache, FlexibleOpenAINonBatch, FlexibleOpenAIBatchOutput, FlexibleOpenAINonBatchOutput, FlexibleStore } from 'flexible-batches';
 import fetch from 'node-fetch';
+import { prisma } from '../lib/prisma.js';
 
 // Load environment variables
 dotenv.config();
-
-const prisma = new PrismaClient();
 
 // Initialize OpenAI client
 const openai = new OpenAI({

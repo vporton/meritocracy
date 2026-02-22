@@ -1,5 +1,4 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -7,9 +6,9 @@ import { ethers } from 'ethers';
 import { getCurrentUserFromToken } from '../middleware/auth.js';
 import EmailService from '../services/EmailService.js';
 import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
+import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Track ongoing OAuth requests to prevent duplicates
 const ongoingOAuthRequests = new Map<string, number>();

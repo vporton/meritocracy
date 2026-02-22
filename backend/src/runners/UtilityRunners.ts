@@ -1,8 +1,9 @@
 import { TaskRunner, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
 import OpenAI from 'openai';
 import { isConfigValueTrue } from '../services/utils.js';
+import { prisma } from '../lib/prisma.js';
 
 // Constants
 const DEFAULT_THRESHOLD = 1e-11;
@@ -155,7 +156,7 @@ export abstract class BaseRunner implements TaskRunner {
   constructor(data: TaskRunnerData, taskId: number) {
     this.data = data;
     this.taskId = taskId;
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.runnerName = this.constructor.name;
   }
 

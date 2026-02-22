@@ -1,7 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // Middleware to extract user ID from authorization token
 export async function getCurrentUserFromToken(req: express.Request): Promise<number | null> {

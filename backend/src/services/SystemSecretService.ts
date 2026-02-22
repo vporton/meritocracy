@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { generatePrivateKey } from 'viem/accounts';
 import { Keypair as SolanaKeypair } from '@solana/web3.js';
 import { Keypair as StellarKeypair } from 'stellar-sdk';
@@ -11,7 +10,7 @@ import process from 'process';
 import dotenv from 'dotenv';
 import fs from 'fs';
 
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 const ECPair = ECPairFactory(tinysecp as any);
 
 export class SystemSecretService {

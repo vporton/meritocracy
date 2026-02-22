@@ -1,10 +1,9 @@
 import express from 'express';
 import { GlobalDataService } from '../services/GlobalDataService.js';
 import { CronService } from '../services/CronService.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const cronService = new CronService(prisma);
 
 // Middleware to check admin password

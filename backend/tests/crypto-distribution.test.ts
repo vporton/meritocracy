@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../src/lib/prisma.js';
 import { MultiNetworkGasTokenDistributionService } from '../src/services/MultiNetworkGasTokenDistributionService.js';
 import { describe, it, beforeEach, after } from 'mocha';
 import {
@@ -8,7 +8,7 @@ import {
   GasTransferResult,
   TokenDistributionOptions
 } from '../src/services/gas-networks/types.js';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 class MockAdapter implements GasTokenNetworkAdapter {
     readonly type = 'MOCK';
@@ -78,7 +78,7 @@ class MockAdapter implements GasTokenNetworkAdapter {
 describe('Crypto Distribution Service (integration)', function (this: Mocha.Suite) {
     this.timeout(120_000);
 
-    const prisma = new PrismaClient();
+    const prisma = createPrismaClient();
 
     beforeEach(async () => {
         await prisma.gasTokenDistribution.deleteMany({});

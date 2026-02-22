@@ -3,10 +3,10 @@
  * This script tests the cleanup service to ensure it properly preserves banned accounts and KYC data
  */
 
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './dist/lib/prisma.js';
 import { DisconnectedAccountCleanupService } from './dist/services/DisconnectedAccountCleanupService.js';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const cleanupService = new DisconnectedAccountCleanupService(prisma);
 
 async function testCleanupServiceWithKycProtection() {

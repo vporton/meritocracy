@@ -1,6 +1,6 @@
 import { generatePrivateKey } from 'viem/accounts';
 import { Keypair as SolanaKeypair } from '@solana/web3.js';
-import { Keypair as StellarKeypair } from 'stellar-sdk';
+import { Keypair as StellarKeypair } from '@stellar/stellar-sdk';
 import { mnemonicGenerate, cryptoWaitReady } from '@polkadot/util-crypto';
 import { ECPairFactory } from 'ecpair';
 import * as tinysecp from 'tiny-secp256k1';

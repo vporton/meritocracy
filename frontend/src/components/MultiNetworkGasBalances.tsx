@@ -53,7 +53,7 @@ const explorerLinkMap: Record<string, ExplorerLinkConfig> = {
   'cosmoshub-mainnet': { label: 'Mintscan', buildUrl: address => `https://www.mintscan.io/cosmos/account/${encodeURIComponent(address)}` },
   'polkadot-mainnet': { label: 'Polkadot Subscan', buildUrl: address => `https://polkadot.subscan.io/account/${encodeURIComponent(address)}` },
   'stellar-mainnet': { label: 'Stellar Expert', buildUrl: address => `https://stellar.expert/explorer/public/account/${encodeURIComponent(address)}` },
-  'icp-mainnet': { label: 'ICP Dashboard', buildUrl: address => `https://dashboard.internetcomputer.org/accounts/${encodeURIComponent(address)}` }
+  'icp-mainnet': { label: 'ICP Dashboard', buildUrl: address => `https://dashboard.internetcomputer.org/account/${encodeURIComponent(address)}` }
 };
 
 const stripCountrySuffix = (networkId: string) => {

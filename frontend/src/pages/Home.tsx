@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import api, { usersApi } from '../services/api'
+import api, { usersApi, SalaryStats } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
@@ -29,9 +29,13 @@ export default function Home() {
   const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
   const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
+  const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
   const [onboardingLoading, setOnboardingLoading] = useState(false)
   const [showOnboardingConfirm, setShowOnboardingConfirm] = useState(false)
+
+  const formatUsd = (value: number) =>
+    value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 
   useEffect(() => {
     const fetchPrimaryNetworkAddress = async () => {
@@ -66,6 +70,21 @@ export default function Home() {
     }
 
     fetchWorldGdp()
+  }, [])
+
+  useEffect(() => {
+    const fetchSalaryStats = async () => {
+      try {
+        const response = await usersApi.getSalaryStats()
+        if (response.data.success) {
+          setSalaryStats(response.data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch recommended salary stats:', error)
+      }
+    }
+
+    fetchSalaryStats()
   }, [])
 
   useEffect(() => {
@@ -280,6 +299,15 @@ export default function Home() {
         )}
       </div>
 
+      {salaryStats && (
+        <div className="card">
+          <h2>💹 Recommended Salaries (All Users)</h2>
+          <p style={{ marginBottom: '0.25rem' }}>📈 <strong>Total recommended salary:</strong> {formatUsd(salaryStats.totalRecommendedSalary)} across {salaryStats.userCount} users</p>
+          <p style={{ marginBottom: '0.25rem' }}>⚖️ <strong>Average recommended salary:</strong> {formatUsd(salaryStats.averageRecommendedSalary)}</p>
+          <p>🧮 <strong>Median recommended salary:</strong> {formatUsd(salaryStats.medianRecommendedSalary)}</p>
+        </div>
+      )}
+    
       {userGdpShare && (
         <div className="card">
           <h2>💼 Your Economic Share</h2>

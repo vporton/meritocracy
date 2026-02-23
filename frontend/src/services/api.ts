@@ -94,6 +94,14 @@ interface UpdatePostData {
   published?: boolean;
 }
 
+interface SalaryStats {
+  worldGdp: number;
+  userCount: number;
+  totalRecommendedSalary: number;
+  averageRecommendedSalary: number;
+  medianRecommendedSalary: number;
+}
+
 interface AuthData {
   ethereumAddress?: string;
   signature?: string;
@@ -175,6 +183,8 @@ export const usersApi = {
     api.get('/api/users/me/gdp-share'),
   getLeaderboard: (limit?: number): Promise<AxiosResponse<{ success: boolean; data: { leaderboard: LeaderboardEntry[]; total: number; limit: number } }>> =>
     api.get('/api/users/leaderboard', { params: limit ? { limit } : {} }),
+  getSalaryStats: (): Promise<AxiosResponse<{ success: boolean; data: SalaryStats }>> =>
+    api.get('/api/users/salary-stats'),
 }
 
 // Posts API
@@ -251,4 +261,4 @@ api.interceptors.response.use(
 )
 
 export default api
-export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry }
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats }

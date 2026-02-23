@@ -32,6 +32,65 @@ interface MultiNetworkStatus {
   totalReserve?: number;
 }
 
+type ExplorerLinkConfig = {
+  label: string;
+  buildUrl: (address: string) => string;
+};
+
+const explorerLinkMap: Record<string, ExplorerLinkConfig> = {
+  mainnet: { label: 'Etherscan', buildUrl: address => `https://etherscan.io/address/${encodeURIComponent(address)}` },
+  sepolia: { label: 'Sepolia Etherscan', buildUrl: address => `https://sepolia.etherscan.io/address/${encodeURIComponent(address)}` },
+  polygon: { label: 'Polygonscan', buildUrl: address => `https://polygonscan.com/address/${encodeURIComponent(address)}` },
+  arbitrum: { label: 'Arbiscan', buildUrl: address => `https://arbiscan.io/address/${encodeURIComponent(address)}` },
+  optimism: { label: 'Optimistic Etherscan', buildUrl: address => `https://optimistic.etherscan.io/address/${encodeURIComponent(address)}` },
+  base: { label: 'Base Explorer', buildUrl: address => `https://basescan.org/address/${encodeURIComponent(address)}` },
+  celo: { label: 'Celo Explorer', buildUrl: address => `https://explorer.celo.org/address/${encodeURIComponent(address)}` },
+  mezo: { label: 'Mezo Explorer', buildUrl: address => `https://explorer.mezo.org/address/${encodeURIComponent(address)}` },
+  mezoTestnet: { label: 'Mezo Testnet Explorer', buildUrl: address => `https://explorer.test.mezo.org/address/${encodeURIComponent(address)}` },
+  'bitcoin-mainnet': { label: 'Mempool Space', buildUrl: address => `https://mempool.space/address/${encodeURIComponent(address)}` },
+  'bitcoin-cash-mainnet': { label: 'Bitcoin.com Explorer', buildUrl: address => `https://explorer.bitcoin.com/bch/address/${encodeURIComponent(address)}` },
+  'solana-mainnet': { label: 'Solana Explorer', buildUrl: address => `https://explorer.solana.com/address/${encodeURIComponent(address)}` },
+  'cosmoshub-mainnet': { label: 'Mintscan', buildUrl: address => `https://www.mintscan.io/cosmos/account/${encodeURIComponent(address)}` },
+  'polkadot-mainnet': { label: 'Polkadot Subscan', buildUrl: address => `https://polkadot.subscan.io/account/${encodeURIComponent(address)}` },
+  'stellar-mainnet': { label: 'Stellar Expert', buildUrl: address => `https://stellar.expert/explorer/public/account/${encodeURIComponent(address)}` },
+  'icp-mainnet': { label: 'ICP Dashboard', buildUrl: address => `https://dashboard.internetcomputer.org/accounts/${encodeURIComponent(address)}` }
+};
+
+const stripCountrySuffix = (networkId: string) => {
+  const match = networkId.match(/^(.*?)(?:-[A-Z]{2})$/);
+  return match ? match[1] : networkId;
+};
+
+const placeholderAddressPatterns = [
+  'ADDRESS-NOT-RESOLVED',
+  'DERIVATION-FAILED',
+  'DERIVE-NOT-SUPPORTED',
+  'SECRET-MISSING-DB',
+  'N/A'
+];
+
+const isPlaceholderAddress = (value: string) => {
+  if (!value) return true;
+  return placeholderAddressPatterns.some(pattern => value.includes(pattern));
+};
+
+const getExplorerLinkForNetwork = (networkId: string, address: string) => {
+  if (!address || isPlaceholderAddress(address)) {
+    return null;
+  }
+
+  const baseNetworkId = stripCountrySuffix(networkId);
+  const config = explorerLinkMap[baseNetworkId];
+  if (!config) {
+    return null;
+  }
+
+  return {
+    label: config.label,
+    url: config.buildUrl(address)
+  };
+};
+
 function MultiNetworkGasBalances() {
   const [networkStatus, setNetworkStatus] = useState<MultiNetworkStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -305,6 +364,7 @@ function MultiNetworkGasBalances() {
             'N/A'
           const address = networkInfo.address ?? 'N/A'
           const shortAddress = shortenAddress(address)
+          const explorerLink = getExplorerLinkForNetwork(networkName, address)
           const balanceDisplay = balanceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${balanceFormatted} ${tokenSymbol}`
@@ -382,16 +442,29 @@ function MultiNetworkGasBalances() {
                         {copiedAddressKey === networkName ? 'Copied!' : 'Copy'}
                       </button>
                     )}
-                  </p>
-                </div>
-              </div>
-
-              {lastDistribution && (
-                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
-                  Last Distribution: {new Date(lastDistribution).toLocaleString()}
                 </p>
-              )}
+                {explorerLink && (
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>
+                    <a
+                      href={explorerLink.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#38bdf8' }}
+                      title={`Open ${displayName} address on ${explorerLink.label}`}
+                    >
+                      View on {explorerLink.label}
+                    </a>
+                  </p>
+                )}
+              </div>
             </div>
+
+            {lastDistribution && (
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+                Last Distribution: {new Date(lastDistribution).toLocaleString()}
+              </p>
+            )}
+          </div>
           )
         })}
       </div>

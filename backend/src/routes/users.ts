@@ -22,6 +22,31 @@ type LeaderboardUser = {
   kycData: string | null;
 };
 
+function calculateMedian(values: number[]): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+type SalaryStatsPayload = {
+  worldGdp: number;
+  userCount: number;
+  totalRecommendedSalary: number;
+  averageRecommendedSalary: number;
+  medianRecommendedSalary: number;
+};
+
+type SalaryStatsCacheEntry = {
+  timestamp: number;
+  data: SalaryStatsPayload;
+};
+const SALARY_STATS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+let salaryStatsCache: SalaryStatsCacheEntry | null = null;
+
 function extractKycName(kycData: string | null): string | null {
   if (!kycData) return null;
   try {
@@ -105,6 +130,66 @@ router.get('/leaderboard', async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Error fetching GDP leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch GDP leaderboard' });
+  }
+});
+
+// GET /api/users/salary-stats - Aggregated recommended salary stats
+router.get('/salary-stats', async (req, res): Promise<void> => {
+  try {
+    const now = Date.now();
+    if (salaryStatsCache && now - salaryStatsCache.timestamp <= SALARY_STATS_CACHE_TTL_MS) {
+      res.json({
+        success: true,
+        data: salaryStatsCache.data
+      });
+      return;
+    }
+
+    const globalData = await prisma.global.findFirst();
+    if (!globalData?.worldGdp) {
+      res.status(404).json({ success: false, error: 'World GDP data is not available yet' });
+      return;
+    }
+
+    const shareRows = await prisma.user.findMany({
+      where: {
+        shareInGDP: {
+          not: null
+        }
+      },
+      select: {
+        shareInGDP: true
+      }
+    });
+
+    const shareValues = shareRows.map(user => Number(user.shareInGDP ?? 0));
+    const totalShare = shareValues.reduce((sum, value) => sum + value, 0);
+    const averageShare = shareValues.length ? totalShare / shareValues.length : 0;
+    const medianShare = calculateMedian(shareValues);
+
+    const multiplier = globalData.worldGdp;
+    const toCurrency = (shareFraction: number) => shareFraction * multiplier;
+
+    const payload = {
+      worldGdp: multiplier,
+      userCount: shareValues.length,
+      totalRecommendedSalary: toCurrency(totalShare),
+      averageRecommendedSalary: toCurrency(averageShare),
+      medianRecommendedSalary: toCurrency(medianShare)
+    };
+
+    salaryStatsCache = {
+      timestamp: now,
+      data: payload
+    };
+
+    res.json({
+      success: true,
+      data: payload
+    });
+  } catch (error: any) {
+    console.error('Error fetching recommended salary stats:', error);
+    res.status(500).json({ error: 'Failed to fetch recommended salary stats' });
   }
 });
 

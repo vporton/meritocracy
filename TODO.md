@@ -75,21 +75,13 @@
 
 - TODO@P3 Audit logs display numeric data, too.
 
-- TODO@P3 Write at the Treasury page how we accept donations.
-
 - TODO@P3 Google Analytics for such things as user registration.
 
 - TODO@P3 In Audit Logs separate last assessment and old logs.
 
-- TODO@P3: calculate total recommended salary, average and median recommended salary.
-
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - FIXME@P2 Snyk vulnerabilities.
-
-- TODO@P3 `eslint` should be in main `package.json` not in `frontend/package.json`.
-
-- TODO@P3 `@dfinity/principal` probably should be in `backend/`.
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.

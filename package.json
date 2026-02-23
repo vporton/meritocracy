@@ -45,6 +45,7 @@
   "dependencies": {
     "@types/node": "^25.3.0",
     "concurrently": "^9.2.1",
+    "eslint": "^10.0.1",
     "serve": "^14.2.5",
     "typescript": "^5.9.3"
   },

@@ -90,7 +90,7 @@ export default function UserAuditLog() {
                             const badgeLabel = assessment.isPending ? 'Pending AI Analysis' : assessment.isError ? 'Research Error' : 'AI Research Assessment';
 
                             return (
-                                <div key={index} className={`assessment-card status-${status}`}>
+                                <section key={index} className={`assessment-card status-${status}`}>
                                     <div className="assessment-header">
                                         <span className="assessment-date">
                                             {new Date(assessment.timestamp).toLocaleString()}
@@ -136,7 +136,7 @@ export default function UserAuditLog() {
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </section>
                             );
                         })
                     )}

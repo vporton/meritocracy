@@ -94,3 +94,5 @@
   Well, it seems need to do in [another way](https://github.com/node-cron/node-cron/issues/505).
   Or use [native Fly.io task scheduler](https://fly.io/docs/blueprints/task-scheduling/) (requires some money).
   As the first thing to do, use `setInterval()` pinging `API_URL` every 30 sec from cron jobs.
+
+- TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.

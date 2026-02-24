@@ -90,5 +90,6 @@
 
 - TODO@P3 Now (recommended) salary stats are cached for 7 days. But it means that once per 7 days there is a big delay.
 
-- TODO@P3 Modify `node-cron` to awake by networks card in about `cron.timeout()`. Otherwise, don't sleep.
+- TODO@P2 Modify `node-cron` to awake by networks card in about `cron.timeout()`. Otherwise, don't sleep.
   Well, it seems need to do in [another way](https://github.com/node-cron/node-cron/issues/505).
+  Or use [native Fly.io task scheduler](https://fly.io/docs/blueprints/task-scheduling/) (requires some money).

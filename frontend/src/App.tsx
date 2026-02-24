@@ -15,6 +15,7 @@ import BanVoting from './pages/BanVoting'
 import BanVotingTimingPlan from './pages/BanVotingTimingPlan'
 import UserAuditLog from './pages/UserAuditLog'
 import Treasury from './pages/Treasury'
+import SocialShareButtons from './components/SocialShareButtons'
 import './App.css'
 
 const queryClient = new QueryClient()
@@ -48,6 +49,10 @@ function App() {
                       <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
                     </Routes>
                   </main>
+                  <SocialShareButtons
+                    title="Meritocracy DAO"
+                    text="Meritocracy funds scientists and open-source developers through transparent AI-assisted governance."
+                  />
                   <p>
                     <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
                     <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}

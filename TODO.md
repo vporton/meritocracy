@@ -91,8 +91,3 @@
 - TODO@P3 Now (recommended) salary stats are cached for 7 days. But it means that once per 7 days there is a big delay.
 
 - TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.
-
-- FIXME@P2 The keep-alive code calls our own API_URL every 60 sec. But if more than one machine is active,
-  it may ping the other machine instead of the machine doing the task. So it may be wrongly suspended.
-
-- FIXME@P1 Several Fly.io machines have the same Cron schedule, so they run duplicate tasks!

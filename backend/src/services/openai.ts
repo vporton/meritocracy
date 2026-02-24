@@ -128,8 +128,13 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   async storeResponseByCustomId(props: {
     customId: string; response: OpenAI.Responses.Response;
   }): Promise<void> {
-    await this.prisma.nonBatchMapping.create({
-      data: {
+    await this.prisma.nonBatchMapping.upsert({
+      where: { customId: props.customId },
+      update: {
+        response: JSON.stringify(props.response),
+        nonBatchId: parseInt(this.storeId!),
+      },
+      create: {
         customId: props.customId,
         response: JSON.stringify(props.response),
         nonBatchId: parseInt(this.storeId!),

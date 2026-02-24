@@ -43,64 +43,77 @@ export class UserEvaluationFlow {
    * Create the flow graph for user evaluation according to the new diagram
    * Returns the root task ID that can be used to start the evaluation
    * 
-   * New Flow according to diagram:
-   * 1. Actor → gpt-5-mini Assessment (scientist check)
-   * 2. Bi-monthly trigger → Sequential randomization and assessment pairs
-   * 3. Each pair: Randomize → Randomized (can lead to ban or median)
-   * 4. 6 pairs total: 3 worth assessment pairs + 3 injection check pairs
+   * Flow strategy:
+   * 1. First run: 3 worth assessments (median from same run)
+   * 2. Subsequent runs: 1 new worth assessment (median from latest 3 total, including history)
+   * 3. Prompt injection checks remain in the flow for each run
    */
   async createEvaluationFlow(evaluationData: UserEvaluationData, scientistOnboardingTask?: Task) {
     console.log(`🔄 Creating evaluation flow for user ${evaluationData.userId}`);
 
     const worthPromptWithGdp = await this.getWorthPromptWithGdp();
-    const completionTasks: number[] = [];
-
-    // Create 6 sequential pairs as per the new diagram:
-    // 3 pairs of "Randomize: How much the user is worth?" → "Randomized: How much the user is worth?"
-    // 3 pairs of "Randomize: Is there a prompt injection?" → "Randomized: Is there a prompt injection?"
+    const hasPreviousWorthAssessments = await this.hasPreviousWorthAssessments(evaluationData.userId);
+    const worthTasks: number[] = [];
+    const initialDependencies = scientistOnboardingTask ? [scientistOnboardingTask.id] : [];
 
     // Pair 1: Worth assessment
     const pair1Randomize = await this.createRandomizePromptTask(
       evaluationData,
-      scientistOnboardingTask ? [scientistOnboardingTask.id] : [],
+      initialDependencies,
       worthPromptWithGdp
     );
     const pair1Worth = await this.createWorthAssessmentTask(evaluationData, [pair1Randomize.id]);
-    completionTasks.push(pair1Worth.id);
+    worthTasks.push(pair1Worth.id);
 
-    // Pair 2: Injection check (depends on pair1 worth assessment for URLs)
+    if (hasPreviousWorthAssessments) {
+      // Subsequent runs: one worth assessment plus one injection check.
+      const pair2Randomize = await this.createRandomizePromptTask(evaluationData, [pair1Worth.id], injectionPrompt);
+      await this.createPromptInjectionTask(evaluationData, [pair2Randomize.id, pair1Worth.id], 1);
+      await this.createMedianTask(evaluationData, worthTasks);
+
+      console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask?.id || 'N/A'}`);
+      console.log(`📊 Flow structure: ${scientistOnboardingTask ? 'Scientist → ' : ''}1 worth + 1 injection → Median(using latest 3 worth assessments)`);
+      return scientistOnboardingTask?.id || pair1Randomize.id;
+    }
+
+    // First run: keep 3 worth assessments and 3 injection checks for bootstrap median.
     const pair2Randomize = await this.createRandomizePromptTask(evaluationData, [pair1Worth.id], injectionPrompt);
     const pair2Injection = await this.createPromptInjectionTask(evaluationData, [pair2Randomize.id, pair1Worth.id], 1);
-    completionTasks.push(pair2Injection.id);
 
-    // Pair 3: Worth assessment
     const pair3Randomize = await this.createRandomizePromptTask(evaluationData, [pair2Injection.id], worthPromptWithGdp);
     const pair3Worth = await this.createWorthAssessmentTask(evaluationData, [pair3Randomize.id]);
-    completionTasks.push(pair3Worth.id);
+    worthTasks.push(pair3Worth.id);
 
-    // Pair 4: Injection check (depends on all previous worth assessments for URLs)
     const pair4Randomize = await this.createRandomizePromptTask(evaluationData, [pair3Worth.id], injectionPrompt);
     const pair4Injection = await this.createPromptInjectionTask(evaluationData, [pair4Randomize.id, pair1Worth.id, pair3Worth.id], 2);
-    completionTasks.push(pair4Injection.id);
 
-    // Pair 5: Worth assessment
     const pair5Randomize = await this.createRandomizePromptTask(evaluationData, [pair4Injection.id], worthPromptWithGdp);
     const pair5Worth = await this.createWorthAssessmentTask(evaluationData, [pair5Randomize.id]);
-    completionTasks.push(pair5Worth.id);
+    worthTasks.push(pair5Worth.id);
 
-    // Pair 6: Injection check (depends on all previous worth assessments for URLs)
     const pair6Randomize = await this.createRandomizePromptTask(evaluationData, [pair5Worth.id], injectionPrompt);
-    const pair6Injection = await this.createPromptInjectionTask(evaluationData, [pair6Randomize.id, pair1Worth.id, pair3Worth.id, pair5Worth.id], 3);
-    completionTasks.push(pair6Injection.id);
+    await this.createPromptInjectionTask(evaluationData, [pair6Randomize.id, pair1Worth.id, pair3Worth.id, pair5Worth.id], 3);
 
-    // Create median task that depends on all worth assessment tasks
-    const worthTasks = [pair1Worth.id, pair3Worth.id, pair5Worth.id];
-    const medianTask = await this.createMedianTask(evaluationData, worthTasks);
+    await this.createMedianTask(evaluationData, worthTasks);
 
     console.log(`✅ Evaluation flow created with root task ${scientistOnboardingTask?.id || 'N/A'}`);
-    console.log(`📊 Flow structure: Scientist → 6 sequential pairs (3 worth + 3 injection) → Median`);
+    console.log(`📊 Flow structure: ${scientistOnboardingTask ? 'Scientist → ' : ''}6 sequential pairs (3 worth + 3 injection) → Median`);
     console.log(`📊 Each injection check can lead to ban, each worth assessment contributes to median`);
     return scientistOnboardingTask?.id || pair1Randomize.id;
+  }
+
+  private async hasPreviousWorthAssessments(userId: number): Promise<boolean> {
+    const worthAssessmentCount = await this.prisma.task.count({
+      where: {
+        runnerClassName: 'WorthAssessmentRunner',
+        isDeleted: false,
+        runnerData: {
+          contains: `"userId":${userId},`
+        }
+      }
+    });
+
+    return worthAssessmentCount > 0;
   }
 
   /**
@@ -257,7 +270,7 @@ export class UserEvaluationFlow {
   /**
    * Create median calculation task
    * This corresponds to "Salary = the median" in the diagram
-   * It depends on all three worth assessment tasks (one from each path)
+   * It depends on current-run worth assessment tasks.
    */
   private async createMedianTask(
     evaluationData: UserEvaluationData,

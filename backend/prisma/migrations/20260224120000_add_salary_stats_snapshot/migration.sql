@@ -1,0 +1,6 @@
+ALTER TABLE "global"
+ADD COLUMN "salaryStatsUserCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "salaryStatsTotal" DOUBLE PRECISION,
+ADD COLUMN "salaryStatsAverage" DOUBLE PRECISION,
+ADD COLUMN "salaryStatsMedian" DOUBLE PRECISION,
+ADD COLUMN "salaryStatsCalculatedAt" TIMESTAMP(3);

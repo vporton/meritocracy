@@ -6,9 +6,6 @@
 
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
-- TODO@P3 Improve "constantness" of _worth_ answers. Probably, ask more than three times, for the median.
-  Also use running average of user worth to reduce used AI tokens.
-
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
   If this is the case, we should rewrite this in ICP. Use ZenDB to replace SQL.
 
@@ -85,9 +82,8 @@
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.
+  "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
 
 - TODO@P3 Update World GDP regularly.
-
-- TODO@P3 Now (recommended) salary stats are cached for 7 days. But it means that once per 7 days there is a big delay.
 
 - TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.

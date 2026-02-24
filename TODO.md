@@ -70,8 +70,6 @@
 
 - TODO@P3 `Disconnect Receiver KYC before disconnecting KYC Level 1` makes no sense.
 
-- TODO@P3 Audit logs display numeric data, too.
-
 - TODO@P3 Google Analytics for such things as user registration.
 
 - TODO@P3 In Audit Logs separate last assessment and old logs.

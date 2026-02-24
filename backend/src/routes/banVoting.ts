@@ -62,7 +62,9 @@ router.post('/vote', requireAuth, async (req, res): Promise<void> => {
 router.get('/:userId/assessments', async (req, res): Promise<void> => {
     try {
         const targetId = Number(req.params.userId);
-        const assessments = await BanVotingService.getUserAssessments(targetId);
+        const page = Number(req.query.page) || 1;
+        const pageSize = Number(req.query.pageSize) || 3;
+        const assessments = await BanVotingService.getUserAssessmentsPaginated(targetId, { page, pageSize });
         res.json(assessments);
     } catch (error: any) {
         console.error('Error fetching assessments:', error);

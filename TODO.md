@@ -72,8 +72,6 @@
 
 - TODO@P3 Google Analytics for such things as user registration.
 
-- TODO@P3 In Audit Logs separate last assessment and old logs.
-
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - FIXME@P2 Snyk vulnerabilities.

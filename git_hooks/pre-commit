@@ -10,5 +10,6 @@ cd backend
 
 npx prisma migrate status --config prisma/prisma.config.js
 
+# TODO@P2 Prevent submitting if not all migrations have been applied.
 # unknown or unexpected option: --shadow-database-url
 # npx prisma migrate diff --shadow-database-url="$SHADOW_DATABASE_URL" --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code

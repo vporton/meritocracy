@@ -87,3 +87,7 @@
   So, now acceleration is off.
 
 - TODO@P3 Update World GDP regularly.
+
+- TODO@P3 Now (recommended) salary stats are cached for 7 days. But it means that once per 7 days there is a big delay.
+
+- TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.

@@ -1,6 +1,6 @@
 # Timing Plan: Worth Assessment, Ban/Unban Voting, and Payments
 
-Status: Proposed (documentation plan, not yet implemented)
+Status: Partially implemented
 
 ## Goals
 - Give voters enough time to ban scammers before disputed funds leave the treasury.
@@ -62,6 +62,18 @@ Use existing components with minimal structural changes:
 - `CronService`: add high-frequency payout/compensation jobs.
 - `PendingTransactionService`: use idempotent stage-1/stage-2 flow for both regular and compensation payouts.
 - Add a ledger table for held slices (example statuses: `HELD_FOR_REVIEW`, `RELEASED_AFTER_UNBAN`, `FORFEITED_AFTER_CONFIRMED_BAN`).
+
+### Fly.io Keepalive for Long Tasks
+
+Long-running tasks now start a self-keepalive timer that calls `API_URL/api/cron/status` every 60 seconds and stops automatically when the task finishes.
+
+Implemented in:
+- `CronService.runBiMonthlyEvaluation()` (re-evaluation of all users)
+- `CronService.runWeeklyGasDistribution()` (weekly/biweekly full payout flow)
+- `CronService.runCompensationPayouts()` (batch release for unbanned users)
+- `POST /api/evaluation/start` (single-user onboarding evaluation)
+
+This keeps the machine network-active during long processing windows and reduces risk of Fly.io suspension while request-driven jobs are still running.
 
 ## Example: Ban Then Unban (No Week-Long Delay)
 

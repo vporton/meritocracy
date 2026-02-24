@@ -93,3 +93,4 @@
 - TODO@P2 Modify `node-cron` to awake by networks card in about `cron.timeout()`. Otherwise, don't sleep.
   Well, it seems need to do in [another way](https://github.com/node-cron/node-cron/issues/505).
   Or use [native Fly.io task scheduler](https://fly.io/docs/blueprints/task-scheduling/) (requires some money).
+  As the first thing to do, use `setInterval()` pinging `API_URL` every 30 sec from cron jobs.

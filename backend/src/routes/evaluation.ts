@@ -5,6 +5,7 @@ import { TaskManager } from '../services/TaskManager.js';
 import { registerAllRunners } from '../runners/OpenAIRunners.js';
 import { requireAuth, requireAdditionalConnections } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
+import { startApiSelfKeepAlive } from '../services/SelfPingKeepAlive.js';
 
 const router = express.Router();
 
@@ -31,29 +32,36 @@ router.post('/start', requireAuth, requireAdditionalConnections, async (req, res
       });
     }
 
-    // Create the evaluation flow service
-    const evaluationFlow = new UserEvaluationFlow(prisma);
+    // Onboarding evaluation can run longer than normal HTTP idle limits on Fly.io.
+    const stopKeepAlive = startApiSelfKeepAlive('user onboarding evaluation');
 
-    // Create the evaluation flow
-    const _rootTaskId = await evaluationFlow.createOnboardingFlow({
-      userId,
-      userData
-    });
+    try {
+      // Create the evaluation flow service
+      const evaluationFlow = new UserEvaluationFlow(prisma);
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { onboarded: true }
-    });
+      // Create the evaluation flow
+      const _rootTaskId = await evaluationFlow.createOnboardingFlow({
+        userId,
+        userData
+      });
 
-    const taskManager = new TaskManager(prisma);
-    const success = await taskManager.runAllPendingTasks();
+      await prisma.user.update({
+        where: { id: userId },
+        data: { onboarded: true }
+      });
 
-    return res.json({
-      success: true,
-      message: 'Evaluation flow started',
-      userId,
-      executed: success
-    });
+      const taskManager = new TaskManager(prisma);
+      const success = await taskManager.runAllPendingTasks();
+
+      return res.json({
+        success: true,
+        message: 'Evaluation flow started',
+        userId,
+        executed: success
+      });
+    } finally {
+      stopKeepAlive();
+    }
 
   } catch (error) {
     console.error('Error starting evaluation:', error);

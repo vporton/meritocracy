@@ -5,6 +5,7 @@ import { TaskManager } from './TaskManager.js';
 import { MultiNetworkGasTokenDistributionService, multiNetworkGasTokenDistributionService } from './MultiNetworkGasTokenDistributionService.js';
 import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupService.js';
 import { GlobalDataService } from './GlobalDataService.js';
+import { startApiSelfKeepAlive } from './SelfPingKeepAlive.js';
 
 export class CronService {
   private prisma: PrismaClient;
@@ -182,6 +183,8 @@ export class CronService {
    */
   async runWeeklyGasDistribution(force: boolean = false) {
     console.log('🔄 Starting multi-network token distribution process...');
+    // Keep Fly.io machine awake while preparing/executing a large payout batch.
+    const stopKeepAlive = startApiSelfKeepAlive('weekly gas distribution');
 
     try {
       if (!force) {
@@ -234,11 +237,15 @@ export class CronService {
     } catch (error) {
       console.error('💥 Fatal error in weekly multi-network token distribution process:', error);
       throw error;
+    } finally {
+      stopKeepAlive();
     }
   }
 
   async runCompensationPayouts() {
     console.log('🔄 Running compensation payout flow...');
+    // Compensation can execute many pending txs; keep pinging API_URL to avoid suspend.
+    const stopKeepAlive = startApiSelfKeepAlive('compensation payouts');
 
     try {
       const dueUsers = await this.prisma.user.findMany({
@@ -289,6 +296,8 @@ export class CronService {
     } catch (error) {
       console.error('💥 Fatal error in compensation payout flow:', error);
       throw error;
+    } finally {
+      stopKeepAlive();
     }
   }
 
@@ -331,6 +340,8 @@ export class CronService {
    */
   async runBiMonthlyEvaluation() {
     console.log('🔄 Starting bi-monthly evaluation process...');
+    // Re-evaluating all users may run for a long time; keep Fly.io instance active.
+    const stopKeepAlive = startApiSelfKeepAlive('bi-monthly evaluation');
 
     try {
       // Find every onboarded user for re-worth assessment
@@ -420,6 +431,8 @@ export class CronService {
     } catch (error) {
       console.error('💥 Fatal error in bi-monthly evaluation process:', error);
       throw error;
+    } finally {
+      stopKeepAlive();
     }
   }
 

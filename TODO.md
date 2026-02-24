@@ -90,9 +90,9 @@
 
 - TODO@P3 Now (recommended) salary stats are cached for 7 days. But it means that once per 7 days there is a big delay.
 
-- TODO@P2 Modify `node-cron` to awake by networks card in about `cron.timeout()`. Otherwise, don't sleep.
-  Well, it seems need to do in [another way](https://github.com/node-cron/node-cron/issues/505).
-  Or use [native Fly.io task scheduler](https://fly.io/docs/blueprints/task-scheduling/) (requires some money).
-  As the first thing to do, use `setInterval()` pinging `API_URL` every 30 sec from cron jobs.
-
 - TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.
+
+- FIXME@P2 The keep-alive code calls our own API_URL every 60 sec. But if more than one machine is active,
+  it may ping the other machine instead of the machine doing the task. So it may be wrongly suspended.
+
+- FIXME@P1 Several Fly.io machines have the same Cron schedule, so they run duplicate tasks!

@@ -81,5 +81,3 @@
   "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
 
 - TODO@P3 Update World GDP regularly.
-
-- TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.

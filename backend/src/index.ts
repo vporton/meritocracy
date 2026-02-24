@@ -24,7 +24,7 @@ import banVotingRoutes from './routes/banVoting.js';
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
 import { GlobalDataService } from './services/GlobalDataService.js';
-import { CronService } from './services/CronService.js';
+import { cronService } from './services/cronServiceInstance.js';
 import { prisma } from './lib/prisma.js';
 
 // Register all TaskRunners on startup
@@ -125,8 +125,6 @@ async function initializeApp() {
 
     // Initialize cron service
     console.log('🔄 Initializing cron service...');
-    const cronService = new CronService(prisma);
-
     // Start the bi-monthly evaluation cron job
     cronService.startBiMonthlyEvaluationCron();
 

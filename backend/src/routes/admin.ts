@@ -1,10 +1,9 @@
 import express from 'express';
 import { GlobalDataService } from '../services/GlobalDataService.js';
-import { CronService } from '../services/CronService.js';
-import { prisma } from '../lib/prisma.js';
+import { CronExecutionLockedError } from '../services/CronService.js';
+import { cronService } from '../services/cronServiceInstance.js';
 
 const router = express.Router();
-const cronService = new CronService(prisma);
 
 // Middleware to check admin password
 const authAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -77,6 +76,15 @@ router.post('/trigger-distribution', authAdmin, async (req, res) => {
         const result = await cronService.runWeeklyGasDistribution(true);
         res.json({ message: 'Distribution triggered successfully', result });
     } catch (error) {
+        if (error instanceof CronExecutionLockedError) {
+            res.status(409).json({
+                error: 'Another admin/cron task is already running',
+                requestedTask: error.requestedTask,
+                runningTask: error.runningTask,
+                message: error.message
+            });
+            return;
+        }
         console.error('Error triggering distribution:', error);
         res.status(500).json({ error: 'Failed to trigger distribution', message: error instanceof Error ? error.message : 'Unknown error' });
     }
@@ -94,6 +102,15 @@ router.post('/trigger-re-worth-assessment', authAdmin, async (_req, res) => {
             result
         });
     } catch (error) {
+        if (error instanceof CronExecutionLockedError) {
+            res.status(409).json({
+                error: 'Another admin/cron task is already running',
+                requestedTask: error.requestedTask,
+                runningTask: error.runningTask,
+                message: error.message
+            });
+            return;
+        }
         console.error('Error triggering re-worth-assessment:', error);
         res.status(500).json({
             error: 'Failed to trigger re-worth-assessment',

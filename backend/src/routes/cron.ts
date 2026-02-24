@@ -1,9 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { CronService } from '../services/CronService.js';
-import { prisma } from '../lib/prisma.js';
+import { cronService } from '../services/cronServiceInstance.js';
 
 const router = Router();
-const cronService = new CronService(prisma);
 
 // Note: Start/stop/run endpoints have been removed for security reasons.
 // The cron service is designed to run automatically and should not be controlled via public API.

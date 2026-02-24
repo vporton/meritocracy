@@ -82,9 +82,8 @@
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.
+  "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
 
 - TODO@P3 Update World GDP regularly.
-
-- TODO@P3 Now (recommended) salary stats are cached for 7 days. But it means that once per 7 days there is a big delay.
 
 - TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.

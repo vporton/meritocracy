@@ -528,15 +528,30 @@ export class MedianRunner extends BaseRunner {
    * @param task - The task with dependencies containing worth assessment results
    */
   protected async executeTask(task: TaskWithDependencies): Promise<void> {
-    // Extract worth values from dependency results
-    const worthValues = await this.processWorthDependencyResults(task);
-    console.log('DEBUG worthValues', worthValues);
+    // Extract worth values from current run dependencies.
+    const currentWorthValues = await this.processWorthDependencyResults(task);
+    const dependencyWorthTaskIds = task.dependencies
+      .filter(dep => dep.dependency.runnerClassName === 'WorthAssessmentRunner')
+      .map(dep => dep.dependency.id);
+
+    // Keep median input to the latest 3 assessments total.
+    const targetValuesCount = 3;
+    let worthValues = [...currentWorthValues];
+    const userId = this.data.userId;
+
+    if (userId && worthValues.length < targetValuesCount) {
+      const historicalWorthValues = await this.getHistoricalWorthValues(
+        userId,
+        dependencyWorthTaskIds,
+        targetValuesCount - worthValues.length
+      );
+      worthValues = [...historicalWorthValues, ...worthValues];
+    }
 
     // Calculate median
     const median = worthValues.length === 0 ? 0 : this.calculateMedian(worthValues);
 
     // Update User.shareInGDP with the calculated median
-    const userId = this.data.userId;
     if (userId) {
       try {
         await this.prisma.user.update({
@@ -581,14 +596,11 @@ export class MedianRunner extends BaseRunner {
    */
   private async processWorthDependencyResults(task: TaskWithDependencies): Promise<number[]> {
     const worthValues: number[] = [];
-    let completedCount = 0;
-    let cancelledCount = 0;
 
     for (const dep of task.dependencies) {
       try {
         // Skip cancelled dependencies - they don't have valid data
         if (dep.dependency.status === 'CANCELLED') {
-          cancelledCount++;
           this.log('info', `Skipping cancelled dependency`, {
             dependencyId: dep.dependency.id,
             runnerClassName: dep.dependency.runnerClassName
@@ -626,7 +638,6 @@ export class MedianRunner extends BaseRunner {
 
         if (typeof response.worthAsFractionOfGDP === 'number') {
           worthValues.push(response.worthAsFractionOfGDP);
-          completedCount++;
         }
       } catch (error) {
         this.log('warn', `Failed to retrieve dependency result`, {
@@ -637,6 +648,81 @@ export class MedianRunner extends BaseRunner {
     }
 
     return worthValues;
+  }
+
+  /**
+   * Retrieve previous completed worth assessment values for the same user,
+   * excluding tasks that already belong to the current median task dependencies.
+   */
+  private async getHistoricalWorthValues(userId: number, excludeTaskIds: number[], limit: number): Promise<number[]> {
+    if (limit <= 0) {
+      return [];
+    }
+
+    const historicalTasks = await this.prisma.task.findMany({
+      where: {
+        runnerClassName: 'WorthAssessmentRunner',
+        status: 'COMPLETED',
+        isDeleted: false,
+        storeId: { not: null },
+        ...(excludeTaskIds.length > 0 ? { id: { notIn: excludeTaskIds } } : {}),
+        runnerData: {
+          contains: `"userId":${userId},`
+        }
+      },
+      select: {
+        id: true,
+        runnerData: true,
+        storeId: true
+      },
+      orderBy: {
+        completedAt: 'desc'
+      },
+      take: limit * 3
+    });
+
+    const historicalValues: number[] = [];
+
+    for (const historicalTask of historicalTasks) {
+      if (historicalValues.length >= limit) {
+        break;
+      }
+
+      if (!historicalTask.runnerData || !historicalTask.storeId) {
+        continue;
+      }
+
+      try {
+        const historicalTaskData: TaskRunnerResult = JSON.parse(historicalTask.runnerData);
+
+        if (historicalTaskData.userId !== userId) {
+          continue;
+        }
+
+        if (!historicalTaskData.customId) {
+          this.log('warn', `Historical worth assessment missing customId`, {
+            taskId: historicalTask.id
+          });
+          continue;
+        }
+
+        const response: WorthAssessmentResponse = await this.getOpenAIResult({
+          customId: historicalTaskData.customId,
+          storeId: historicalTask.storeId
+        });
+
+        if (typeof response?.worthAsFractionOfGDP === 'number') {
+          historicalValues.push(response.worthAsFractionOfGDP);
+        }
+      } catch (error) {
+        this.log('warn', `Failed to retrieve historical worth assessment`, {
+          taskId: historicalTask.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    return historicalValues;
   }
 
   /**

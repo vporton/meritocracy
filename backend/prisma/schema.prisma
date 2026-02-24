@@ -209,6 +209,11 @@ model Global {
   id                     Int      @id @default(autoincrement())
   worldGdp               Float?
   gasDistributionEnabled Boolean  @default(true)
+  salaryStatsUserCount   Int      @default(0)
+  salaryStatsTotal       Float?
+  salaryStatsAverage     Float?
+  salaryStatsMedian      Float?
+  salaryStatsCalculatedAt DateTime?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

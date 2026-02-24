@@ -2,6 +2,16 @@ import fetch from 'node-fetch';
 import { prisma } from '../lib/prisma.js';
 
 export class GlobalDataService {
+  private static calculateMedian(values: number[]): number {
+    if (values.length === 0) return 0;
+    const sorted = [...values].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 0) {
+      return (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+    return sorted[mid];
+  }
+
   /**
    * Fetches world GDP data from World Bank API
    * @returns Promise<number | null> - GDP value in current US dollars or null if failed
@@ -158,6 +168,70 @@ export class GlobalDataService {
       return true;
     } catch (error) {
       console.error('Error setting gas distribution enabled status:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Recomputes and stores aggregated salary stats from current user shares.
+   * Should be called right after a full worth re-evaluation cycle.
+   */
+  static async recomputeAndStoreSalaryStats(): Promise<boolean> {
+    try {
+      const globalData = await prisma.global.findFirst({
+        select: {
+          worldGdp: true
+        }
+      });
+
+      if (!globalData?.worldGdp) {
+        console.error('Cannot recompute salary stats: world GDP is not available');
+        return false;
+      }
+
+      const shareRows = await prisma.user.findMany({
+        where: {
+          shareInGDP: {
+            not: null
+          }
+        },
+        select: {
+          shareInGDP: true
+        }
+      });
+
+      const shareValues = shareRows.map(user => Number(user.shareInGDP ?? 0));
+      const totalShare = shareValues.reduce((sum, value) => sum + value, 0);
+      const averageShare = shareValues.length ? totalShare / shareValues.length : 0;
+      const medianShare = this.calculateMedian(shareValues);
+
+      const multiplier = globalData.worldGdp;
+      const toCurrency = (shareFraction: number) => shareFraction * multiplier;
+
+      await prisma.global.upsert({
+        where: {
+          id: 1
+        },
+        update: {
+          salaryStatsUserCount: shareValues.length,
+          salaryStatsTotal: toCurrency(totalShare),
+          salaryStatsAverage: toCurrency(averageShare),
+          salaryStatsMedian: toCurrency(medianShare),
+          salaryStatsCalculatedAt: new Date()
+        },
+        create: {
+          worldGdp: multiplier,
+          salaryStatsUserCount: shareValues.length,
+          salaryStatsTotal: toCurrency(totalShare),
+          salaryStatsAverage: toCurrency(averageShare),
+          salaryStatsMedian: toCurrency(medianShare),
+          salaryStatsCalculatedAt: new Date()
+        }
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error recomputing and storing salary stats:', error);
       return false;
     }
   }

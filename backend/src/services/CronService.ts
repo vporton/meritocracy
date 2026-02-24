@@ -364,11 +364,16 @@ export class CronService {
 
       if (eligibleUsers.length === 0) {
         console.log('ℹ️  No users eligible for bi-monthly evaluation');
+        const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
+        if (!salaryStatsUpdated) {
+          console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
+        }
         return {
           eligibleUsers: 0,
           successful: 0,
           failed: 0,
-          errors: [] as string[]
+          errors: [] as string[],
+          salaryStatsUpdated
         };
       }
 
@@ -421,11 +426,17 @@ export class CronService {
         results.errors.forEach(error => console.log(`    - ${error}`));
       }
 
+      const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
+      if (!salaryStatsUpdated) {
+        console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
+      }
+
       return {
         eligibleUsers: eligibleUsers.length,
         successful: results.successful,
         failed: results.failed,
-        errors: results.errors
+        errors: results.errors,
+        salaryStatsUpdated
       };
 
     } catch (error) {

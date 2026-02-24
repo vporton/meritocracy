@@ -1,5 +1,25 @@
 import { prisma } from '../lib/prisma.js';
 import emailService from './EmailService.js';
+import { GlobalDataService } from './GlobalDataService.js';
+
+interface AssessmentWorthValue {
+  key: 'overall' | 'scientist' | 'fossDev' | 'scienceMarketer';
+  label: string;
+  fractionOfGDP: number;
+  usd: number | null;
+}
+
+interface AssessmentPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+interface PaginatedAssessments {
+  items: any[];
+  pagination: AssessmentPagination;
+}
 
 export class BanVotingService {
   /**
@@ -224,6 +244,21 @@ export class BanVotingService {
    * Get all AI assessments for a specific user from tasks
    */
   static async getUserAssessments(userId: number) {
+    const paginatedResult = await this.getUserAssessmentsPaginated(userId, { page: 1, pageSize: 50 });
+    return paginatedResult.items;
+  }
+
+  /**
+   * Get paginated AI assessments for a specific user from tasks
+   */
+  static async getUserAssessmentsPaginated(
+    userId: number,
+    options: { page?: number; pageSize?: number } = {}
+  ): Promise<PaginatedAssessments> {
+    const pageSize = Math.max(1, options.pageSize ?? 3);
+    const requestedPage = Math.max(1, options.page ?? 1);
+    const worldGdp = await GlobalDataService.getWorldGdp();
+
     // 1. Find all WorthAssessmentRunner tasks for this user
     const tasks = await prisma.task.findMany({
       where: {
@@ -245,7 +280,7 @@ export class BanVotingService {
         }
       },
       orderBy: { createdAt: 'desc' },
-      take: 50
+      take: 200
     });
 
     const results: any[] = [];
@@ -290,6 +325,7 @@ export class BanVotingService {
           const response = JSON.parse(mapping.response);
           const sources: string[] = [];
           let rationale = '';
+          let worthValues: AssessmentWorthValue[] = this.extractWorthValues(response, worldGdp);
 
           // 1. Check root level for common fields (e.g. from Fake Mode)
           if (response.why) rationale = response.why;
@@ -334,6 +370,7 @@ export class BanVotingService {
                     if (json.sources && Array.isArray(json.sources)) {
                       sources.push(...json.sources);
                     }
+                    worthValues = this.mergeWorthValues(worthValues, this.extractWorthValues(json, worldGdp));
                   } catch (e) {
                     // Not JSON, or doesn't have 'why' - use as raw text if we don't have rationale yet
                     if (!rationale) rationale = c.text;
@@ -347,6 +384,7 @@ export class BanVotingService {
                 const json = JSON.parse(content);
                 if (json.why) rationale = json.why;
                 if (json.sources && Array.isArray(json.sources)) sources.push(...json.sources);
+                worthValues = this.mergeWorthValues(worthValues, this.extractWorthValues(json, worldGdp));
               } catch (e) {
                 if (!rationale) rationale = content;
               }
@@ -357,6 +395,7 @@ export class BanVotingService {
             text: rationale || 'No rationale available in stored response.',
             sources: [...new Set(sources)],
             timestamp: task.completedAt || mapping.createdAt,
+            worthValues,
             isError: task.status === 'CANCELLED'
           });
         } catch (e) {
@@ -370,7 +409,60 @@ export class BanVotingService {
       }
     }
 
-    return results;
+    const sortedResults = results.sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+
+    const total = sortedResults.length;
+    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+    const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages);
+    const offset = (page - 1) * pageSize;
+    const items = sortedResults.slice(offset, offset + pageSize);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages
+      }
+    };
+  }
+
+  private static extractWorthValues(payload: any, worldGdp: number | null): AssessmentWorthValue[] {
+    const worthFields: Array<{ key: AssessmentWorthValue['key']; label: string; field: string }> = [
+      { key: 'overall', label: 'Overall Worth', field: 'worthAsFractionOfGDP' },
+      { key: 'scientist', label: 'Scientist Worth', field: 'worthAsScientistFractionOfGDP' },
+      { key: 'fossDev', label: 'FOSS Developer Worth', field: 'worthAsFossDevFractionOfGDP' },
+      { key: 'scienceMarketer', label: 'Science Marketer Worth', field: 'worthAsScienceMarketerFractionOfGDP' }
+    ];
+
+    return worthFields
+      .filter(({ field }) => typeof payload?.[field] === 'number')
+      .map(({ key, label, field }) => {
+        const fraction = payload[field] as number;
+        return {
+          key,
+          label,
+          fractionOfGDP: fraction,
+          usd: worldGdp ? fraction * worldGdp : null
+        };
+      });
+  }
+
+  private static mergeWorthValues(
+    existingValues: AssessmentWorthValue[],
+    newValues: AssessmentWorthValue[]
+  ): AssessmentWorthValue[] {
+    const merged = new Map<AssessmentWorthValue['key'], AssessmentWorthValue>();
+    for (const value of existingValues) {
+      merged.set(value.key, value);
+    }
+    for (const value of newValues) {
+      merged.set(value.key, value);
+    }
+    return Array.from(merged.values());
   }
 
   /**

@@ -72,8 +72,6 @@
 
 - TODO@P3 Google Analytics for such things as user registration.
 
-- TODO@P3 In Audit Logs separate last assessment and old logs.
-
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - FIXME@P2 Snyk vulnerabilities.
@@ -83,5 +81,3 @@
   "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
 
 - TODO@P3 Update World GDP regularly.
-
-- TODO@P2 Ensure that `/admin` tasks don't interfere with cron jobs and with each other.

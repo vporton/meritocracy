@@ -7,6 +7,13 @@ import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupS
 import { GlobalDataService } from './GlobalDataService.js';
 import { startApiSelfKeepAlive } from './SelfPingKeepAlive.js';
 
+export class CronExecutionLockedError extends Error {
+  constructor(public readonly requestedTask: string, public readonly runningTask: string) {
+    super(`Cannot start "${requestedTask}" because "${runningTask}" is already running.`);
+    this.name = 'CronExecutionLockedError';
+  }
+}
+
 export class CronService {
   private prisma: PrismaClient;
   private userEvaluationFlow: UserEvaluationFlow;
@@ -17,6 +24,7 @@ export class CronService {
   private compensationPayoutJob: cron.ScheduledTask | null = null;
   private monthlyCleanupJob: cron.ScheduledTask | null = null;
   private readonly distributionIntervalWeeks: 1 | 2;
+  private static activeExecution: { token: symbol; taskName: string; startedAt: Date } | null = null;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -25,6 +33,43 @@ export class CronService {
     this.disconnectedAccountCleanupService = new DisconnectedAccountCleanupService(prisma);
     const interval = Number(process.env.GAS_DISTRIBUTION_INTERVAL_WEEKS ?? '1');
     this.distributionIntervalWeeks = interval === 2 ? 2 : 1;
+  }
+
+  private async runWithExclusiveExecution<T>(taskName: string, operation: () => Promise<T>): Promise<T> {
+    const releaseLock = this.acquireExecutionLock(taskName);
+    try {
+      return await operation();
+    } finally {
+      releaseLock();
+    }
+  }
+
+  private acquireExecutionLock(taskName: string): () => void {
+    const running = CronService.activeExecution;
+    if (running) {
+      throw new CronExecutionLockedError(taskName, running.taskName);
+    }
+
+    const token = Symbol(taskName);
+    CronService.activeExecution = {
+      token,
+      taskName,
+      startedAt: new Date()
+    };
+
+    return () => {
+      if (CronService.activeExecution?.token === token) {
+        CronService.activeExecution = null;
+      }
+    };
+  }
+
+  private handleScheduledExecutionError(jobName: string, error: unknown): void {
+    if (error instanceof CronExecutionLockedError) {
+      console.log(`⏭️ ${jobName} skipped: ${error.message}`);
+      return;
+    }
+    console.error(`💥 ${jobName} failed:`, error);
   }
 
   /**
@@ -45,7 +90,11 @@ export class CronService {
     // - Every day of week
     this.cronJob = cron.schedule('0 2 1 */2 *', async () => {
       console.log('🕐 Bi-monthly evaluation cron job triggered');
-      await this.runBiMonthlyEvaluation();
+      try {
+        await this.runBiMonthlyEvaluation();
+      } catch (error) {
+        this.handleScheduledExecutionError('Bi-monthly evaluation cron job', error);
+      }
     }, {
       timezone: 'UTC'
     });
@@ -89,7 +138,11 @@ export class CronService {
     // - 0 = Sunday
     this.weeklyGasDistributionJob = cron.schedule('0 20 * * 0', async () => {
       console.log('🕐 Weekly gas token distribution cron job triggered (End of Week)');
-      await this.runWeeklyGasDistribution();
+      try {
+        await this.runWeeklyGasDistribution();
+      } catch (error) {
+        this.handleScheduledExecutionError('Weekly gas token distribution cron job', error);
+      }
     }, {
       timezone: 'UTC'
     });
@@ -110,7 +163,11 @@ export class CronService {
 
     this.compensationPayoutJob = cron.schedule('0 * * * *', async () => {
       console.log('🕐 Compensation payout cron job triggered');
-      await this.runCompensationPayouts();
+      try {
+        await this.runCompensationPayouts();
+      } catch (error) {
+        this.handleScheduledExecutionError('Compensation payout cron job', error);
+      }
     }, {
       timezone: 'UTC'
     });
@@ -156,7 +213,11 @@ export class CronService {
     // - Every day of week
     this.monthlyCleanupJob = cron.schedule('0 4 1 * *', async () => {
       console.log('🕐 Monthly disconnected account cleanup cron job triggered');
-      await this.runMonthlyCleanup();
+      try {
+        await this.runMonthlyCleanup();
+      } catch (error) {
+        this.handleScheduledExecutionError('Monthly disconnected account cleanup cron job', error);
+      }
     }, {
       timezone: 'UTC'
     });
@@ -182,123 +243,127 @@ export class CronService {
    * @param force - If true, skip the enabled check (used for manual triggers)
    */
   async runWeeklyGasDistribution(force: boolean = false) {
-    console.log('🔄 Starting multi-network token distribution process...');
-    // Keep Fly.io machine awake while preparing/executing a large payout batch.
-    const stopKeepAlive = startApiSelfKeepAlive('weekly gas distribution');
+    return this.runWithExclusiveExecution('weekly gas distribution', async () => {
+      console.log('🔄 Starting multi-network token distribution process...');
+      // Keep Fly.io machine awake while preparing/executing a large payout batch.
+      const stopKeepAlive = startApiSelfKeepAlive('weekly gas distribution');
 
-    try {
-      if (!force) {
-        const isEnabled = await GlobalDataService.isGasDistributionEnabled();
-        if (!isEnabled) {
-          console.log('🚫 Gas distribution is currently disabled via admin setting.');
+      try {
+        if (!force) {
+          const isEnabled = await GlobalDataService.isGasDistributionEnabled();
+          if (!isEnabled) {
+            console.log('🚫 Gas distribution is currently disabled via admin setting.');
+            return {
+              networkResults: new Map(),
+              errors: ['Gas distribution is disabled.']
+            };
+          }
+        }
+
+        if (!force && this.distributionIntervalWeeks === 2 && !this.shouldRunCurrentWeek()) {
+          console.log('⏭️  Biweekly mode active: skipping this week regular payout cycle.');
           return {
             networkResults: new Map(),
-            errors: ['Gas distribution is disabled.']
+            errors: [] as string[],
+            skippedByBiweeklySchedule: true
           };
         }
-      }
 
-      if (!force && this.distributionIntervalWeeks === 2 && !this.shouldRunCurrentWeek()) {
-        console.log('⏭️  Biweekly mode active: skipping this week regular payout cycle.');
+        // Stage 1: prepare in a single weekly/biweekly batch.
+        const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistributionTwoStage();
+        // Stage 2: execute batch right away.
+        const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
+
+        console.log('✅ Weekly multi-network token distribution completed');
+
+        for (const [networkName, networkResult] of result.networkResults) {
+          console.log(
+            `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed, ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved`
+          );
+        }
+
+        if (result.errors.length > 0) {
+          console.log('⚠️  Some errors occurred:');
+          result.errors.forEach(error => console.log(`  - ${error}`));
+        }
+
+        if (execution.errors.length > 0) {
+          console.log('⚠️  Some execution errors occurred:');
+          execution.errors.forEach(error => console.log(`  - ${error}`));
+        }
+
         return {
-          networkResults: new Map(),
-          errors: [] as string[],
-          skippedByBiweeklySchedule: true
+          ...result,
+          execution
         };
+      } catch (error) {
+        console.error('💥 Fatal error in weekly multi-network token distribution process:', error);
+        throw error;
+      } finally {
+        stopKeepAlive();
       }
-
-      // Stage 1: prepare in a single weekly/biweekly batch.
-      const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistributionTwoStage();
-      // Stage 2: execute batch right away.
-      const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
-
-      console.log('✅ Weekly multi-network token distribution completed');
-
-      for (const [networkName, networkResult] of result.networkResults) {
-        console.log(
-          `🌐 [${networkName}]: ${networkResult.distributedAmount.toFixed(6)} ${networkResult.tokenSymbol} distributed, ${networkResult.reservedAmount.toFixed(6)} ${networkResult.tokenSymbol} reserved`
-        );
-      }
-
-      if (result.errors.length > 0) {
-        console.log('⚠️  Some errors occurred:');
-        result.errors.forEach(error => console.log(`  - ${error}`));
-      }
-
-      if (execution.errors.length > 0) {
-        console.log('⚠️  Some execution errors occurred:');
-        execution.errors.forEach(error => console.log(`  - ${error}`));
-      }
-
-      return {
-        ...result,
-        execution
-      };
-    } catch (error) {
-      console.error('💥 Fatal error in weekly multi-network token distribution process:', error);
-      throw error;
-    } finally {
-      stopKeepAlive();
-    }
+    });
   }
 
   async runCompensationPayouts() {
-    console.log('🔄 Running compensation payout flow...');
-    // Compensation can execute many pending txs; keep pinging API_URL to avoid suspend.
-    const stopKeepAlive = startApiSelfKeepAlive('compensation payouts');
+    return this.runWithExclusiveExecution('compensation payouts', async () => {
+      console.log('🔄 Running compensation payout flow...');
+      // Compensation can execute many pending txs; keep pinging API_URL to avoid suspend.
+      const stopKeepAlive = startApiSelfKeepAlive('compensation payouts');
 
-    try {
-      const dueUsers = await this.prisma.user.findMany({
-        where: {
-          compensationDueAt: { lte: new Date() },
-          onboarded: true,
-          OR: [
-            { bannedTill: null },
-            { bannedTill: { lt: new Date() } }
-          ],
-          paymentHoldStartedAt: null
-        },
-        select: {
-          id: true
+      try {
+        const dueUsers = await this.prisma.user.findMany({
+          where: {
+            compensationDueAt: { lte: new Date() },
+            onboarded: true,
+            OR: [
+              { bannedTill: null },
+              { bannedTill: { lt: new Date() } }
+            ],
+            paymentHoldStartedAt: null
+          },
+          select: {
+            id: true
+          }
+        });
+
+        if (dueUsers.length === 0) {
+          console.log('ℹ️  No due compensation payouts found');
+          return {
+            dueUsers: 0,
+            released: 0,
+            skipped: 0,
+            errors: [] as string[]
+          };
         }
-      });
 
-      if (dueUsers.length === 0) {
-        console.log('ℹ️  No due compensation payouts found');
+        const userIds = dueUsers.map(u => u.id);
+        const release = await this.multiNetworkGasTokenDistributionService.releaseHeldCompensationForUsers(userIds);
+        const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
+
+        await this.prisma.user.updateMany({
+          where: {
+            id: { in: userIds }
+          },
+          data: {
+            compensationDueAt: null
+          }
+        });
+
         return {
-          dueUsers: 0,
-          released: 0,
-          skipped: 0,
-          errors: [] as string[]
+          dueUsers: dueUsers.length,
+          released: release.released,
+          skipped: release.skipped,
+          releaseErrors: release.errors,
+          execution
         };
+      } catch (error) {
+        console.error('💥 Fatal error in compensation payout flow:', error);
+        throw error;
+      } finally {
+        stopKeepAlive();
       }
-
-      const userIds = dueUsers.map(u => u.id);
-      const release = await this.multiNetworkGasTokenDistributionService.releaseHeldCompensationForUsers(userIds);
-      const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
-
-      await this.prisma.user.updateMany({
-        where: {
-          id: { in: userIds }
-        },
-        data: {
-          compensationDueAt: null
-        }
-      });
-
-      return {
-        dueUsers: dueUsers.length,
-        released: release.released,
-        skipped: release.skipped,
-        releaseErrors: release.errors,
-        execution
-      };
-    } catch (error) {
-      console.error('💥 Fatal error in compensation payout flow:', error);
-      throw error;
-    } finally {
-      stopKeepAlive();
-    }
+    });
   }
 
   /**
@@ -306,32 +371,34 @@ export class CronService {
    * This can be called via API endpoint for testing
    */
   async runMonthlyCleanup() {
-    console.log('🔄 Starting monthly disconnected account cleanup process...');
+    return this.runWithExclusiveExecution('monthly cleanup', async () => {
+      console.log('🔄 Starting monthly disconnected account cleanup process...');
 
-    try {
-      const result = await this.disconnectedAccountCleanupService.cleanupDisconnectedAccounts(30, false);
+      try {
+        const result = await this.disconnectedAccountCleanupService.cleanupDisconnectedAccounts(30, false);
 
-      if (result.success) {
-        console.log('✅ Monthly disconnected account cleanup completed successfully');
-        console.log(`🗑️  Deleted ${result.deletedCount} disconnected accounts`);
-        console.log(`🛡️  Preserved ${result.preservedBannedCount} banned accounts`);
-        console.log(`🛡️  Preserved ${result.preservedKycCount} KYC accounts`);
-        console.log(`📊 Details: ${result.details.disconnectedAccounts} disconnected, ${result.details.bannedAccounts} banned, ${result.details.kycAccounts} with KYC, ${result.details.accountsWithActiveSessions} with active sessions`);
+        if (result.success) {
+          console.log('✅ Monthly disconnected account cleanup completed successfully');
+          console.log(`🗑️  Deleted ${result.deletedCount} disconnected accounts`);
+          console.log(`🛡️  Preserved ${result.preservedBannedCount} banned accounts`);
+          console.log(`🛡️  Preserved ${result.preservedKycCount} KYC accounts`);
+          console.log(`📊 Details: ${result.details.disconnectedAccounts} disconnected, ${result.details.bannedAccounts} banned, ${result.details.kycAccounts} with KYC, ${result.details.accountsWithActiveSessions} with active sessions`);
 
-        if (result.errors.length > 0) {
-          console.log('⚠️  Some errors occurred:');
-          result.errors.forEach(error => console.log(`  - ${error}`));
+          if (result.errors.length > 0) {
+            console.log('⚠️  Some errors occurred:');
+            result.errors.forEach(error => console.log(`  - ${error}`));
+          }
+        } else {
+          console.error('❌ Monthly disconnected account cleanup failed');
+          result.errors.forEach(error => console.error(`  - ${error}`));
         }
-      } else {
-        console.error('❌ Monthly disconnected account cleanup failed');
-        result.errors.forEach(error => console.error(`  - ${error}`));
-      }
 
-      return result;
-    } catch (error) {
-      console.error('💥 Fatal error in monthly disconnected account cleanup process:', error);
-      throw error;
-    }
+        return result;
+      } catch (error) {
+        console.error('💥 Fatal error in monthly disconnected account cleanup process:', error);
+        throw error;
+      }
+    });
   }
 
   /**
@@ -339,119 +406,126 @@ export class CronService {
    * This can be called via API endpoint for testing
    */
   async runBiMonthlyEvaluation() {
-    console.log('🔄 Starting bi-monthly evaluation process...');
-    // Re-evaluating all users may run for a long time; keep Fly.io instance active.
-    const stopKeepAlive = startApiSelfKeepAlive('bi-monthly evaluation');
+    return this.runWithExclusiveExecution('bi-monthly evaluation', async () => {
+      console.log('🔄 Starting bi-monthly evaluation process...');
+      // Re-evaluating all users may run for a long time; keep Fly.io instance active.
+      const stopKeepAlive = startApiSelfKeepAlive('bi-monthly evaluation');
 
-    try {
-      // Find every onboarded user for re-worth assessment
-      const eligibleUsers = await this.prisma.user.findMany({
-        where: {
-          onboarded: true
-        },
-        select: {
-          id: true,
-          orcidId: true,
-          githubHandle: true,
-          bitbucketHandle: true,
-          gitlabHandle: true,
-          name: true,
-          email: true
+      try {
+        // Find every onboarded user for re-worth assessment
+        const eligibleUsers = await this.prisma.user.findMany({
+          where: {
+            onboarded: true
+          },
+          select: {
+            id: true,
+            orcidId: true,
+            githubHandle: true,
+            bitbucketHandle: true,
+            gitlabHandle: true,
+            name: true,
+            email: true
+          }
+        });
+
+        console.log(`📊 Found ${eligibleUsers.length} eligible users for evaluation`);
+
+        if (eligibleUsers.length === 0) {
+          console.log('ℹ️  No users eligible for bi-monthly evaluation');
+          const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
+          if (!salaryStatsUpdated) {
+            console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
+          }
+          return {
+            eligibleUsers: 0,
+            successful: 0,
+            failed: 0,
+            errors: [] as string[],
+            salaryStatsUpdated
+          };
         }
-      });
 
-      console.log(`📊 Found ${eligibleUsers.length} eligible users for evaluation`);
+        // Process each eligible user
+        const results = {
+          successful: 0,
+          failed: 0,
+          errors: [] as string[]
+        };
 
-      if (eligibleUsers.length === 0) {
-        console.log('ℹ️  No users eligible for bi-monthly evaluation');
+        for (const user of eligibleUsers) {
+          try {
+            console.log(`🔄 Creating evaluation flow for user ${user.id} (${user.name || user.email || 'Unknown'})`);
+
+            const evaluationData: UserEvaluationData = {
+              userId: user.id,
+              userData: {
+                orcidId: user.orcidId || undefined,
+                githubHandle: user.githubHandle || undefined,
+                bitbucketHandle: user.bitbucketHandle || undefined,
+                gitlabHandle: user.gitlabHandle || undefined,
+                name: user.name || undefined,
+                email: user.email || undefined
+              }
+            };
+
+            // Create evaluation flow (without scientist onboarding since user is already onboarded)
+            const rootTaskId = await this.userEvaluationFlow.createEvaluationFlow(evaluationData);
+
+            console.log(`✅ Created evaluation flow for user ${user.id}, root task ID: ${rootTaskId}`);
+            results.successful++;
+
+            const taskManager = new TaskManager(this.prisma);
+            await taskManager.runAllPendingTasks();
+
+          } catch (error) {
+            const errorMessage = `Failed to create evaluation flow for user ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            console.error(`❌ ${errorMessage}`);
+            results.errors.push(errorMessage);
+            results.failed++;
+          }
+        }
+
+        console.log('📊 Bi-monthly evaluation process completed:');
+        console.log(`  ✅ Successful: ${results.successful}`);
+        console.log(`  ❌ Failed: ${results.failed}`);
+
+        if (results.errors.length > 0) {
+          console.log('  🚨 Errors:');
+          results.errors.forEach(error => console.log(`    - ${error}`));
+        }
+
         const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
         if (!salaryStatsUpdated) {
           console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
         }
+
         return {
-          eligibleUsers: 0,
-          successful: 0,
-          failed: 0,
-          errors: [] as string[],
+          eligibleUsers: eligibleUsers.length,
+          successful: results.successful,
+          failed: results.failed,
+          errors: results.errors,
           salaryStatsUpdated
         };
+
+      } catch (error) {
+        console.error('💥 Fatal error in bi-monthly evaluation process:', error);
+        throw error;
+      } finally {
+        stopKeepAlive();
       }
-
-      // Process each eligible user
-      const results = {
-        successful: 0,
-        failed: 0,
-        errors: [] as string[]
-      };
-
-      for (const user of eligibleUsers) {
-        try {
-          console.log(`🔄 Creating evaluation flow for user ${user.id} (${user.name || user.email || 'Unknown'})`);
-
-          const evaluationData: UserEvaluationData = {
-            userId: user.id,
-            userData: {
-              orcidId: user.orcidId || undefined,
-              githubHandle: user.githubHandle || undefined,
-              bitbucketHandle: user.bitbucketHandle || undefined,
-              gitlabHandle: user.gitlabHandle || undefined,
-              name: user.name || undefined,
-              email: user.email || undefined
-            }
-          };
-
-          // Create evaluation flow (without scientist onboarding since user is already onboarded)
-          const rootTaskId = await this.userEvaluationFlow.createEvaluationFlow(evaluationData);
-
-          console.log(`✅ Created evaluation flow for user ${user.id}, root task ID: ${rootTaskId}`);
-          results.successful++;
-
-          const taskManager = new TaskManager(this.prisma);
-          await taskManager.runAllPendingTasks();
-
-        } catch (error) {
-          const errorMessage = `Failed to create evaluation flow for user ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-          console.error(`❌ ${errorMessage}`);
-          results.errors.push(errorMessage);
-          results.failed++;
-        }
-      }
-
-      console.log('📊 Bi-monthly evaluation process completed:');
-      console.log(`  ✅ Successful: ${results.successful}`);
-      console.log(`  ❌ Failed: ${results.failed}`);
-
-      if (results.errors.length > 0) {
-        console.log('  🚨 Errors:');
-        results.errors.forEach(error => console.log(`    - ${error}`));
-      }
-
-      const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
-      if (!salaryStatsUpdated) {
-        console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
-      }
-
-      return {
-        eligibleUsers: eligibleUsers.length,
-        successful: results.successful,
-        failed: results.failed,
-        errors: results.errors,
-        salaryStatsUpdated
-      };
-
-    } catch (error) {
-      console.error('💥 Fatal error in bi-monthly evaluation process:', error);
-      throw error;
-    } finally {
-      stopKeepAlive();
-    }
+    });
   }
 
   /**
    * Get the status of the cron jobs
    */
   getCronStatus() {
+    const activeExecution = CronService.activeExecution;
     return {
+      activeExecution: activeExecution ? {
+        taskName: activeExecution.taskName,
+        startedAt: activeExecution.startedAt.toISOString()
+      } : null,
       biMonthlyEvaluation: {
         isRunning: this.cronJob !== null,
         nextRun: this.cronJob ? this.getNextRunTime() : null,

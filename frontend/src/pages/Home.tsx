@@ -5,7 +5,6 @@ import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
-import { text } from 'stream/consumers'
 
 interface WorldGdpData {
   worldGdp: number;

@@ -5,11 +5,10 @@ set -e
 npm run build
 npm test
 
-# cd backend
-# . ./.env
+cd backend
+. ./.env  # TODO@P3: needed?
 
-# Error: The datasource.url property is required in your Prisma config file when using prisma migrate status.
-# npx prisma migrate status
+npx prisma migrate status --config prisma/prisma.config.js
 
 # unknown or unexpected option: --shadow-database-url
 # npx prisma migrate diff --shadow-database-url="$SHADOW_DATABASE_URL" --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code

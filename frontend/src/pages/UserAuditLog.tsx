@@ -1,9 +1,9 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
-import { useState } from 'react';
 import './UserAuditLog.css';
 import { markdownToHtml } from '../utils/markdown';
+import Canonical from '../components/Canonical';
 
 interface WorthValue {
     key: 'overall' | 'scientist' | 'fossDev' | 'scienceMarketer';
@@ -33,7 +33,9 @@ interface AssessmentsResponse {
 
 export default function UserAuditLog() {
     const { userId } = useParams<{ userId: string }>();
-    const [page, setPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
+    const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
     const { data, isLoading, isError } = useQuery<AssessmentsResponse>({
         queryKey: ['user-assessments', userId, page],
@@ -68,6 +70,7 @@ export default function UserAuditLog() {
             <Helmet>
                 <title>User Audit Log - Meritocracy</title>
             </Helmet>
+            <Canonical baseUrl="https://merit.science-dao.org" />
             <div className="container">
                 <header className="page-header">
                     <Link to="/ban-voting" className="back-link">← Back to Voting</Link>
@@ -145,7 +148,10 @@ export default function UserAuditLog() {
                     <div className="pagination-controls">
                         <button
                             type="button"
-                            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                            onClick={() => {
+                                const nextPage = Math.max(page - 1, 1);
+                                setSearchParams(nextPage > 1 ? { page: String(nextPage) } : {});
+                            }}
                             disabled={pagination.page <= 1}
                         >
                             Previous
@@ -155,7 +161,10 @@ export default function UserAuditLog() {
                         </span>
                         <button
                             type="button"
-                            onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                            onClick={() => {
+                                const nextPage = Math.min(page + 1, pagination.totalPages);
+                                setSearchParams(nextPage > 1 ? { page: String(nextPage) } : {});
+                            }}
                             disabled={pagination.page >= pagination.totalPages}
                         >
                             Next

@@ -83,5 +83,3 @@
 - TODO@P3 Update World GDP regularly.
 
 - TODO@P3 In Audit Logs display user name, not only user ID.
-
-- TODO@P3 Create paginated list of users for all Audit Logs to be indexed.

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { worldGdpApi } from '../services/api';
 import { Helmet } from 'react-helmet-async';
+import Canonical from '../components/Canonical';
 import './BanVoting.css';
 
 interface AIResponse {
@@ -151,6 +152,7 @@ export default function BanVoting() {
           content="Participate in Meritocracy's ban voting to flag or reverse bans on accounts suspected of prompt injection or severe plagiarism."
         />
       </Helmet>
+      <Canonical baseUrl="https://merit.science-dao.org" />
       <div className="container">
                 <header className="page-header">
                     <h1>Ban Voting System</h1>

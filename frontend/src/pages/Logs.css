@@ -270,6 +270,20 @@
   border-radius: 4px;
 }
 
+.log-meta-item.accounts {
+  line-height: 1.6;
+}
+
+.log-account-link {
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.log-account-link:hover {
+  color: #1e40af;
+  text-decoration: underline;
+}
+
 .log-meta-item.error {
   color: #dc2626;
   background: #fef2f2;

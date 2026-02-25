@@ -5,6 +5,8 @@ import './Logs.css';
 import { Helmet } from 'react-helmet-async';
 import Canonical from '../components/Canonical';
 
+type LogUserProfile = NonNullable<DBLogEntry['user']>;
+
 const Logs: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [logs, setLogs] = useState<DBLogEntry[]>([]);
@@ -112,6 +114,149 @@ const Logs: React.FC = () => {
     return colors[status as keyof typeof colors] || '#6b7280';
   };
 
+  const formatUserLabel = (userId?: number, user?: LogUserProfile) => {
+    if (!userId && !user?.id) return null;
+    const resolvedUserId = userId ?? user?.id;
+    const name = user?.name?.trim();
+    if (!resolvedUserId) return name || null;
+    return name ? `${name} (#${resolvedUserId})` : `#${resolvedUserId}`;
+  };
+
+  const shortenAddress = (address: string, leading = 6, trailing = 4) => {
+    if (address.length <= leading + trailing + 3) {
+      return address;
+    }
+    return `${address.slice(0, leading)}...${address.slice(-trailing)}`;
+  };
+
+  const getLogUser = (log: DBLogEntry): LogUserProfile | undefined => {
+    if (log.user) {
+      return log.user;
+    }
+
+    if (!log.details || typeof log.details !== 'object') {
+      return undefined;
+    }
+
+    const details = log.details as any;
+
+    if (details.user && typeof details.user === 'object' && typeof details.user.id === 'number') {
+      return details.user as LogUserProfile;
+    }
+
+    if (typeof details.id === 'number') {
+      return {
+        id: details.id,
+        name: details.name,
+        ethereumAddress: details.ethereumAddress,
+        solanaAddress: details.solanaAddress,
+        bitcoinAddress: details.bitcoinAddress,
+        bitcoinCashAddress: details.bitcoinCashAddress,
+        polkadotAddress: details.polkadotAddress,
+        cosmosAddress: details.cosmosAddress,
+        stellarAddress: details.stellarAddress,
+        icpAddress: details.icpAddress,
+        orcidId: details.orcidId,
+        githubHandle: details.githubHandle,
+        bitbucketHandle: details.bitbucketHandle,
+        gitlabHandle: details.gitlabHandle
+      };
+    }
+
+    return undefined;
+  };
+
+  const getUserAccountLinks = (user: LogUserProfile) => {
+    const links: Array<{ key: string; label: string; href: string }> = [];
+
+    if (user.githubHandle) {
+      links.push({
+        key: `github-${user.githubHandle}`,
+        label: `GitHub @${user.githubHandle}`,
+        href: `https://github.com/${encodeURIComponent(user.githubHandle)}`
+      });
+    }
+    if (user.gitlabHandle) {
+      links.push({
+        key: `gitlab-${user.gitlabHandle}`,
+        label: `GitLab @${user.gitlabHandle}`,
+        href: `https://gitlab.com/${encodeURIComponent(user.gitlabHandle)}`
+      });
+    }
+    if (user.bitbucketHandle) {
+      links.push({
+        key: `bitbucket-${user.bitbucketHandle}`,
+        label: `Bitbucket @${user.bitbucketHandle}`,
+        href: `https://bitbucket.org/${encodeURIComponent(user.bitbucketHandle)}`
+      });
+    }
+    if (user.orcidId) {
+      links.push({
+        key: `orcid-${user.orcidId}`,
+        label: `ORCID ${user.orcidId}`,
+        href: `https://orcid.org/${encodeURIComponent(user.orcidId)}`
+      });
+    }
+    if (user.ethereumAddress) {
+      links.push({
+        key: `eth-${user.ethereumAddress}`,
+        label: `Ethereum ${shortenAddress(user.ethereumAddress)}`,
+        href: `https://etherscan.io/address/${encodeURIComponent(user.ethereumAddress)}`
+      });
+    }
+    if (user.solanaAddress) {
+      links.push({
+        key: `sol-${user.solanaAddress}`,
+        label: `Solana ${shortenAddress(user.solanaAddress, 4, 4)}`,
+        href: `https://solscan.io/account/${encodeURIComponent(user.solanaAddress)}`
+      });
+    }
+    if (user.bitcoinAddress) {
+      links.push({
+        key: `btc-${user.bitcoinAddress}`,
+        label: `Bitcoin ${shortenAddress(user.bitcoinAddress, 4, 4)}`,
+        href: `https://mempool.space/address/${encodeURIComponent(user.bitcoinAddress)}`
+      });
+    }
+    if (user.bitcoinCashAddress) {
+      links.push({
+        key: `bch-${user.bitcoinCashAddress}`,
+        label: `BCH ${shortenAddress(user.bitcoinCashAddress, 4, 4)}`,
+        href: `https://explorer.bitcoin.com/bch/address/${encodeURIComponent(user.bitcoinCashAddress)}`
+      });
+    }
+    if (user.polkadotAddress) {
+      links.push({
+        key: `dot-${user.polkadotAddress}`,
+        label: `Polkadot ${shortenAddress(user.polkadotAddress, 4, 4)}`,
+        href: `https://polkadot.subscan.io/account/${encodeURIComponent(user.polkadotAddress)}`
+      });
+    }
+    if (user.cosmosAddress) {
+      links.push({
+        key: `cosmos-${user.cosmosAddress}`,
+        label: `Cosmos ${shortenAddress(user.cosmosAddress, 6, 4)}`,
+        href: `https://www.mintscan.io/cosmos/account/${encodeURIComponent(user.cosmosAddress)}`
+      });
+    }
+    if (user.stellarAddress) {
+      links.push({
+        key: `xlm-${user.stellarAddress}`,
+        label: `Stellar ${shortenAddress(user.stellarAddress, 4, 4)}`,
+        href: `https://stellar.expert/explorer/public/account/${encodeURIComponent(user.stellarAddress)}`
+      });
+    }
+    if (user.icpAddress) {
+      links.push({
+        key: `icp-${user.icpAddress}`,
+        label: `ICP ${shortenAddress(user.icpAddress)}`,
+        href: `https://dashboard.internetcomputer.org/account/${encodeURIComponent(user.icpAddress)}`
+      });
+    }
+
+    return links;
+  };
+
   const renderLogDetails = (log: DBLogEntry) => {
     return (
       <div className="log-details">
@@ -190,7 +335,7 @@ const Logs: React.FC = () => {
         <title>Meritocracy App - User Activity Logs</title>
         <meta name="description" content="Meritocracy App - Show user activity logs." />
       </Helmet>
-      <Canonical baseUrl="https://merit.science-dao.org/logs" />
+      <Canonical baseUrl="https://merit.science-dao.org" />
       <div className="logs-header">
         <h1>Meritocracy App Logs</h1>
         <p>View and filter OpenAI API request and response logs</p>
@@ -342,8 +487,13 @@ const Logs: React.FC = () => {
           <div className="no-logs">No logs found matching the current filters.</div>
         ) : (
           <div className="logs-list">
-            {logs.map((log) => (
-              <div key={log.id} className="log-item">
+            {logs.map((log) => {
+              const logUser = getLogUser(log);
+              const userLabel = formatUserLabel(log.userId, logUser);
+              const accountLinks = logUser ? getUserAccountLinks(logUser) : [];
+
+              return (
+                <div key={log.id} className="log-item">
                 <div className="log-header">
                   <div className="log-type" style={{ backgroundColor: getLogTypeColor(log.type) }}>
                     {log.type.toUpperCase()}
@@ -361,8 +511,27 @@ const Logs: React.FC = () => {
                 </div>
 
                 <div className="log-meta">
-                  {log.userId && (
-                    <span className="log-meta-item">User: {log.userId}</span>
+                  {userLabel && (
+                    <span className="log-meta-item">User: {userLabel}</span>
+                  )}
+                  {accountLinks.length > 0 && (
+                    <span className="log-meta-item accounts">
+                      Accounts:
+                      {' '}
+                      {accountLinks.map((accountLink, index) => (
+                        <React.Fragment key={accountLink.key}>
+                          <a
+                            href={accountLink.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="log-account-link"
+                          >
+                            {accountLink.label}
+                          </a>
+                          {index < accountLinks.length - 1 ? ', ' : ''}
+                        </React.Fragment>
+                      ))}
+                    </span>
                   )}
                   {log.taskId && (
                     <span className="log-meta-item">Task: {log.taskId}</span>
@@ -376,8 +545,9 @@ const Logs: React.FC = () => {
                   <summary>View Details</summary>
                   {renderLogDetails(log)}
                 </details>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
 

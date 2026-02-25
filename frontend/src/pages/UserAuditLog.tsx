@@ -177,7 +177,7 @@ export default function UserAuditLog() {
     return (
         <div className="user-audit-log-page">
             <Helmet>
-                <title>User Recommended Salary Audit Log - Meritocracy</title>
+                <title>Recommended Salary for User "{displayName}" - Meritocracy</title>
             </Helmet>
             <Canonical baseUrl="https://merit.science-dao.org" />
             <div className="container">

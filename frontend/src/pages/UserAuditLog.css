@@ -38,6 +38,23 @@
     font-size: 1.1rem;
 }
 
+.user-audit-log-page .profile-links {
+    margin: 0.8rem auto 0;
+    max-width: 850px;
+    color: #4a5568;
+    line-height: 1.7;
+    font-size: 0.95rem;
+}
+
+.user-audit-log-page .profile-links a {
+    color: #4c51bf;
+    text-decoration: none;
+}
+
+.user-audit-log-page .profile-links a:hover {
+    text-decoration: underline;
+}
+
 .assessments-list {
     display: flex;
     flex-direction: column;

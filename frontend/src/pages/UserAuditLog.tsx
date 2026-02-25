@@ -177,14 +177,14 @@ export default function UserAuditLog() {
     return (
         <div className="user-audit-log-page">
             <Helmet>
-                <title>User Audit Log - Meritocracy</title>
+                <title>User Recommended Salary Audit Log - Meritocracy</title>
             </Helmet>
             <Canonical baseUrl="https://merit.science-dao.org" />
             <div className="container">
                 <header className="page-header">
-                    <Link to="/ban-voting" className="back-link">← Back to Voting</Link>
-                    <h1>User Research Audit Log</h1>
-                    <p className="subtitle">AI rationales and sources for {displayName}</p>
+                    <Link to="/ban-voting" className="back-link"><span data-nosnippet="data-nosnippet">← Back to Voting</span></Link>
+                    <h1>User Worth Research Audit Log</h1>
+                    <p className="subtitle">AI rationales and sources for Recommended Salary of user {displayName}</p>
                     {profileLinks.length > 0 && (
                         <p className="profile-links" data-nosnippet="data-nosnippet">
                             {profileLinks.map((profileLink, index) => (

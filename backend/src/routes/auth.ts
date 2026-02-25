@@ -763,7 +763,6 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
   }
 });
 
-// TODO@P3: Do we need both this .get handler and the .post handler?
 // OAuth callback endpoints for secure token exchange
 // GET route for OAuth provider redirects
 router.get('/:provider/callback', async (req, res): Promise<void> => {

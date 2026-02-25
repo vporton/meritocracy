@@ -331,7 +331,7 @@ function MultiNetworkGasBalances() {
       </div>
 
       {/* Network Details */}
-      <div style={{ display: 'grid', gap: '1rem' }} data-nosnippet="data-nosnippet">
+      <div style={{ display: 'grid', gap: '1rem' }}>
         {networkStatus.enabledNetworks.map((networkName) => {
           const networkInfo = networkStatus.networks[networkName] ?? {}
           const isNetworkLoading = loadingNetworks[networkName]

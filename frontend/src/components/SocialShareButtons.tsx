@@ -37,7 +37,7 @@ export default function SocialShareButtons({
   }
 
   return (
-    <section className="social-share-card" aria-label="Share Meritocracy">
+    <section className="social-share-card" aria-label="Share Meritocracy" data-nosnippet="data-nosnippet">
       <p className="social-share-title">Share Meritocracy</p>
       <div className="social-share-list">
         {links.map((link) => (

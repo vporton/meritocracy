@@ -34,7 +34,7 @@ interface AssessmentsResponse {
 
 export default function UserAuditLog() {
     const { userId } = useParams<{ userId: string }>();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
     const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
@@ -68,6 +68,8 @@ export default function UserAuditLog() {
 
     const assessments = data?.items ?? [];
     const pagination = data?.pagination;
+    const baseLogsPath = userId ? `/logs/${userId}` : '/logs';
+    const pageToSearch = (targetPage: number) => (targetPage > 1 ? `?page=${targetPage}` : '');
 
     const displayName = userProfile?.name?.trim() || (userId ? `User #${userId}` : 'Unknown user');
 
@@ -271,29 +273,31 @@ export default function UserAuditLog() {
                 </div>
                 {pagination && pagination.totalPages > 1 && (
                     <div className="pagination-controls">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const nextPage = Math.max(page - 1, 1);
-                                setSearchParams(nextPage > 1 ? { page: String(nextPage) } : {});
-                            }}
-                            disabled={pagination.page <= 1}
-                        >
-                            Previous
-                        </button>
+                        {pagination.page > 1 ? (
+                            <Link
+                                to={{ pathname: baseLogsPath, search: pageToSearch(Math.max(page - 1, 1)) }}
+                                className="pagination-link"
+                                rel="prev"
+                            >
+                                Previous
+                            </Link>
+                        ) : (
+                            <span className="pagination-link is-disabled">Previous</span>
+                        )}
                         <span>
                             Page {pagination.page} of {pagination.totalPages}
                         </span>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const nextPage = Math.min(page + 1, pagination.totalPages);
-                                setSearchParams(nextPage > 1 ? { page: String(nextPage) } : {});
-                            }}
-                            disabled={pagination.page >= pagination.totalPages}
-                        >
-                            Next
-                        </button>
+                        {pagination.page < pagination.totalPages ? (
+                            <Link
+                                to={{ pathname: baseLogsPath, search: pageToSearch(Math.min(page + 1, pagination.totalPages)) }}
+                                className="pagination-link"
+                                rel="next"
+                            >
+                                Next
+                            </Link>
+                        ) : (
+                            <span className="pagination-link is-disabled">Next</span>
+                        )}
                     </div>
                 )}
             </div>

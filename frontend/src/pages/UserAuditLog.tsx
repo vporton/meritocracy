@@ -250,15 +250,17 @@ export default function UserAuditLog() {
                                         {assessment.sources && assessment.sources.length > 0 && (
                                             <section className="sources-section">
                                                 <h3>Research Sources</h3>
-                                                <ul>
-                                                    {assessment.sources.map((source, sIndex) => (
-                                                        <li key={sIndex}>
-                                                            <a href={source} target="_blank" rel="noopener noreferrer">
-                                                                {source}
-                                                            </a>
-                                                        </li>
-                                                    ))}
-                                                </ul>
+                                                <div data-nosnippet="data-nosnippet">
+                                                    <ul>
+                                                        {assessment.sources.map((source, sIndex) => (
+                                                            <li key={sIndex}>
+                                                                <a href={source} target="_blank" rel="noopener noreferrer">
+                                                                    {source}
+                                                                </a>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
                                             </section>
                                         )}
                                     </div>

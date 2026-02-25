@@ -6,10 +6,9 @@ npm run build
 npm test
 
 cd backend
-. ./.env  # TODO@P3: needed?
 
+# Prevent submitting, if has not been tested on a local DB.
 npx prisma migrate status --config prisma/prisma.config.js
 
-# TODO@P2 Prevent submitting if not all migrations have been applied.
-# unknown or unexpected option: --shadow-database-url
-# npx prisma migrate diff --shadow-database-url="$SHADOW_DATABASE_URL" --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --exit-code
+# Prevent submitting if not all migrations have been applied.
+npx prisma migrate diff --from-schema prisma/schema.prisma --to-migrations prisma/migrations --exit-code

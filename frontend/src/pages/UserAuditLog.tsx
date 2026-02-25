@@ -90,12 +90,12 @@ export default function UserAuditLog() {
                     ) : (
                         assessments.map((assessment, index) => {
                             const status = assessment.isPending ? 'pending' : assessment.isError ? 'error' : 'completed';
-                            const badgeLabel = assessment.isPending ? 'Pending AI Analysis' : assessment.isError ? 'Research Error' : 'AI Research Assessment';
+                            const badgeLabel = assessment.isPending ? 'Pending AI Analysis' : assessment.isError ? 'Research Error' : 'Recommended Salary Assessment';
 
                             return (
                                 <section key={index} className={`assessment-card status-${status}`}>
                                     <div className="assessment-header">
-                                        <span className="assessment-date">
+                                        <span className="assessment-date" data-nosnippet="data-nosnippet">
                                             {new Date(assessment.timestamp).toLocaleString()}
                                         </span>
                                         <span className={`assessment-label badge-${status}`}>

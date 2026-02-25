@@ -104,18 +104,20 @@ export default function UserAuditLog() {
                                     </div>
                                     <div className="assessment-content">
                                         {assessment.worthValues && assessment.worthValues.length > 0 && (
-                                            <div className="worth-section">
+                                            <section className="worth-section">
                                                 <h3>Assigned Worth</h3>
-                                                <ul>
-                                                    {assessment.worthValues.map((worth) => (
-                                                        <li key={worth.key}>
-                                                            <strong>{worth.label}:</strong>{' '}
-                                                            <span>{formatFraction(worth.fractionOfGDP)} of GDP</span>{' '}
-                                                            (<span>{formatUsd(worth.usd)}</span>)
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
+                                                <div data-nosnippet="data-nosnippet">
+                                                    <ul>
+                                                        {assessment.worthValues.map((worth) => (
+                                                            <li key={worth.key}>
+                                                                <strong>{worth.label}:</strong>{' '}
+                                                                <span>{formatFraction(worth.fractionOfGDP)} of GDP</span>{' '}
+                                                                (<span>{formatUsd(worth.usd)}</span>)
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </section>
                                         )}
                                         <div className={`rationale-text ${status}`}>
                                             <h3>Rationale</h3>
@@ -125,7 +127,7 @@ export default function UserAuditLog() {
                                             />
                                         </div>
                                         {assessment.sources && assessment.sources.length > 0 && (
-                                            <div className="sources-section">
+                                            <section className="sources-section">
                                                 <h3>Research Sources</h3>
                                                 <ul>
                                                     {assessment.sources.map((source, sIndex) => (
@@ -136,7 +138,7 @@ export default function UserAuditLog() {
                                                         </li>
                                                     ))}
                                                 </ul>
-                                            </div>
+                                            </section>
                                         )}
                                     </div>
                                 </section>

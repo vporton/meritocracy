@@ -121,6 +121,22 @@ interface DBLogEntry {
   type: 'openai' | 'task' | 'user' | 'session';
   timestamp: string;
   userId?: number;
+  user?: {
+    id: number;
+    name?: string | null;
+    ethereumAddress?: string | null;
+    solanaAddress?: string | null;
+    bitcoinAddress?: string | null;
+    bitcoinCashAddress?: string | null;
+    polkadotAddress?: string | null;
+    cosmosAddress?: string | null;
+    stellarAddress?: string | null;
+    icpAddress?: string | null;
+    orcidId?: string | null;
+    githubHandle?: string | null;
+    bitbucketHandle?: string | null;
+    gitlabHandle?: string | null;
+  };
   taskId?: number;
   action: string;
   details: any;

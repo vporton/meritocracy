@@ -1,10 +1,26 @@
-import { PrismaClient, OpenAILog, Task, User, Session } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export interface DBLogEntry {
   id: string;
   type: 'openai' | 'task' | 'user' | 'session';
   timestamp: Date;
   userId?: number;
+  user?: {
+    id: number;
+    name?: string | null;
+    ethereumAddress?: string | null;
+    solanaAddress?: string | null;
+    bitcoinAddress?: string | null;
+    bitcoinCashAddress?: string | null;
+    polkadotAddress?: string | null;
+    cosmosAddress?: string | null;
+    stellarAddress?: string | null;
+    icpAddress?: string | null;
+    orcidId?: string | null;
+    githubHandle?: string | null;
+    bitbucketHandle?: string | null;
+    gitlabHandle?: string | null;
+  };
   taskId?: number;
   action: string;
   details: any;
@@ -65,8 +81,9 @@ export class DBLogsService {
     // Apply pagination
     const offset = filter.offset || 0;
     const limit = filter.limit || 100;
+    const paginatedLogs = logs.slice(offset, offset + limit);
 
-    return logs.slice(offset, offset + limit);
+    return this.enrichLogsWithUsers(paginatedLogs);
   }
 
   /**
@@ -434,5 +451,55 @@ export class DBLogsService {
       logsByUser,
       recentActivity
     };
+  }
+
+  /**
+   * Attach user names and account fields to logs for compact frontend rendering.
+   */
+  private async enrichLogsWithUsers(logs: DBLogEntry[]): Promise<DBLogEntry[]> {
+    const userIds = Array.from(
+      new Set(
+        logs
+          .map(log => log.userId)
+          .filter((userId): userId is number => typeof userId === 'number')
+      )
+    );
+
+    if (userIds.length === 0) {
+      return logs;
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        name: true,
+        ethereumAddress: true,
+        solanaAddress: true,
+        bitcoinAddress: true,
+        bitcoinCashAddress: true,
+        polkadotAddress: true,
+        cosmosAddress: true,
+        stellarAddress: true,
+        icpAddress: true,
+        orcidId: true,
+        githubHandle: true,
+        bitbucketHandle: true,
+        gitlabHandle: true
+      }
+    });
+
+    const userById = new Map(users.map(user => [user.id, user]));
+
+    return logs.map(log => {
+      if (!log.userId) {
+        return log;
+      }
+
+      return {
+        ...log,
+        user: userById.get(log.userId)
+      };
+    });
   }
 }

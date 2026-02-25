@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import './UserAuditLog.css';
 import { markdownToHtml } from '../utils/markdown';
 import Canonical from '../components/Canonical';
+import { User } from '../services/api';
 
 interface WorthValue {
     key: 'overall' | 'scientist' | 'fossDev' | 'scienceMarketer';
@@ -50,8 +51,25 @@ export default function UserAuditLog() {
         },
         enabled: !!userId
     });
+
+    const { data: userProfile } = useQuery<User>({
+        queryKey: ['user-profile', userId],
+        queryFn: async () => {
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/users/${userId}`
+            );
+            if (!response.ok) {
+                throw new Error('Failed to fetch user profile');
+            }
+            return response.json();
+        },
+        enabled: !!userId
+    });
+
     const assessments = data?.items ?? [];
     const pagination = data?.pagination;
+
+    const displayName = userProfile?.name?.trim() || (userId ? `User #${userId}` : 'Unknown user');
 
     const formatFraction = (value: number) =>
         Math.abs(value) < 0.0001 ? value.toExponential(4) : value.toLocaleString(undefined, { maximumSignificantDigits: 6 });
@@ -65,6 +83,97 @@ export default function UserAuditLog() {
         }).format(value);
     };
 
+    const shortenAddress = (address: string, leading = 6, trailing = 4) => {
+        if (address.length <= leading + trailing + 3) return address;
+        return `${address.slice(0, leading)}...${address.slice(-trailing)}`;
+    };
+
+    const profileLinks: Array<{ key: string; label: string; href: string }> = [];
+    if (userProfile?.githubHandle) {
+        profileLinks.push({
+            key: `github-${userProfile.githubHandle}`,
+            label: `GitHub @${userProfile.githubHandle}`,
+            href: `https://github.com/${encodeURIComponent(userProfile.githubHandle)}`
+        });
+    }
+    if (userProfile?.gitlabHandle) {
+        profileLinks.push({
+            key: `gitlab-${userProfile.gitlabHandle}`,
+            label: `GitLab @${userProfile.gitlabHandle}`,
+            href: `https://gitlab.com/${encodeURIComponent(userProfile.gitlabHandle)}`
+        });
+    }
+    if (userProfile?.bitbucketHandle) {
+        profileLinks.push({
+            key: `bitbucket-${userProfile.bitbucketHandle}`,
+            label: `Bitbucket @${userProfile.bitbucketHandle}`,
+            href: `https://bitbucket.org/${encodeURIComponent(userProfile.bitbucketHandle)}`
+        });
+    }
+    if (userProfile?.orcidId) {
+        profileLinks.push({
+            key: `orcid-${userProfile.orcidId}`,
+            label: `ORCID ${userProfile.orcidId}`,
+            href: `https://orcid.org/${encodeURIComponent(userProfile.orcidId)}`
+        });
+    }
+    if (userProfile?.ethereumAddress) {
+        profileLinks.push({
+            key: `eth-${userProfile.ethereumAddress}`,
+            label: `Ethereum ${shortenAddress(userProfile.ethereumAddress)}`,
+            href: `https://etherscan.io/address/${encodeURIComponent(userProfile.ethereumAddress)}`
+        });
+    }
+    if (userProfile?.solanaAddress) {
+        profileLinks.push({
+            key: `sol-${userProfile.solanaAddress}`,
+            label: `Solana ${shortenAddress(userProfile.solanaAddress, 4, 4)}`,
+            href: `https://solscan.io/account/${encodeURIComponent(userProfile.solanaAddress)}`
+        });
+    }
+    if (userProfile?.bitcoinAddress) {
+        profileLinks.push({
+            key: `btc-${userProfile.bitcoinAddress}`,
+            label: `Bitcoin ${shortenAddress(userProfile.bitcoinAddress, 4, 4)}`,
+            href: `https://mempool.space/address/${encodeURIComponent(userProfile.bitcoinAddress)}`
+        });
+    }
+    if (userProfile?.bitcoinCashAddress) {
+        profileLinks.push({
+            key: `bch-${userProfile.bitcoinCashAddress}`,
+            label: `BCH ${shortenAddress(userProfile.bitcoinCashAddress, 4, 4)}`,
+            href: `https://explorer.bitcoin.com/bch/address/${encodeURIComponent(userProfile.bitcoinCashAddress)}`
+        });
+    }
+    if (userProfile?.polkadotAddress) {
+        profileLinks.push({
+            key: `dot-${userProfile.polkadotAddress}`,
+            label: `Polkadot ${shortenAddress(userProfile.polkadotAddress, 4, 4)}`,
+            href: `https://polkadot.subscan.io/account/${encodeURIComponent(userProfile.polkadotAddress)}`
+        });
+    }
+    if (userProfile?.cosmosAddress) {
+        profileLinks.push({
+            key: `cosmos-${userProfile.cosmosAddress}`,
+            label: `Cosmos ${shortenAddress(userProfile.cosmosAddress, 6, 4)}`,
+            href: `https://www.mintscan.io/cosmos/account/${encodeURIComponent(userProfile.cosmosAddress)}`
+        });
+    }
+    if (userProfile?.stellarAddress) {
+        profileLinks.push({
+            key: `xlm-${userProfile.stellarAddress}`,
+            label: `Stellar ${shortenAddress(userProfile.stellarAddress, 4, 4)}`,
+            href: `https://stellar.expert/explorer/public/account/${encodeURIComponent(userProfile.stellarAddress)}`
+        });
+    }
+    if (userProfile?.icpAddress) {
+        profileLinks.push({
+            key: `icp-${userProfile.icpAddress}`,
+            label: `ICP ${shortenAddress(userProfile.icpAddress)}`,
+            href: `https://dashboard.internetcomputer.org/account/${encodeURIComponent(userProfile.icpAddress)}`
+        });
+    }
+
     return (
         <div className="user-audit-log-page">
             <Helmet>
@@ -75,7 +184,19 @@ export default function UserAuditLog() {
                 <header className="page-header">
                     <Link to="/ban-voting" className="back-link">← Back to Voting</Link>
                     <h1>User Research Audit Log</h1>
-                    <p className="subtitle">AI rationales and sources for User #{userId}</p>
+                    <p className="subtitle">AI rationales and sources for {displayName}</p>
+                    {profileLinks.length > 0 && (
+                        <p className="profile-links" data-nosnippet="data-nosnippet">
+                            {profileLinks.map((profileLink, index) => (
+                                <span key={profileLink.key}>
+                                    <a href={profileLink.href} target="_blank" rel="noopener noreferrer">
+                                        {profileLink.label}
+                                    </a>
+                                    {index < profileLinks.length - 1 ? ' • ' : ''}
+                                </span>
+                            ))}
+                        </p>
+                    )}
                 </header>
 
                 <div className="assessments-list">

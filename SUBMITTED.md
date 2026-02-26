@@ -84,7 +84,7 @@
   * https://techforgood.zendesk.com - submitted 12 Oct 2025
   * www.globalgiving.org (they require me to provide annual reports, brochures, newsletters, or news reports)
   * https://rashi.org.il - contacted 12 Oct 2025
-  * https://accelerator.ou.org/apply - contacted 12 Oct 2025, will consider for the next cohort
+  * https://accelerator.ou.org/apply - applied 27 Feb 2026
   * https://astera.org - sent 12 Oct 2025
   * https://www.openphilanthropy.org - contacted 12 Oct 2025
   * https://www.shell.com/what-we-do/technology-and-innovation/innovate-with-shell/share-your-idea.html - submitted 12 Oct 2025 - rejected 20 Oct 2025 "not a potential GameChanger project for us"

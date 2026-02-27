@@ -978,19 +978,17 @@ const ConnectForm = () => {
         </div>
       )}
 
-      <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas).</p>
+      <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas). You also must connect your Ethereum account.</p>
 
       <p style={{ color: 'red' }}>Your data won't be deleted (even on request),
         because it may be necessary to sue against you, if you misbehave (hack, DoS, etc. us).</p>
 
-      <p style={{ color: 'red' }}>After connecting your accounts, you need to pass evaluation at <Link to="/">the homepage</Link>{" "}
+      <p style={{ color: 'red' }}>After connecting your accounts, you need to pass evaluation (the evaluate button will appear at this page){" "}
         to decide, whether the system will pay you and how much.</p>
 
       {user?.kycStatus !== 'APPROVED' && !kycTokenParam && (
         <p className="kyc-notice">KYC verification will be requested via email once funds are allocated to you.</p>
       )}
-
-      <p>The Ethereum address will also be used for payments to you.</p>
 
       <p style={{ color: 'red' }}>BitBucket is not supported yet.</p>
 

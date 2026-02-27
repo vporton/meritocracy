@@ -212,7 +212,7 @@ export default function Home() {
       {showEvaluationCTA && (
         <div className="card evaluation-callout">
           <h2>Not yet evaluated? Get your share for free.</h2>
-          <p>Connect your accounts, let AI review your contributions, and receive a personalized economic share—at no cost.</p>
+          <p>Connect your accounts, let AI review your contributions, and become eligible for receiving cryptocurrency grants—at no cost.</p>
           <Link to="/connect" className="evaluation-link">Start your free evaluation</Link>
         </div>
       )}

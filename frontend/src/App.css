@@ -48,6 +48,37 @@
   padding: 2em;
 }
 
+.evaluation-callout {
+  background: #f5f3ff;
+  border-left: 5px solid #7c3aed;
+  text-align: left;
+  margin: 1.5rem auto;
+  max-width: 640px;
+}
+
+.evaluation-callout h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.evaluation-callout p {
+  margin: 0 0 0.75rem;
+}
+
+.evaluation-link {
+  display: inline-block;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.evaluation-link:hover {
+  background: #5b21b6;
+}
+
 .read-the-docs {
   color: #888;
 }

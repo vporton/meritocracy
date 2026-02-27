@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import api, { usersApi, SalaryStats } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
@@ -24,14 +24,12 @@ interface UserGdpShareData {
 export default function Home() {
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
-  const navigate = useNavigate()
   const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
   const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
-  const [onboardingLoading, setOnboardingLoading] = useState(false)
-  const [showOnboardingConfirm, setShowOnboardingConfirm] = useState(false)
+  const showEvaluationCTA = !user?.onboarded
 
   const formatUsd = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
@@ -128,79 +126,6 @@ export default function Home() {
     }
   }
 
-  const handleStartOnboarding = async () => {
-    if (!user || !isAuthenticated) {
-      alert('Please connect your accounts first before starting onboarding.')
-      return
-    }
-
-    // Show confirmation dialog
-    setShowOnboardingConfirm(true)
-  }
-
-  const confirmOnboarding = async () => {
-    if (!user || !isAuthenticated) {
-      return
-    }
-
-    setShowOnboardingConfirm(false)
-    setOnboardingLoading(true)
-    try {
-      // Start the onboarding flow
-      const response = await api.post('/api/evaluation/start', {
-        userId: user.id,
-        userData: {
-          orcidId: user.orcidId,
-          githubHandle: user.githubHandle,
-          bitbucketHandle: user.bitbucketHandle,
-          gitlabHandle: user.gitlabHandle,
-          ethereumAddress: user.ethereumAddress,
-          email: user.email,
-          emailVerified: user.emailVerified,
-        }
-      })
-
-      if (response.data.success) {
-        try {
-          await refreshUser()
-        } catch (err) {
-          console.error('Failed to refresh user after starting evaluation:', err)
-        }
-        // Redirect to logs page to see the progress
-        navigate('/logs')
-      } else {
-        alert('Failed to start onboarding. Please try again.')
-      }
-    } catch (error) {
-      console.error('Onboarding error:', error)
-      alert('Failed to start onboarding. Please try again.')
-    } finally {
-      setOnboardingLoading(false)
-    }
-  }
-
-  const cancelOnboarding = () => {
-    setShowOnboardingConfirm(false)
-  }
-
-  const hasConnectedAccounts = () => {
-    if (!user) return false
-    const hasSocial = !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle)
-    const hasEmail = !!(user.email && user.emailVerified)
-    const hasEth = !!user.ethereumAddress
-
-    if (import.meta.env.DEV) {
-      return hasEmail && hasEth
-    }
-
-    return hasSocial && hasEmail && hasEth
-  }
-
-  const hasKycVerification = () => {
-    if (!user) return false
-    return user.kycStatus === 'APPROVED'
-  }
-
   useEffect(() => {
     console.log(
       '[Home] user onboarded:', user?.onboarded,
@@ -284,6 +209,13 @@ export default function Home() {
       <h1>Meritocracy: A DAO<sup><a href='https://science-dao.org/dao-status/'>*</a></sup> for Funding Scientists and Open-Source Developers</h1>
       <p>Meritocracy is a decentralized science (DeSci) DAO that distributes funding to scientists and open-source developers based on measurable contributions. The system uses transparent voting, reputation signals, and on-chain records to allocate resources without traditional grant committees.</p>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
+      {showEvaluationCTA && (
+        <div className="card evaluation-callout">
+          <h2>Not yet evaluated? Get your share for free.</h2>
+          <p>Connect your accounts, let AI review your contributions, and become eligible for receiving cryptocurrency grants—at no cost.</p>
+          <Link to="/connect" className="evaluation-link">Start your free evaluation</Link>
+        </div>
+      )}
       <div className="card">
         <h2>🌍 World Economy</h2>
         {worldGdp ? (
@@ -351,192 +283,13 @@ export default function Home() {
                 Your evaluation process has been completed. You can view your progress and results in the <a href="/logs" style={{ color: '#b45309', textDecoration: 'underline' }}>Logs</a> page.
               </p>
             </div>
-          ) : hasConnectedAccounts() ? (
-            <div>
-              {/* Prominent warning about connecting accounts */}
-              <div style={{
-                padding: '1rem',
-                background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
-                borderRadius: '8px',
-                borderLeft: '4px solid #ef4444',
-                marginBottom: '1.5rem'
-              }}>
-                <p style={{ margin: 0, color: '#dc2626', fontWeight: '600', fontSize: '1rem' }}>
-                  ⚠️ <strong>IMPORTANT: Connect Your Accounts First!</strong>
-                </p>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  To start evaluation, you MUST connect <strong>Ethereum</strong>, <strong>email (verified)</strong>{import.meta.env.DEV ? ' (Social connection is optional in dev mode)' : <>, and at least <strong>one</strong> of the following: <strong>ORCID, GitHub, BitBucket, GitLab</strong></>}.
-                </p>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                  Make sure to connect these on the <a href="/connect" style={{ color: '#b91c1c', textDecoration: 'underline', fontWeight: '600' }}>Connect page</a> before proceeding.
-                </p>
-              </div>
-
-              {!hasKycVerification() && (
-                <div style={{
-                  padding: '1rem',
-                  background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
-                  borderRadius: '8px',
-                  borderLeft: '4px solid #0ea5e9',
-                  marginBottom: '1.5rem'
-                }}>
-                  <p style={{ margin: 0, color: '#0369a1', fontWeight: '600', fontSize: '1rem' }}>
-                    🆔 <strong>KYC Verification Notice</strong>
-                  </p>
-                  <p style={{ margin: '0.5rem 0 0 0', color: '#0369a1', fontSize: '0.9rem' }}>
-                    You can start your evaluation now without KYC.
-                  </p>
-                  <p style={{ margin: '0.5rem 0 0 0', color: '#0369a1', fontSize: '0.9rem' }}>
-                    However, you will be required to complete KYC later to receive payments once they are allocated to you.
-                  </p>
-                </div>
-              )}
-
-              <p>
-                {hasKycVerification()
-                  ? "✅ You have connected accounts and completed KYC verification."
-                  : "✅ You have connected accounts. You can start your evaluation now!"}
-              </p>
-              <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
-                Click the button below to begin the AI analysis of your contributions and receive your GDP share calculation.
-              </p>
-              <button
-                onClick={handleStartOnboarding}
-                disabled={onboardingLoading}
-                style={{
-                  background: onboardingLoading ? '#666' : '#4caf50',
-                  border: 'none',
-                  color: 'white',
-                  padding: '1rem 2rem',
-                  borderRadius: '8px',
-                  cursor: onboardingLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  transition: 'background-color 0.25s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  margin: '0 auto'
-                }}
-              >
-                {onboardingLoading ? (
-                  <>
-                    <div className="loading" style={{ margin: 0, fontSize: '0.9rem' }}>⏳</div>
-                    Starting Evaluation...
-                  </>
-                ) : (
-                  <>
-                    🚀 Start Evaluation
-                  </>
-                )}
-              </button>
-            </div>
           ) : (
             <div>
-              <p>⚠️ <strong>Please connect your accounts first!</strong></p>
-              <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
-                To start evaluation, you MUST connect:
-              </p>
-              <ul style={{ fontSize: '0.9rem', color: '#888', textAlign: 'left', display: 'inline-block' }}>
-                <li>Ethereum wallet</li>
-                <li>Email address (and verify it)</li>
-                <li>At least one of: ORCID, GitHub, BitBucket, or GitLab {import.meta.env.DEV && <span style={{ color: '#059669' }}>(Optional in development mode)</span>}
-                  <span style={{ color: '#dc2626' }}>(Be sure to connect accounts where you works are presented <strong>before</strong> evaluation!)</span></li>
-              </ul>
-              <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
-                Go to the <a href="/connect" style={{ color: '#646cff' }}>Connect</a> page to link your accounts.
+              <p style={{ marginBottom: 0 }}>
+                Start evaluation from the <a href="/connect" style={{ color: '#646cff' }}>Connect</a> page after linking your accounts.
               </p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Onboarding Confirmation Dialog */}
-      {showOnboardingConfirm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '2rem',
-            borderRadius: '12px',
-            maxWidth: '500px',
-            width: '90%',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-          }}>
-            <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>
-              ⚠️ Confirm Onboarding Start
-            </h2>
-            <div style={{
-              padding: '1rem',
-              background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
-              borderRadius: '8px',
-              borderLeft: '4px solid #ef4444',
-              marginBottom: '1.5rem'
-            }}>
-              <p style={{ margin: 0, color: '#dc2626', fontWeight: '600' }}>
-                <strong>IMPORTANT REMINDER:</strong>
-              </p>
-              <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                Have you connected <strong>Ethereum</strong> and <strong>email</strong>{import.meta.env.DEV ? '?' : <>, and at least <strong>one</strong> of: <strong>ORCID, GitHub, BitBucket, GitLab?</strong></>}
-              </p>
-              <p style={{ margin: '0.5rem 0 0 0', color: '#dc2626', fontSize: '0.9rem' }}>
-                {hasKycVerification()
-                  ? "✅ KYC verification is complete."
-                  : "ℹ️ KYC verification is NOT yet complete. You can proceed with evaluation, but you will need to complete KYC later to receive payments."}
-              </p>
-            </div>
-            <p style={{ margin: '0 0 1.5rem 0', color: '#666' }}>
-              Are you sure you want to start the evaluation process now?
-              You can still connect additional accounts later, but it may delay your salary calculation.
-            </p>
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'flex-end'
-            }}>
-              <button
-                onClick={cancelOnboarding}
-                style={{
-                  background: '#6b7280',
-                  border: 'none',
-                  color: 'white',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmOnboarding}
-                disabled={onboardingLoading}
-                style={{
-                  background: onboardingLoading ? '#666' : '#ef4444',
-                  border: 'none',
-                  color: 'white',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '6px',
-                  cursor: onboardingLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500'
-                }}
-              >
-                {onboardingLoading ? 'Starting...' : 'Yes, Start Evaluation'}
-              </button>
-            </div>
-          </div>
         </div>
       )}
       <div style={{textAlign: 'left'}}>

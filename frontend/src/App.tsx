@@ -29,6 +29,9 @@ function App() {
             <BrowserRouter>
               <div className="App">
                 <header>
+                  {import.meta.env.VITE_TEST_INSTANCE === 'true' &&
+                    <p style={{color: 'red'}}>This is a test installation.</p>
+                  }
                   <Navigation />
                 </header>
                 <div className="page-container">

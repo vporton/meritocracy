@@ -172,3 +172,4 @@
   * https://hashlock.com/blog/top-50-grants-for-crypto-and-web3-projects-a-complete-list
     * TODO
   * TODO
+* THE KH IMPACT FUND - mailed 27 Feb 2026

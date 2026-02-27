@@ -778,7 +778,7 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
       fullCode: code, // For debugging - remove in production
       state: state ? `${state.substring(0, 10)}...` : 'null',
       stateLength: state ? state.length : 0,
-      bodyKeys: Object.keys(req.body),
+      bodyKeys: req.body && typeof req.body === 'object' ? Object.keys(req.body) : [],
       headers: {
         'content-type': req.headers['content-type'],
         'user-agent': req.headers['user-agent'],

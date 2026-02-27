@@ -1,8 +1,8 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { useAuth } from '../contexts/AuthContext';
-import { User, authApi, usersApi } from '../services/api';
+import api, { User, authApi, usersApi } from '../services/api';
 import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
 import './ConnectForm.css';
 import Canonical from './Canonical';
@@ -52,6 +52,7 @@ interface MessageEvent {
 
 const ConnectForm = () => {
   const { login, registerEmail, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
+  const navigate = useNavigate();
   const { connect, connectors } = useConnect();
   const { address, isConnected, connector } = useAccount();
   const { signMessageAsync } = useSignMessage();
@@ -73,6 +74,7 @@ const ConnectForm = () => {
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -902,6 +904,54 @@ const ConnectForm = () => {
     return className;
   };
 
+  const hasConnectedAccounts = (): boolean => {
+    if (!user) return false;
+
+    const hasSocial = !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle);
+    const hasEmail = !!(user.email && user.emailVerified);
+    const hasEth = !!user.ethereumAddress;
+
+    if (import.meta.env.DEV) {
+      return hasEmail && hasEth;
+    }
+
+    return hasSocial && hasEmail && hasEth;
+  };
+
+  const handleStartEvaluation = async () => {
+    if (!user || !isAuthenticated || onboardingLoading || user.onboarded || !hasConnectedAccounts()) {
+      return;
+    }
+
+    setOnboardingLoading(true);
+    try {
+      const response = await api.post('/api/evaluation/start', {
+        userId: user.id,
+        userData: {
+          orcidId: user.orcidId,
+          githubHandle: user.githubHandle,
+          bitbucketHandle: user.bitbucketHandle,
+          gitlabHandle: user.gitlabHandle,
+          ethereumAddress: user.ethereumAddress,
+          email: user.email,
+          emailVerified: user.emailVerified,
+        }
+      });
+
+      if (response.data.success) {
+        await refreshUser();
+        navigate('/logs');
+      } else {
+        alert('Failed to start evaluation. Please try again.');
+      }
+    } catch (error) {
+      console.error('Start evaluation error:', error);
+      alert('Failed to start evaluation. Please try again.');
+    } finally {
+      setOnboardingLoading(false);
+    }
+  };
+
   return (
     <div className="connect-form">
       <Helmet>
@@ -913,6 +963,20 @@ const ConnectForm = () => {
 
       {renderConnectedStatus()}
       {renderVotingPleaPreference()}
+
+      {isAuthenticated && user && !user.onboarded && (
+        <div className="evaluation-start-card">
+          <p>{hasConnectedAccounts() ? 'All required accounts are connected.' : 'Connect required accounts to start evaluation.'}</p>
+          <button
+            className="connect-button start-evaluation-button"
+            onClick={handleStartEvaluation}
+            disabled={!hasConnectedAccounts() || onboardingLoading}
+          >
+            <span className="connect-icon">🚀</span>
+            {onboardingLoading ? 'Starting Evaluation...' : 'Start Evaluation'}
+          </button>
+        </div>
+      )}
 
       <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas).</p>
 

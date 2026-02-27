@@ -93,3 +93,5 @@
 5. Подключенная аналитика
 6. Раньше работало, сейчас хз
 https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
+
+- TODO@P3 On Staging: `GET https://meritocracy-staging.fly.dev:445/api/users/salary-stats 404 (Not Found)`

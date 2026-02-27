@@ -95,3 +95,5 @@
 https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 
 - TODO@P3 On Staging: `GET https://meritocracy-staging.fly.dev:445/api/users/salary-stats 404 (Not Found)`
+
+- TODO@P3 At /connect page display crypto addresses shortened and with Copy button.

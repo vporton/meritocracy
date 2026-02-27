@@ -6,6 +6,7 @@ primary_region = 'iad'
 [build]
 
 [env]
+  TEST_INSTANCE = 'true'
   API_URL = 'https://meritocracy-staging.fly.dev:445'
   BITBUCKET_CLIENT_ID = 'PFdcCeTaGXXY723bfBuTe3deVJDstaf2'
   BITCOIN_ENABLED = 'true'

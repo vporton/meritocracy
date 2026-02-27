@@ -21,6 +21,9 @@ import './App.css'
 const queryClient = new QueryClient()
 
 function App() {
+  const testVar = import.meta.env.VITE_TEST_INSTANCE;
+  console.log(`VITE_TEST_INSTANCE=${testVar}`); // TODO@P3: Remove this.
+  const isTest = testVar === 'true';
   return (
     <HelmetProvider>
       <WagmiProvider config={config}>
@@ -29,9 +32,7 @@ function App() {
             <BrowserRouter>
               <div className="App">
                 <header>
-                  {import.meta.env.VITE_TEST_INSTANCE === 'true' &&
-                    <p style={{color: 'red'}}>This is a test installation.</p>
-                  }
+                  {isTest && <p style={{color: 'red'}}>This is a test installation.</p>}
                   <Navigation />
                 </header>
                 <div className="page-container">

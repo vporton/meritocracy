@@ -51,11 +51,11 @@ function App() {
                       <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
                     </Routes>
                   </main>
-                  <SocialShareButtons
-                    title="Meritocracy DAO"
-                    text="Meritocracy funds scientists and open-source developers through transparent AI-assisted governance."
-                  />
                   <footer>
+                    <SocialShareButtons
+                      title="Meritocracy DAO"
+                      text="Meritocracy funds scientists and open-source developers through transparent AI-assisted governance."
+                    />
                     <p data-nosnippet="data-nosnippet">
                       <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
                       <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}

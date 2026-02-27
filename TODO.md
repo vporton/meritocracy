@@ -81,3 +81,15 @@
   "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
 
 - TODO@P3 Update World GDP regularly.
+
+- TODO@P2 ckBTC, ckETH, ckUSDT, ckUSDC, ckEURC.
+
+- ProductHunter:
+Для продакта нужно:
+1. Нормально выглядящий (адаптивный, как минимум), рабочий сайт (желательно готовый к приёму 500-10к трафика) - или хорошо показать функционал + список ожидания
+2. Медиаматериалы (точно скрины, желательно videothrough)
+3. Текстовое описание
+4. 90% нужно какое-то место сбора фидбека
+5. Подключенная аналитика
+6. Раньше работало, сейчас хз
+https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one

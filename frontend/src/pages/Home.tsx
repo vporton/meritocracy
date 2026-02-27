@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import api, { usersApi, SalaryStats } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
@@ -29,6 +29,7 @@ export default function Home() {
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
+  const showEvaluationCTA = !user?.onboarded
 
   const formatUsd = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
@@ -208,6 +209,13 @@ export default function Home() {
       <h1>Meritocracy: A DAO<sup><a href='https://science-dao.org/dao-status/'>*</a></sup> for Funding Scientists and Open-Source Developers</h1>
       <p>Meritocracy is a decentralized science (DeSci) DAO that distributes funding to scientists and open-source developers based on measurable contributions. The system uses transparent voting, reputation signals, and on-chain records to allocate resources without traditional grant committees.</p>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>
+      {showEvaluationCTA && (
+        <div className="card evaluation-callout">
+          <h2>Not yet evaluated? Get your share for free.</h2>
+          <p>Connect your accounts, let AI review your contributions, and receive a personalized economic share—at no cost.</p>
+          <Link to="/connect" className="evaluation-link">Start your free evaluation</Link>
+        </div>
+      )}
       <div className="card">
         <h2>🌍 World Economy</h2>
         {worldGdp ? (

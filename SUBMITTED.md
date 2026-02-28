@@ -162,7 +162,7 @@
     * Peters Family Foundation 
     * TODO
 * University of Liverpool https://liverpool.ac.uk - contacted on a partnership 7 Feb 2026 - TODO: My site is broken during submission.
-* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission)
+* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission) - again considered since 28 Feb 2026
 * OSV Fellowship https://osv.llc - applied 14 Feb 2026 - rejected 20 Feb 2026 "Due to a high volume of applications"
 * https://www.google.com/search?q=crypto+grants
   * https://blockchaingrants.org

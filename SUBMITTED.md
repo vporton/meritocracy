@@ -50,7 +50,7 @@
     * AI for social good awards https://research.google/programs-and-events/past-programs/ai-for-social-good-awards/ - not found how to contact.
     * IBM Watson AI XPRIZE https://www.xprize.org/ - emailed 22 Oct 2025
     * https://omidyar.com - We do not accept funding requests or proposals. - contacted 13 Jan 2026
-    * https://data.org - submitted 2 Oct 2025
+    * https://data.org - submitted 2 Oct 2025 - rejected 2 Mar 2026 "due to the high volume of submissions"
     * https://www2.fundsforngos.org - noted
   * The RAAIS Foundation Grants https://www.raais.org/grants - submitted 2 Oct 2025
   * Google.org Accelerator: Generative AI open call https://impactchallenge.withgoogle.com/genaiaccelerator/ - ended

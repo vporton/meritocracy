@@ -20,8 +20,6 @@
 
 - TODO@P3 Should the user be able to add more than one email?
 
-- TODO@P3 Allow to enter a blockchain address instead of using a wallet.
-
 - TODO@P3 Task Execution Logs are empty (CASCADE DELETE?)
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.

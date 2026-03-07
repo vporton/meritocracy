@@ -469,7 +469,7 @@ The CANCELLED status enables significant optimizations:
 
 ### Best Practices
 
-1. **Meet Evaluation Requirements**: To start evaluation, a user must have a connected Ethereum wallet, a verified email, and at least one connected social account (ORCID, GitHub, BitBucket, or GitLab).
+1. **Meet Evaluation Requirements**: To start evaluation, a user must have an Ethereum address, a verified email, and at least one connected social account (ORCID, GitHub, BitBucket, or GitLab).
 2. **Always check task status** before using results
 2. **Handle partial evaluations gracefully** in the UI
 3. **Log cancellation reasons** for debugging

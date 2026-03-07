@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import { validateNonEvmAddresses } from '../utils/addressValidation.js';
+import { isValidEthereumAddress, validateNonEvmAddresses } from '../utils/addressValidation.js';
 import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -262,6 +262,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     const {
       email,
       name,
+      ethereumAddress,
       solanaAddress,
       bitcoinAddress,
       bitcoinCashAddress,
@@ -273,6 +274,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     }: {
       email: string,
       name: string,
+      ethereumAddress: string,
       solanaAddress: string,
       bitcoinAddress: string,
       bitcoinCashAddress: string,
@@ -290,15 +292,21 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    const validationErrors = validateNonEvmAddresses({
-      solanaAddress,
-      bitcoinAddress,
-      bitcoinCashAddress,
-      polkadotAddress,
-      cosmosAddress,
-      stellarAddress,
-      icpAddress
-    });
+    const validationErrors: Record<string, string> = {
+      ...validateNonEvmAddresses({
+        solanaAddress,
+        bitcoinAddress,
+        bitcoinCashAddress,
+        polkadotAddress,
+        cosmosAddress,
+        stellarAddress,
+        icpAddress
+      })
+    };
+
+    if (ethereumAddress && ethereumAddress.trim() && !isValidEthereumAddress(ethereumAddress)) {
+      validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
+    }
 
     if (Object.keys(validationErrors).length > 0) {
       res.status(400).json({
@@ -318,6 +326,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       data: {
         ...(email && { email }),
         ...(name !== undefined && { name }),
+        ...(ethereumAddress !== undefined && { ethereumAddress: ethereumAddress?.trim() ? ethereumAddress.trim() : null }),
         ...(solanaAddress !== undefined && { solanaAddress: solanaAddress?.trim() ? solanaAddress.trim() : null }),
         ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
         ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress?.trim() ? bitcoinCashAddress.trim() : null }),

@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
+import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';
 import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
@@ -61,6 +62,9 @@ const ConnectForm = () => {
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
   const kycTokenParam = searchParams.get('kycToken') || '';
+  const [manualEthAddress, setManualEthAddress] = useState('');
+  const [manualEthStatus, setManualEthStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [manualEthError, setManualEthError] = useState<string | null>(null);
   const [nonEvmForm, setNonEvmForm] = useState({
     solanaAddress: '',
     bitcoinAddress: '',
@@ -138,6 +142,7 @@ const ConnectForm = () => {
 
   useEffect(() => {
     if (user) {
+      setManualEthAddress(user.ethereumAddress ?? '');
       setNonEvmForm({
         solanaAddress: user.solanaAddress ?? '',
         bitcoinAddress: user.bitcoinAddress ?? '',
@@ -148,6 +153,7 @@ const ConnectForm = () => {
         icpAddress: user.icpAddress ?? '',
       });
     } else {
+      setManualEthAddress('');
       setNonEvmForm({
         solanaAddress: '',
         bitcoinAddress: '',
@@ -158,6 +164,8 @@ const ConnectForm = () => {
         icpAddress: '',
       });
     }
+    setManualEthStatus('idle');
+    setManualEthError(null);
     setNonEvmErrors({});
   }, [user]);
 
@@ -703,6 +711,45 @@ const ConnectForm = () => {
     });
   };
 
+  const handleManualEthereumSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!user) {
+      setManualEthStatus('error');
+      setManualEthError('You must be logged in to save an Ethereum address');
+      return;
+    }
+
+    const trimmed = manualEthAddress.trim();
+    if (trimmed && !isAddress(trimmed)) {
+      setManualEthStatus('error');
+      setManualEthError('Invalid Ethereum address format.');
+      return;
+    }
+
+    try {
+      setManualEthStatus('saving');
+      setManualEthError(null);
+
+      await usersApi.update(user.id, {
+        ethereumAddress: trimmed || null
+      });
+
+      await refreshUser();
+
+      setManualEthStatus('success');
+      setTimeout(() => setManualEthStatus('idle'), 2000);
+    } catch (error: any) {
+      console.error('Manual Ethereum address update failed:', error);
+      const errorMessage = error?.response?.data?.details?.ethereumAddress
+        || error?.response?.data?.error
+        || error?.message
+        || 'Failed to save Ethereum address';
+      setManualEthStatus('error');
+      setManualEthError(errorMessage);
+    }
+  };
+
   const handleNonEvmSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -966,7 +1013,7 @@ const ConnectForm = () => {
 
       {isAuthenticated && user && !user.onboarded && (
         <div className="evaluation-start-card">
-          <p>{hasConnectedAccounts() ? 'All required accounts are connected.' : 'Connect required accounts to start evaluation.'}</p>
+          <p>{hasConnectedAccounts() ? 'All required accounts are connected.' : 'Add the required accounts and an Ethereum address to start evaluation.'}</p>
           <button
             className="connect-button start-evaluation-button"
             onClick={handleStartEvaluation}
@@ -978,7 +1025,7 @@ const ConnectForm = () => {
         </div>
       )}
 
-      <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) <strong>before</strong> the evaluation to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas). You also must connect your Ethereum account.</p>
+      <p>You need to connect all accounts with your products (like GitHub for your free software, ORCID for your scientific articles, etc.) <strong>before</strong> the evaluation to receive maximum salary at our site (and, yes, it is completely free, you even don't need to pay for blockchain gas). You also must provide your Ethereum address, either by connecting a wallet or entering it manually.</p>
 
       <p style={{ color: 'red' }}>Your data won't be deleted (even on request),
         because it may be necessary to sue against you, if you misbehave (hack, DoS, etc. us).</p>
@@ -1078,6 +1125,50 @@ const ConnectForm = () => {
         </button>
 
 
+      </div>
+
+      <div className="ethereum-manual">
+        <h3>Ethereum Address (Manual)</h3>
+        <p className="ethereum-manual-note">
+          Use this if you don’t want to connect a wallet. You can still connect a wallet later.
+        </p>
+        <form onSubmit={handleManualEthereumSubmit}>
+          <div className="form-group">
+            <label htmlFor="ethereumAddress">Ethereum Address</label>
+            <input
+              type="text"
+              id="ethereumAddress"
+              value={manualEthAddress}
+              onChange={(event) => {
+                setManualEthAddress(event.target.value);
+                if (manualEthStatus === 'error') {
+                  setManualEthStatus('idle');
+                  setManualEthError(null);
+                }
+              }}
+              placeholder="0x..."
+              disabled={!isAuthenticated || manualEthStatus === 'saving'}
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="submit-button"
+              disabled={!isAuthenticated || manualEthStatus === 'saving'}
+            >
+              {manualEthStatus === 'saving' ? 'Saving...' : 'Save Ethereum Address'}
+            </button>
+          </div>
+          {manualEthStatus === 'success' && (
+            <p className="success-message">Ethereum address saved successfully.</p>
+          )}
+          {manualEthStatus === 'error' && manualEthError && (
+            <p className="error-message">{manualEthError}</p>
+          )}
+          {!isAuthenticated && (
+            <p className="info-message">Log in or connect an account before saving an Ethereum address.</p>
+          )}
+        </form>
       </div>
 
       {/* Email Form - Moved here to be more visible */}

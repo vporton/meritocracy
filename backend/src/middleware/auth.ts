@@ -136,8 +136,8 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
     if (missingRequirements.length > 0) {
       res.status(403).json({
         error: 'Evaluation requirements not met',
-        message: `To start evaluation, you must connect: Ethereum, email (verified), and at least one of: ORCID, GitHub, Bitbucket, or GitLab. Missing: ${missingRequirements.join(', ')}`,
-        requiredConnections: ['Ethereum', 'Verified Email', 'ORCID/GitHub/Bitbucket/GitLab'],
+        message: `To start evaluation, you must provide an Ethereum address, a verified email, and at least one of: ORCID, GitHub, Bitbucket, or GitLab. Missing: ${missingRequirements.join(', ')}`,
+        requiredConnections: ['Ethereum Address', 'Verified Email', 'ORCID/GitHub/Bitbucket/GitLab'],
         currentConnections: {
           ethereumAddress: user.ethereumAddress,
           email: user.email,

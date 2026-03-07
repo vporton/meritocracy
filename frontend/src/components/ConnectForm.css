@@ -380,6 +380,28 @@
     animation: slideDown 0.3s ease-out;
   }
 
+  .ethereum-manual {
+    margin-top: 2rem;
+    padding: 1.75rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .ethereum-manual h3 {
+    margin: 0 0 0.5rem 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .ethereum-manual-note {
+    margin: 0 0 1rem 0;
+    color: #475569;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
   @keyframes slideDown {
     from {
       opacity: 0;
@@ -483,6 +505,26 @@
 
   .email-info strong {
     font-weight: 600;
+  }
+
+  .success-message {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 6px;
+    border-left: 4px solid #16a34a;
+    font-size: 0.9rem;
+  }
+
+  .info-message {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #e0f2fe;
+    color: #0c4a6e;
+    border-radius: 6px;
+    border-left: 4px solid #0ea5e9;
+    font-size: 0.9rem;
   }
 
   /* Responsive design */

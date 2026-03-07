@@ -316,17 +316,17 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       icpAddress,
       votingPleaUnsubscribed
     }: {
-      email: string,
-      name: string,
-      ethereumAddress: string,
-      solanaAddress: string,
-      bitcoinAddress: string,
-      bitcoinCashAddress: string,
-      polkadotAddress: string,
-      cosmosAddress: string,
-      stellarAddress: string,
-      icpAddress: string,
-      votingPleaUnsubscribed: string
+      email: string | null,
+      name: string | null,
+      ethereumAddress: string | null,
+      solanaAddress: string | null,
+      bitcoinAddress: string | null,
+      bitcoinCashAddress: string | null,
+      polkadotAddress: string | null,
+      cosmosAddress: string | null,
+      stellarAddress: string | null,
+      icpAddress: string | null,
+      votingPleaUnsubscribed: string | null
     } = req.body;
     const authenticatedUserId = (req as any).userId;
 
@@ -348,7 +348,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       })
     };
 
-    if (ethereumAddress && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
+    if (ethereumAddress !== null && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
       validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
     }
 
@@ -360,7 +360,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    let normalizedVotingPleaPreference: string | boolean = votingPleaUnsubscribed; // TODO@P3: Use one type, not two.
+    let normalizedVotingPleaPreference: string | boolean | null = votingPleaUnsubscribed; // TODO@P3: Use one type, not two.
     if (typeof normalizedVotingPleaPreference === 'string') {
       normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
     }
@@ -388,16 +388,16 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       await tx.user.update({
         where: { id: parseInt(id as string) },
         data: {
-          ...(name !== "" && { name }), // FIXME@P3
-          ...{ ethereumAddress: ethereumAddress !== "" ? String(ethereumAddress).trim() : null },
-          ...{ solanaAddress: solanaAddress !== "" ? String(solanaAddress).trim() : null },
-          ...{ bitcoinAddress: bitcoinAddress !== "" ? String(bitcoinAddress).trim() : null },
-          ...{ bitcoinCashAddress: bitcoinCashAddress !== "" ? String(bitcoinCashAddress).trim() : null },
-          ...{ polkadotAddress: polkadotAddress !== "" ? String(polkadotAddress).trim() : null },
-          ...{ cosmosAddress: cosmosAddress !== "" ? String(cosmosAddress).trim() : null },
-          ...{ stellarAddress: stellarAddress !== "" ? String(stellarAddress).trim() : null },
-          ...{ icpAddress: icpAddress !== "" ? String(icpAddress).trim() : null },
-          ...{ votingPleaUnsubscribed: normalizedVotingPleaPreference }
+          ...(name !== null && { name }), // FIXME@P3
+          ...{ ethereumAddress: ethereumAddress !== null ? String(ethereumAddress).trim() : null },
+          ...{ solanaAddress: solanaAddress !== null ? String(solanaAddress).trim() : null },
+          ...{ bitcoinAddress: bitcoinAddress !== null ? String(bitcoinAddress).trim() : null },
+          ...{ bitcoinCashAddress: bitcoinCashAddress !== null ? String(bitcoinCashAddress).trim() : null },
+          ...{ polkadotAddress: polkadotAddress !== null ? String(polkadotAddress).trim() : null },
+          ...{ cosmosAddress: cosmosAddress !== null ? String(cosmosAddress).trim() : null },
+          ...{ stellarAddress: stellarAddress !== null ? String(stellarAddress).trim() : null },
+          ...{ icpAddress: icpAddress !== null ? String(icpAddress).trim() : null },
+          ...(normalizedVotingPleaPreference !== null && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },
       });
 

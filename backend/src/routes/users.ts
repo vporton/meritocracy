@@ -389,14 +389,14 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         where: { id: parseInt(id as string) },
         data: {
           ...(name !== undefined && { name }),
-          ...(ethereumAddress !== undefined && { ethereumAddress: String(ethereumAddress).trim() }),
-          ...(solanaAddress !== undefined && { solanaAddress: String(solanaAddress).trim() }),
-          ...(bitcoinAddress !== undefined && { bitcoinAddress: String(bitcoinAddress).trim() }),
-          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: String(bitcoinCashAddress).trim() }),
-          ...(polkadotAddress !== undefined && { polkadotAddress: String(polkadotAddress).trim() }),
-          ...(cosmosAddress !== undefined && { cosmosAddress: String(cosmosAddress).trim() }),
-          ...(stellarAddress !== undefined && { stellarAddress: String(stellarAddress).trim() }),
-          ...(icpAddress !== undefined && { icpAddress: String(icpAddress).trim() }),
+          ...(ethereumAddress !== undefined && { ethereumAddress: ethereumAddress ? String(ethereumAddress).trim() : undefined }),
+          ...(solanaAddress !== undefined && { solanaAddress: solanaAddress ? String(solanaAddress).trim() : undefined }),
+          ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : undefined }),
+          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : undefined }),
+          ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress ? String(polkadotAddress).trim() : undefined }),
+          ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : undefined }),
+          ...(stellarAddress !== undefined && { stellarAddress: stellarAddress ? String(stellarAddress).trim() : undefined }),
+          ...(icpAddress !== undefined && { icpAddress: icpAddress ? String(icpAddress).trim() : undefined }),
           ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },
       });

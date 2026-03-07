@@ -316,9 +316,10 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       icpAddress,
       votingPleaUnsubscribed
     }: {
-      email: string | null,
-      name: string | null,
-      ethereumAddress: string | null,
+      // TODO@P3: This typing is a bit messy - we should standardize on one type for "not provided" vs "explicitly null" across the board.
+      email: string | undefined,
+      name: string | undefined,
+      ethereumAddress: string | undefined,
       solanaAddress: string | null,
       bitcoinAddress: string | null,
       bitcoinCashAddress: string | null,
@@ -348,7 +349,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       })
     };
 
-    if (ethereumAddress !== null && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
+    if (ethereumAddress !== undefined && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
       validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
     }
 
@@ -389,7 +390,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         where: { id: parseInt(id as string) },
         data: {
           ...(name !== null && { name }), // FIXME@P3
-          ...{ ethereumAddress: ethereumAddress !== null ? String(ethereumAddress).trim() : null },
+          ...{ ethereumAddress: ethereumAddress !== undefined ? String(ethereumAddress).trim() : undefined },
           ...{ solanaAddress: solanaAddress !== null ? String(solanaAddress).trim() : null },
           ...{ bitcoinAddress: bitcoinAddress !== null ? String(bitcoinAddress).trim() : null },
           ...{ bitcoinCashAddress: bitcoinCashAddress !== null ? String(bitcoinCashAddress).trim() : null },

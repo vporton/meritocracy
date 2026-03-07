@@ -173,3 +173,4 @@
     * TODO
   * TODO
 * THE KH IMPACT FUND - mailed 27 Feb 2026
+* Morgan Stanley Inclusive & Sustainable Ventures (MSISV) - submitted 7 Mar 2026

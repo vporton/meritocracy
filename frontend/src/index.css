@@ -186,6 +186,9 @@ button:focus-visible {
   border-radius: 4px;
   text-decoration: none;
   transition: background-color 0.25s;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .nav-link:hover,
@@ -203,6 +206,8 @@ button:focus-visible {
 .nav-user {
   color: #fff;
   font-weight: 500;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .nav-logout {
@@ -362,6 +367,7 @@ button:focus-visible {
     flex-direction: column;
     align-items: stretch;
     padding: 0.5rem 1rem;
+    overflow-x: clip;
   }
 
   .nav-header {
@@ -383,6 +389,7 @@ button:focus-visible {
     display: none;
     flex-direction: column;
     width: 100%;
+    min-width: 0;
     gap: 1rem;
     padding-top: 1rem;
     border-top: 1px solid #333;
@@ -394,15 +401,31 @@ button:focus-visible {
   }
   
   .nav-left, .nav-right {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
     gap: 0.5rem;
+    min-width: 0;
   }
 
   .nav-auth {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .nav-link,
+  .nav-logout,
+  .nav-user,
+  .nav-loading {
+    width: 100%;
+    text-align: center;
+  }
+
+  .nav-user {
+    white-space: normal;
   }
 
   /* Leaderboard */

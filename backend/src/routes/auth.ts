@@ -26,7 +26,7 @@ function verifyEthereumSignature(address: string, message: string, signature: st
     const recoveredAddress = ethers.verifyMessage(message, signature);
 
     // Normalize addresses to lowercase for comparison
-    const normalizedAddress = address.toLowerCase();
+    const normalizedAddress = String(address).toLowerCase();
     const normalizedRecovered = recoveredAddress.toLowerCase();
 
     return normalizedAddress === normalizedRecovered;
@@ -845,11 +845,11 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
     console.log(`=== OAuth Callback for ${provider} ===`);
     console.log('Request details:', {
       provider,
-      code: code ? `${code.substring(0, 10)}...` : 'null',
-      codeLength: code ? code.length : 0,
+      code: code ? `${String(code).substring(0, 10)}...` : 'null',
+      codeLength: code ? String(code).length : 0,
       fullCode: code, // For debugging - remove in production
-      state: state ? `${state.substring(0, 10)}...` : 'null',
-      stateLength: state ? state.length : 0,
+      state: state ? `${String(state).substring(0, 10)}...` : 'null',
+      stateLength: state ? String(state).length : 0,
       bodyKeys: req.body && typeof req.body === 'object' ? Object.keys(req.body) : [],
       headers: {
         'content-type': req.headers['content-type'],
@@ -1013,8 +1013,8 @@ router.get('/:provider/callback', async (req, res): Promise<void> => {
 async function handleGitHubOAuth(code: string): Promise<UserData> {
   console.log('=== GitHub OAuth Handler ===');
   console.log('Code received:', {
-    code: code ? `${code.substring(0, 10)}...` : 'null',
-    codeLength: code ? code.length : 0,
+    code: code ? `${String(code).substring(0, 10)}...` : 'null',
+    codeLength: code ? String(code).length : 0,
     fullCode: code // Log full code for debugging
   });
 
@@ -1029,7 +1029,7 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
     url: 'https://github.com/login/oauth/access_token',
     client_id: requestBody.client_id,
     redirect_uri: requestBody.redirect_uri,
-    code_preview: code ? `${code.substring(0, 10)}...` : 'null',
+    code_preview: code ? `${String(code).substring(0, 10)}...` : 'null',
     frontend_url: process.env.FRONTEND_URL
   });
 
@@ -1115,8 +1115,8 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
 async function handleORCIDOAuth(code: string): Promise<UserData> {
   console.log('=== ORCID OAuth Handler ===');
   console.log('Code received:', {
-    code: code ? `${code.substring(0, 10)}...` : 'null',
-    codeLength: code ? code.length : 0,
+    code: code ? `${String(code).substring(0, 10)}...` : 'null',
+    codeLength: code ? String(code).length : 0,
     fullCode: code // Log full code for debugging
   });
 
@@ -1136,7 +1136,7 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
     url: tokenUrl,
     client_id: requestBody.client_id,
     redirect_uri: requestBody.redirect_uri,
-    code_preview: code ? `${code.substring(0, 10)}...` : 'null',
+    code_preview: code ? `${String(code).substring(0, 10)}...` : 'null',
     orcid_domain: orcidDomain
   });
 
@@ -1276,8 +1276,8 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
 async function handleGitLabOAuth(code: string): Promise<UserData> {
   console.log('=== GitLab OAuth Handler ===');
   console.log('Code received:', {
-    code: code ? `${code.substring(0, 10)}...` : 'null',
-    codeLength: code ? code.length : 0,
+    code: code ? `${String(code).substring(0, 10)}...` : 'null',
+    codeLength: code ? String(code).length : 0,
     fullCode: code // Log full code for debugging
   });
 
@@ -1293,7 +1293,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     url: 'https://gitlab.com/oauth/token',
     client_id: requestBody.client_id,
     redirect_uri: requestBody.redirect_uri,
-    code_preview: code ? `${code.substring(0, 10)}...` : 'null'
+    code_preview: code ? `${String(code).substring(0, 10)}...` : 'null'
   });
 
   // Exchange code for access token
@@ -1789,7 +1789,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
 
       // Store rejection details if available
       let rejectionReason = reason;
-      if (decision && decision.reviews && decision.reviews.length > 0) {
+      if (decision && decision.reviews && String(decision.reviews).length > 0) {
         const review = decision.reviews[0];
         rejectionReason = review.comment || reason;
         if (isVotingFlow) {

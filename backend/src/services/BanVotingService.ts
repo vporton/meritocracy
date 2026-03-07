@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import emailService from './EmailService.js';
 import { GlobalDataService } from './GlobalDataService.js';
+import { getUserEmailAddresses, obfuscateEmailsInValue } from './userEmailUtils.js';
 
 interface AssessmentWorthValue {
   key: 'overall' | 'scientist' | 'fossDev' | 'scienceMarketer';
@@ -258,6 +259,7 @@ export class BanVotingService {
     const pageSize = Math.max(1, options.pageSize ?? 3);
     const requestedPage = Math.max(1, options.page ?? 1);
     const worldGdp = await GlobalDataService.getWorldGdp();
+    const userEmails = await getUserEmailAddresses(prisma, userId);
 
     // 1. Find all WorthAssessmentRunner tasks for this user
     const tasks = await prisma.task.findMany({
@@ -392,8 +394,8 @@ export class BanVotingService {
           });
 
           results.push({
-            text: rationale || 'No rationale available in stored response.',
-            sources: [...new Set(sources)],
+            text: obfuscateEmailsInValue(rationale || 'No rationale available in stored response.', userEmails),
+            sources: obfuscateEmailsInValue([...new Set(sources)], userEmails),
             timestamp: task.completedAt || mapping.createdAt,
             worthValues,
             isError: task.status === 'CANCELLED'

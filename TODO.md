@@ -18,8 +18,6 @@
 - TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"
   to "Disconnect Email" state through browser inter-windows communication.
 
-- TODO@P3 Should the user be able to add more than one email?
-
 - TODO@P3 Task Execution Logs are empty (CASCADE DELETE?)
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
@@ -27,8 +25,6 @@
 - TODO@P3 Donation to the system through MetaMask et al.
 
 - Make our AI to summarize each time when it asserts worth and save work and/or go further building on it the next time.
-
-- TODO@P2 User email should be passed to AI. (Remove it from logs!)
 
 - TODO@P3 Option to donate back to AIIM automatically.
 

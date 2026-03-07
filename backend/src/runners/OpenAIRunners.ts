@@ -8,6 +8,7 @@ import { ReasoningEffort } from 'openai/resources';
 import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 import { isConfigValueTrue } from '../services/utils.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
+import { extractVerifiedEmails } from '../services/userEmailUtils.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -67,9 +68,9 @@ function generateUserPrompt(userData: any): string {
     accountInfo.push(`Name: ${userData.name}`);
   }
 
-  // Add email if available and verified
-  if (userData.email && userData.emailVerified) {
-    accountInfo.push(`Email: ${userData.email}`);
+  const verifiedEmails = extractVerifiedEmails(userData);
+  if (verifiedEmails.length > 0) {
+    accountInfo.push(`Emails: ${verifiedEmails.join(', ')}`);
   }
 
   if (accountInfo.length === 0) {

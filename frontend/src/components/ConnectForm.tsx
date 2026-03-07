@@ -52,7 +52,7 @@ interface MessageEvent {
 }
 
 const ConnectForm = () => {
-  const { login, registerEmail, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
+  const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const navigate = useNavigate();
   const { connect, connectors } = useConnect();
   const { address, isConnected, connector } = useAccount();
@@ -79,6 +79,13 @@ const ConnectForm = () => {
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const userEmails = user?.emails?.length
+    ? user.emails
+    : user?.email
+      ? [{ email: user.email, verified: !!user.emailVerified, createdAt: user.createdAt, updatedAt: user.updatedAt }]
+      : [];
+  const verifiedEmails = userEmails.filter(email => email.verified);
+  const pendingEmails = userEmails.filter(email => !email.verified);
 
   // Handle Ethereum connection flow when address becomes available
   useEffect(() => {
@@ -197,9 +204,11 @@ const ConnectForm = () => {
       if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
       if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
       if (user.gitlabHandle) connectedProviders.push({ name: 'GitLab', value: user.gitlabHandle });
-      if (user.email) {
-        const emailStatus = user.emailVerified ? '✓' : '⚠️';
-        connectedProviders.push({ name: 'Email', value: `${user.email} ${emailStatus}` });
+      if (userEmails.length > 0) {
+        connectedProviders.push({
+          name: 'Emails',
+          value: userEmails.map(email => `${email.email} ${email.verified ? '✓' : '⚠️'}`).join(', ')
+        });
       }
       if (user.kycStatus === 'APPROVED' || user.kycStatus === 'PENDING') {
         connectedProviders.push({ name: 'Receiver KYC', value: `APPROVED ✓` });
@@ -276,33 +285,21 @@ const ConnectForm = () => {
   };
 
   // Helper function to disconnect a provider
-  const handleDisconnect = async (provider: string) => {
+  const handleDisconnect = async (provider: string, payload?: Record<string, unknown>) => {
     try {
       setConnectStatus(prev => ({ ...prev, [provider]: 'disconnecting' }));
 
-      // Call backend to disconnect/unlink the provider
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/disconnect/${provider}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        await response.json();
-        // Update the user context with the updated user data
+      const response = await authApi.disconnectProvider(provider, payload);
+      if (response.data.user) {
         await refreshUser();
         setConnectStatus(prev => {
           const { [provider]: _, ...rest } = prev;
           return rest;
         }); // Clear the provider's status
-      } else {
-        throw new Error('Failed to disconnect provider');
       }
     } catch (error: any) {
       console.error('Disconnect error:', error);
-      setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.message }));
+      setConnectStatus(prev => ({ ...prev, [provider]: 'error', error: error.response?.data?.error || error.message }));
     }
   };
 
@@ -640,11 +637,6 @@ const ConnectForm = () => {
 
   // Email connection handler
   const handleEmailConnect = async () => {
-    // Check if already connected and user wants to disconnect
-    if (isProviderConnected('email')) {
-      return handleDisconnect('email');
-    }
-
     if (!showEmailForm) {
       setShowEmailForm(true);
       return;
@@ -695,6 +687,29 @@ const ConnectForm = () => {
       }
     } catch (error: any) {
       console.error('Email connection error:', error);
+      setConnectStatus(prev => ({ ...prev, email: 'error', error: error.message }));
+    }
+  };
+
+  const handleEmailRemove = async (email: string) => {
+    await handleDisconnect('email', { email });
+  };
+
+  const handleEmailResend = async (email: string) => {
+    try {
+      setConnectStatus(prev => ({ ...prev, email: 'connecting' }));
+      const result = await resendVerification(email);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to resend verification email');
+      }
+      setConnectStatus(prev => ({ ...prev, email: 'verification-sent' }));
+      setTimeout(() => {
+        setConnectStatus(prev => {
+          const { email, ...rest } = prev;
+          return rest;
+        });
+      }, 5000);
+    } catch (error: any) {
       setConnectStatus(prev => ({ ...prev, email: 'error', error: error.message }));
     }
   };
@@ -822,9 +837,12 @@ const ConnectForm = () => {
       github: 'githubHandle',
       bitbucket: 'bitbucketHandle',
       gitlab: 'gitlabHandle',
-      email: 'email',
       votingKyc: 'kycVotingStatus'
     };
+
+    if (provider === 'email') {
+      return userEmails.length > 0;
+    }
 
     const field = providerFields[provider];
     if (provider === 'votingKyc') {
@@ -856,11 +874,8 @@ const ConnectForm = () => {
     const displayName = providerDisplayNames[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
 
     // Special handling for email: check verification status
-    if (provider === 'email' && isConnected && !status) {
-      if (user?.email && !user?.emailVerified) {
-        return 'Waiting for email';
-      }
-      return `Disconnect ${displayName}`;
+    if (provider === 'email' && !status) {
+      return userEmails.length > 0 ? 'Add Email' : 'Connect with Email';
     }
 
     // Special handling for KYC: show status -> REMOVED
@@ -930,10 +945,10 @@ const ConnectForm = () => {
     if (status === 'error') className += ' error';
 
     // Special handling for email verification status
-    if (provider === 'email' && isConnected && !status) {
-      if (user?.email && !user?.emailVerified) {
+    if (provider === 'email' && !status) {
+      if (pendingEmails.length > 0) {
         className += ' waiting-for-verification';
-      } else {
+      } else if (userEmails.length > 0) {
         className += ' connected';
       }
     } else if (provider === 'votingKyc' && !status) {
@@ -955,7 +970,7 @@ const ConnectForm = () => {
     if (!user) return false;
 
     const hasSocial = !!(user.orcidId || user.githubHandle || user.bitbucketHandle || user.gitlabHandle);
-    const hasEmail = !!(user.email && user.emailVerified);
+    const hasEmail = verifiedEmails.length > 0;
     const hasEth = !!user.ethereumAddress;
 
     if (import.meta.env.DEV) {
@@ -980,8 +995,9 @@ const ConnectForm = () => {
           bitbucketHandle: user.bitbucketHandle,
           gitlabHandle: user.gitlabHandle,
           ethereumAddress: user.ethereumAddress,
-          email: user.email,
-          emailVerified: user.emailVerified,
+          email: verifiedEmails[0]?.email,
+          emailVerified: verifiedEmails.length > 0,
+          emails: verifiedEmails,
         }
       });
 
@@ -1126,6 +1142,29 @@ const ConnectForm = () => {
 
 
       </div>
+
+      {userEmails.length > 0 && (
+        <div className="email-form">
+          <h3>Connected Emails</h3>
+          <div className="connected-providers">
+            <ul>
+              {userEmails.map(email => (
+                <li key={email.email}>
+                  <strong>{email.email}</strong> {email.verified ? '✓ verified' : '⚠️ pending'}
+                  {!email.verified && (
+                    <button type="button" className="cancel-button" onClick={() => handleEmailResend(email.email)}>
+                      Resend verification
+                    </button>
+                  )}
+                  <button type="button" className="cancel-button" onClick={() => handleEmailRemove(email.email)}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <div className="ethereum-manual">
         <h3>Ethereum Address (Manual)</h3>

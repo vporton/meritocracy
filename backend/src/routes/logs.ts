@@ -2,9 +2,22 @@ import express from 'express';
 import { DBLogsService, LogsFilter } from '../services/DBLogsService.js';
 import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
+import { getUserEmailAddresses, obfuscateEmailsInValue } from '../services/userEmailUtils.js';
 
 const router = express.Router();
 const dbLogsService = new DBLogsService(prisma);
+
+async function obfuscateUserEmailsInLogs(logs: any[], userId: number) {
+  const userEmails = await getUserEmailAddresses(prisma, userId);
+
+  return logs.map(log => ({
+    ...log,
+    details: obfuscateEmailsInValue(log.details, userEmails),
+    request: log.request ? obfuscateEmailsInValue(log.request, userEmails) : log.request,
+    response: log.response ? obfuscateEmailsInValue(log.response, userEmails) : log.response,
+    error: log.error ? obfuscateEmailsInValue(log.error, userEmails) : log.error
+  }));
+}
 
 // Remove duplicate auth middleware - now imported from shared module
 
@@ -135,7 +148,8 @@ router.get('/my', requireAuth, async (req, res): Promise<void> => {
       offset: offset ? parseInt(offset as string) : undefined
     };
 
-    const logs = await dbLogsService.getUserLogs(userId, filter);
+    const rawLogs = await dbLogsService.getUserLogs(userId, filter);
+    const logs = await obfuscateUserEmailsInLogs(rawLogs, userId);
 
     res.json({
       success: true,
@@ -191,7 +205,8 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
       offset: offset ? parseInt(offset as string) : undefined
     };
 
-    const logs = await dbLogsService.getUserLogs(requestedUserId, filter);
+    const rawLogs = await dbLogsService.getUserLogs(requestedUserId, filter);
+    const logs = await obfuscateUserEmailsInLogs(rawLogs, requestedUserId);
 
     res.json({
       success: true,

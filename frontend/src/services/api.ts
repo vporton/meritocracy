@@ -22,6 +22,12 @@ interface User {
   id: number;
   email?: string;
   emailVerified?: boolean;
+  emails?: Array<{
+    email: string;
+    verified: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
   name?: string;
   ethereumAddress?: string;
   solanaAddress?: string | null;
@@ -224,8 +230,10 @@ export const authApi = {
     api.post('/api/auth/register/email', { email, name }),
   verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User }>> =>
     api.post('/api/auth/verify/email', { token }),
-  resendVerification: (): Promise<AxiosResponse<{ message: string }>> =>
-    api.post('/api/auth/resend-verification'),
+  resendVerification: (email?: string): Promise<AxiosResponse<{ message: string }>> =>
+    api.post('/api/auth/resend-verification', email ? { email } : {}),
+  disconnectProvider: (provider: string, payload?: Record<string, unknown>): Promise<AxiosResponse<{ message: string; user: User }>> =>
+    api.post(`/api/auth/disconnect/${provider}`, payload || {}),
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),

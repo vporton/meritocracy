@@ -3,10 +3,12 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { ethers } from 'ethers';
+import { Prisma } from '@prisma/client';
 import { getCurrentUserFromToken } from '../middleware/auth.js';
 import EmailService from '../services/EmailService.js';
 import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
 import { prisma } from '../lib/prisma.js';
+import { normalizeEmail, removeAllUserEmails, syncPrimaryEmail } from '../services/userEmailUtils.js';
 
 const router = express.Router();
 
@@ -45,6 +47,22 @@ interface UserData {
   issuingState?: string;
   personalNumber?: string;
   residenceCountry?: string;
+}
+
+const userWithEmailsInclude: Prisma.UserInclude = {
+  emails: {
+    orderBy: [
+      { verified: 'desc' },
+      { createdAt: 'asc' }
+    ]
+  }
+};
+
+async function getUserWithEmails(userId: number) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    include: userWithEmailsInclude
+  });
 }
 
 // Helper function to find or create user based on provided data.
@@ -105,7 +123,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
           issuingState: issuingState || currentUser.issuingState,
           personalNumber: personalNumber || currentUser.personalNumber,
           residenceCountry: residenceCountry || currentUser.residenceCountry,
-        }
+        },
+        include: userWithEmailsInclude
       });
     } else {
       // No current user, create new one
@@ -122,7 +141,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
       if (residenceCountry) createData.residenceCountry = residenceCountry;
 
       return await prisma.user.create({
-        data: createData
+        data: createData,
+        include: userWithEmailsInclude
       });
     }
   } else {
@@ -233,6 +253,11 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
           data: { userId: currentUserId }
         });
 
+        await tx.userEmail.updateMany({
+          where: { userId: existingUser.id },
+          data: { userId: currentUserId }
+        });
+
         // Transfer KYC tokens
         await tx.kycToken.updateMany({
           where: { userId: existingUser.id },
@@ -267,7 +292,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
         // Update the current user with merged data
         return await tx.user.update({
           where: { id: currentUserId },
-          data: updateData
+          data: updateData,
+          include: userWithEmailsInclude
         });
       });
     } else {
@@ -286,7 +312,8 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
 
       return await prisma.user.update({
         where: { id: existingUser.id },
-        data: updateData
+        data: updateData,
+        include: userWithEmailsInclude
       });
     }
   }
@@ -491,9 +518,10 @@ router.post('/login/gitlab', async (req, res): Promise<void> => {
 // Email registration endpoint
 router.post('/register/email', async (req, res): Promise<void> => {
   try {
-    const { email, name } = req.body;
+    const normalizedEmail = normalizeEmail(req.body.email || '');
+    const { name } = req.body;
 
-    if (!email) {
+    if (!normalizedEmail) {
       res.status(400).json({ error: 'Email is required' });
       return;
     }
@@ -505,7 +533,7 @@ router.post('/register/email', async (req, res): Promise<void> => {
       ? /^[^\s@]+@(localhost|127\.0\.0\.1|[\w.-]+\.[\w.-]+)$/
       : /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       res.status(400).json({ error: 'Invalid email format' });
       return;
     }
@@ -514,53 +542,93 @@ router.post('/register/email', async (req, res): Promise<void> => {
     const currentUserId = await getCurrentUserFromToken(req);
 
     // Check if email is already taken by another user (only if verified)
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+    const existingUserEmail = await prisma.userEmail.findUnique({
+      where: { email: normalizedEmail },
+      include: { user: true }
     });
 
-    if (existingUser && existingUser.emailVerified && (!currentUserId || existingUser.id !== currentUserId)) {
+    if (existingUserEmail && existingUserEmail.verified && (!currentUserId || existingUserEmail.userId !== currentUserId)) {
       res.status(400).json({ error: 'Email is already registered and verified' });
       return;
     }
 
-    let user;
-    if (currentUserId && existingUser && existingUser.id === currentUserId) {
-      // User is already authenticated and this is their email, just send verification
-      user = existingUser;
-    } else if (currentUserId) {
-      // User is authenticated and wants to add this email to their account
-      user = await prisma.user.update({
-        where: { id: currentUserId },
-        data: { email, name: name || undefined }
-      });
-    } else {
-      // New user registration
-      user = await findOrCreateUser({
-        email,
-        name
-      }, null);
-    }
-
-    // Generate verification token and send email
-    const verificationToken = EmailService.generateVerificationToken();
-    console.log('About to send verification email for:', email, 'user:', user.id, 'token:', verificationToken);
-    const emailSent = await EmailService.sendVerificationEmail(email, verificationToken, user.id);
-
-    if (!emailSent) {
-      res.status(500).json({ error: 'Failed to send verification email' });
+    if (existingUserEmail && currentUserId && existingUserEmail.userId !== currentUserId) {
+      res.status(400).json({ error: 'Email is already attached to another account' });
       return;
     }
 
-    // If user is already authenticated, return success immediately
+    let user;
+    let requiresVerification = true;
+
     if (currentUserId) {
-      const responseMessage = 'Verification email sent successfully';
+      user = await prisma.$transaction(async (tx) => {
+        const existingForCurrentUser = await tx.userEmail.findUnique({
+          where: { email: normalizedEmail }
+        });
+
+        if (existingForCurrentUser?.verified) {
+          requiresVerification = false;
+        } else if (!existingForCurrentUser) {
+          await tx.userEmail.create({
+            data: {
+              userId: currentUserId,
+              email: normalizedEmail
+            }
+          });
+        }
+
+        await tx.user.update({
+          where: { id: currentUserId },
+          data: { name: name || undefined }
+        });
+
+        return syncPrimaryEmail(tx, currentUserId);
+      });
+    } else {
+      if (existingUserEmail) {
+        user = await syncPrimaryEmail(prisma, existingUserEmail.userId);
+      } else {
+        user = await prisma.$transaction(async (tx) => {
+          const createdUser = await tx.user.create({
+            data: {
+              name: name || null,
+              email: normalizedEmail,
+              emailVerified: false
+            }
+          });
+
+          await tx.userEmail.create({
+            data: {
+              userId: createdUser.id,
+              email: normalizedEmail
+            }
+          });
+
+          return syncPrimaryEmail(tx, createdUser.id);
+        });
+      }
+    }
+
+    if (requiresVerification) {
+      const verificationToken = EmailService.generateVerificationToken();
+      console.log('About to send verification email for:', normalizedEmail, 'user:', user.id, 'token:', verificationToken);
+      const emailSent = await EmailService.sendVerificationEmail(normalizedEmail, verificationToken, user.id);
+
+      if (!emailSent) {
+        res.status(500).json({ error: 'Failed to send verification email' });
+        return;
+      }
+    }
+
+    if (currentUserId) {
+      const responseMessage = requiresVerification
+        ? 'Verification email sent successfully'
+        : 'Email is already verified';
 
       res.json({
         message: responseMessage,
-        user: {
-          ...user,
-          emailVerified: false // Will be true after verification
-        }
+        user,
+        requiresVerification
       });
       return;
     }
@@ -572,15 +640,12 @@ router.post('/register/email', async (req, res): Promise<void> => {
 
     res.json({
       message: responseMessage,
-      user: {
-        ...user,
-        emailVerified: false
-      },
+      user,
       session: {
         token: session.token,
         expiresAt: session.expiresAt
       },
-      requiresVerification: true
+      requiresVerification
     });
   } catch (error: any) {
     console.error('Email registration error:', error);
@@ -606,9 +671,7 @@ router.post('/verify/email', async (req, res): Promise<void> => {
     }
 
     // Get the updated user data
-    const user = await prisma.user.findUnique({
-      where: { id: result.userId! }
-    });
+    const user = await getUserWithEmails(result.userId!);
 
     res.json({
       message: 'Email verified successfully',
@@ -623,6 +686,7 @@ router.post('/verify/email', async (req, res): Promise<void> => {
 // Resend verification email endpoint
 router.post('/resend-verification', async (req, res): Promise<void> => {
   try {
+    const requestedEmail = req.body?.email ? normalizeEmail(req.body.email) : null;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({ error: 'No token provided' });
@@ -634,7 +698,11 @@ router.post('/resend-verification', async (req, res): Promise<void> => {
     // Find session and get user
     const session = await prisma.session.findUnique({
       where: { token },
-      include: { user: true }
+      include: {
+        user: {
+          include: userWithEmailsInclude
+        }
+      }
     });
 
     if (!session || session.expiresAt < new Date()) {
@@ -644,19 +712,19 @@ router.post('/resend-verification', async (req, res): Promise<void> => {
 
     const user = session.user;
 
-    if (!user.email) {
-      res.status(400).json({ error: 'No email address associated with this account' });
-      return;
-    }
+    const pendingEmails = user.emails.filter(email => !email.verified);
+    const emailToResend = requestedEmail
+      ? pendingEmails.find(email => email.email === requestedEmail)
+      : pendingEmails[0];
 
-    if (user.emailVerified) {
-      res.status(400).json({ error: 'Email is already verified' });
+    if (!emailToResend) {
+      res.status(400).json({ error: 'No email address associated with this account' });
       return;
     }
 
     // Generate new verification token and send email
     const verificationToken = EmailService.generateVerificationToken();
-    const emailSent = await EmailService.sendVerificationEmail(user.email, verificationToken, user.id);
+    const emailSent = await EmailService.sendVerificationEmail(emailToResend.email, verificationToken, user.id);
 
     if (!emailSent) {
       res.status(500).json({ error: 'Failed to send verification email' });
@@ -709,7 +777,11 @@ router.get('/me', async (req, res): Promise<void> => {
     // Find session
     const session = await prisma.session.findUnique({
       where: { token },
-      include: { user: true }
+      include: {
+        user: {
+          include: userWithEmailsInclude
+        }
+      }
     });
 
     if (!session || session.expiresAt < new Date()) {
@@ -1312,6 +1384,7 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
 // Disconnect provider endpoint
 router.post('/disconnect/:provider', async (req, res): Promise<void> => {
   try {
+    const requestedEmail = req.body?.email ? normalizeEmail(req.body.email) : null;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({ error: 'No token provided' });
@@ -1324,7 +1397,11 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
     // Find session and get user
     const session = await prisma.session.findUnique({
       where: { token },
-      include: { user: true }
+      include: {
+        user: {
+          include: userWithEmailsInclude
+        }
+      }
     });
 
     if (!session || session.expiresAt < new Date()) {
@@ -1394,14 +1471,50 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
       return;
     }
 
+    if (provider === 'email') {
+      if (user.emails.length === 0 && !user.email) {
+        res.status(400).json({ error: 'Provider not connected' });
+        return;
+      }
+
+      const emailToRemove = requestedEmail || user.emails[0]?.email || user.email;
+      if (!emailToRemove) {
+        res.status(400).json({ error: 'Email is required' });
+        return;
+      }
+
+      const updatedUser = await prisma.$transaction(async (tx) => {
+        await tx.emailVerificationToken.deleteMany({
+          where: {
+            userId: user.id,
+            email: emailToRemove
+          }
+        });
+
+        await tx.userEmail.deleteMany({
+          where: {
+            userId: user.id,
+            email: emailToRemove
+          }
+        });
+
+        return syncPrimaryEmail(tx, user.id);
+      });
+
+      res.json({
+        message: 'email disconnected successfully',
+        user: updatedUser
+      });
+      return;
+    }
+
     // Determine which field to clear based on provider
     const providerFields: Record<string, string> = {
       ethereum: 'ethereumAddress',
       orcid: 'orcidId',
       github: 'githubHandle',
       bitbucket: 'bitbucketHandle',
-      gitlab: 'gitlabHandle',
-      email: 'email'
+      gitlab: 'gitlabHandle'
     };
 
     const fieldToClear = providerFields[provider];
@@ -1421,14 +1534,10 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
       [fieldToClear]: null
     };
 
-    // If disconnecting email, also clear emailVerified
-    if (provider === 'email') {
-      updateData.emailVerified = false;
-    }
-
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: updateData
+      data: updateData,
+      include: userWithEmailsInclude
     });
 
     res.json({

@@ -9,7 +9,7 @@ interface AuthContextType {
   login: (authData: AuthData, provider: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   registerEmail: (email: string, name?: string) => Promise<{ success: boolean; error?: string; user?: User; requiresVerification?: boolean; message?: string }>;
   verifyEmail: (token: string) => Promise<{ success: boolean; error?: string; user?: User }>;
-  resendVerification: () => Promise<{ success: boolean; error?: string }>;
+  resendVerification: (email?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | undefined>;
   updateAuthData: (userData: User, sessionToken: string) => void;
@@ -185,11 +185,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, []);
 
-  const resendVerification = useCallback(async () => {
+  const resendVerification = useCallback(async (email?: string) => {
     try {
       setIsLoading(true);
 
-      await authApi.resendVerification();
+      await authApi.resendVerification(email);
 
       return {
         success: true

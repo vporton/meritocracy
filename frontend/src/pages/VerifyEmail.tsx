@@ -15,6 +15,7 @@ const VerifyEmail = () => {
   const token = searchParams.get('token');
 
   const verificationStarted = useRef(false);
+  const pendingEmail = user?.emails?.find(email => !email.verified)?.email;
 
   useEffect(() => {
     if (!token || verificationStarted.current) {
@@ -55,7 +56,7 @@ const VerifyEmail = () => {
   const handleResendVerification = async () => {
     try {
       setStatus('resending');
-      const result = await resendVerification();
+      const result = await resendVerification(pendingEmail);
 
       if (result.success) {
         setMessage('Verification email sent successfully! Please check your inbox.');
@@ -109,7 +110,7 @@ const VerifyEmail = () => {
             <div className="error-icon">✗</div>
             <p className="error-text">{error}</p>
 
-            {isAuthenticated && user && !user.emailVerified && (
+            {isAuthenticated && user && pendingEmail && (
               <div className="resend-section">
                 <p>Didn't receive the verification email?</p>
                 <button

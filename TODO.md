@@ -91,3 +91,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 On Staging: `GET https://meritocracy-staging.fly.dev:445/api/users/salary-stats 404 (Not Found)`
 
 - TODO@P2 Support more WalletConnect wallets.
+
+- TODO@P3 On the phone Galaxy A25 5G 90E7 design does not fit horizontally.

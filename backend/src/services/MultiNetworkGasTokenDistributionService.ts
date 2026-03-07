@@ -17,6 +17,7 @@ import {
   stellarGasTokenNetworkAdapter,
   icpGasTokenNetworkAdapter
 } from './gas-networks/index.js';
+import type { IcpTreasuryFundingAddress } from './gas-networks/IcpGasTokenNetworkAdapter.js';
 import { systemSecretService } from './SystemSecretService.js';
 import emailService from './EmailService.js';
 import { pendingTransactionService } from './PendingTransactionService.js';
@@ -68,11 +69,29 @@ type ReserveStatusEntry = {
   gasPrice?: string;
   balanceFormatted?: string;
   gasPriceFormatted?: string;
+  fundingAddresses?: IcpTreasuryFundingAddress[];
 };
 
 type AdapterContextEntry = {
   adapter: GasTokenNetworkAdapter;
   context: GasTokenNetworkContext;
+};
+
+const maybeGetIcpFundingAddresses = async (
+  adapter: GasTokenNetworkAdapter,
+  context: GasTokenNetworkContext
+): Promise<IcpTreasuryFundingAddress[] | undefined> => {
+  if (adapter.type !== 'ICP') {
+    return undefined;
+  }
+
+  try {
+    return await icpGasTokenNetworkAdapter.getTreasuryFundingAddresses(context);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️  Failed to load ICP treasury funding addresses for ${context.networkName}: ${message}`);
+    return undefined;
+  }
 };
 
 export class MultiNetworkGasTokenDistributionService {
@@ -1762,6 +1781,7 @@ export class MultiNetworkGasTokenDistributionService {
     entry: AdapterContextEntry
   ): Promise<ReserveStatusEntry> {
     const { adapter, context } = entry;
+    const fundingAddresses = await maybeGetIcpFundingAddresses(adapter, context);
     const reserveRow = await this.prisma.gasTokenReserve.findFirst({
       where: this.buildTokenWhere(context),
       orderBy: { id: 'desc' }
@@ -1791,7 +1811,8 @@ export class MultiNetworkGasTokenDistributionService {
       lastDistribution: reserveRow?.lastDistribution ?? null,
       adapterType: context.adapterType,
       networkName: context.networkName,
-      address: context.walletAddress
+      address: context.walletAddress,
+      fundingAddresses
     };
   }
 
@@ -1843,6 +1864,7 @@ export class MultiNetworkGasTokenDistributionService {
     if (!entry) return undefined;
 
     const { adapter, context } = entry;
+    const fundingAddresses = await maybeGetIcpFundingAddresses(adapter, context);
 
     // 1. Get info from DB
     const reserveRow = await this.prisma.gasTokenReserve.findFirst({
@@ -1865,7 +1887,8 @@ export class MultiNetworkGasTokenDistributionService {
       lastDistribution,
       adapterType: context.adapterType,
       networkName: context.networkName,
-      address: context.walletAddress
+      address: context.walletAddress,
+      fundingAddresses
     };
 
     // 3. Supplement with live blockchain info

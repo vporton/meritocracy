@@ -11,9 +11,9 @@ export default function Treasury() {
       </Helmet>
       <Canonical baseUrl="https://merit.science-dao.org" />
       <h1>Treasury of the Meritocracy App <span style={{ color: 'red' }}>⚠️This is a beta version</span></h1>
-      <p>This page shows token reserves across supported networks and allows to fill the reserves by sending crypto directly to the blockchain accounts.</p>
+      <p>This page shows token reserves across supported networks and allows you to fill the reserves by sending crypto directly to the blockchain accounts.</p>
       <p>However, the recommended way to fill the accounts is to <a target='_blank' href='https://science-dao.org/donation/'>donate</a> to our charity, rather than to fill accounts directly.</p>
-      <p>WARNING: Currently only gas tokens are supported. ERC-20 if sent to the below addresses may be lost.</p>
+      <p>WARNING: Gas tokens are the safest option. For ckBTC, ckETH, and ck stablecoins, use the origin-network instructions shown for the treasury entry.</p>
       <MultiNetworkGasBalances />
     </div>
   )

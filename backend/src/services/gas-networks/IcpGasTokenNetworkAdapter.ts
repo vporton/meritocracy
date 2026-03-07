@@ -39,6 +39,8 @@ interface IcpTokenConfig {
 const DEFAULT_ICP_LEDGER_CANISTER_ID = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
 const DEFAULT_ICP_HOST = 'https://ic0.app';
 const DEFAULT_ICP_DECIMALS = 8;
+const DEFAULT_CKBTC_MINTER_CANISTER_ID = 'mqygn-kiaaa-aaaar-qaadq-cai';
+const DEFAULT_CKETH_HELPER_CONTRACT_ADDRESS = '0x6abDA0438307733FC299e9C229FD3cc074bD8cC0';
 const ICRC1_ACCOUNT = IDL.Record({
   owner: IDL.Principal,
   subaccount: IDL.Opt(IDL.Vec(IDL.Nat8))
@@ -72,6 +74,14 @@ const icrc1IdlFactory = ({ IDL: idl }: { IDL: typeof IDL }) =>
       Err: ICRC1_TRANSFER_ERROR
     })], [])
   });
+const ckbtcMinterIdlFactory = ({ IDL: idl }: { IDL: any }) =>
+  idl.Service({
+    get_btc_address: idl.Func(
+      [idl.Record({ owner: idl.Opt(idl.Principal), subaccount: idl.Opt(idl.Vec(idl.Nat8)) })],
+      [idl.Text],
+      []
+    )
+  });
 
 type Icrc1Actor = {
   icrc1_balance_of: (account: { owner: Principal; subaccount: [] | [Uint8Array] }) => Promise<bigint>;
@@ -86,6 +96,18 @@ type Icrc1Actor = {
     memo: [];
     created_at_time: [];
   }) => Promise<{ Ok?: bigint; Err?: Record<string, unknown> }>;
+};
+
+
+export interface IcpTreasuryFundingAddress {
+  network: 'Bitcoin' | 'Ethereum' | 'ICP';
+  label: string;
+  address: string;
+  note?: string;
+}
+
+type CkbtcMinterActor = {
+  get_btc_address: (args: { owner: [] | [Principal]; subaccount: [] | [Uint8Array] }) => Promise<string>;
 };
 
 const ICP_TOKENS: readonly IcpTokenConfig[] = [
@@ -209,6 +231,8 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   private identity?: Ed25519KeyIdentity;
   private icrcActors = new Map<string, Icrc1Actor>();
   private icrcMetadataCache = new Map<string, Promise<{ symbol: string; decimals: number; fee: bigint }>>();
+  private ckbtcMinter?: CkbtcMinterActor;
+  private fundingAddressCache = new Map<string, Promise<IcpTreasuryFundingAddress[] | undefined>>();
 
   private ensureEnabledConfig(): IcpNetworkConfig {
     const config = readIcpConfig();
@@ -263,6 +287,26 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       canisterId: Principal.fromText(canisterId)
     }) as unknown as Icrc1Actor;
     this.icrcActors.set(canisterId, actor);
+    return actor;
+  }
+
+
+  private async getCkbtcMinter(config: IcpNetworkConfig): Promise<CkbtcMinterActor> {
+    if (this.ckbtcMinter) {
+      return this.ckbtcMinter;
+    }
+
+    const actor = Actor.createActor(
+      ckbtcMinterIdlFactory as never,
+      {
+        agent: await this.getAgent(config),
+        canisterId: Principal.fromText(
+          process.env.ICP_CKBTC_MINTER_CANISTER_ID ?? DEFAULT_CKBTC_MINTER_CANISTER_ID
+        )
+      }
+    ) as unknown as CkbtcMinterActor;
+
+    this.ckbtcMinter = actor;
     return actor;
   }
 
@@ -407,6 +451,97 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     );
 
     return contexts;
+  }
+
+  async getTreasuryFundingAddresses(
+    context: GasTokenNetworkContext
+  ): Promise<IcpTreasuryFundingAddress[] | undefined> {
+    if (
+      context.tokenSymbol !== 'ckBTC' &&
+      context.tokenSymbol !== 'ckETH' &&
+      context.tokenSymbol !== 'ckUSDT' &&
+      context.tokenSymbol !== 'ckUSDC' &&
+      context.tokenSymbol !== 'ckEURC'
+    ) {
+      return undefined;
+    }
+
+    const cacheKey = `${context.networkId}:${context.walletAddress ?? ''}`;
+    const cached = this.fundingAddressCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const promise = this.loadTreasuryFundingAddresses(context).catch(error => {
+      this.fundingAddressCache.delete(cacheKey);
+      throw error;
+    });
+    this.fundingAddressCache.set(cacheKey, promise);
+    return promise;
+  }
+
+  private async loadTreasuryFundingAddresses(
+    context: GasTokenNetworkContext
+  ): Promise<IcpTreasuryFundingAddress[] | undefined> {
+    const config = this.ensureEnabledConfig();
+    const principalText = context.walletAddress ?? (await this.resolveWalletAddress(config, { tokenType: 'ICRC1' }));
+
+    if (context.tokenSymbol === 'ckBTC') {
+      if (!principalText) {
+        return undefined;
+      }
+
+      const minter = await this.getCkbtcMinter(config);
+      const owner = Principal.fromText(this.normalizePrincipalAddress(principalText));
+      const btcAddress = await withRetry(
+        () => minter.get_btc_address({ owner: [owner], subaccount: [] }),
+        { taskName: 'ckBTC get_btc_address' }
+      );
+
+      return [
+        {
+          network: 'Bitcoin',
+          label: 'Treasury Bitcoin deposit address',
+          address: btcAddress,
+          note: 'Send BTC here, then call the ckBTC minter update_balance flow to mint ckBTC to the treasury principal.'
+        },
+        {
+          network: 'ICP',
+          label: 'Treasury ICP principal',
+          address: owner.toText(),
+          note: 'This principal receives the minted ckBTC on ICP.'
+        }
+      ];
+    }
+
+    if (!principalText) {
+      return undefined;
+    }
+
+    const normalizedPrincipal = this.normalizePrincipalAddress(principalText);
+    const helperContractAddress =
+      process.env.ICP_CKETH_HELPER_CONTRACT_ADDRESS ?? DEFAULT_CKETH_HELPER_CONTRACT_ADDRESS;
+    const isStablecoin =
+      context.tokenSymbol === 'ckUSDT' ||
+      context.tokenSymbol === 'ckUSDC' ||
+      context.tokenSymbol === 'ckEURC';
+
+    return [
+      {
+        network: 'Ethereum',
+        label: isStablecoin ? `${context.tokenSymbol} helper contract` : 'ckETH helper contract',
+        address: helperContractAddress,
+        note: isStablecoin
+          ? `Approve the helper contract to spend ${context.tokenSymbol.slice(2)}, then call deposit with the treasury principal as receiver.`
+          : 'Call the helper contract deposit function on Ethereum and pass the treasury principal as the receiver.'
+      },
+      {
+        network: 'ICP',
+        label: 'Treasury ICP principal',
+        address: normalizedPrincipal,
+        note: `Use this principal as the ${context.tokenSymbol} receiver when depositing from Ethereum.`
+      }
+    ];
   }
 
   private async resolveWalletAddress(

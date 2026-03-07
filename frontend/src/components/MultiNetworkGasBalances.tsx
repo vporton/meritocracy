@@ -23,6 +23,7 @@ interface NetworkInfo {
   totalReserve?: number;
   lastDistribution?: string;
   walletBalance?: number;
+  fundingAddresses?: FundingAddress[];
 }
 
 interface MultiNetworkStatus {
@@ -37,6 +38,28 @@ type ExplorerLinkConfig = {
   label: string;
   buildUrl: (address: string) => string;
 };
+
+type FundingAddress = {
+  network: string;
+  label: string;
+  address: string;
+  note?: string;
+};
+
+type TokenOption = {
+  label: string;
+  tokenSymbol?: string;
+  tokenType?: string;
+};
+
+const tokenOptions: TokenOption[] = [
+  { label: 'Gas tokens' },
+  { label: 'ckBTC', tokenSymbol: 'CKBTC', tokenType: 'ICRC1' },
+  { label: 'ckETH', tokenSymbol: 'CKETH', tokenType: 'ICRC1' },
+  { label: 'ckUSDT', tokenSymbol: 'CKUSDT', tokenType: 'ICRC1' },
+  { label: 'ckUSDC', tokenSymbol: 'CKUSDC', tokenType: 'ICRC1' },
+  { label: 'ckEURC', tokenSymbol: 'CKEURC', tokenType: 'ICRC1' }
+];
 
 const explorerLinkMap: Record<string, ExplorerLinkConfig> = {
   mainnet: { label: 'Etherscan', buildUrl: address => `https://etherscan.io/address/${encodeURIComponent(address)}` },
@@ -98,6 +121,7 @@ function MultiNetworkGasBalances() {
   const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
+  const [selectedToken, setSelectedToken] = useState<TokenOption>(tokenOptions[0])
 
   const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
@@ -114,6 +138,15 @@ function MultiNetworkGasBalances() {
     return `${value.slice(0, startLength)}...${value.slice(-endLength)}`
   }
 
+  const shortenFundingAddress = (value: string) => {
+    if (!value) {
+      return value
+    }
+
+    const isPrincipal = value.includes('-') && !value.startsWith('0x')
+    return shortenAddress(value, isPrincipal ? 8 : 10, isPrincipal ? 6 : 6)
+  }
+
   const copyAddress = async (address: string, networkKey: string) => {
     try {
       await navigator.clipboard.writeText(address)
@@ -124,18 +157,36 @@ function MultiNetworkGasBalances() {
     }
   }
 
-  const fetchMultiNetworkStatus = async (currentScope: 'GLOBAL' | 'COUNTRY', currentCountry: string) => {
+  const fetchMultiNetworkStatus = async (
+    currentScope: 'GLOBAL' | 'COUNTRY',
+    currentCountry: string,
+    token: TokenOption
+  ) => {
     try {
       setLoading(true)
       setError(null)
       setNetworkStatus(null)
       setLoadingNetworks({})
 
-      const queryParams = currentScope === 'COUNTRY' ? `?country=${currentCountry}` : '';
+      const params = new URLSearchParams()
+      if (currentScope === 'COUNTRY') {
+        params.set('country', currentCountry)
+      }
+      if (token.tokenSymbol) {
+        params.set('tokenSymbol', token.tokenSymbol)
+      }
+      if (token.tokenType) {
+        params.set('tokenType', token.tokenType)
+      }
+      const queryParams = params.toString() ? `?${params.toString()}` : ''
 
       // If country scope, ensure account exists first
       if (currentScope === 'COUNTRY') {
-        await api.post('/api/multi-network-gas/ensure-country-account', { country: currentCountry });
+        await api.post('/api/multi-network-gas/ensure-country-account', {
+          country: currentCountry,
+          tokenSymbol: token.tokenSymbol,
+          tokenType: token.tokenType
+        });
       }
 
       // 1. Fetch initial list of networks (fast)
@@ -224,8 +275,8 @@ function MultiNetworkGasBalances() {
   }
 
   useEffect(() => {
-    fetchMultiNetworkStatus(scope, selectedCountry)
-  }, [scope, selectedCountry])
+    fetchMultiNetworkStatus(scope, selectedCountry, selectedToken)
+  }, [scope, selectedCountry, selectedToken])
 
   if (loading && !networkStatus) {
     return (
@@ -312,6 +363,21 @@ function MultiNetworkGasBalances() {
               <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
             ))}
           </optgroup>
+        </select>
+        <label>Asset:</label>
+        <select
+          value={selectedToken.label}
+          onChange={(e) => {
+            const next = tokenOptions.find(option => option.label === e.target.value)
+            if (next) {
+              setSelectedToken(next)
+            }
+          }}
+          style={{ padding: '0.5rem', borderRadius: '4px', maxWidth: '200px' }}
+        >
+          {tokenOptions.map(option => (
+            <option key={option.label} value={option.label}>{option.label}</option>
+          ))}
         </select>
       </div>
 
@@ -456,6 +522,50 @@ function MultiNetworkGasBalances() {
                       View on {explorerLink.label}
                     </a>
                   </p>
+                )}
+                {networkInfo.fundingAddresses && networkInfo.fundingAddresses.length > 0 && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <p style={{ margin: '0 0 0.4rem 0', color: '#d1d5db', fontWeight: 600 }}>
+                      Fill from origin network
+                    </p>
+                    {networkInfo.fundingAddresses.map((funding, index) => {
+                      const fundingKey = `${networkName}-funding-${index}`
+                      return (
+                        <div key={fundingKey} style={{ marginBottom: '0.5rem' }}>
+                          <p style={{ margin: '0.1rem 0', color: '#9ca3af' }}>
+                            <strong>{funding.network}:</strong> {funding.label}
+                          </p>
+                          <p
+                            style={{ margin: '0.1rem 0', color: '#e5e7eb', fontFamily: 'monospace', fontSize: '0.8rem' }}
+                            title={funding.address}
+                          >
+                            {shortenFundingAddress(funding.address)}
+                            <button
+                              type="button"
+                              onClick={() => copyAddress(funding.address, fundingKey)}
+                              style={{
+                                marginLeft: '0.5rem',
+                                padding: '0.2rem 0.5rem',
+                                fontSize: '0.75rem',
+                                background: copiedAddressKey === fundingKey ? '#10b981' : '#374151',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {copiedAddressKey === fundingKey ? 'Copied!' : 'Copy'}
+                            </button>
+                          </p>
+                          {funding.note && (
+                            <p style={{ margin: '0.1rem 0', color: '#9ca3af', fontSize: '0.8rem' }}>
+                              {funding.note}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
             </div>

@@ -94,4 +94,4 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 On the phones Galaxy A25 5G 90E7 and other real devices design does not fit horizontally.
   The effect is not repeatable in Chrome Dev Tools.
 
-- FIXME@P2 It seems that validation of (non-EVM) addresses is done only on the client side.
+- FIXME@P2 "Connected Emails" Remove button becomes completely black, when mouse over.

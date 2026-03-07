@@ -95,3 +95,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
   The effect is not repeatable in Chrome Dev Tools.
 
 - FIXME@P2 It seems that validation of (non-EVM) addresses is done only on the client side.
+
+- FIXME@P2 "Connected Emails" Remove button becomes completely black, when mouse over.

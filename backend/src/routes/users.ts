@@ -348,7 +348,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       })
     };
 
-    if (ethereumAddress && ethereumAddress.trim() && !isValidEthereumAddress(ethereumAddress)) {
+    if (ethereumAddress && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
       validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
     }
 
@@ -389,14 +389,14 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         where: { id: parseInt(id as string) },
         data: {
           ...(name !== undefined && { name }),
-          ...(ethereumAddress !== undefined && { ethereumAddress: ethereumAddress?.trim() ? ethereumAddress.trim() : null }),
-          ...(solanaAddress !== undefined && { solanaAddress: solanaAddress?.trim() ? solanaAddress.trim() : null }),
-          ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
-          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress?.trim() ? bitcoinCashAddress.trim() : null }),
-          ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
-          ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
-          ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null }),
-          ...(icpAddress !== undefined && { icpAddress: icpAddress?.trim() ? icpAddress.trim() : null }),
+          ...(ethereumAddress !== undefined && { ethereumAddress: String(ethereumAddress).trim() }),
+          ...(solanaAddress !== undefined && { solanaAddress: String(solanaAddress).trim() }),
+          ...(bitcoinAddress !== undefined && { bitcoinAddress: String(bitcoinAddress).trim() }),
+          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: String(bitcoinCashAddress).trim() }),
+          ...(polkadotAddress !== undefined && { polkadotAddress: String(polkadotAddress).trim() }),
+          ...(cosmosAddress !== undefined && { cosmosAddress: String(cosmosAddress).trim() }),
+          ...(stellarAddress !== undefined && { stellarAddress: String(stellarAddress).trim() }),
+          ...(icpAddress !== undefined && { icpAddress: String(icpAddress).trim() }),
           ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },
       });

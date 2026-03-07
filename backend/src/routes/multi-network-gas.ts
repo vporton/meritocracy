@@ -19,14 +19,19 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
 
   const {
     tokenType,
+    tokenSymbol,
     country,
   } = source;
 
   if (typeof tokenType === 'string') {
     const normalized = tokenType.toUpperCase();
-    if (normalized === 'NATIVE') {
+    if (normalized === 'NATIVE' || normalized === 'ERC20' || normalized === 'ICRC1') {
       overrides.tokenType = normalized as TokenDistributionOptions['tokenType'];
     }
+  }
+
+  if (typeof tokenSymbol === 'string' && /^[A-Za-z0-9._-]+$/.test(tokenSymbol.trim())) {
+    overrides.tokenSymbol = tokenSymbol.trim().toUpperCase();
   }
 
   if (typeof country === 'string' && country.trim().length === 2) {
@@ -53,7 +58,8 @@ router.get('/list', async (req, res) => {
         networkDetails: enabledNetworkDetails,
         totalNetworks: enabledNetworks.length,
         token: {
-          type: overrides.tokenType ?? 'NATIVE',
+          type: overrides.tokenType,
+          symbol: overrides.tokenSymbol,
         }
       }
     });
@@ -92,7 +98,8 @@ router.get('/status', async (req, res) => {
       totalAvailable,
       totalReserve,
       token: {
-        type: overrides.tokenType ?? 'NATIVE',
+        type: overrides.tokenType,
+        symbol: overrides.tokenSymbol,
       }
     };
 
@@ -122,7 +129,8 @@ router.get('/reserve-status', async (req, res) => {
       success: true,
       data: Object.fromEntries(reserveStatus),
       token: {
-        type: overrides.tokenType ?? 'NATIVE',
+        type: overrides.tokenType,
+        symbol: overrides.tokenSymbol,
       }
     });
   } catch (error) {
@@ -190,7 +198,8 @@ router.get('/network/:networkName/status', async (req, res) => {
       success: true,
       data: status,
       token: {
-        type: overrides.tokenType ?? status.tokenType ?? 'NATIVE',
+        type: overrides.tokenType ?? status.tokenType,
+        symbol: overrides.tokenSymbol ?? status.tokenSymbol,
       }
     });
   } catch (error) {
@@ -275,7 +284,8 @@ router.post('/run-distribution', async (req, res) => {
         networkResults: Object.fromEntries(result.networkResults),
         errors: result.errors,
         token: {
-          type: overrides.tokenType ?? 'NATIVE',
+          type: overrides.tokenType,
+          symbol: overrides.tokenSymbol,
         }
       },
       overrides

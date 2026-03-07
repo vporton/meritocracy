@@ -465,7 +465,7 @@ export class MultiNetworkEthereumService {
             }
             gasEstimate = await withRetry(
                 () => client.publicClient.estimateContractGas({
-                    address: request.token.tokenAddress!,
+                    address: request.token.tokenAddress as `0x${string}`,
                     abi: ERC20_ABI,
                     functionName: 'transfer',
                     args: [request.to, amountRaw],
@@ -518,7 +518,7 @@ export class MultiNetworkEthereumService {
             return await withRetry(
                 () => client.walletClient.writeContract({
                     account: account,
-                    address: request.token.tokenAddress!,
+                    address: request.token.tokenAddress as `0x${string}`,
                     abi: ERC20_ABI,
                     functionName: 'transfer',
                     args: [request.to, amountRaw],

@@ -76,7 +76,6 @@
 
 - TODO@P3 Update World GDP regularly.
 
-- TODO@P2 ckBTC, ckETH, ckUSDT, ckUSDC, ckEURC.
 
 - ProductHunter:
 Для продакта нужно:
@@ -91,3 +90,6 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 On Staging: `GET https://meritocracy-staging.fly.dev:445/api/users/salary-stats 404 (Not Found)`
 
 - TODO@P2 Support more WalletConnect wallets.
+
+- TODO@P3 On the phones Galaxy A25 5G 90E7 and other real devices design does not fit horizontally.
+  The effect is not repeatable in Chrome Dev Tools.

@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { isValidEthereumAddress, validateNonEvmAddresses } from '../utils/addressValidation.js';
 import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
 import { prisma } from '../lib/prisma.js';
+import { normalizeEmail, removeAllUserEmails, syncPrimaryEmail } from '../services/userEmailUtils.js';
 
 const router = express.Router();
 
@@ -163,6 +164,35 @@ router.get('/:id', async (req, res): Promise<void> => {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
       where: { id: parseInt(id as string) },
+      select: {
+        id: true,
+        name: true,
+        ethereumAddress: true,
+        solanaAddress: true,
+        bitcoinAddress: true,
+        bitcoinCashAddress: true,
+        polkadotAddress: true,
+        cosmosAddress: true,
+        stellarAddress: true,
+        icpAddress: true,
+        orcidId: true,
+        githubHandle: true,
+        bitbucketHandle: true,
+        gitlabHandle: true,
+        onboarded: true,
+        shareInGDP: true,
+        kycStatus: true,
+        kycVerifiedAt: true,
+        kycRejectedAt: true,
+        kycRejectionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        votingPleaUnsubscribed: true,
+        kycVotingStatus: true,
+        kycVotingVerifiedAt: true,
+        kycVotingRejectedAt: true,
+        kycVotingRejectionReason: true
+      }
     });
 
     if (!user) {
@@ -239,9 +269,23 @@ router.post('/', async (req, res): Promise<void> => {
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizeEmail(email),
         name: name || null,
+        emails: {
+          create: {
+            email: normalizeEmail(email),
+            verified: false
+          }
+        }
       },
+      include: {
+        emails: {
+          orderBy: [
+            { verified: 'desc' },
+            { createdAt: 'asc' }
+          ]
+        }
+      }
     });
 
     res.status(201).json(user);
@@ -321,21 +365,43 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
     }
 
-    const user = await prisma.user.update({
-      where: { id: parseInt(id as string) },
-      data: {
-        ...(email && { email }),
-        ...(name !== undefined && { name }),
-        ...(ethereumAddress !== undefined && { ethereumAddress: ethereumAddress?.trim() ? ethereumAddress.trim() : null }),
-        ...(solanaAddress !== undefined && { solanaAddress: solanaAddress?.trim() ? solanaAddress.trim() : null }),
-        ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
-        ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress?.trim() ? bitcoinCashAddress.trim() : null }),
-        ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
-        ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
-        ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null }),
-        ...(icpAddress !== undefined && { icpAddress: icpAddress?.trim() ? icpAddress.trim() : null }),
-        ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      if (email) {
+        const normalized = normalizeEmail(email);
+        const existingEmail = await tx.userEmail.findUnique({
+          where: { email: normalized }
+        });
+        if (existingEmail && existingEmail.userId !== authenticatedUserId) {
+          throw Object.assign(new Error('Email already exists'), { code: 'P2002' });
+        }
+        if (!existingEmail) {
+          await tx.userEmail.create({
+            data: {
+              userId: authenticatedUserId,
+              email: normalized,
+              verified: false
+            }
+          });
+        }
+      }
+
+      await tx.user.update({
+        where: { id: parseInt(id as string) },
+        data: {
+          ...(name !== undefined && { name }),
+          ...(ethereumAddress !== undefined && { ethereumAddress: ethereumAddress?.trim() ? ethereumAddress.trim() : null }),
+          ...(solanaAddress !== undefined && { solanaAddress: solanaAddress?.trim() ? solanaAddress.trim() : null }),
+          ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress?.trim() ? bitcoinAddress.trim() : null }),
+          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress?.trim() ? bitcoinCashAddress.trim() : null }),
+          ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress?.trim() ? polkadotAddress.trim() : null }),
+          ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress?.trim() ? cosmosAddress.trim() : null }),
+          ...(stellarAddress !== undefined && { stellarAddress: stellarAddress?.trim() ? stellarAddress.trim() : null }),
+          ...(icpAddress !== undefined && { icpAddress: icpAddress?.trim() ? icpAddress.trim() : null }),
+          ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
+        },
+      });
+
+      return syncPrimaryEmail(tx, authenticatedUserId);
     });
 
     res.json(user);
@@ -367,9 +433,12 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
 
     const deletionTimestamp = new Date();
     // Legal requirement: User logs must be preserved for potential lawsuits, so we soft-delete instead of removing rows.
-    await prisma.user.update({
-      where: { id: parseInt(id as string) },
-      data: makeUserSoftDeletePayload(deletionTimestamp)
+    await prisma.$transaction(async (tx) => {
+      await removeAllUserEmails(tx, parseInt(id as string));
+      await tx.user.update({
+        where: { id: parseInt(id as string) },
+        data: makeUserSoftDeletePayload(deletionTimestamp)
+      });
     });
 
     res.status(204).send();

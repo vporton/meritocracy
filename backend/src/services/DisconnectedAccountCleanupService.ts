@@ -218,6 +218,14 @@ export class DisconnectedAccountCleanupService {
 
           try {
             // Legal requirement: user logs must stay for potential lawsuits, so we soft-delete rows instead of hard deletes.
+            await this.prisma.userEmail.deleteMany({
+              where: {
+                userId: {
+                  in: batch
+                }
+              }
+            });
+
             const updateResult = await this.prisma.user.updateMany({
               where: {
                 id: {

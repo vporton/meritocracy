@@ -104,6 +104,14 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
         ethereumAddress: true,
         email: true,
         emailVerified: true,
+        emails: {
+          where: {
+            verified: true
+          },
+          select: {
+            email: true
+          }
+        },
         orcidId: true,
         githubHandle: true,
         bitbucketHandle: true,
@@ -118,7 +126,8 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
 
     const missingRequirements: string[] = [];
     if (!user.ethereumAddress) missingRequirements.push('Ethereum Address');
-    if (!user.email || !user.emailVerified) missingRequirements.push('Verified Email');
+    const hasVerifiedEmail = user.emails.length > 0 || (!!user.email && !!user.emailVerified);
+    if (!hasVerifiedEmail) missingRequirements.push('Verified Email');
 
     const hasSocialConnection = !!(
       user.orcidId ||
@@ -142,6 +151,7 @@ export async function requireAdditionalConnections(req: express.Request, res: ex
           ethereumAddress: user.ethereumAddress,
           email: user.email,
           emailVerified: user.emailVerified,
+          emails: user.emails,
           orcidId: user.orcidId,
           githubHandle: user.githubHandle,
           bitbucketHandle: user.bitbucketHandle,

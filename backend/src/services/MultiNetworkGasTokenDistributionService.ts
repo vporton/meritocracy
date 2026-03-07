@@ -21,6 +21,7 @@ import { systemSecretService } from './SystemSecretService.js';
 import emailService from './EmailService.js';
 import { pendingTransactionService } from './PendingTransactionService.js';
 import { prisma } from '../lib/prisma.js';
+import { getVerifiedEmailAddresses } from './userEmailUtils.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -704,10 +705,13 @@ export class MultiNetworkGasTokenDistributionService {
 
           console.log(`⏳ [${context.networkName}] Skipped distribution for user ${dist.userId}: KYC required (reservation cleared)`);
 
-          if (user?.email) {
+          if (user) {
             const token = emailService.generateKycToken();
             await emailService.storeKycToken(token, user.id);
-            await emailService.sendKycRequestEmail(user.email, token, user.name || undefined);
+            const verifiedEmails = await getVerifiedEmailAddresses(this.prisma, user.id);
+            for (const email of verifiedEmails) {
+              await emailService.sendKycRequestEmail(email, token, user.name || undefined);
+            }
           }
 
           // Do NOT decrement remainingAmount because we didn't use it.
@@ -1021,10 +1025,13 @@ export class MultiNetworkGasTokenDistributionService {
 
           console.log(`⏳ [${context.networkName}] Skipped distribution for user ${dist.userId}: KYC required (reservation cleared)`);
 
-          if (user?.email) {
+          if (user) {
             const token = emailService.generateKycToken();
             await emailService.storeKycToken(token, user.id);
-            await emailService.sendKycRequestEmail(user.email, token, user.name || undefined);
+            const verifiedEmails = await getVerifiedEmailAddresses(this.prisma, user.id);
+            for (const email of verifiedEmails) {
+              await emailService.sendKycRequestEmail(email, token, user.name || undefined);
+            }
           }
 
           // Do not decrement remainingAmount

@@ -78,6 +78,7 @@ interface CreatePostData {
 interface UpdateUserData {
   email?: string;
   name?: string;
+  ethereumAddress?: string | null;
   solanaAddress?: string | null;
   bitcoinAddress?: string | null;
   bitcoinCashAddress?: string | null;

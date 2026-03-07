@@ -50,7 +50,7 @@
     * AI for social good awards https://research.google/programs-and-events/past-programs/ai-for-social-good-awards/ - not found how to contact.
     * IBM Watson AI XPRIZE https://www.xprize.org/ - emailed 22 Oct 2025
     * https://omidyar.com - We do not accept funding requests or proposals. - contacted 13 Jan 2026
-    * https://data.org - submitted 2 Oct 2025
+    * https://data.org - submitted 2 Oct 2025 - rejected 2 Mar 2026 "due to the high volume of submissions"
     * https://www2.fundsforngos.org - noted
   * The RAAIS Foundation Grants https://www.raais.org/grants - submitted 2 Oct 2025
   * Google.org Accelerator: Generative AI open call https://impactchallenge.withgoogle.com/genaiaccelerator/ - ended
@@ -90,7 +90,7 @@
   * https://www.openphilanthropy.org - contacted 12 Oct 2025
   * https://www.shell.com/what-we-do/technology-and-innovation/innovate-with-shell/share-your-idea.html - submitted 12 Oct 2025 - rejected 20 Oct 2025 "not a potential GameChanger project for us"
   * https://chainforgood.org - submitted 12 Oct 2025
-  * https://app.akindo.io - applied
+  * AKINDO https://app.akindo.io - applied
   * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIM 17 Sep 2025 - rejected 14 Oct 2025 "paying attention to experiments in funding and resource allocation, but are not currently making grants in this area"
 * A email from ffwd.com
   * Okta for Good: Nonprofit Technology Fellowship https://www.okta.com/company/okta-for-good/nonprofit-technology-fellows/ - submitted 18 Oct 2025 - rejected 15 Dec 2025
@@ -162,7 +162,7 @@
     * Peters Family Foundation 
     * TODO
 * University of Liverpool https://liverpool.ac.uk - contacted on a partnership 7 Feb 2026 - TODO: My site is broken during submission.
-* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission)
+* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission) - again considered since 28 Feb 2026
 * OSV Fellowship https://osv.llc - applied 14 Feb 2026 - rejected 20 Feb 2026 "Due to a high volume of applications"
 * https://www.google.com/search?q=crypto+grants
   * https://blockchaingrants.org
@@ -173,3 +173,5 @@
     * TODO
   * TODO
 * THE KH IMPACT FUND - mailed 27 Feb 2026
+* Morgan Stanley Inclusive & Sustainable Ventures (MSISV) - submitted 7 Mar 2026
+* Bellagio Center Residency Program Expression of Interest (EOI) https://residency.rockefellerfoundation.org/nomination/dashboard.asp - submitted 7 Mar 2026

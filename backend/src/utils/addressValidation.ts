@@ -4,6 +4,7 @@ import bs58 from 'bs58';
 import { decodeAddress } from '@polkadot/util-crypto';
 import { fromBech32 } from '@cosmjs/encoding';
 import { StrKey } from '@stellar/stellar-sdk';
+import { isAddress } from 'viem';
 // NOTE: We avoid importing '@dfinity/principal' directly so the code works even
 // when the package is not installed (e.g. in limited build environments).
 
@@ -228,6 +229,15 @@ export const isValidIcpAddress = (value: string): boolean => {
   }
 
   return isValidIcpPrincipalText(trimmed);
+};
+
+export const isValidEthereumAddress = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  return isAddress(trimmed);
 };
 
 export type NonEvmAddressInput = {

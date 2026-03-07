@@ -20,8 +20,6 @@
 
 - TODO@P3 Should the user be able to add more than one email?
 
-- TODO@P3 Allow to enter a blockchain address instead of using a wallet.
-
 - TODO@P3 Task Execution Logs are empty (CASCADE DELETE?)
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
@@ -95,3 +93,7 @@
 https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 
 - TODO@P3 On Staging: `GET https://meritocracy-staging.fly.dev:445/api/users/salary-stats 404 (Not Found)`
+
+- TODO@P3 At /connect page display crypto addresses shortened and with Copy button.
+
+- TODO@P2 Support more WalletConnect wallets.

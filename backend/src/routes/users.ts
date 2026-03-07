@@ -388,16 +388,16 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       await tx.user.update({
         where: { id: parseInt(id as string) },
         data: {
-          ...(name !== undefined && { name }),
-          ...(ethereumAddress !== undefined && { ethereumAddress: ethereumAddress ? String(ethereumAddress).trim() : undefined }),
-          ...(solanaAddress !== undefined && { solanaAddress: solanaAddress ? String(solanaAddress).trim() : undefined }),
-          ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : undefined }),
-          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : undefined }),
-          ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress ? String(polkadotAddress).trim() : undefined }),
-          ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : undefined }),
-          ...(stellarAddress !== undefined && { stellarAddress: stellarAddress ? String(stellarAddress).trim() : undefined }),
-          ...(icpAddress !== undefined && { icpAddress: icpAddress ? String(icpAddress).trim() : undefined }),
-          ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
+          ...(name !== "" && { name }), // FIXME@P3
+          ...{ ethereumAddress: ethereumAddress !== "" ? String(ethereumAddress).trim() : null },
+          ...{ solanaAddress: solanaAddress !== "" ? String(solanaAddress).trim() : null },
+          ...{ bitcoinAddress: bitcoinAddress !== "" ? String(bitcoinAddress).trim() : null },
+          ...{ bitcoinCashAddress: bitcoinCashAddress !== "" ? String(bitcoinCashAddress).trim() : null },
+          ...{ polkadotAddress: polkadotAddress !== "" ? String(polkadotAddress).trim() : null },
+          ...{ cosmosAddress: cosmosAddress !== "" ? String(cosmosAddress).trim() : null },
+          ...{ stellarAddress: stellarAddress !== "" ? String(stellarAddress).trim() : null },
+          ...{ icpAddress: icpAddress !== "" ? String(icpAddress).trim() : null },
+          ...{ votingPleaUnsubscribed: normalizedVotingPleaPreference }
         },
       });
 

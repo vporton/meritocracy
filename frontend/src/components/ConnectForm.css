@@ -303,6 +303,50 @@
     text-align: left;
   }
 
+  .connected-provider-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .provider-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    color: inherit;
+    min-width: 0;
+  }
+
+  .provider-value span {
+    color: #065f46;
+    min-width: 0;
+  }
+
+  .copy-address-button {
+    border: 1px solid #d1d5db;
+    background: #f8fafc;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .copy-address-button:hover {
+    border-color: #6366f1;
+    background: #eef2ff;
+  }
+
+  .copy-address-button:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+  }
+
   .voting-plea-preference {
     margin-bottom: 2rem;
     padding: 1.25rem;

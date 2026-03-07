@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
@@ -12,6 +12,13 @@ import { Helmet } from 'react-helmet-async';
 interface ConnectStatus {
   [provider: string]: string | undefined;
   error?: string;
+}
+
+interface DisplayProvider {
+  name: string;
+  value: string;
+  displayValue: string;
+  isBlockchain: boolean;
 }
 
 interface OAuthClientIds {
@@ -51,6 +58,55 @@ interface MessageEvent {
   };
 }
 
+const BLOCKCHAIN_PROVIDER_NAMES = new Set([
+  'Ethereum',
+  'Solana',
+  'Bitcoin',
+  'Bitcoin Cash',
+  'Polkadot',
+  'Cosmos',
+  'Stellar',
+  'ICP',
+]);
+
+const SHORT_ADDRESS_HEAD = 6;
+const SHORT_ADDRESS_TAIL = 4;
+
+const shortenAddress = (address: string) => {
+  const normalized = address.trim();
+  if (normalized.length <= SHORT_ADDRESS_HEAD + SHORT_ADDRESS_TAIL + 1) {
+    return normalized;
+  }
+  return `${normalized.slice(0, SHORT_ADDRESS_HEAD)}…${normalized.slice(-SHORT_ADDRESS_TAIL)}`;
+};
+
+const copyTextToClipboard = async (text: string) => {
+  const value = text.trim();
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(value);
+  }
+
+  if (typeof document === 'undefined') {
+    return Promise.reject(new Error('Clipboard is not available'));
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const successful = document.execCommand('copy');
+  document.body.removeChild(textarea);
+
+  if (!successful) {
+    return Promise.reject(new Error('Fallback copy command failed'));
+  }
+
+  return Promise.resolve();
+};
+
 const ConnectForm = () => {
   const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +131,8 @@ const ConnectForm = () => {
     icpAddress: '',
   });
   const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
+  const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
@@ -186,67 +244,124 @@ const ConnectForm = () => {
     }
   }, [showEmailForm]);
 
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleCopyAddress = async (value: string, providerName: string) => {
+    try {
+      await copyTextToClipboard(value);
+      setCopiedProvider(providerName);
+
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopiedProvider(prev => (prev === providerName ? null : prev));
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy address to clipboard:', error);
+    }
+  };
+
   // Show connected status and allow connecting more accounts
   const renderConnectedStatus = () => {
-    if (isAuthenticated && user) {
-      const connectedProviders = [];
-
-      // Check which providers are connected
-      if (user.ethereumAddress) connectedProviders.push({ name: 'Ethereum', value: user.ethereumAddress });
-      if (user.solanaAddress) connectedProviders.push({ name: 'Solana', value: user.solanaAddress });
-      if (user.bitcoinAddress) connectedProviders.push({ name: 'Bitcoin', value: user.bitcoinAddress });
-      if (user.bitcoinCashAddress) connectedProviders.push({ name: 'Bitcoin Cash', value: user.bitcoinCashAddress });
-      if (user.polkadotAddress) connectedProviders.push({ name: 'Polkadot', value: user.polkadotAddress });
-      if (user.cosmosAddress) connectedProviders.push({ name: 'Cosmos', value: user.cosmosAddress });
-      if (user.stellarAddress) connectedProviders.push({ name: 'Stellar', value: user.stellarAddress });
-      if (user.icpAddress) connectedProviders.push({ name: 'ICP', value: user.icpAddress });
-      if (user.orcidId) connectedProviders.push({ name: 'ORCID', value: user.orcidId });
-      if (user.githubHandle) connectedProviders.push({ name: 'GitHub', value: user.githubHandle });
-      if (user.bitbucketHandle) connectedProviders.push({ name: 'BitBucket', value: user.bitbucketHandle });
-      if (user.gitlabHandle) connectedProviders.push({ name: 'GitLab', value: user.gitlabHandle });
-      if (userEmails.length > 0) {
-        connectedProviders.push({
-          name: 'Emails',
-          value: userEmails.map(email => `${email.email} ${email.verified ? '✓' : '⚠️'}`).join(', ')
-        });
-      }
-      if (user.kycStatus === 'APPROVED' || user.kycStatus === 'PENDING') {
-        connectedProviders.push({ name: 'Receiver KYC', value: `APPROVED ✓` });
-      }
-      if (user.kycVotingStatus === 'APPROVED' || user.kycVotingStatus === 'PENDING') {
-        connectedProviders.push({ name: 'Voting KYC', value: `APPROVED ✓` });
-      }
-
-      return (
-        <div className="connected-status">
-          <h3>✅ Connected Accounts</h3>
-          {user.onboarded ? (
-            <div className="onboarded-notice">
-              <p><strong>🎉 Onboarding Complete!</strong></p>
-              <p>You have successfully completed the onboarding process. You can still connect additional accounts below.</p>
-            </div>
-          ) : (
-            <p>You are successfully authenticated. You can connect additional accounts below.</p>
-          )}
-          <div className="connected-user-info">
-            <strong>Current user:</strong> {user?.id}: {user?.name || 'User'}
-          </div>
-          {connectedProviders.length > 0 && (
-            <div className="connected-providers">
-              <h4>Connected Services:</h4>
-              <ul>
-                {connectedProviders.map((provider, index) => (
-                  <li key={index}>
-                    <strong>{provider.name}:</strong> {provider.value}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      );
+    if (!isAuthenticated || !user) {
+      return null;
     }
-    return null;
+
+    const connectedProviders: DisplayProvider[] = [];
+
+    const addProvider = (
+      name: string,
+      rawValue: string,
+      options: { isBlockchain?: boolean; displayValue?: string } = {}
+    ) => {
+      const trimmedValue = rawValue.trim();
+      if (!trimmedValue) {
+        return;
+      }
+
+      const isBlockchainProvider = options.isBlockchain ?? BLOCKCHAIN_PROVIDER_NAMES.has(name);
+      connectedProviders.push({
+        name,
+        value: trimmedValue,
+        displayValue: options.displayValue ?? (isBlockchainProvider ? shortenAddress(trimmedValue) : trimmedValue),
+        isBlockchain: isBlockchainProvider,
+      });
+    };
+
+    if (user.ethereumAddress) addProvider('Ethereum', user.ethereumAddress);
+    if (user.solanaAddress) addProvider('Solana', user.solanaAddress);
+    if (user.bitcoinAddress) addProvider('Bitcoin', user.bitcoinAddress);
+    if (user.bitcoinCashAddress) addProvider('Bitcoin Cash', user.bitcoinCashAddress);
+    if (user.polkadotAddress) addProvider('Polkadot', user.polkadotAddress);
+    if (user.cosmosAddress) addProvider('Cosmos', user.cosmosAddress);
+    if (user.stellarAddress) addProvider('Stellar', user.stellarAddress);
+    if (user.icpAddress) addProvider('ICP', user.icpAddress);
+    if (user.orcidId) addProvider('ORCID', user.orcidId);
+    if (user.githubHandle) addProvider('GitHub', user.githubHandle);
+    if (user.bitbucketHandle) addProvider('BitBucket', user.bitbucketHandle);
+    if (user.gitlabHandle) addProvider('GitLab', user.gitlabHandle);
+    if (userEmails.length > 0) {
+      const emailDisplay = userEmails
+        .map(email => `${email.email} ${email.verified ? '✓' : '⚠️'}`)
+        .join(', ');
+      addProvider('Emails', emailDisplay, { isBlockchain: false, displayValue: emailDisplay });
+    }
+    if (user.kycStatus === 'APPROVED' || user.kycStatus === 'PENDING') {
+      addProvider('Receiver KYC', 'APPROVED ✓', { isBlockchain: false });
+    }
+    if (user.kycVotingStatus === 'APPROVED' || user.kycVotingStatus === 'PENDING') {
+      addProvider('Voting KYC', 'APPROVED ✓', { isBlockchain: false });
+    }
+
+    return (
+      <div className="connected-status">
+        <h3>✅ Connected Accounts</h3>
+        {user.onboarded ? (
+          <div className="onboarded-notice">
+            <p><strong>🎉 Onboarding Complete!</strong></p>
+            <p>You have successfully completed the onboarding process. You can still connect additional accounts below.</p>
+          </div>
+        ) : (
+          <p>You are successfully authenticated. You can connect additional accounts below.</p>
+        )}
+        <div className="connected-user-info">
+          <strong>Current user:</strong> {user?.id}: {user?.name || 'User'}
+        </div>
+        {connectedProviders.length > 0 && (
+          <div className="connected-providers">
+            <h4>Connected Services:</h4>
+            <ul>
+              {connectedProviders.map((provider, index) => (
+                <li key={`${provider.name}-${index}`} className="connected-provider-item">
+                  <div className="provider-value">
+                    <strong>{provider.name}:</strong>
+                    <span>{provider.displayValue}</span>
+                  </div>
+                  {provider.isBlockchain && (
+                    <button
+                      type="button"
+                      className="copy-address-button"
+                      onClick={() => handleCopyAddress(provider.value, provider.name)}
+                      title={`Copy ${provider.name} address`}
+                    >
+                      {copiedProvider === provider.name ? 'Copied!' : 'Copy'}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderVotingPleaPreference = () => {

@@ -40,6 +40,14 @@ The automated distribution service currently supports native gas tokens on:
 - Polkadot (DOT)
 - Cosmos Hub (ATOM)
 - Stellar (XLM)
+- Internet Computer (ICP)
+
+It also supports ICP ICRC-1 assets with fixed transfer fees that behave operationally like gas-token distributions:
+- ckBTC
+- ckETH
+- ckUSDT
+- ckUSDC
+- ckEURC
 
 ## 📁 Project Structure
 

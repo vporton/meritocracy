@@ -5,6 +5,7 @@ export type GasTokenNetworkType = 'EVM' | 'SOLANA' | 'BITCOIN' | 'BITCOIN_CASH' 
 
 export interface TokenDistributionOptions {
   tokenType?: TokenType;
+  tokenSymbol?: string;
   country?: string;
 }
 

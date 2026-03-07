@@ -13,6 +13,7 @@ interface NetworkInfo {
   nativeTokenSymbol?: string;
   tokenDecimals?: number;
   tokenType?: string;
+  baseNetworkId?: string;
   gasPrice?: string;
   balance?: string;
   address?: string;
@@ -80,7 +81,7 @@ const getExplorerLinkForNetwork = (networkId: string, address: string) => {
   }
 
   const baseNetworkId = stripCountrySuffix(networkId);
-  const config = explorerLinkMap[baseNetworkId];
+  const config = explorerLinkMap[baseNetworkId] ?? (baseNetworkId.startsWith('icp-mainnet') ? explorerLinkMap['icp-mainnet'] : undefined);
   if (!config) {
     return null;
   }

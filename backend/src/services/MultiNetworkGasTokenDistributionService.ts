@@ -114,7 +114,8 @@ export class MultiNetworkGasTokenDistributionService {
       ];
 
     this.defaultTokenOptions = {
-      tokenType: defaultTokenOptions?.tokenType ?? 'NATIVE'
+      tokenType: defaultTokenOptions?.tokenType,
+      tokenSymbol: defaultTokenOptions?.tokenSymbol
     };
 
     this.warmupAdapters();
@@ -277,6 +278,7 @@ export class MultiNetworkGasTokenDistributionService {
   private resolveTokenOptions(overrides?: TokenDistributionOptions): TokenDistributionOptions {
     return {
       tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType,
+      tokenSymbol: overrides?.tokenSymbol,
       country: overrides?.country
     };
   }
@@ -1965,7 +1967,10 @@ export class MultiNetworkGasTokenDistributionService {
         networkId: sanitized.networkId!,
         networkName: sanitized.networkName!,
         adapterType: sanitized.adapterType!,
-        walletAddress: sanitized.walletAddress
+        walletAddress: sanitized.walletAddress,
+        tokenSymbol: sanitized.tokenSymbol,
+        tokenType: sanitized.tokenType,
+        baseNetworkId: sanitized.baseNetworkId
       };
     });
   }

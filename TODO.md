@@ -76,7 +76,6 @@
 
 - TODO@P3 Update World GDP regularly.
 
-- TODO@P2 ckBTC, ckETH, ckUSDT, ckUSDC, ckEURC.
 
 - ProductHunter:
 Для продакта нужно:

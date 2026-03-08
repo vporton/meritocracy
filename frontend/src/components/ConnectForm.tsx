@@ -431,7 +431,12 @@ const ConnectForm = () => {
                 <li key={`${provider.name}-${index}`} className="connected-provider-item">
                   <div className="provider-value">
                     <strong>{provider.name}:</strong>
-                    <span>{provider.displayValue}</span>
+                    <span
+                      title={provider.isBlockchain ? provider.value : undefined}
+                      aria-label={provider.isBlockchain ? provider.value : undefined}
+                    >
+                      {provider.displayValue}
+                    </span>
                   </div>
                   {provider.isBlockchain && (
                     <button

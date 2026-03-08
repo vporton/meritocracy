@@ -1559,27 +1559,6 @@ const ConnectForm = () => {
         </p>
       </div>
 
-      {hasReownWalletModal && import.meta.env.DEV && (
-        <div className="connect-info">
-          <p>
-            <strong>AppKit debug:</strong>{' '}
-            initialized={String(isAppKitInitialized)}, open={String(isAppKitOpen)}, loading={String(isAppKitLoading)},
-            activeChain={activeChain || 'none'}, connectingWallet={connectingWallet?.name || 'none'},
-            ethereumStatus={connectStatus.ethereum || 'idle'}
-          </p>
-          {appKitAlertMessage && (
-            <p>
-              <strong>AppKit alert:</strong> {appKitAlertMessage}
-            </p>
-          )}
-          {appKitEvents.timestamp > 0 && (
-            <p>
-              <strong>Last AppKit event:</strong> {serializeDebugData(appKitEvents.data)}
-            </p>
-          )}
-        </div>
-      )}
-
     </div>
   );
 };

@@ -99,3 +99,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 MetaMask should be in the list of Bitcoin wallets.
 
 - TODO@P3 Can we add more connect wallet, than EVM, Solana, and Bitcoin?
+
+- TODO@P3 If a user is a citizen of several countries, which funds are distributed to him/her?

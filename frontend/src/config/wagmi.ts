@@ -1,5 +1,6 @@
 import { createAppKit } from '@reown/appkit/react';
 import { bitcoin, mainnet, sepolia, solana } from '@reown/appkit/networks';
+import { BitcoinAdapter } from '@reown/appkit-adapter-bitcoin';
 import { SolanaAdapter } from '@reown/appkit-adapter-solana';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { createConfig, http } from 'wagmi';
@@ -35,9 +36,10 @@ if (hasReownWalletModal) {
   const solanaAdapter = new SolanaAdapter({
     registerWalletStandard: true,
   });
+  const bitcoinAdapter = new BitcoinAdapter();
 
   createAppKit({
-    adapters: [wagmiAdapter, solanaAdapter],
+    adapters: [wagmiAdapter, solanaAdapter, bitcoinAdapter],
     metadata,
     networks,
     projectId,

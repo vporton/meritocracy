@@ -23,6 +23,8 @@ export default defineConfig({
   define: {
     global: 'globalThis',
     'process.env': {},
+    'process.browser': 'true',
+    'process.version': JSON.stringify('v18.16.0'),
   },
   resolve: {
     alias: {

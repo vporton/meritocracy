@@ -4,7 +4,7 @@ import { useConnect, useAccount, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';
-import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
+import { NonEvmAddressInput, validateNonEvmAddresses } from '../utils/addressValidation';
 import './ConnectForm.css';
 import Canonical from './Canonical';
 import { Helmet } from 'react-helmet-async';
@@ -57,6 +57,34 @@ interface MessageEvent {
     error?: string;
   };
 }
+
+type AddressFormValues = {
+  ethereumAddress: string;
+} & Record<keyof NonEvmAddressInput, string>;
+
+type AddressFormErrors = Partial<Record<keyof AddressFormValues, string>>;
+
+const ADDRESS_FORM_FIELDS: (keyof AddressFormValues)[] = [
+  'ethereumAddress',
+  'solanaAddress',
+  'bitcoinAddress',
+  'bitcoinCashAddress',
+  'polkadotAddress',
+  'cosmosAddress',
+  'stellarAddress',
+  'icpAddress',
+];
+
+const getEmptyAddressForm = (): AddressFormValues => ({
+  ethereumAddress: '',
+  solanaAddress: '',
+  bitcoinAddress: '',
+  bitcoinCashAddress: '',
+  polkadotAddress: '',
+  cosmosAddress: '',
+  stellarAddress: '',
+  icpAddress: '',
+});
 
 const BLOCKCHAIN_PROVIDER_NAMES = new Set([
   'Ethereum',
@@ -118,19 +146,8 @@ const ConnectForm = () => {
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
   const kycTokenParam = searchParams.get('kycToken') || '';
-  const [manualEthAddress, setManualEthAddress] = useState('');
-  const [manualEthStatus, setManualEthStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [manualEthError, setManualEthError] = useState<string | null>(null);
-  const [nonEvmForm, setNonEvmForm] = useState({
-    solanaAddress: '',
-    bitcoinAddress: '',
-    bitcoinCashAddress: '',
-    polkadotAddress: '',
-    cosmosAddress: '',
-    stellarAddress: '',
-    icpAddress: '',
-  });
-  const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
+  const [addressForm, setAddressForm] = useState<AddressFormValues>(getEmptyAddressForm());
+  const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({});
   const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
@@ -207,8 +224,8 @@ const ConnectForm = () => {
 
   useEffect(() => {
     if (user) {
-      setManualEthAddress(user.ethereumAddress ?? '');
-      setNonEvmForm({
+      setAddressForm({
+        ethereumAddress: user.ethereumAddress ?? '',
         solanaAddress: user.solanaAddress ?? '',
         bitcoinAddress: user.bitcoinAddress ?? '',
         bitcoinCashAddress: user.bitcoinCashAddress ?? '',
@@ -218,20 +235,13 @@ const ConnectForm = () => {
         icpAddress: user.icpAddress ?? '',
       });
     } else {
-      setManualEthAddress('');
-      setNonEvmForm({
-        solanaAddress: '',
-        bitcoinAddress: '',
-        bitcoinCashAddress: '',
-        polkadotAddress: '',
-        cosmosAddress: '',
-        stellarAddress: '',
-        icpAddress: '',
-      });
+      setAddressForm(getEmptyAddressForm());
     }
-    setManualEthStatus('idle');
-    setManualEthError(null);
-    setNonEvmErrors({});
+    setAddressErrors({});
+    setConnectStatus(prev => {
+      const { addresses, ...rest } = prev;
+      return rest;
+    });
   }, [user]);
 
   // Scroll to email form when it's shown
@@ -829,10 +839,10 @@ const ConnectForm = () => {
     }
   };
 
-  const handleNonEvmChange = (field: keyof typeof nonEvmForm) => (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAddressChange = (field: keyof AddressFormValues) => (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-    setNonEvmForm(prev => ({ ...prev, [field]: value }));
-    setNonEvmErrors(prev => {
+    setAddressForm(prev => ({ ...prev, [field]: value }));
+    setAddressErrors(prev => {
       if (!prev[field]) {
         return prev;
       }
@@ -841,104 +851,83 @@ const ConnectForm = () => {
     });
   };
 
-  const handleManualEthereumSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleAddressesSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!user) {
-      setManualEthStatus('error');
-      setManualEthError('You must be logged in to save an Ethereum address');
+      setConnectStatus(prev => ({ ...prev, addresses: 'error', error: 'You must be logged in to save addresses' }));
       return;
     }
 
-    const trimmed = manualEthAddress.trim();
-    if (trimmed && !isAddress(trimmed)) {
-      setManualEthStatus('error');
-      setManualEthError('Invalid Ethereum address format.');
+    const trimmedEthereum = addressForm.ethereumAddress.trim();
+    const validationErrors: AddressFormErrors = {
+      ...validateNonEvmAddresses({
+        solanaAddress: addressForm.solanaAddress,
+        bitcoinAddress: addressForm.bitcoinAddress,
+        bitcoinCashAddress: addressForm.bitcoinCashAddress,
+        polkadotAddress: addressForm.polkadotAddress,
+        cosmosAddress: addressForm.cosmosAddress,
+        stellarAddress: addressForm.stellarAddress,
+        icpAddress: addressForm.icpAddress,
+      })
+    };
+
+    if (trimmedEthereum && !isAddress(trimmedEthereum)) {
+      validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      const firstError = Object.values(validationErrors).find(value => value) || 'Please check the address formats.';
+      setAddressErrors(validationErrors);
+      setConnectStatus(prev => ({ ...prev, addresses: 'error', error: firstError }));
       return;
     }
+
+    setAddressErrors({});
+    setConnectStatus(prev => ({ ...prev, addresses: 'processing', error: undefined }));
 
     try {
-      setManualEthStatus('saving');
-      setManualEthError(null);
-
       await usersApi.update(user.id, {
-        ethereumAddress: trimmed || null
-      });
-
-      await refreshUser();
-
-      setManualEthStatus('success');
-      setTimeout(() => setManualEthStatus('idle'), 2000);
-    } catch (error: any) {
-      console.error('Manual Ethereum address update failed:', error);
-      const errorMessage = error?.response?.data?.details?.ethereumAddress
-        || error?.response?.data?.error
-        || error?.message
-        || 'Failed to save Ethereum address';
-      setManualEthStatus('error');
-      setManualEthError(errorMessage);
-    }
-  };
-
-  const handleNonEvmSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!user) {
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: 'You must be logged in to save addresses' }));
-      return;
-    }
-
-    try {
-      const validationErrors = validateNonEvmAddresses(nonEvmForm);
-      if (Object.keys(validationErrors).length > 0) {
-        const firstError = Object.values(validationErrors)[0];
-        setNonEvmErrors(validationErrors);
-        setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: firstError || 'Please check the address formats.' }));
-        return;
-      }
-
-      setNonEvmErrors({});
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'processing', error: undefined }));
-
-      await usersApi.update(user.id, {
-        solanaAddress: nonEvmForm.solanaAddress.trim() || null,
-        bitcoinAddress: nonEvmForm.bitcoinAddress.trim() || null,
-        bitcoinCashAddress: nonEvmForm.bitcoinCashAddress.trim() || null,
-        polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
-        cosmosAddress: nonEvmForm.cosmosAddress.trim() || null,
-        stellarAddress: nonEvmForm.stellarAddress.trim() || null,
-        icpAddress: nonEvmForm.icpAddress.trim() || null,
+        ethereumAddress: trimmedEthereum || null,
+        solanaAddress: addressForm.solanaAddress.trim() || null,
+        bitcoinAddress: addressForm.bitcoinAddress.trim() || null,
+        bitcoinCashAddress: addressForm.bitcoinCashAddress.trim() || null,
+        polkadotAddress: addressForm.polkadotAddress.trim() || null,
+        cosmosAddress: addressForm.cosmosAddress.trim() || null,
+        stellarAddress: addressForm.stellarAddress.trim() || null,
+        icpAddress: addressForm.icpAddress.trim() || null,
       });
 
       await refreshUser();
 
       setConnectStatus(prev => {
         const { error, ...rest } = prev;
-        return { ...rest, nonEvmAddresses: 'success' };
+        return { ...rest, addresses: 'success' };
       });
 
       setTimeout(() => {
         setConnectStatus(prev => {
-          const { nonEvmAddresses, ...rest } = prev;
+          const { addresses, ...rest } = prev;
           return rest;
         });
       }, 2000);
     } catch (error: any) {
-      console.error('Non-EVM address update failed:', error);
+      console.error('Address update failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
       const detailErrors = error?.response?.data?.details;
       if (detailErrors && typeof detailErrors === 'object') {
-        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'bitcoinCashAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress', 'icpAddress'] as const;
-        const mappedErrors: NonEvmAddressErrors = {};
-        for (const key of recognizedKeys) {
+        const mappedErrors: AddressFormErrors = {};
+        for (const key of ADDRESS_FORM_FIELDS) {
           const value = (detailErrors as Record<string, unknown>)[key];
           if (typeof value === 'string') {
             mappedErrors[key] = value;
           }
         }
-        setNonEvmErrors(mappedErrors);
+        if (Object.keys(mappedErrors).length > 0) {
+          setAddressErrors(mappedErrors);
+        }
       }
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: errorMessage }));
+      setConnectStatus(prev => ({ ...prev, addresses: 'error', error: errorMessage }));
     }
   };
 
@@ -1281,49 +1270,144 @@ const ConnectForm = () => {
         </div>
       )}
 
-      <div className="ethereum-manual">
-        <h3>Ethereum Address (Manual)</h3>
-        <p className="ethereum-manual-note">
-          Use this if you don’t want to connect a wallet. You can still connect a wallet later.
+      <div className="addresses-form">
+        <h3>Blockchain Addresses</h3>
+        <p className="addresses-form-note">
+          Enter your preferred blockchain addresses here. You can still connect a wallet later if you prefer.
         </p>
-        <form onSubmit={handleManualEthereumSubmit}>
+        <form onSubmit={handleAddressesSubmit}>
           <div className="form-group">
             <label htmlFor="ethereumAddress">Ethereum Address</label>
             <input
               type="text"
               id="ethereumAddress"
-              value={manualEthAddress}
-              onChange={(event) => {
-                setManualEthAddress(event.target.value);
-                if (manualEthStatus === 'error') {
-                  setManualEthStatus('idle');
-                  setManualEthError(null);
-                }
-              }}
+              value={addressForm.ethereumAddress}
+              onChange={handleAddressChange('ethereumAddress')}
               placeholder="0x..."
-              disabled={!isAuthenticated || manualEthStatus === 'saving'}
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
             />
+            {addressErrors.ethereumAddress && (
+              <p className="error-message">{addressErrors.ethereumAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="solanaAddress">Solana Address</label>
+            <input
+              type="text"
+              id="solanaAddress"
+              value={addressForm.solanaAddress}
+              onChange={handleAddressChange('solanaAddress')}
+              placeholder="Enter your Solana address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.solanaAddress && (
+              <p className="error-message">{addressErrors.solanaAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="bitcoinAddress">Bitcoin Address</label>
+            <input
+              type="text"
+              id="bitcoinAddress"
+              value={addressForm.bitcoinAddress}
+              onChange={handleAddressChange('bitcoinAddress')}
+              placeholder="Enter your Bitcoin address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.bitcoinAddress && (
+              <p className="error-message">{addressErrors.bitcoinAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="bitcoinCashAddress">Bitcoin Cash Address</label>
+            <input
+              type="text"
+              id="bitcoinCashAddress"
+              value={addressForm.bitcoinCashAddress}
+              onChange={handleAddressChange('bitcoinCashAddress')}
+              placeholder="Enter your Bitcoin Cash address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.bitcoinCashAddress && (
+              <p className="error-message">{addressErrors.bitcoinCashAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="polkadotAddress">Polkadot Address</label>
+            <input
+              type="text"
+              id="polkadotAddress"
+              value={addressForm.polkadotAddress}
+              onChange={handleAddressChange('polkadotAddress')}
+              placeholder="Enter your Polkadot address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.polkadotAddress && (
+              <p className="error-message">{addressErrors.polkadotAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="cosmosAddress">Cosmos (ATOM) Address</label>
+            <input
+              type="text"
+              id="cosmosAddress"
+              value={addressForm.cosmosAddress}
+              onChange={handleAddressChange('cosmosAddress')}
+              placeholder="Enter your Cosmos Hub address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.cosmosAddress && (
+              <p className="error-message">{addressErrors.cosmosAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="stellarAddress">Stellar Address</label>
+            <input
+              type="text"
+              id="stellarAddress"
+              value={addressForm.stellarAddress}
+              onChange={handleAddressChange('stellarAddress')}
+              placeholder="Enter your Stellar public key (starts with G)"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.stellarAddress && (
+              <p className="error-message">{addressErrors.stellarAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="icpAddress">ICP Address</label>
+            <input
+              type="text"
+              id="icpAddress"
+              value={addressForm.icpAddress}
+              onChange={handleAddressChange('icpAddress')}
+              placeholder="Enter your ICP account ID or principal"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.icpAddress && (
+              <p className="error-message">{addressErrors.icpAddress}</p>
+            )}
           </div>
           <div className="form-actions">
             <button
               type="submit"
               className="submit-button"
-              disabled={!isAuthenticated || manualEthStatus === 'saving'}
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
             >
-              {manualEthStatus === 'saving' ? 'Saving...' : 'Save Ethereum Address'}
+              {connectStatus.addresses === 'processing' ? 'Saving...' : 'Save Addresses'}
             </button>
           </div>
-          {manualEthStatus === 'success' && (
-            <p className="success-message">Ethereum address saved successfully.</p>
+          {connectStatus.addresses === 'success' && (
+            <p className="success-message">Addresses saved successfully.</p>
           )}
-          {manualEthStatus === 'error' && manualEthError && (
-            <p className="error-message">{manualEthError}</p>
+          {connectStatus.addresses === 'error' && connectStatus.error && (
+            <p className="error-message">{connectStatus.error}</p>
           )}
-          {!isAuthenticated && (
-            <p className="info-message">Log in or connect an account before saving an Ethereum address.</p>
-          )}
-        </form>
-      </div>
+      {!isAuthenticated && (
+        <p className="info-message">Log in or connect an account before saving addresses.</p>
+      )}
+    </form>
+  </div>
 
       {/* Email Form - Moved here to be more visible */}
       {showEmailForm && (
@@ -1383,132 +1467,10 @@ const ConnectForm = () => {
         </div>
       )}
 
-      <div className="non-evm-addresses">
-        <h3>Non-EVM Addresses</h3>
-        <form onSubmit={handleNonEvmSubmit}>
-          <div className="form-group">
-            <label htmlFor="solanaAddress">Solana Address</label>
-            <input
-              type="text"
-              id="solanaAddress"
-              value={nonEvmForm.solanaAddress}
-              onChange={handleNonEvmChange('solanaAddress')}
-              placeholder="Enter your Solana address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.solanaAddress && (
-              <p className="error-message">{nonEvmErrors.solanaAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="bitcoinAddress">Bitcoin Address</label>
-            <input
-              type="text"
-              id="bitcoinAddress"
-              value={nonEvmForm.bitcoinAddress}
-              onChange={handleNonEvmChange('bitcoinAddress')}
-              placeholder="Enter your Bitcoin address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.bitcoinAddress && (
-              <p className="error-message">{nonEvmErrors.bitcoinAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="bitcoinCashAddress">Bitcoin Cash Address</label>
-            <input
-              type="text"
-              id="bitcoinCashAddress"
-              value={nonEvmForm.bitcoinCashAddress}
-              onChange={handleNonEvmChange('bitcoinCashAddress')}
-              placeholder="Enter your Bitcoin Cash address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.bitcoinCashAddress && (
-              <p className="error-message">{nonEvmErrors.bitcoinCashAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="polkadotAddress">Polkadot Address</label>
-            <input
-              type="text"
-              id="polkadotAddress"
-              value={nonEvmForm.polkadotAddress}
-              onChange={handleNonEvmChange('polkadotAddress')}
-              placeholder="Enter your Polkadot address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.polkadotAddress && (
-              <p className="error-message">{nonEvmErrors.polkadotAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="cosmosAddress">Cosmos (ATOM) Address</label>
-            <input
-              type="text"
-              id="cosmosAddress"
-              value={nonEvmForm.cosmosAddress}
-              onChange={handleNonEvmChange('cosmosAddress')}
-              placeholder="Enter your Cosmos Hub address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.cosmosAddress && (
-              <p className="error-message">{nonEvmErrors.cosmosAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="stellarAddress">Stellar Address</label>
-            <input
-              type="text"
-              id="stellarAddress"
-              value={nonEvmForm.stellarAddress}
-              onChange={handleNonEvmChange('stellarAddress')}
-              placeholder="Enter your Stellar public key (starts with G)"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.stellarAddress && (
-              <p className="error-message">{nonEvmErrors.stellarAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="icpAddress">ICP Address</label>
-            <input
-              type="text"
-              id="icpAddress"
-              value={nonEvmForm.icpAddress}
-              onChange={handleNonEvmChange('icpAddress')}
-              placeholder="Enter your ICP account ID or principal"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.icpAddress && (
-              <p className="error-message">{nonEvmErrors.icpAddress}</p>
-            )}
-          </div>
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            >
-              {connectStatus.nonEvmAddresses === 'processing' ? 'Saving...' : 'Save Addresses'}
-            </button>
-          </div>
-          {connectStatus.nonEvmAddresses === 'success' && (
-            <p className="success-message">Addresses saved successfully.</p>
-          )}
-          {connectStatus.nonEvmAddresses === 'error' && connectStatus.error && (
-            <p className="error-message">{connectStatus.error}</p>
-          )}
-          {!isAuthenticated && (
-            <p className="info-message">Log in or connect an account before saving addresses.</p>
-          )}
-        </form>
-      </div>
-
 
       {/* Error Display */}
       {Object.entries(connectStatus).map(([provider, status]) =>
-        status === 'error' && provider !== 'nonEvmAddresses' && (
+        status === 'error' && provider !== 'addresses' && (
           <div key={provider} className="error-message">
             {provider.toUpperCase()} connection failed: {connectStatus.error}
           </div>

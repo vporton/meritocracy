@@ -366,6 +366,16 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
     }
 
+    let normalizedEthereumAddress: string | null | undefined;
+    if (ethereumAddress === undefined) {
+      normalizedEthereumAddress = undefined;
+    } else if (ethereumAddress === null) {
+      normalizedEthereumAddress = null;
+    } else {
+      const trimmed = String(ethereumAddress).trim();
+      normalizedEthereumAddress = trimmed || null;
+    }
+
     const user = await prisma.$transaction(async (tx) => {
       if (email) {
         const normalized = normalizeEmail(email);
@@ -390,7 +400,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
         where: { id: parseInt(id as string) },
         data: {
           ...(name && { name }), // FIXME@P3
-          ...{ ethereumAddress: ethereumAddress ? String(ethereumAddress).trim() : undefined },
+          ...(normalizedEthereumAddress !== undefined ? { ethereumAddress: normalizedEthereumAddress } : {}),
           ...{ solanaAddress: solanaAddress ? String(solanaAddress).trim() : null },
           ...{ bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null },
           ...{ bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : null },

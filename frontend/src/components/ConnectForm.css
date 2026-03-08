@@ -424,7 +424,7 @@
     animation: slideDown 0.3s ease-out;
   }
 
-  .ethereum-manual {
+  .addresses-form {
     margin-top: 2rem;
     padding: 1.75rem;
     background: #f8fafc;
@@ -432,14 +432,14 @@
     border: 1px solid #e2e8f0;
   }
 
-  .ethereum-manual h3 {
+  .addresses-form h3 {
     margin: 0 0 0.5rem 0;
     color: #1e293b;
     font-size: 1.1rem;
     font-weight: 600;
   }
 
-  .ethereum-manual-note {
+  .addresses-form-note {
     margin: 0 0 1rem 0;
     color: #475569;
     text-align: left;

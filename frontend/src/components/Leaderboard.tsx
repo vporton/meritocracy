@@ -148,6 +148,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
               >
                 Audit Logs
               </Link>
+              {' '}
               <span className="leaderboard-name" title={`User #${entry.userId}: ${entry.name}`}>{entry.name}</span>
             </div>
             <div className="col-share">

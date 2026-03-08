@@ -317,17 +317,17 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       votingPleaUnsubscribed
     }: {
       // TODO@P3: This typing is a bit messy - we should standardize on one type for "not provided" vs "explicitly null" across the board.
-      email: string | undefined,
-      name: string | undefined,
-      ethereumAddress: string | undefined,
-      solanaAddress: string | null,
-      bitcoinAddress: string | null,
-      bitcoinCashAddress: string | null,
-      polkadotAddress: string | null,
-      cosmosAddress: string | null,
-      stellarAddress: string | null,
-      icpAddress: string | null,
-      votingPleaUnsubscribed: string | null
+      email: string | null | undefined,
+      name: string | null | undefined,
+      ethereumAddress: string | null | undefined,
+      solanaAddress: string | null | undefined,
+      bitcoinAddress: string | null | undefined,
+      bitcoinCashAddress: string | null | undefined,
+      polkadotAddress: string | null | undefined,
+      cosmosAddress: string | null | undefined,
+      stellarAddress: string | null | undefined,
+      icpAddress: string | null | undefined,
+      votingPleaUnsubscribed: string | null | undefined
     } = req.body;
     const authenticatedUserId = (req as any).userId;
 
@@ -349,7 +349,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       })
     };
 
-    if (ethereumAddress !== undefined && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
+    if (ethereumAddress !== null && ethereumAddress !== undefined && String(ethereumAddress).trim() && !isValidEthereumAddress(ethereumAddress)) {
       validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
     }
 
@@ -361,7 +361,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    let normalizedVotingPleaPreference: string | boolean | null = votingPleaUnsubscribed; // TODO@P3: Use one type, not two.
+    let normalizedVotingPleaPreference: string | boolean | null | undefined = votingPleaUnsubscribed; // TODO@P3: Use one type, not two.
     if (typeof normalizedVotingPleaPreference === 'string') {
       normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
     }
@@ -389,16 +389,16 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       await tx.user.update({
         where: { id: parseInt(id as string) },
         data: {
-          ...(name !== null && { name }), // FIXME@P3
-          ...{ ethereumAddress: ethereumAddress !== undefined ? String(ethereumAddress).trim() : undefined },
-          ...{ solanaAddress: solanaAddress !== null ? String(solanaAddress).trim() : null },
-          ...{ bitcoinAddress: bitcoinAddress !== null ? String(bitcoinAddress).trim() : null },
-          ...{ bitcoinCashAddress: bitcoinCashAddress !== null ? String(bitcoinCashAddress).trim() : null },
-          ...{ polkadotAddress: polkadotAddress !== null ? String(polkadotAddress).trim() : null },
-          ...{ cosmosAddress: cosmosAddress !== null ? String(cosmosAddress).trim() : null },
-          ...{ stellarAddress: stellarAddress !== null ? String(stellarAddress).trim() : null },
-          ...{ icpAddress: icpAddress !== null ? String(icpAddress).trim() : null },
-          ...(normalizedVotingPleaPreference !== null && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
+          ...(name && { name }), // FIXME@P3
+          ...{ ethereumAddress: ethereumAddress ? String(ethereumAddress).trim() : undefined },
+          ...{ solanaAddress: solanaAddress ? String(solanaAddress).trim() : null },
+          ...{ bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null },
+          ...{ bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : null },
+          ...{ polkadotAddress: polkadotAddress ? String(polkadotAddress).trim() : null },
+          ...{ cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null },
+          ...{ stellarAddress: stellarAddress ? String(stellarAddress).trim() : null },
+          ...{ icpAddress: icpAddress ? String(icpAddress).trim() : null },
+          ...(normalizedVotingPleaPreference && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },
       });
 

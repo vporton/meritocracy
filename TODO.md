@@ -103,3 +103,7 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 If a user is a citizen of several countries, which funds are distributed to him/her?
 
 - TODO@P3 Increase LLM "power" parameters.
+
+- TODO@P2 Use a free Cron HTTP requests service instead of `node-cron`.
+  This has several advantages: no need to keep an instance running all the time,
+  no need for a dedicated Cron instance.

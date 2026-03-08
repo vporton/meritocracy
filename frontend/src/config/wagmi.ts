@@ -37,6 +37,7 @@ if (hasReownWalletModal) {
     metadata,
     networks,
     projectId,
+    enableNetworkSwitch: false,
     debug: true,
     enableReconnect: false,
     features: {

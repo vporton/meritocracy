@@ -1,6 +1,8 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useConnect, useAccount, useSignMessage } from 'wagmi';
+import { useAppKit, useAppKitEvents, useAppKitState } from '@reown/appkit/react';
+import { AlertController } from '@reown/appkit-controllers';
+import { useConnection, useDisconnect, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';
@@ -8,6 +10,7 @@ import { NonEvmAddressInput, validateNonEvmAddresses } from '../utils/addressVal
 import './ConnectForm.css';
 import Canonical from './Canonical';
 import { Helmet } from 'react-helmet-async';
+import { hasReownWalletModal } from '../config/wagmi';
 
 interface ConnectStatus {
   [provider: string]: string | undefined;
@@ -135,12 +138,23 @@ const copyTextToClipboard = async (text: string) => {
   return Promise.resolve();
 };
 
+const serializeDebugData = (value: unknown) => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '[unserializable]';
+  }
+};
+
 const ConnectForm = () => {
   const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const navigate = useNavigate();
-  const { connect, connectors } = useConnect();
-  const { address, isConnected, connector } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { open: openAppKit } = useAppKit();
+  const { open: isAppKitOpen, loading: isAppKitLoading, connectingWallet, initialized: isAppKitInitialized, activeChain } = useAppKitState();
+  const appKitEvents = useAppKitEvents();
+  const { address, isConnected } = useConnection();
+  const { mutateAsync: disconnectWalletAsync } = useDisconnect();
+  const { mutateAsync: signWalletMessageAsync } = useSignMessage();
   const [searchParams] = useSearchParams();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
@@ -151,6 +165,7 @@ const ConnectForm = () => {
   const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
+  const [appKitAlertMessage, setAppKitAlertMessage] = useState('');
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
@@ -181,7 +196,7 @@ const ConnectForm = () => {
         const message = `Connect to Meritocracy platform with address: ${address}`;
         console.log('Requesting signature for message:', message);
 
-        const signature = await signMessageAsync({ message });
+        const signature = await signWalletMessageAsync({ message });
         console.log('Signature received:', signature ? 'yes' : 'no');
 
         if (!signature) {
@@ -220,7 +235,70 @@ const ConnectForm = () => {
     };
 
     handleAuthentication();
-  }, [pendingWalletAuth, isConnected, address, signMessageAsync, login]);
+  }, [pendingWalletAuth, isConnected, address, signWalletMessageAsync, login]);
+
+  useEffect(() => {
+    if (connectStatus.ethereum === 'selecting' && isConnected && address) {
+      setPendingWalletAuth(true);
+    }
+  }, [connectStatus.ethereum, isConnected, address]);
+
+  useEffect(() => {
+    const syncAlertState = () => {
+      setAppKitAlertMessage(AlertController.state.open ? AlertController.state.message : '');
+    };
+
+    syncAlertState();
+    const unsubscribeMessage = AlertController.subscribeKey('message', syncAlertState);
+    const unsubscribeOpen = AlertController.subscribeKey('open', syncAlertState);
+
+    return () => {
+      unsubscribeMessage();
+      unsubscribeOpen();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasReownWalletModal) {
+      return;
+    }
+
+    console.log('AppKit state update', {
+      ethereumStatus: connectStatus.ethereum,
+      isAppKitInitialized,
+      isAppKitOpen,
+      isAppKitLoading,
+      connectingWallet: connectingWallet?.name,
+      activeChain,
+      isConnected,
+      address,
+      alert: appKitAlertMessage || undefined,
+    });
+  }, [
+    connectStatus.ethereum,
+    isAppKitInitialized,
+    isAppKitOpen,
+    isAppKitLoading,
+    connectingWallet,
+    activeChain,
+    isConnected,
+    address,
+    appKitAlertMessage,
+  ]);
+
+  useEffect(() => {
+    if (!hasReownWalletModal || !appKitEvents.timestamp) {
+      return;
+    }
+
+    console.log('AppKit event update', {
+      timestamp: appKitEvents.timestamp,
+      data: appKitEvents.data,
+      pendingEvents: appKitEvents.pendingEvents,
+      walletImpressions: appKitEvents.walletImpressions,
+      reportedErrors: appKitEvents.reportedErrors,
+    });
+  }, [appKitEvents, appKitEvents.timestamp]);
 
   useEffect(() => {
     if (user) {
@@ -415,6 +493,9 @@ const ConnectForm = () => {
       setConnectStatus(prev => ({ ...prev, [provider]: 'disconnecting' }));
 
       const response = await authApi.disconnectProvider(provider, payload);
+      if (provider === 'ethereum' && isConnected) {
+        await disconnectWalletAsync();
+      }
       if (response.data.user) {
         await refreshUser();
         setConnectStatus(prev => {
@@ -448,7 +529,7 @@ const ConnectForm = () => {
   // Ethereum/Web3 Connect - show wallet selection
   const handleEthereumConnect = async () => {
     console.log('Ethereum connect button clicked!');
-    console.log('Current state:', { isConnected, isProviderConnected: isProviderConnected('ethereum'), connectors: connectors.length });
+    console.log('Current state:', { isConnected, isProviderConnected: isProviderConnected('ethereum') });
 
     // Check if already connected to our platform and user wants to disconnect
     if (isProviderConnected('ethereum')) {
@@ -456,33 +537,28 @@ const ConnectForm = () => {
       return handleDisconnect('ethereum');
     }
 
-    // Always show wallet selection modal first, regardless of current connection state
-    console.log('Showing wallet selection modal...');
-    setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
-  };
-
-  // Handle wallet selection
-  const handleWalletSelect = async (selectedConnector: any) => {
     try {
-      setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
-      console.log('Connecting to wallet:', selectedConnector.name);
-
-      // If already connected to this connector, proceed with authentication immediately
-      if (isConnected && selectedConnector.name === connector?.name && address) {
-        console.log('Already connected to this wallet, proceeding with authentication...');
+      if (isConnected && address) {
+        console.log('Wallet already connected, proceeding with authentication...');
         setPendingWalletAuth(true);
         return;
       }
 
-      // Connect to the selected wallet
-      console.log('Initiating wallet connection...');
-      await connect({ connector: selectedConnector });
-      console.log('Wallet connection initiated');
+      if (!hasReownWalletModal) {
+        setConnectStatus(prev => ({
+          ...prev,
+          ethereum: 'error',
+          error: 'Wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable Reown.'
+        }));
+        return;
+      }
 
-      // Set flag to trigger authentication once connection is established
-      setPendingWalletAuth(true);
+      setAppKitAlertMessage('');
+      setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
+      console.log('Opening Reown wallet chooser...');
+      await openAppKit({ view: 'Connect', namespace: 'eip155' });
     } catch (error: any) {
-      console.error('Wallet connection error:', error);
+      console.error('Wallet selection error:', error);
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
         setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
       } else {
@@ -1483,41 +1559,27 @@ const ConnectForm = () => {
         </p>
       </div>
 
-      {/* Wallet Selection Modal */}
-      {connectStatus.ethereum === 'selecting' && (
-        <div className="wallet-selection-modal">
-          <div className="modal-overlay" onClick={() => setConnectStatus(prev => ({ ...prev, ethereum: undefined }))} />
-          <div className="modal-content">
-            <h3>Select a Wallet</h3>
-            <div className="wallet-options">
-
-              {connectors.map((connector) => (
-                <button
-                  key={connector.uid}
-                  className="wallet-option"
-                  onClick={() => handleWalletSelect(connector)}
-                >
-                  <span className="wallet-icon">
-                    {connector.name === 'MetaMask' && '🦊'}
-                    {connector.name === 'WalletConnect' && '🔗'}
-                    {connector.name === 'Coinbase Wallet' && '🔵'}
-                    {connector.name === 'Safe' && '🛡️'}
-                    {connector.name === 'Rainbow' && '🌈'}
-                    {!['MetaMask', 'WalletConnect', 'Coinbase Wallet', 'Safe', 'Rainbow'].includes(connector.name) && '💳'}
-                  </span>
-                  <span className="wallet-name">{connector.name}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              className="modal-close"
-              onClick={() => setConnectStatus(prev => ({ ...prev, ethereum: undefined }))}
-            >
-              Cancel
-            </button>
-          </div>
+      {hasReownWalletModal && import.meta.env.DEV && (
+        <div className="connect-info">
+          <p>
+            <strong>AppKit debug:</strong>{' '}
+            initialized={String(isAppKitInitialized)}, open={String(isAppKitOpen)}, loading={String(isAppKitLoading)},
+            activeChain={activeChain || 'none'}, connectingWallet={connectingWallet?.name || 'none'},
+            ethereumStatus={connectStatus.ethereum || 'idle'}
+          </p>
+          {appKitAlertMessage && (
+            <p>
+              <strong>AppKit alert:</strong> {appKitAlertMessage}
+            </p>
+          )}
+          {appKitEvents.timestamp > 0 && (
+            <p>
+              <strong>Last AppKit event:</strong> {serializeDebugData(appKitEvents.data)}
+            </p>
+          )}
         </div>
       )}
+
     </div>
   );
 };

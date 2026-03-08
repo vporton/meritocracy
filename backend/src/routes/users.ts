@@ -399,15 +399,15 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       await tx.user.update({
         where: { id: parseInt(id as string) },
         data: {
-          ...(name && { name }), // FIXME@P3
-          ...(normalizedEthereumAddress !== undefined ? { ethereumAddress: normalizedEthereumAddress } : {}),
-          ...{ solanaAddress: solanaAddress ? String(solanaAddress).trim() : null },
-          ...{ bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null },
-          ...{ bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : null },
-          ...{ polkadotAddress: polkadotAddress ? String(polkadotAddress).trim() : null },
-          ...{ cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null },
-          ...{ stellarAddress: stellarAddress ? String(stellarAddress).trim() : null },
-          ...{ icpAddress: icpAddress ? String(icpAddress).trim() : null },
+          ...(name !== undefined && (name && { name })), // FIXME@P3
+          ...(normalizedEthereumAddress !== undefined && { ethereumAddress: normalizedEthereumAddress }),
+          ...(solanaAddress !== undefined && { solanaAddress: solanaAddress ? String(solanaAddress).trim() : null }),
+          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null }),
+          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : null }),
+          ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress ? String(polkadotAddress).trim() : null }),
+          ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null }),
+          ...(stellarAddress !== undefined && { stellarAddress: stellarAddress ? String(stellarAddress).trim() : null }),
+          ...(icpAddress !== undefined && { icpAddress: icpAddress ? String(icpAddress).trim() : null }),
           // TODO@P3: `undefined` vs `null`:
           ...(normalizedVotingPleaPreference !== undefined && normalizedVotingPleaPreference !== null && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },

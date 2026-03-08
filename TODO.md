@@ -95,3 +95,7 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - FIXME@P3 Binance Webapp isn't working: https://github.com/reown-com/appkit/issues/5584
 
 - TODO@P3 TRON and TON tokens.
+
+- TODO@P3 MetaMask should be in the list of Bitcoin wallets.
+
+- TODO@P3 Can we add more connect wallet, than EVM, Solana, and Bitcoin?

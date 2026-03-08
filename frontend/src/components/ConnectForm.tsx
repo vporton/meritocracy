@@ -186,6 +186,7 @@ const serializeDebugData = (value: unknown) => {
   }
 };
 
+/* TODO@P3 White-screen bug in production: disabling Solana/Bitcoin wallet autofill helpers until we can fix the crash.
 const normalizeSolanaProvider = (value: unknown): SolanaWalletProvider | undefined => {
   if (!value || typeof value !== 'object') {
     return undefined;
@@ -297,6 +298,7 @@ const connectInjectedSolanaWallet = async (): Promise<string | null> => {
 
   return typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
 };
+*/
 
 const ConnectForm = () => {
   const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
@@ -1284,6 +1286,7 @@ const ConnectForm = () => {
     await persistAddressForm();
   };
 
+  /* TODO@P3 White-screen bug in production: disable Solana/Bitcoin wallet connect helper until we can fix the crash.
   const handleWalletAddressConnect = async (
     field: 'solanaAddress' | 'bitcoinAddress',
     namespace: 'solana' | 'bip122'
@@ -1331,6 +1334,7 @@ const ConnectForm = () => {
       }));
     }
   };
+  */
 
   // Helper function to check if a provider is connected
   const isProviderConnected = (provider: string): boolean => {
@@ -1693,6 +1697,8 @@ const ConnectForm = () => {
           </div>
           <div className="form-group">
             <label htmlFor="solanaAddress">Solana Address</label>
+            {/* TODO@P3 White-screen bug in production: disabling the Solana wallet autofill button until we fix the crash. */}
+            {/*
             <button
               type="button"
               className="cancel-button"
@@ -1701,6 +1707,7 @@ const ConnectForm = () => {
             >
               Connect Solana wallet
             </button>
+            */}
             <input
               type="text"
               id="solanaAddress"
@@ -1715,6 +1722,8 @@ const ConnectForm = () => {
           </div>
           <div className="form-group">
             <label htmlFor="bitcoinAddress">Bitcoin Address</label>
+            {/* TODO@P3 White-screen bug in production: disabling the Bitcoin wallet autofill button until we fix the crash. */}
+            {/*
             <button
               type="button"
               className="cancel-button"
@@ -1723,6 +1732,7 @@ const ConnectForm = () => {
             >
               Connect Bitcoin wallet
             </button>
+            */}
             <input
               type="text"
               id="bitcoinAddress"

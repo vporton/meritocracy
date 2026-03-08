@@ -8,7 +8,7 @@ npm test
 cd backend
 
 # TODO@P2: hack
-npm update prisma
+npm install prisma
 
 # Prevent submitting, if has not been tested on a local DB.
 npx prisma migrate status --config prisma/prisma.config.js

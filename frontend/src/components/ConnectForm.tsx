@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAppKit, useAppKitEvents, useAppKitState } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount, useAppKitEvents, useAppKitState } from '@reown/appkit/react';
 import { AlertController } from '@reown/appkit-controllers';
 import { useConnection, useDisconnect, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
@@ -61,6 +61,34 @@ interface MessageEvent {
   };
 }
 
+interface SolanaPublicKey {
+  toBase58(): string;
+}
+
+interface SolanaWalletProvider {
+  publicKey?: SolanaPublicKey;
+  isPhantom?: boolean;
+  isSolflare?: boolean;
+  isBackpack?: boolean;
+  isMetaMask?: boolean;
+  providers?: SolanaWalletProvider[];
+  connect?: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: SolanaPublicKey } | void>;
+  request?: (args: { method: string; params?: unknown }) => Promise<{ publicKey?: SolanaPublicKey } | string | void>;
+}
+
+interface SolanaWindow extends Window {
+  backpack?: SolanaWalletProvider | { solana?: SolanaWalletProvider };
+  phantom?: { solana?: SolanaWalletProvider };
+  solana?: SolanaWalletProvider;
+  solflare?: SolanaWalletProvider | { solana?: SolanaWalletProvider };
+}
+
+interface SolanaWalletOption {
+  id: string;
+  label: string;
+  provider: SolanaWalletProvider;
+}
+
 type AddressFormValues = {
   ethereumAddress: string;
 } & Record<keyof NonEvmAddressInput, string>;
@@ -87,6 +115,11 @@ const getEmptyAddressForm = (): AddressFormValues => ({
   cosmosAddress: '',
   stellarAddress: '',
   icpAddress: '',
+});
+
+const getEmptyWalletAutofillState = () => ({
+  solanaAddress: '',
+  bitcoinAddress: '',
 });
 
 const BLOCKCHAIN_PROVIDER_NAMES = new Set([
@@ -146,12 +179,126 @@ const serializeDebugData = (value: unknown) => {
   }
 };
 
+const normalizeSolanaProvider = (value: unknown): SolanaWalletProvider | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const provider = value as SolanaWalletProvider | { solana?: SolanaWalletProvider };
+  return provider.solana ?? (provider as SolanaWalletProvider);
+};
+
+const canConnectSolanaProvider = (provider?: SolanaWalletProvider): provider is SolanaWalletProvider => {
+  return Boolean(provider && (typeof provider.connect === 'function' || typeof provider.request === 'function'));
+};
+
+const getSolanaWalletLabel = (id: string, provider?: SolanaWalletProvider): string => {
+  if (provider?.isMetaMask) {
+    return 'MetaMask';
+  }
+
+  if (provider?.isPhantom) {
+    return 'Phantom';
+  }
+
+  if (provider?.isSolflare) {
+    return 'Solflare';
+  }
+
+  if (provider?.isBackpack) {
+    return 'Backpack';
+  }
+
+  return id;
+};
+
+const getInjectedSolanaWallets = (): SolanaWalletOption[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const solanaWindow = window as SolanaWindow;
+  const rootProvider = normalizeSolanaProvider(solanaWindow.solana);
+  const candidateEntries: Array<{ id: string; provider?: SolanaWalletProvider }> = [
+    { id: 'MetaMask', provider: rootProvider?.isMetaMask ? rootProvider : undefined },
+    { id: 'Phantom', provider: normalizeSolanaProvider(solanaWindow.phantom) },
+    { id: 'Solflare', provider: normalizeSolanaProvider(solanaWindow.solflare) },
+    { id: 'Backpack', provider: normalizeSolanaProvider(solanaWindow.backpack) },
+    { id: 'Injected Solana', provider: rootProvider },
+  ];
+
+  for (const [index, provider] of (rootProvider?.providers ?? []).entries()) {
+    candidateEntries.push({
+      id: `Injected Solana ${index + 1}`,
+      provider,
+    });
+  }
+
+  const seenProviders = new Set<SolanaWalletProvider>();
+
+  return candidateEntries.flatMap(candidate => {
+    if (!canConnectSolanaProvider(candidate.provider) || seenProviders.has(candidate.provider)) {
+      return [];
+    }
+
+    seenProviders.add(candidate.provider);
+
+    return [{
+      id: candidate.id,
+      label: getSolanaWalletLabel(candidate.id, candidate.provider),
+      provider: candidate.provider,
+    }];
+  });
+};
+
+const selectInjectedSolanaWallet = (wallets: SolanaWalletOption[]): SolanaWalletOption | null => {
+  if (wallets.length === 0) {
+    return null;
+  }
+
+  if (wallets.length === 1 || typeof window === 'undefined') {
+    return wallets[0];
+  }
+
+  const choices = wallets.map((wallet, index) => `${index + 1}. ${wallet.label}`).join('\n');
+  const selection = window.prompt(`Choose a Solana wallet:\n${choices}`, '1');
+  if (selection === null) {
+    return null;
+  }
+
+  const selectedIndex = Number.parseInt(selection, 10) - 1;
+  return wallets[selectedIndex] ?? null;
+};
+
+const connectInjectedSolanaWallet = async (): Promise<string | null> => {
+  const wallets = getInjectedSolanaWallets();
+  const selectedWallet = selectInjectedSolanaWallet(wallets);
+  if (!selectedWallet) {
+    return null;
+  }
+
+  const { provider } = selectedWallet;
+  const result = provider.connect
+    ? await provider.connect()
+    : await provider.request?.({ method: 'connect' });
+  const resultPublicKey = typeof result === 'string' ? result : result?.publicKey;
+  const publicKey = resultPublicKey ?? provider.publicKey;
+
+  if (!publicKey) {
+    return null;
+  }
+
+  return typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
+};
+
 const ConnectForm = () => {
   const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
   const navigate = useNavigate();
   const { open: openAppKit } = useAppKit();
   const { open: isAppKitOpen, loading: isAppKitLoading, connectingWallet, initialized: isAppKitInitialized, activeChain } = useAppKitState();
   const appKitEvents = useAppKitEvents();
+  const solanaAccount = useAppKitAccount({ namespace: 'solana' });
+  const bitcoinAccount = useAppKitAccount({ namespace: 'bip122' });
   const { address, isConnected } = useConnection();
   const { mutateAsync: disconnectWalletAsync } = useDisconnect();
   const { mutateAsync: signWalletMessageAsync } = useSignMessage();
@@ -162,6 +309,7 @@ const ConnectForm = () => {
   const kycTokenParam = searchParams.get('kycToken') || '';
   const [addressForm, setAddressForm] = useState<AddressFormValues>(getEmptyAddressForm());
   const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({});
+  const walletAutofillRef = useRef(getEmptyWalletAutofillState());
   const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
@@ -320,7 +468,52 @@ const ConnectForm = () => {
       const { addresses, ...rest } = prev;
       return rest;
     });
+    walletAutofillRef.current = getEmptyWalletAutofillState();
   }, [user]);
+
+  const syncWalletAddressField = (field: 'solanaAddress' | 'bitcoinAddress', nextValue?: string) => {
+    const trimmedValue = nextValue?.trim();
+    const previousWalletValue = walletAutofillRef.current[field];
+
+    if (!trimmedValue) {
+      walletAutofillRef.current[field] = '';
+      return;
+    }
+
+    setAddressForm(prev => {
+      const currentValue = prev[field].trim();
+      if (currentValue && currentValue !== previousWalletValue) {
+        walletAutofillRef.current[field] = trimmedValue;
+        return prev;
+      }
+
+      walletAutofillRef.current[field] = trimmedValue;
+      return {
+        ...prev,
+        [field]: trimmedValue,
+      };
+    });
+
+    setAddressErrors(prev => {
+      if (!prev[field]) {
+        return prev;
+      }
+
+      const { [field]: _removed, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const bitcoinWalletAddress = bitcoinAccount.allAccounts.find(account => account.namespace === 'bip122' && account.type === 'payment')?.address
+    ?? (typeof bitcoinAccount.address === 'string' ? bitcoinAccount.address : undefined);
+
+  useEffect(() => {
+    syncWalletAddressField('solanaAddress', typeof solanaAccount.address === 'string' ? solanaAccount.address : undefined);
+  }, [solanaAccount.address]);
+
+  useEffect(() => {
+    syncWalletAddressField('bitcoinAddress', bitcoinWalletAddress);
+  }, [bitcoinWalletAddress]);
 
   // Scroll to email form when it's shown
   useEffect(() => {
@@ -1012,6 +1205,55 @@ const ConnectForm = () => {
     }
   };
 
+  const handleWalletAddressConnect = async (
+    field: 'solanaAddress' | 'bitcoinAddress',
+    namespace: 'solana' | 'bip122',
+    connectedAddress?: string
+  ) => {
+    if (connectedAddress?.trim()) {
+      syncWalletAddressField(field, connectedAddress);
+      return;
+    }
+
+    if (namespace === 'solana') {
+      try {
+        setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
+        const injectedSolanaAddress = await connectInjectedSolanaWallet();
+        if (injectedSolanaAddress) {
+          syncWalletAddressField(field, injectedSolanaAddress);
+          return;
+        }
+      } catch (error: any) {
+        setConnectStatus(prev => ({
+          ...prev,
+          addresses: 'error',
+          error: error?.message || 'Failed to connect Solana wallet'
+        }));
+        return;
+      }
+    }
+
+    if (!hasReownWalletModal) {
+      setConnectStatus(prev => ({
+        ...prev,
+        addresses: 'error',
+        error: 'Wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable wallet autofill.'
+      }));
+      return;
+    }
+
+    try {
+      setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
+      await openAppKit({ view: 'Connect', namespace });
+    } catch (error: any) {
+      setConnectStatus(prev => ({
+        ...prev,
+        addresses: 'error',
+        error: error?.message || 'Failed to open wallet selector'
+      }));
+    }
+  };
+
   // Helper function to check if a provider is connected
   const isProviderConnected = (provider: string): boolean => {
     if (!user) return false;
@@ -1354,7 +1596,7 @@ const ConnectForm = () => {
       <div className="addresses-form">
         <h3>Blockchain Addresses</h3>
         <p className="addresses-form-note">
-          Enter your preferred blockchain addresses here. You can still connect a wallet later if you prefer.
+          Enter your preferred blockchain addresses here. You can still connect a wallet later if you prefer. Wallet autofill currently supports Ethereum login plus Solana and Bitcoin wallet sessions.
         </p>
         <form onSubmit={handleAddressesSubmit}>
           <div className="form-group">
@@ -1373,6 +1615,18 @@ const ConnectForm = () => {
           </div>
           <div className="form-group">
             <label htmlFor="solanaAddress">Solana Address</label>
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => handleWalletAddressConnect(
+                'solanaAddress',
+                'solana',
+                typeof solanaAccount.address === 'string' ? solanaAccount.address : undefined
+              )}
+              disabled={connectStatus.addresses === 'processing'}
+            >
+              {solanaAccount.isConnected ? 'Use connected Solana wallet' : 'Connect Solana wallet'}
+            </button>
             <input
               type="text"
               id="solanaAddress"
@@ -1387,6 +1641,14 @@ const ConnectForm = () => {
           </div>
           <div className="form-group">
             <label htmlFor="bitcoinAddress">Bitcoin Address</label>
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => handleWalletAddressConnect('bitcoinAddress', 'bip122', bitcoinWalletAddress)}
+              disabled={connectStatus.addresses === 'processing'}
+            >
+              {bitcoinAccount.isConnected ? 'Use connected Bitcoin wallet' : 'Connect Bitcoin wallet'}
+            </button>
             <input
               type="text"
               id="bitcoinAddress"

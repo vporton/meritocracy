@@ -117,9 +117,9 @@ const getEmptyAddressForm = (): AddressFormValues => ({
   icpAddress: '',
 });
 
-const getEmptyWalletAutofillState = () => ({
-  solanaAddress: '',
-  bitcoinAddress: '',
+const getEmptyWalletAutofillState = (initial?: Partial<Record<'solanaAddress' | 'bitcoinAddress', string>>) => ({
+  solanaAddress: initial?.solanaAddress ?? '',
+  bitcoinAddress: initial?.bitcoinAddress ?? '',
 });
 
 const BLOCKCHAIN_PROVIDER_NAMES = new Set([
@@ -308,8 +308,10 @@ const ConnectForm = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const kycTokenParam = searchParams.get('kycToken') || '';
   const [addressForm, setAddressForm] = useState<AddressFormValues>(getEmptyAddressForm());
+  const addressFormRef = useRef<AddressFormValues>(getEmptyAddressForm());
   const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({});
   const walletAutofillRef = useRef(getEmptyWalletAutofillState());
+  const persistAddressFormRef = useRef<((overrides?: Partial<AddressFormValues>) => Promise<boolean>) | null>(null);
   const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
@@ -449,50 +451,63 @@ const ConnectForm = () => {
   }, [appKitEvents, appKitEvents.timestamp]);
 
   useEffect(() => {
+    const nextAddressForm = user ? {
+      ethereumAddress: user.ethereumAddress ?? '',
+      solanaAddress: user.solanaAddress ?? '',
+      bitcoinAddress: user.bitcoinAddress ?? '',
+      bitcoinCashAddress: user.bitcoinCashAddress ?? '',
+      polkadotAddress: user.polkadotAddress ?? '',
+      cosmosAddress: user.cosmosAddress ?? '',
+      stellarAddress: user.stellarAddress ?? '',
+      icpAddress: user.icpAddress ?? '',
+    } : getEmptyAddressForm();
+
+    addressFormRef.current = nextAddressForm;
+
     if (user) {
-      setAddressForm({
-        ethereumAddress: user.ethereumAddress ?? '',
-        solanaAddress: user.solanaAddress ?? '',
-        bitcoinAddress: user.bitcoinAddress ?? '',
-        bitcoinCashAddress: user.bitcoinCashAddress ?? '',
-        polkadotAddress: user.polkadotAddress ?? '',
-        cosmosAddress: user.cosmosAddress ?? '',
-        stellarAddress: user.stellarAddress ?? '',
-        icpAddress: user.icpAddress ?? '',
-      });
+      setAddressForm(nextAddressForm);
     } else {
-      setAddressForm(getEmptyAddressForm());
+      setAddressForm(nextAddressForm);
     }
     setAddressErrors({});
     setConnectStatus(prev => {
       const { addresses, ...rest } = prev;
       return rest;
     });
-    walletAutofillRef.current = getEmptyWalletAutofillState();
+    walletAutofillRef.current = getEmptyWalletAutofillState({
+      solanaAddress: user?.solanaAddress?.trim(),
+      bitcoinAddress: user?.bitcoinAddress?.trim(),
+    });
   }, [user]);
 
-  const syncWalletAddressField = (field: 'solanaAddress' | 'bitcoinAddress', nextValue?: string) => {
+  const syncWalletAddressField = (field: 'solanaAddress' | 'bitcoinAddress', nextValue?: string): string | undefined => {
     const trimmedValue = nextValue?.trim();
     const previousWalletValue = walletAutofillRef.current[field];
 
     if (!trimmedValue) {
       walletAutofillRef.current[field] = '';
-      return;
+      return undefined;
     }
 
-    setAddressForm(prev => {
-      const currentValue = prev[field].trim();
-      if (currentValue && currentValue !== previousWalletValue) {
-        walletAutofillRef.current[field] = trimmedValue;
-        return prev;
-      }
+    const currentValue = addressFormRef.current[field].trim();
 
-      walletAutofillRef.current[field] = trimmedValue;
-      return {
-        ...prev,
-        [field]: trimmedValue,
-      };
-    });
+    walletAutofillRef.current[field] = trimmedValue;
+
+    if (currentValue && currentValue !== previousWalletValue) {
+      return undefined;
+    }
+
+    if (currentValue === trimmedValue) {
+      return undefined;
+    }
+
+    const nextForm = {
+      ...addressFormRef.current,
+      [field]: trimmedValue,
+    };
+
+    addressFormRef.current = nextForm;
+    setAddressForm(nextForm);
 
     setAddressErrors(prev => {
       if (!prev[field]) {
@@ -502,18 +517,39 @@ const ConnectForm = () => {
       const { [field]: _removed, ...rest } = prev;
       return rest;
     });
+
+    return trimmedValue;
   };
 
   const bitcoinWalletAddress = bitcoinAccount.allAccounts.find(account => account.namespace === 'bip122' && account.type === 'payment')?.address
     ?? (typeof bitcoinAccount.address === 'string' ? bitcoinAccount.address : undefined);
 
-  useEffect(() => {
-    syncWalletAddressField('solanaAddress', typeof solanaAccount.address === 'string' ? solanaAccount.address : undefined);
-  }, [solanaAccount.address]);
+  const resolveSolanaAccountAddress = () => {
+    const injected = typeof solanaAccount.address === 'string' && solanaAccount.address.trim()
+      ? solanaAccount.address.trim()
+      : undefined;
+    if (injected) {
+      return injected;
+    }
+
+    const fallback = solanaAccount.allAccounts.find(account => account.namespace === 'solana' && account.address);
+    return fallback?.address?.trim() || undefined;
+  };
 
   useEffect(() => {
-    syncWalletAddressField('bitcoinAddress', bitcoinWalletAddress);
-  }, [bitcoinWalletAddress]);
+    const effectiveAddress = resolveSolanaAccountAddress();
+    const updatedValue = syncWalletAddressField('solanaAddress', effectiveAddress);
+    if (user && updatedValue) {
+      void persistAddressFormRef.current?.({ solanaAddress: updatedValue });
+    }
+  }, [solanaAccount.address, solanaAccount.allAccounts, user]);
+
+  useEffect(() => {
+    const updatedValue = syncWalletAddressField('bitcoinAddress', bitcoinWalletAddress);
+    if (user && updatedValue) {
+      void persistAddressFormRef.current?.({ bitcoinAddress: updatedValue });
+    }
+  }, [bitcoinWalletAddress, user]);
 
   // Scroll to email form when it's shown
   useEffect(() => {
@@ -1115,7 +1151,12 @@ const ConnectForm = () => {
 
   const handleAddressChange = (field: keyof AddressFormValues) => (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-    setAddressForm(prev => ({ ...prev, [field]: value }));
+    const nextForm = {
+      ...addressFormRef.current,
+      [field]: value,
+    };
+    addressFormRef.current = nextForm;
+    setAddressForm(nextForm);
     setAddressErrors(prev => {
       if (!prev[field]) {
         return prev;
@@ -1125,28 +1166,31 @@ const ConnectForm = () => {
     });
   };
 
-  const handleAddressesSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const persistAddressForm = async (overrides: Partial<AddressFormValues> = {}) => {
     if (!user) {
       setConnectStatus(prev => ({ ...prev, addresses: 'error', error: 'You must be logged in to save addresses' }));
-      return;
+      return false;
     }
 
-    const trimmedEthereum = addressForm.ethereumAddress.trim();
+    const mergedForm: AddressFormValues = { ...addressFormRef.current, ...overrides };
+    const trimmedForm: AddressFormValues = ADDRESS_FORM_FIELDS.reduce<AddressFormValues>((acc, key) => {
+      acc[key] = (mergedForm[key] ?? '').trim();
+      return acc;
+    }, {} as AddressFormValues);
+
     const validationErrors: AddressFormErrors = {
       ...validateNonEvmAddresses({
-        solanaAddress: addressForm.solanaAddress,
-        bitcoinAddress: addressForm.bitcoinAddress,
-        bitcoinCashAddress: addressForm.bitcoinCashAddress,
-        polkadotAddress: addressForm.polkadotAddress,
-        cosmosAddress: addressForm.cosmosAddress,
-        stellarAddress: addressForm.stellarAddress,
-        icpAddress: addressForm.icpAddress,
+        solanaAddress: trimmedForm.solanaAddress,
+        bitcoinAddress: trimmedForm.bitcoinAddress,
+        bitcoinCashAddress: trimmedForm.bitcoinCashAddress,
+        polkadotAddress: trimmedForm.polkadotAddress,
+        cosmosAddress: trimmedForm.cosmosAddress,
+        stellarAddress: trimmedForm.stellarAddress,
+        icpAddress: trimmedForm.icpAddress,
       })
     };
 
-    if (trimmedEthereum && !isAddress(trimmedEthereum)) {
+    if (trimmedForm.ethereumAddress && !isAddress(trimmedForm.ethereumAddress)) {
       validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
     }
 
@@ -1154,7 +1198,7 @@ const ConnectForm = () => {
       const firstError = Object.values(validationErrors).find(value => value) || 'Please check the address formats.';
       setAddressErrors(validationErrors);
       setConnectStatus(prev => ({ ...prev, addresses: 'error', error: firstError }));
-      return;
+      return false;
     }
 
     setAddressErrors({});
@@ -1162,17 +1206,24 @@ const ConnectForm = () => {
 
     try {
       await usersApi.update(user.id, {
-        ethereumAddress: trimmedEthereum || null,
-        solanaAddress: addressForm.solanaAddress.trim() || null,
-        bitcoinAddress: addressForm.bitcoinAddress.trim() || null,
-        bitcoinCashAddress: addressForm.bitcoinCashAddress.trim() || null,
-        polkadotAddress: addressForm.polkadotAddress.trim() || null,
-        cosmosAddress: addressForm.cosmosAddress.trim() || null,
-        stellarAddress: addressForm.stellarAddress.trim() || null,
-        icpAddress: addressForm.icpAddress.trim() || null,
+        ethereumAddress: trimmedForm.ethereumAddress || null,
+        solanaAddress: trimmedForm.solanaAddress || null,
+        bitcoinAddress: trimmedForm.bitcoinAddress || null,
+        bitcoinCashAddress: trimmedForm.bitcoinCashAddress || null,
+        polkadotAddress: trimmedForm.polkadotAddress || null,
+        cosmosAddress: trimmedForm.cosmosAddress || null,
+        stellarAddress: trimmedForm.stellarAddress || null,
+        icpAddress: trimmedForm.icpAddress || null,
       });
 
       await refreshUser();
+      addressFormRef.current = trimmedForm;
+      setAddressForm(trimmedForm);
+
+      walletAutofillRef.current = {
+        solanaAddress: trimmedForm.solanaAddress,
+        bitcoinAddress: trimmedForm.bitcoinAddress,
+      };
 
       setConnectStatus(prev => {
         const { error, ...rest } = prev;
@@ -1185,6 +1236,8 @@ const ConnectForm = () => {
           return rest;
         });
       }, 2000);
+
+      return true;
     } catch (error: any) {
       console.error('Address update failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
@@ -1202,7 +1255,16 @@ const ConnectForm = () => {
         }
       }
       setConnectStatus(prev => ({ ...prev, addresses: 'error', error: errorMessage }));
+      return false;
     }
+  };
+
+  persistAddressFormRef.current = persistAddressForm;
+
+  const handleAddressesSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    await persistAddressForm();
   };
 
   const handleWalletAddressConnect = async (
@@ -1211,7 +1273,10 @@ const ConnectForm = () => {
     connectedAddress?: string
   ) => {
     if (connectedAddress?.trim()) {
-      syncWalletAddressField(field, connectedAddress);
+      const updatedValue = syncWalletAddressField(field, connectedAddress);
+      if (user && updatedValue) {
+        void persistAddressForm({ [field]: updatedValue });
+      }
       return;
     }
 
@@ -1220,7 +1285,10 @@ const ConnectForm = () => {
         setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
         const injectedSolanaAddress = await connectInjectedSolanaWallet();
         if (injectedSolanaAddress) {
-          syncWalletAddressField(field, injectedSolanaAddress);
+          const updatedValue = syncWalletAddressField(field, injectedSolanaAddress);
+          if (user && updatedValue) {
+            void persistAddressForm({ [field]: updatedValue });
+          }
           return;
         }
       } catch (error: any) {
@@ -1625,7 +1693,7 @@ const ConnectForm = () => {
               )}
               disabled={connectStatus.addresses === 'processing'}
             >
-              {solanaAccount.isConnected ? 'Use connected Solana wallet' : 'Connect Solana wallet'}
+              Connect Solana wallet
             </button>
             <input
               type="text"
@@ -1647,7 +1715,7 @@ const ConnectForm = () => {
               onClick={() => handleWalletAddressConnect('bitcoinAddress', 'bip122', bitcoinWalletAddress)}
               disabled={connectStatus.addresses === 'processing'}
             >
-              {bitcoinAccount.isConnected ? 'Use connected Bitcoin wallet' : 'Connect Bitcoin wallet'}
+              Connect Bitcoin wallet
             </button>
             <input
               type="text"

@@ -95,3 +95,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - FIXME@P3 Binance Webapp isn't working: https://github.com/reown-com/appkit/issues/5584
 
 - TODO@P2 Support non-EVM networks in MetaMask.
+
+- TODO@P3 In /connect add tooltips over shortened blockchain addresses.

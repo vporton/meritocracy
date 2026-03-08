@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { ethers } from 'ethers';
 import { Prisma } from '@prisma/client';
+import { createPublicClient, http, type Address, type Hex } from 'viem';
+import { mainnet, sepolia } from 'viem/chains';
 import { getCurrentUserFromToken } from '../middleware/auth.js';
 import EmailService from '../services/EmailService.js';
 import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
@@ -17,21 +19,50 @@ const ongoingOAuthRequests = new Map<string, number>();
 // Cache successful OAuth results for a short time to handle duplicates
 const oauthResultCache = new Map<string, any>();
 
+const ethereumVerificationClients = [
+  createPublicClient({
+    chain: mainnet,
+    transport: http(),
+  }),
+  createPublicClient({
+    chain: sepolia,
+    transport: http(),
+  }),
+];
+
 // Remove duplicate auth middleware - now imported from shared module
 
 // Helper function to verify Ethereum signature
-function verifyEthereumSignature(address: string, message: string, signature: string): boolean {
+async function verifyEthereumSignature(address: string, message: string, signature: string): Promise<boolean> {
+  const normalizedAddress = String(address).toLowerCase();
+
   try {
-    // Recover the address from the signature
     const recoveredAddress = ethers.verifyMessage(message, signature);
-
-    // Normalize addresses to lowercase for comparison
-    const normalizedAddress = String(address).toLowerCase();
     const normalizedRecovered = recoveredAddress.toLowerCase();
-
     return normalizedAddress === normalizedRecovered;
   } catch (error) {
-    console.error('Error verifying Ethereum signature:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    for (const client of ethereumVerificationClients) {
+      try {
+        const isValid = await client.verifyMessage({
+          address: address as Address,
+          message,
+          signature: signature as Hex,
+        });
+
+        if (isValid) {
+          return true;
+        }
+      } catch (verificationError) {
+        console.error(
+          `Error verifying Ethereum signature on ${client.chain?.name ?? 'unknown chain'}:`,
+          verificationError
+        );
+      }
+    }
+
+    console.error('Error verifying Ethereum signature:', errorMessage);
     return false;
   }
 }
@@ -360,7 +391,7 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
     }
 
     // Verify the Ethereum signature
-    if (!verifyEthereumSignature(ethereumAddress, message, signature)) {
+    if (!await verifyEthereumSignature(ethereumAddress, message, signature)) {
       res.status(401).json({ error: 'Invalid signature' });
       return;
     }

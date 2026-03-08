@@ -176,3 +176,4 @@
 * Morgan Stanley Inclusive & Sustainable Ventures (MSISV) - submitted 7 Mar 2026
 * Bellagio Center Residency Program Expression of Interest (EOI) https://residency.rockefellerfoundation.org/nomination/dashboard.asp - submitted 7 Mar 2026
 * Codex for Open Source https://openai.com/form/codex-for-oss/ - submitted 7 Mar 2026
+* Renaissance Philanthropy https://www.renaissancephilanthropy.org - contacted 8 Mar 2026

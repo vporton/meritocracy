@@ -46,21 +46,6 @@ type FundingAddress = {
   note?: string;
 };
 
-type TokenOption = {
-  label: string;
-  tokenSymbol?: string;
-  tokenType?: string;
-};
-
-const tokenOptions: TokenOption[] = [
-  { label: 'Gas tokens' },
-  { label: 'ckBTC', tokenSymbol: 'CKBTC', tokenType: 'ICRC1' },
-  { label: 'ckETH', tokenSymbol: 'CKETH', tokenType: 'ICRC1' },
-  { label: 'ckUSDT', tokenSymbol: 'CKUSDT', tokenType: 'ICRC1' },
-  { label: 'ckUSDC', tokenSymbol: 'CKUSDC', tokenType: 'ICRC1' },
-  { label: 'ckEURC', tokenSymbol: 'CKEURC', tokenType: 'ICRC1' }
-];
-
 const explorerLinkMap: Record<string, ExplorerLinkConfig> = {
   mainnet: { label: 'Etherscan', buildUrl: address => `https://etherscan.io/address/${encodeURIComponent(address)}` },
   sepolia: { label: 'Sepolia Etherscan', buildUrl: address => `https://sepolia.etherscan.io/address/${encodeURIComponent(address)}` },
@@ -121,7 +106,6 @@ function MultiNetworkGasBalances() {
   const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
-  const [selectedToken, setSelectedToken] = useState<TokenOption>(tokenOptions[0])
 
   const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
@@ -159,8 +143,7 @@ function MultiNetworkGasBalances() {
 
   const fetchMultiNetworkStatus = async (
     currentScope: 'GLOBAL' | 'COUNTRY',
-    currentCountry: string,
-    token: TokenOption
+    currentCountry: string
   ) => {
     try {
       setLoading(true)
@@ -172,20 +155,12 @@ function MultiNetworkGasBalances() {
       if (currentScope === 'COUNTRY') {
         params.set('country', currentCountry)
       }
-      if (token.tokenSymbol) {
-        params.set('tokenSymbol', token.tokenSymbol)
-      }
-      if (token.tokenType) {
-        params.set('tokenType', token.tokenType)
-      }
       const queryParams = params.toString() ? `?${params.toString()}` : ''
 
       // If country scope, ensure account exists first
       if (currentScope === 'COUNTRY') {
         await api.post('/api/multi-network-gas/ensure-country-account', {
-          country: currentCountry,
-          tokenSymbol: token.tokenSymbol,
-          tokenType: token.tokenType
+          country: currentCountry
         });
       }
 
@@ -275,8 +250,8 @@ function MultiNetworkGasBalances() {
   }
 
   useEffect(() => {
-    fetchMultiNetworkStatus(scope, selectedCountry, selectedToken)
-  }, [scope, selectedCountry, selectedToken])
+    fetchMultiNetworkStatus(scope, selectedCountry)
+  }, [scope, selectedCountry])
 
   if (loading && !networkStatus) {
     return (
@@ -363,21 +338,6 @@ function MultiNetworkGasBalances() {
               <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
             ))}
           </optgroup>
-        </select>
-        <label>Asset:</label>
-        <select
-          value={selectedToken.label}
-          onChange={(e) => {
-            const next = tokenOptions.find(option => option.label === e.target.value)
-            if (next) {
-              setSelectedToken(next)
-            }
-          }}
-          style={{ padding: '0.5rem', borderRadius: '4px', maxWidth: '200px' }}
-        >
-          {tokenOptions.map(option => (
-            <option key={option.label} value={option.label}>{option.label}</option>
-          ))}
         </select>
       </div>
 

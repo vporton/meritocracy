@@ -303,6 +303,27 @@
     text-align: left;
   }
 
+  .connected-providers button.cancel-button {
+    margin-left: 0.75rem;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 6px;
+    background: #6b7280;
+    color: #fff;
+    border: 1px solid transparent;
+    transition: background 0.2s ease;
+  }
+
+  .connected-providers button.cancel-button:hover:not(:disabled) {
+    background: #4b5563;
+  }
+
+  .connected-providers button.cancel-button:focus-visible {
+    outline: 2px solid rgba(79, 70, 229, 0.8);
+    outline-offset: 2px;
+  }
+
   .connected-provider-item {
     display: flex;
     align-items: center;

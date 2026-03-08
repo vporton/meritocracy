@@ -408,7 +408,8 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
           ...{ cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null },
           ...{ stellarAddress: stellarAddress ? String(stellarAddress).trim() : null },
           ...{ icpAddress: icpAddress ? String(icpAddress).trim() : null },
-          ...(normalizedVotingPleaPreference && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
+          // TODO@P3: `undefined` vs `null`:
+          ...(normalizedVotingPleaPreference !== undefined && normalizedVotingPleaPreference !== null && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },
       });
 

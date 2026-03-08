@@ -93,3 +93,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
   The effect is not repeatable in Chrome Dev Tools.
 
 - FIXME@P3 Binance Webapp isn't working: https://github.com/reown-com/appkit/issues/5584
+
+- TODO@P3 TRON and TON tokens.

@@ -107,3 +107,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P2 Use a free Cron HTTP requests service instead of `node-cron`.
   This has several advantages: no need to keep an instance running all the time,
   no need for a dedicated Cron instance.
+
+- TODO@P2 In the treasury display dollar equivalents of tokens.

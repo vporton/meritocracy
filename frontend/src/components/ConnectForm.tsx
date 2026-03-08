@@ -122,6 +122,13 @@ const getEmptyWalletAutofillState = (initial?: Partial<Record<'solanaAddress' | 
   bitcoinAddress: initial?.bitcoinAddress ?? '',
 });
 
+const getEmptyWalletAutofillSuppressionState = (
+  initial?: Partial<Record<'solanaAddress' | 'bitcoinAddress', boolean>>
+) => ({
+  solanaAddress: initial?.solanaAddress ?? false,
+  bitcoinAddress: initial?.bitcoinAddress ?? false,
+});
+
 const BLOCKCHAIN_PROVIDER_NAMES = new Set([
   'Ethereum',
   'Solana',
@@ -311,6 +318,7 @@ const ConnectForm = () => {
   const addressFormRef = useRef<AddressFormValues>(getEmptyAddressForm());
   const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({});
   const walletAutofillRef = useRef(getEmptyWalletAutofillState());
+  const walletAutofillSuppressedRef = useRef(getEmptyWalletAutofillSuppressionState());
   const persistAddressFormRef = useRef<((overrides?: Partial<AddressFormValues>) => Promise<boolean>) | null>(null);
   const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -478,6 +486,7 @@ const ConnectForm = () => {
       solanaAddress: user?.solanaAddress?.trim(),
       bitcoinAddress: user?.bitcoinAddress?.trim(),
     });
+    walletAutofillSuppressedRef.current = getEmptyWalletAutofillSuppressionState();
   }, [user]);
 
   const syncWalletAddressField = (field: 'solanaAddress' | 'bitcoinAddress', nextValue?: string): string | undefined => {
@@ -486,6 +495,10 @@ const ConnectForm = () => {
 
     if (!trimmedValue) {
       walletAutofillRef.current[field] = '';
+      return undefined;
+    }
+
+    if (walletAutofillSuppressedRef.current[field] && trimmedValue === previousWalletValue) {
       return undefined;
     }
 
@@ -1151,6 +1164,9 @@ const ConnectForm = () => {
 
   const handleAddressChange = (field: keyof AddressFormValues) => (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
+    if (field === 'solanaAddress' || field === 'bitcoinAddress') {
+      walletAutofillSuppressedRef.current[field] = value.trim() !== walletAutofillRef.current[field];
+    }
     const nextForm = {
       ...addressFormRef.current,
       [field]: value,
@@ -1224,6 +1240,7 @@ const ConnectForm = () => {
         solanaAddress: trimmedForm.solanaAddress,
         bitcoinAddress: trimmedForm.bitcoinAddress,
       };
+      walletAutofillSuppressedRef.current = getEmptyWalletAutofillSuppressionState();
 
       setConnectStatus(prev => {
         const { error, ...rest } = prev;
@@ -1269,16 +1286,9 @@ const ConnectForm = () => {
 
   const handleWalletAddressConnect = async (
     field: 'solanaAddress' | 'bitcoinAddress',
-    namespace: 'solana' | 'bip122',
-    connectedAddress?: string
+    namespace: 'solana' | 'bip122'
   ) => {
-    if (connectedAddress?.trim()) {
-      const updatedValue = syncWalletAddressField(field, connectedAddress);
-      if (user && updatedValue) {
-        void persistAddressForm({ [field]: updatedValue });
-      }
-      return;
-    }
+    walletAutofillSuppressedRef.current[field] = false;
 
     if (namespace === 'solana') {
       try {
@@ -1686,11 +1696,7 @@ const ConnectForm = () => {
             <button
               type="button"
               className="cancel-button"
-              onClick={() => handleWalletAddressConnect(
-                'solanaAddress',
-                'solana',
-                typeof solanaAccount.address === 'string' ? solanaAccount.address : undefined
-              )}
+              onClick={() => handleWalletAddressConnect('solanaAddress', 'solana')}
               disabled={connectStatus.addresses === 'processing'}
             >
               Connect Solana wallet
@@ -1712,7 +1718,7 @@ const ConnectForm = () => {
             <button
               type="button"
               className="cancel-button"
-              onClick={() => handleWalletAddressConnect('bitcoinAddress', 'bip122', bitcoinWalletAddress)}
+              onClick={() => handleWalletAddressConnect('bitcoinAddress', 'bip122')}
               disabled={connectStatus.addresses === 'processing'}
             >
               Connect Bitcoin wallet

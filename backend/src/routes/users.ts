@@ -402,7 +402,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
           ...(name !== undefined && (name && { name })), // FIXME@P3
           ...(normalizedEthereumAddress !== undefined && { ethereumAddress: normalizedEthereumAddress }),
           ...(solanaAddress !== undefined && { solanaAddress: solanaAddress ? String(solanaAddress).trim() : null }),
-          ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null }),
+          ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null }),
           ...(bitcoinCashAddress !== undefined && { bitcoinCashAddress: bitcoinCashAddress ? String(bitcoinCashAddress).trim() : null }),
           ...(polkadotAddress !== undefined && { polkadotAddress: polkadotAddress ? String(polkadotAddress).trim() : null }),
           ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null }),

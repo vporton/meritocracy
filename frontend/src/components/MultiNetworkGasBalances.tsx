@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { countries } from '../utils/countries'
+import { formatTokenUsdEstimate } from '../utils/tokenUsd'
 
 interface NetworkInfo {
   name?: string;
@@ -355,6 +356,9 @@ function MultiNetworkGasBalances() {
         <p style={{ margin: '0.5rem 0 0 0', color: '#0c4a6e', fontSize: '0.9rem' }}>
           {networkStatus.totalNetworks} networks enabled: {networkStatus.enabledNetworks.join(', ')}
         </p>
+        <p style={{ margin: '0.5rem 0 0 0', color: '#075985', fontSize: '0.8rem' }}>
+          USD values are reference estimates from a static price table, not live market quotes.
+        </p>
       </div>
 
       {/* Network Details */}
@@ -395,6 +399,7 @@ function MultiNetworkGasBalances() {
           const balanceDisplay = balanceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${balanceFormatted} ${tokenSymbol}`
+          const balanceUsdEstimate = formatTokenUsdEstimate(tokenSymbol, fallbackWalletBalance)
           const gasPriceDisplay = gasPriceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${gasPriceFormatted} ${tokenSymbol}`
@@ -439,6 +444,9 @@ function MultiNetworkGasBalances() {
                 <div>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Balance:</strong> {balanceDisplay}
+                    {balanceUsdEstimate && (
+                      <span style={{ color: '#cbd5e1' }}> ({balanceUsdEstimate})</span>
+                    )}
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Gas Price:</strong> {gasPriceDisplay}

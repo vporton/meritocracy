@@ -1,77 +1,32 @@
-# Bi-Monthly Evaluation Cron Setup
+# Cron Job Setup
 
-This document describes the bi-monthly cron functionality that automatically creates evaluation flows for onboarded users who were updated more than a month ago.
+This document explains how the Meritocracy backend now runs its recurring maintenance flows via external HTTP schedulers rather than an in-process scheduler.
 
 ## Overview
 
-The cron service runs automatically on the 1st of every other month at 2:00 AM UTC, creating evaluation flows for users who:
-- Are onboarded (`onboarded: true`)
-- Were last updated more than 1 month ago
+Each cron job is exposed as a dedicated `POST /api/cron/*` endpoint. The jobs are triggered by https://cron-job.org per the expressions listed below, and each endpoint launches the work in the background so that the HTTP request returns immediately (the long-running flow continues on the server side).
 
-## API Endpoints
+## Cron endpoints
 
-### Get Cron Status
-```
-GET /api/cron/status
-```
-Returns the current status of the cron job including whether it's running and the next scheduled run time.
+| Job | Endpoint | Cron expression (UTC) | Description |
+| --- | --- | --- | --- |
+| Bi-monthly user evaluation | `POST /api/cron/bi-monthly-evaluation` | `0 2 1 */2 *` | Runs on the 1st day of every other month at 02:00 UTC to re-run the evaluation flow for every onboarded user. |
+| Weekly gas distribution | `POST /api/cron/weekly-gas-distribution` | `0 20 * * 0` | Runs every Sunday at 20:00 UTC (biweekly toggle respected) to process the multi-network gas token distribution. |
+| Compensation payout | `POST /api/cron/compensation-payout` | `0 * * * *` | Runs hourly on the hour to release held balances once compensation becomes due. |
+| Monthly connected account cleanup | `POST /api/cron/monthly-cleanup` | `0 4 1 * *` | Runs on the 1st day of every month at 04:00 UTC to remove disconnected accounts. |
 
-### Get Eligible Users
-```
-GET /api/cron/eligible-users
-```
-Returns a list of users who are currently eligible for bi-monthly evaluation. Useful for debugging and monitoring.
+Each request must originate from cron-job.org and include the header `Authorization: Basic <token>`, where the `<token>` (including the `Basic ` prefix) is stored in the `CRON_JOB_AUTHORIZATION` environment variable. The server rejects requests that lack the header or whose token does not match exactly, ensuring only the authorized job service can trigger these flows.
 
-## Security Note
+## Background execution
 
-The cron job management endpoints (start, stop, run) have been removed for security reasons. The cron service is designed to run automatically and should not be controlled via public API endpoints. Only read-only monitoring endpoints are available.
-
-## Configuration
-
-The cron job is automatically started when the server starts up. The schedule is:
-- **Frequency**: Bi-monthly (1st of every other month)
-- **Time**: 2:00 AM UTC
-- **Cron Expression**: `0 2 1 */2 *`
-
-## How It Works
-
-1. **User Selection**: The system queries for users where:
-   - `onboarded = true`
-   - `updatedAt < (current_date - 1 month)`
-
-2. **Evaluation Flow Creation**: For each eligible user, it creates an evaluation flow using the `UserEvaluationFlow.createEvaluationFlow()` method.
-
-3. **Logging**: All operations are logged with detailed information about successes and failures.
-
-4. **Error Handling**: If individual user processing fails, it logs the error and continues with the next user.
+The handlers do **not** wait for the job to finish before responding. They immediately return `202 Accepted` after the task is queued, and the real work continues asynchronously. This keeps cron-job.org from timing out (cron-job.org aborts requests after ~25 seconds). Detailed logs inside each job record progress, errors, and summaries.
 
 ## Monitoring
 
-The system provides comprehensive logging:
-- ✅ Successful operations
-- ❌ Failed operations with error details
-- 📊 Summary statistics after each run
-- 🕐 Cron job trigger notifications
+- **Status**: `GET /api/cron/status` returns whether a job is currently running and restates the cron expressions. This endpoint is safe to call without authentication.
+- **Admin triggers**: There are still admin-only endpoints (`/api/admin/trigger-distribution`, `/api/admin/trigger-re-worth-assessment`) that can start the weekly distribution or bi-monthly evaluation manually; they share the same locking logic as the cron jobs.
+- **Logs**: Each job prints start/end markers and, for the bi-monthly evaluation, it logs the per-user successes/failures plus salary statistics updates.
 
-## Graceful Shutdown
+## Summary
 
-The cron service properly handles server shutdown signals (SIGINT, SIGTERM) to ensure clean termination.
-
-## Testing
-
-You can monitor the functionality using the available API endpoints:
-
-1. **Check status**: `GET /api/cron/status`
-2. **View eligible users**: `GET /api/cron/eligible-users`
-
-For testing the actual cron functionality, you would need to:
-- Modify the cron schedule temporarily for testing
-- Use database queries to verify evaluation flows are created
-- Check server logs for cron job execution
-
-## Dependencies
-
-- `node-cron`: For scheduling functionality
-- `@types/node-cron`: TypeScript definitions
-- `PrismaClient`: Database operations
-- `UserEvaluationFlow`: Evaluation flow creation
+The original `node-cron` dependency has been removed so the backend no longer runs its own scheduler. Instead, `https://cron-job.org` calls the protected endpoints above. That service retries failed jobs and stops a job after 25 failures, so it is critical to keep monitoring logs and the `/api/cron/status` endpoint to ensure the external scheduler is healthy.

@@ -24,7 +24,6 @@ import banVotingRoutes from './routes/banVoting.js';
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
 import { GlobalDataService } from './services/GlobalDataService.js';
-import { cronService } from './services/cronServiceInstance.js';
 import { prisma } from './lib/prisma.js';
 
 // Register all TaskRunners on startup
@@ -123,33 +122,15 @@ async function initializeApp() {
 
     console.log('✅ Global data initialization complete');
 
-    // Initialize cron service
-    console.log('🔄 Initializing cron service...');
-    // Start the bi-monthly evaluation cron job
-    cronService.startBiMonthlyEvaluationCron();
-
-    // Start the weekly gas token distribution cron job
-    cronService.startWeeklyGasDistributionCron();
-
-    // Start the hourly compensation payout cron job
-    cronService.startCompensationPayoutCron();
-
-    // Start the monthly disconnected account cleanup cron job
-    cronService.startMonthlyCleanupCron();
-
-    console.log('✅ Cron service initialization complete');
-
     // Graceful shutdown handling
     process.on('SIGINT', () => {
       console.log('🛑 Shutting down gracefully...');
-      cronService.destroy();
       prisma.$disconnect();
       process.exit(0);
     });
 
     process.on('SIGTERM', () => {
       console.log('🛑 Shutting down gracefully...');
-      cronService.destroy();
       prisma.$disconnect();
       process.exit(0);
     });

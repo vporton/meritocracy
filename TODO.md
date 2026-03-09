@@ -70,9 +70,6 @@
   So, now acceleration is off.
   "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
 
-- TODO@P3 Update World GDP regularly.
-
-
 - ProductHunter:
 Для продакта нужно:
 1. Нормально выглядящий (адаптивный, как минимум), рабочий сайт (желательно готовый к приёму 500-10к трафика) - или хорошо показать функционал + список ожидания

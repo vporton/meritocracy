@@ -88,6 +88,15 @@ router.post('/monthly-cleanup', ensureCronAuth, (req, res) => {
 });
 
 /**
+ * POST /api/cron/world-gdp-refresh
+ * scheduled via https://cron-job.org
+ */
+router.post('/world-gdp-refresh', ensureCronAuth, (req, res) => {
+  const result = scheduleCronJob('world GDP refresh', cronJobMetadata.worldGdpRefresh.cron, () => cronService.runWorldGdpRefresh());
+  respondToJobRequest('world GDP refresh', result, res, 'World GDP refresh queued (background job is running).');
+});
+
+/**
  * GET /api/cron/status
  * Public, returns metadata about cron-job.org driven schedules
  */

@@ -22,6 +22,10 @@ export const cronJobMetadata = {
   monthlyCleanup: {
     cron: '0 4 1 * *',
     description: '1st of every month at 4:00 AM UTC (disconnected account cleanup)'
+  },
+  worldGdpRefresh: {
+    cron: '0 6 1 * *',
+    description: '1st of every month at 06:00 UTC (world GDP refresh)'
   }
 } as const;
 
@@ -100,6 +104,10 @@ export class CronService {
       monthlyCleanup: {
         running: activeTaskName === 'monthly cleanup',
         schedule: `${cronJobMetadata.monthlyCleanup.cron} (${cronJobMetadata.monthlyCleanup.description})`
+      },
+      worldGdpRefresh: {
+        running: activeTaskName === 'world GDP refresh',
+        schedule: `${cronJobMetadata.worldGdpRefresh.cron} (${cronJobMetadata.worldGdpRefresh.description})`
       }
     };
   }
@@ -252,6 +260,34 @@ export class CronService {
         console.error('💥 Fatal error in monthly disconnected account cleanup process:', error);
         throw error;
       }
+    });
+  }
+
+  async runWorldGdpRefresh() {
+    return this.runWithExclusiveExecution('world GDP refresh', async () => {
+      console.log('🔄 Checking whether world GDP data needs a refresh...');
+      const shouldUpdate = await GlobalDataService.shouldUpdateGdp();
+      if (!shouldUpdate) {
+        console.log('ℹ️  World GDP is up to date; skipping refresh.');
+        return {
+          refreshed: false,
+          reason: 'not_due'
+        };
+      }
+
+      console.log('📈 Refreshing world GDP data...');
+      const success = await GlobalDataService.fetchAndUpdateWorldGdp();
+      if (!success) {
+        console.error('❌ World GDP refresh failed');
+        return {
+          refreshed: false,
+          reason: 'failed'
+        };
+      }
+
+      return {
+        refreshed: true
+      };
     });
   }
 

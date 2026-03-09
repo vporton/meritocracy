@@ -14,6 +14,7 @@ Each cron job is exposed as a dedicated `POST /api/cron/*` endpoint. The jobs ar
 | Weekly gas distribution | `POST /api/cron/weekly-gas-distribution` | `0 20 * * 0` | Runs every Sunday at 20:00 UTC (biweekly toggle respected) to process the multi-network gas token distribution. |
 | Compensation payout | `POST /api/cron/compensation-payout` | `0 * * * *` | Runs hourly on the hour to release held balances once compensation becomes due. |
 | Monthly connected account cleanup | `POST /api/cron/monthly-cleanup` | `0 4 1 * *` | Runs on the 1st day of every month at 04:00 UTC to remove disconnected accounts. |
+| World GDP refresh | `POST /api/cron/world-gdp-refresh` | `0 6 1 * *` | Runs on the 1st day of every month at 06:00 UTC to refresh the stored world GDP value when the cached copy is older than a month. |
 
 Each request must originate from cron-job.org and include the header `Authorization: Basic <token>`, where the `<token>` (including the `Basic ` prefix) is stored in the `CRON_JOB_AUTHORIZATION` environment variable. The server rejects requests that lack the header or whose token does not match exactly, ensuring only the authorized job service can trigger these flows.
 

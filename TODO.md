@@ -102,9 +102,11 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 
 - TODO@P3 Increase LLM "power" parameters.
 
-- TODO@P2 Use a free Cron HTTP requests service instead of `node-cron`.
+- TODO@P2 Use a free Cron HTTP requests service https://cron-job.org instead of `node-cron`.
   This has several advantages: no need to keep an instance running all the time,
   no need for a dedicated Cron instance.
+  https://cron-job.org rejects a job after 25 failures. So, make jobs run in background
+  to ensure they don't timeout.
 
 - TODO@P2 In the treasury display dollar equivalents of tokens.
 

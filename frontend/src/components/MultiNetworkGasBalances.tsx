@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { countries } from '../utils/countries'
-import { formatTokenUsdEstimate } from '../utils/tokenUsd'
 
 interface NetworkInfo {
   name?: string;
@@ -33,6 +32,14 @@ interface MultiNetworkStatus {
   totalNetworks: number;
   totalAvailable?: number;
   totalReserve?: number;
+}
+
+interface TokenPriceQuote {
+  symbol: string;
+  coinId: string;
+  usd: number;
+  lastUpdatedAt: string | null;
+  source: 'coingecko';
 }
 
 type ExplorerLinkConfig = {
@@ -107,9 +114,16 @@ function MultiNetworkGasBalances() {
   const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
+  const [tokenQuotes, setTokenQuotes] = useState<Record<string, TokenPriceQuote>>({})
 
   const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
+
+  const usdFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2
+  })
 
   const shortenAddress = (value: string, startLength = 6, endLength = 4) => {
     if (!value || value === 'N/A') {
@@ -151,6 +165,7 @@ function MultiNetworkGasBalances() {
       setError(null)
       setNetworkStatus(null)
       setLoadingNetworks({})
+      setTokenQuotes({})
 
       const params = new URLSearchParams()
       if (currentScope === 'COUNTRY') {
@@ -178,7 +193,7 @@ function MultiNetworkGasBalances() {
             networkName: net.networkName,
             adapterType: net.adapterType,
             walletAddress: net.walletAddress,
-            tokenSymbol: '...',
+            tokenSymbol: net.tokenSymbol || '...',
             totalReserve: 0,
             walletBalance: 0,
             availableForDistribution: 0,
@@ -198,6 +213,31 @@ function MultiNetworkGasBalances() {
         })
         setLoadingNetworks(initialLoading)
         setLoading(false)
+
+        const tokenSymbols = Array.from(
+          new Set(
+            networks
+              .map((net: any) => typeof net.tokenSymbol === 'string' ? net.tokenSymbol.trim().toUpperCase() : '')
+              .filter((symbol: string) => symbol.length > 0)
+          )
+        )
+
+        if (tokenSymbols.length > 0) {
+          try {
+            const priceResponse = await api.get('/api/global/token-prices', {
+              params: {
+                symbols: tokenSymbols.join(',')
+              }
+            })
+
+            const quotes = priceResponse.data?.data?.quotes
+            if (quotes && typeof quotes === 'object') {
+              setTokenQuotes(quotes)
+            }
+          } catch (priceError) {
+            console.error('Failed to fetch live token prices:', priceError)
+          }
+        }
 
         // 2. Fetch each network's status individualy in parallel (backend will coalesce and cache)
         enabledNetworks.forEach(async (networkId: string) => {
@@ -249,6 +289,31 @@ function MultiNetworkGasBalances() {
       setLoading(false)
     }
   }
+
+  const formatUsdAmount = (tokenSymbol: string, amount?: number) => {
+    if (!Number.isFinite(amount)) {
+      return null
+    }
+
+    const quote = tokenQuotes[tokenSymbol.trim().toUpperCase()]
+    if (!quote || !Number.isFinite(quote.usd)) {
+      return null
+    }
+
+    return usdFormatter.format((amount as number) * quote.usd)
+  }
+
+  const latestQuoteTime = Object.values(tokenQuotes).reduce<string | null>((latest, quote) => {
+    if (!quote.lastUpdatedAt) {
+      return latest
+    }
+
+    if (!latest || new Date(quote.lastUpdatedAt).getTime() > new Date(latest).getTime()) {
+      return quote.lastUpdatedAt
+    }
+
+    return latest
+  }, null)
 
   useEffect(() => {
     fetchMultiNetworkStatus(scope, selectedCountry)
@@ -356,9 +421,11 @@ function MultiNetworkGasBalances() {
         <p style={{ margin: '0.5rem 0 0 0', color: '#0c4a6e', fontSize: '0.9rem' }}>
           {networkStatus.totalNetworks} networks enabled: {networkStatus.enabledNetworks.join(', ')}
         </p>
-        <p style={{ margin: '0.5rem 0 0 0', color: '#075985', fontSize: '0.8rem' }}>
-          USD values are reference estimates from a static price table, not live market quotes.
-        </p>
+        {latestQuoteTime && (
+          <p style={{ margin: '0.5rem 0 0 0', color: '#075985', fontSize: '0.8rem' }}>
+            USD quotes from CoinGecko. Last update: {new Date(latestQuoteTime).toLocaleString()}
+          </p>
+        )}
       </div>
 
       {/* Network Details */}
@@ -399,10 +466,14 @@ function MultiNetworkGasBalances() {
           const balanceDisplay = balanceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${balanceFormatted} ${tokenSymbol}`
-          const balanceUsdEstimate = formatTokenUsdEstimate(tokenSymbol, fallbackWalletBalance)
+          const balanceUsdEstimate = formatUsdAmount(tokenSymbol, fallbackWalletBalance)
           const gasPriceDisplay = gasPriceFormatted === 'N/A'
             ? (isNetworkLoading ? 'Loading...' : 'N/A')
             : `${gasPriceFormatted} ${tokenSymbol}`
+          const gasPriceNumeric = Number.parseFloat(gasPriceFormatted)
+          const gasPriceUsdEstimate = Number.isFinite(gasPriceNumeric)
+            ? formatUsdAmount(tokenSymbol, gasPriceNumeric)
+            : null
 
           return (
             <div key={networkName} style={{
@@ -450,6 +521,9 @@ function MultiNetworkGasBalances() {
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Gas Price:</strong> {gasPriceDisplay}
+                    {gasPriceUsdEstimate && (
+                      <span style={{ color: '#cbd5e1' }}> ({gasPriceUsdEstimate})</span>
+                    )}
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#888' }}>
                     <strong>Address:</strong>{" "}

@@ -109,6 +109,14 @@ interface SalaryStats {
   medianRecommendedSalary: number;
 }
 
+interface TokenPriceQuote {
+  symbol: string;
+  coinId: string;
+  usd: number;
+  lastUpdatedAt: string | null;
+  source: 'coingecko';
+}
+
 interface AuthData {
   ethereumAddress?: string;
   signature?: string;
@@ -276,6 +284,11 @@ export const worldGdpApi = {
     api.get('/api/global/gdp'),
 }
 
+export const tokenPricesApi = {
+  get: (symbols: string[]): Promise<AxiosResponse<{ success: boolean; data: { quotes: Record<string, TokenPriceQuote>; source: string; requestedSymbols: string[]; supportedSymbols: string[] } }>> =>
+    api.get('/api/global/token-prices', { params: { symbols: symbols.join(',') } }),
+}
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
@@ -286,4 +299,4 @@ api.interceptors.response.use(
 )
 
 export default api
-export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats }
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats, TokenPriceQuote }

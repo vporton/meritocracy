@@ -1,5 +1,6 @@
 import express from 'express';
 import { GlobalDataService } from '../services/GlobalDataService.js';
+import { TokenPriceService } from '../services/TokenPriceService.js';
 
 const router = express.Router();
 
@@ -71,6 +72,39 @@ router.post('/refresh-gdp', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Something went wrong'
+    });
+  }
+});
+
+/**
+ * GET /api/global/token-prices
+ * Get live USD token prices
+ */
+router.get('/token-prices', async (req, res) => {
+  try {
+    const rawSymbols = typeof req.query.symbols === 'string' ? req.query.symbols : '';
+    const symbols = rawSymbols
+      .split(',')
+      .map(symbol => symbol.trim().toUpperCase())
+      .filter(Boolean);
+
+    const quotes = await TokenPriceService.getUsdQuotes(symbols);
+
+    return res.json({
+      success: true,
+      data: {
+        quotes,
+        source: 'coingecko',
+        requestedSymbols: symbols,
+        supportedSymbols: TokenPriceService.getSupportedSymbols()
+      }
+    });
+  } catch (error) {
+    console.error('Error getting token prices:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve token prices',
       error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Something went wrong'
     });
   }

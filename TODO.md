@@ -111,3 +111,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P2 In the treasury display dollar equivalents of tokens.
 
 - FIXME@P2 "Gas tokens are the safest option." text is a nonsense.
+
+- TODO@P3 Improve Logs UI.

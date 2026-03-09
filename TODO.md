@@ -52,8 +52,6 @@
 
 - TODO@P2 Implement tech support.
 
-- FIXME@P2 `threshold` in `cron.schedule` (otherwise, tasks may be skipped because of suspending of VMs between HTTP requests).
-
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
 
 - TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906

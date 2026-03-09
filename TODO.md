@@ -103,3 +103,5 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 Improve Logs UI.
 
 - TODO@P3 For ck tokens provide direct links to topping up dapps (maybe to Etherscan instead, to increase safety).
+
+- FIXME@P3 At `/admin` there is displayed wrong data on when Cron is run.

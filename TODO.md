@@ -68,8 +68,6 @@
 
 - FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
-- FIXME@P2 Snyk vulnerabilities.
-
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.
   "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"

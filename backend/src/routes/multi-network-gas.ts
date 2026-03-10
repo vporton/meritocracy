@@ -21,6 +21,7 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
     tokenType,
     tokenSymbol,
     country,
+    region,
   } = source;
 
   if (typeof tokenType === 'string') {
@@ -36,6 +37,13 @@ const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions 
 
   if (typeof country === 'string' && country.trim().length === 2) {
     overrides.country = country.trim().toUpperCase();
+  }
+
+  if (typeof region === 'string') {
+    const normalizedRegion = region.trim().toUpperCase();
+    if (normalizedRegion === 'EU') {
+      overrides.region = 'EU';
+    }
   }
 
   return overrides;
@@ -312,6 +320,9 @@ router.post('/ensure-country-account', async (req, res) => {
 
     const enabledNetworkDetails = await multiNetworkGasTokenDistributionService.getEnabledNetworks();
     const results: Record<string, boolean> = {};
+    const baseNetworkIds = Array.from(
+      new Set(enabledNetworkDetails.map(net => net.baseNetworkId ?? net.networkId))
+    );
 
     // We need to import systemSecretService here or access it safely.
     // Since it's a singleton, we can import it.
@@ -321,9 +332,9 @@ router.post('/ensure-country-account', async (req, res) => {
     // Better: Add top-level import.
     const { systemSecretService } = await import('../services/SystemSecretService.js');
 
-    for (const net of enabledNetworkDetails) {
-      await systemSecretService.ensureCountrySecret(net.networkId, country.toUpperCase());
-      results[net.networkId] = true;
+    for (const networkId of baseNetworkIds) {
+      await systemSecretService.ensureCountrySecret(networkId, country.toUpperCase());
+      results[networkId] = true;
     }
 
     // Clear context cache to ensure new secrets are picked up immediately
@@ -336,6 +347,46 @@ router.post('/ensure-country-account', async (req, res) => {
     });
   } catch (error) {
     console.error('Error ensuring country account:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/multi-network-gas/ensure-region-account
+ * Create accounts for a specific region if they don't exist
+ */
+router.post('/ensure-region-account', async (req, res) => {
+  try {
+    const { region } = req.body;
+    const normalizedRegion = typeof region === 'string' ? region.trim().toUpperCase() : '';
+    if (normalizedRegion !== 'EU') {
+      return res.status(400).json({ success: false, error: 'Invalid region code (supported: EU)' });
+    }
+
+    const enabledNetworkDetails = await multiNetworkGasTokenDistributionService.getEnabledNetworks();
+    const results: Record<string, boolean> = {};
+    const baseNetworkIds = Array.from(
+      new Set(enabledNetworkDetails.map(net => net.baseNetworkId ?? net.networkId))
+    );
+    const { systemSecretService } = await import('../services/SystemSecretService.js');
+
+    for (const networkId of baseNetworkIds) {
+      await systemSecretService.ensureRegionSecret(networkId, normalizedRegion);
+      results[networkId] = true;
+    }
+
+    multiNetworkGasTokenDistributionService.clearContextCache();
+
+    return res.json({
+      success: true,
+      created: true,
+      networks: results
+    });
+  } catch (error) {
+    console.error('Error ensuring region account:', error);
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

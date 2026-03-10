@@ -7,6 +7,7 @@ export interface TokenDistributionOptions {
   tokenType?: TokenType;
   tokenSymbol?: string;
   country?: string;
+  region?: 'EU';
 }
 
 export interface GasTokenNetworkContext extends TokenDescriptor {
@@ -22,6 +23,7 @@ export interface GasTokenNetworkContext extends TokenDescriptor {
    */
   privateKey?: string;
   country?: string;
+  region?: 'EU';
   baseNetworkId?: string;
 }
 

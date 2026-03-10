@@ -116,7 +116,7 @@ function MultiNetworkGasBalances() {
   const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
   const [tokenQuotes, setTokenQuotes] = useState<Record<string, TokenPriceQuote>>({})
 
-  const [scope, setScope] = useState<'GLOBAL' | 'COUNTRY'>('GLOBAL');
+  const [scope, setScope] = useState<'GLOBAL' | 'REGION_EU' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
 
   const usdFormatter = new Intl.NumberFormat('en-US', {
@@ -157,7 +157,7 @@ function MultiNetworkGasBalances() {
   }
 
   const fetchMultiNetworkStatus = async (
-    currentScope: 'GLOBAL' | 'COUNTRY',
+    currentScope: 'GLOBAL' | 'REGION_EU' | 'COUNTRY',
     currentCountry: string
   ) => {
     try {
@@ -170,13 +170,19 @@ function MultiNetworkGasBalances() {
       const params = new URLSearchParams()
       if (currentScope === 'COUNTRY') {
         params.set('country', currentCountry)
+      } else if (currentScope === 'REGION_EU') {
+        params.set('region', 'EU')
       }
       const queryParams = params.toString() ? `?${params.toString()}` : ''
 
-      // If country scope, ensure account exists first
+      // If scoped fund, ensure the corresponding treasury account exists first.
       if (currentScope === 'COUNTRY') {
         await api.post('/api/multi-network-gas/ensure-country-account', {
           country: currentCountry
+        });
+      } else if (currentScope === 'REGION_EU') {
+        await api.post('/api/multi-network-gas/ensure-region-account', {
+          region: 'EU'
         });
       }
 
@@ -184,7 +190,10 @@ function MultiNetworkGasBalances() {
       const listResponse = await api.get(`/api/multi-network-gas/list${queryParams}`)
       if (listResponse.data.success) {
         const listData = listResponse.data.data
-        const networks = listData.networkDetails || []
+        const rawNetworks = listData.networkDetails || []
+        const networks = currentScope === 'GLOBAL'
+          ? rawNetworks.filter((net: any) => !net.baseNetworkId)
+          : rawNetworks
         const initialNetworks: Record<string, NetworkInfo> = {}
         const initialLoading: Record<string, boolean> = {}
 
@@ -203,11 +212,11 @@ function MultiNetworkGasBalances() {
           initialLoading[net.networkId] = true
         })
 
-        const enabledNetworks = listData.enabledNetworks || []
+        const enabledNetworks = networks.map((net: any) => net.networkId)
         setNetworkStatus({
           enabledNetworks,
           networks: initialNetworks,
-          totalNetworks: listData.totalNetworks || 0,
+          totalNetworks: enabledNetworks.length,
           totalAvailable: 0,
           totalReserve: 0
         })
@@ -386,11 +395,19 @@ function MultiNetworkGasBalances() {
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <label>Fund Source:</label>
         <select
-          value={scope === 'GLOBAL' ? 'GLOBAL' : selectedCountry}
+          value={
+            scope === 'GLOBAL'
+              ? 'GLOBAL'
+              : scope === 'REGION_EU'
+                ? 'EU'
+                : selectedCountry
+          }
           onChange={(e) => {
             const val = e.target.value;
             if (val === 'GLOBAL') {
               setScope('GLOBAL');
+            } else if (val === 'EU') {
+              setScope('REGION_EU');
             } else {
               setScope('COUNTRY');
               setSelectedCountry(val);
@@ -399,6 +416,7 @@ function MultiNetworkGasBalances() {
           style={{ padding: '0.5rem', borderRadius: '4px', maxWidth: '300px' }}
         >
           <option value="GLOBAL">Global Fund</option>
+          <option value="EU">European Union Fund</option>
           <optgroup label="Countries">
             {countries.map(c => (
               <option key={c.code} value={c.code}>{c.name} ({c.code})</option>

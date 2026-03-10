@@ -23,6 +23,7 @@ import emailService from './EmailService.js';
 import { pendingTransactionService } from './PendingTransactionService.js';
 import { prisma } from '../lib/prisma.js';
 import { getVerifiedEmailAddresses } from './userEmailUtils.js';
+import { isEuCountryCode } from '../utils/euCountries.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -76,6 +77,9 @@ type AdapterContextEntry = {
   adapter: GasTokenNetworkAdapter;
   context: GasTokenNetworkContext;
 };
+
+const SUPPORTED_REGIONS = ['EU'] as const;
+type SupportedRegion = (typeof SUPPORTED_REGIONS)[number];
 
 const maybeGetIcpFundingAddresses = async (
   adapter: GasTokenNetworkAdapter,
@@ -187,10 +191,13 @@ export class MultiNetworkGasTokenDistributionService {
       const contextEntries = new Map<string, AdapterContextEntry>();
       console.log(`🔍 [MultiNetwork] Refreshing adapter contexts for ${cacheKey}...`);
 
-      // If no specific country is requested, we include all countries that have onboarded users
+      // If no specific scope is requested, include all country contexts and supported regional contexts.
       let countriesToInclude: string[] = [];
+      let regionsToInclude: SupportedRegion[] = [];
       if (tokenOptions.country) {
         countriesToInclude = [tokenOptions.country];
+      } else if (tokenOptions.region) {
+        regionsToInclude = [tokenOptions.region];
       } else {
         // If tests override eligible users, derive countries from the override to avoid DB-dependent contexts.
         if (this.eligibleUsersOverride) {
@@ -208,6 +215,8 @@ export class MultiNetworkGasTokenDistributionService {
           });
           countriesToInclude = usersWithCountry.map(u => u.residenceCountry!);
         }
+
+        regionsToInclude = [...SUPPORTED_REGIONS];
       }
 
       for (const adapter of this.networkAdapters) {
@@ -221,8 +230,8 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         for (const context of baseContexts) {
-          // Add Global context (only if we are not restricted to a specific country)
-          if (!tokenOptions.country) {
+          // Add Global context only if we are not restricted to a narrower scope.
+          if (!tokenOptions.country && !tokenOptions.region) {
             contextEntries.set(context.networkId, { adapter, context });
           }
 
@@ -230,41 +239,38 @@ export class MultiNetworkGasTokenDistributionService {
           for (const country of countriesToInclude) {
             try {
               const secret = await systemSecretService.ensureCountrySecret(context.networkId, country);
-
-              let finalWalletAddress = 'ADDRESS-NOT-RESOLVED';
-              let finalPrivateKey: string | undefined = undefined;
-
-              if (secret) {
-                finalPrivateKey = secret.trim();
-                if (adapter.deriveAddress) {
-                  try {
-                    finalWalletAddress = await adapter.deriveAddress(finalPrivateKey);
-                  } catch (e) {
-                    console.error(`Derivation failed for ${context.networkId} (${country}):`, e);
-                    finalWalletAddress = 'DERIVATION-FAILED';
-                  }
-                } else {
-                  finalWalletAddress = 'DERIVE-NOT-SUPPORTED';
-                }
-              } else {
-                finalWalletAddress = 'SECRET-MISSING-DB';
-              }
-
-              const newNetworkId = `${context.networkId}-${country}`;
-              contextEntries.set(newNetworkId, {
+              const scopedContext = await this.buildScopedContext(
                 adapter,
-                context: {
-                  ...context,
-                  networkId: newNetworkId,
-                  networkName: `${context.networkName} (${country})`,
-                  country,
-                  privateKey: finalPrivateKey,
-                  walletAddress: finalWalletAddress,
-                  baseNetworkId: context.networkId
-                }
+                context,
+                country,
+                'country',
+                secret
+              );
+              contextEntries.set(scopedContext.networkId, {
+                adapter,
+                context: scopedContext
               });
             } catch (error) {
               console.error(`❌ Failed to setup country context for ${context.networkId} / ${country}:`, error);
+            }
+          }
+
+          for (const region of regionsToInclude) {
+            try {
+              const secret = await systemSecretService.ensureRegionSecret(context.networkId, region);
+              const scopedContext = await this.buildScopedContext(
+                adapter,
+                context,
+                region,
+                'region',
+                secret
+              );
+              contextEntries.set(scopedContext.networkId, {
+                adapter,
+                context: scopedContext
+              });
+            } catch (error) {
+              console.error(`❌ Failed to setup region context for ${context.networkId} / ${region}:`, error);
             }
           }
         }
@@ -298,8 +304,50 @@ export class MultiNetworkGasTokenDistributionService {
     return {
       tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType,
       tokenSymbol: overrides?.tokenSymbol,
-      country: overrides?.country
+      country: overrides?.country,
+      region: overrides?.region
     };
+  }
+
+  private async buildScopedContext(
+    adapter: GasTokenNetworkAdapter,
+    context: GasTokenNetworkContext,
+    scopeCode: string,
+    scopeType: 'country' | 'region',
+    secret: string
+  ): Promise<GasTokenNetworkContext> {
+    let walletAddress = 'ADDRESS-NOT-RESOLVED';
+
+    if (adapter.deriveAddress) {
+      try {
+        walletAddress = await adapter.deriveAddress(secret.trim());
+      } catch (error) {
+        console.error(`Derivation failed for ${context.networkId} (${scopeCode}):`, error);
+        walletAddress = 'DERIVATION-FAILED';
+      }
+    } else {
+      walletAddress = 'DERIVE-NOT-SUPPORTED';
+    }
+
+    return {
+      ...context,
+      networkId: `${context.networkId}-${scopeCode}`,
+      networkName: `${context.networkName} (${scopeCode})`,
+      country: scopeType === 'country' ? scopeCode : undefined,
+      region: scopeType === 'region' ? (scopeCode as SupportedRegion) : undefined,
+      privateKey: secret.trim(),
+      walletAddress,
+      baseNetworkId: context.networkId
+    };
+  }
+
+  private isUserInRegion(user: User, region: SupportedRegion): boolean {
+    switch (region) {
+      case 'EU':
+        return isEuCountryCode(user.residenceCountry);
+      default:
+        return false;
+    }
   }
 
   private normalizeTokenAddress(tokenAddress: unknown): string | null {
@@ -472,11 +520,15 @@ export class MultiNetworkGasTokenDistributionService {
       }
     >();
 
-    // Use collectNetworkAdapterContexts to get all relevant contexts (Global + Countries)
+    // Use collectNetworkAdapterContexts to get all relevant contexts (global, regional, country).
     const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
 
     for (const [contextId, { adapter, context }] of contextEntries.entries()) {
-      const userFilter = context.country ? (u: User) => u.residenceCountry === context.country : undefined;
+      const userFilter = context.country
+        ? (u: User) => u.residenceCountry === context.country
+        : context.region
+          ? (u: User) => this.isUserInRegion(u, context.region as SupportedRegion)
+          : undefined;
 
       const eligibleUsers = users.filter(user => {
         if (userFilter && !userFilter(user)) return false;
@@ -491,7 +543,7 @@ export class MultiNetworkGasTokenDistributionService {
       const totalShareDenom = eligibleUsers.reduce((sum, u) => sum + (u.shareInGDP ?? 0), 0);
 
       if (eligibleUsers.length === 0 || totalShareDenom <= 0) {
-        if (!context.country) {
+        if (!context.country && !context.region) {
           console.warn(
             `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
           );
@@ -551,7 +603,7 @@ export class MultiNetworkGasTokenDistributionService {
       const totalAvailable = spendableFromWallet + currentReserve; // currentReserve checks the separate reserve table, mostly for reporting now
 
       if (totalAvailable <= 0 && totalBacklogLiability <= 0) {
-        if (!context.country) {
+        if (!context.country && !context.region) {
           console.warn(
             `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
           );
@@ -1859,6 +1911,8 @@ export class MultiNetworkGasTokenDistributionService {
     let lookupKey = networkId;
     if (tokenOptions.country && !networkId.endsWith(`-${tokenOptions.country}`)) {
       lookupKey = `${networkId}-${tokenOptions.country}`;
+    } else if (tokenOptions.region && !networkId.endsWith(`-${tokenOptions.region}`)) {
+      lookupKey = `${networkId}-${tokenOptions.region}`;
     }
     const entry = contexts.get(lookupKey);
     if (!entry) return undefined;
@@ -1900,8 +1954,9 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (!enabledEvmNetworks.includes(networkId)) {
           // Try exact suffix match first
-          if (tokenOptions.country && networkId.endsWith(`-${tokenOptions.country}`)) {
-            const potential = networkId.slice(0, -1 * (tokenOptions.country.length + 1));
+          const scopedSuffix = tokenOptions.country ?? tokenOptions.region;
+          if (scopedSuffix && networkId.endsWith(`-${scopedSuffix}`)) {
+            const potential = networkId.slice(0, -1 * (scopedSuffix.length + 1));
             if (enabledEvmNetworks.includes(potential)) {
               baseNetworkId = potential;
             }
@@ -2017,7 +2072,7 @@ export class MultiNetworkGasTokenDistributionService {
         let matchedInfo: { name: string; chainId: number; address: string; balance: bigint; gasPrice: bigint } | undefined;
 
         for (const [baseNetworkId, info] of networkInfo) {
-          if (contextKey === baseNetworkId || contextKey.startsWith(`${baseNetworkId} -`)) {
+          if (contextKey === baseNetworkId || contextKey.startsWith(`${baseNetworkId}-`)) {
             matchedInfo = info;
             break;
           }

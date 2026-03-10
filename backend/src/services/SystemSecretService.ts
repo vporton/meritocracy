@@ -174,6 +174,21 @@ export class SystemSecretService {
         return `${family}_PRIVATE_KEY_COUNTRY_${c}`;
     }
 
+    private getSecretNameForRegion(network: string, region: string): string {
+        const n = network.toUpperCase();
+        const r = region.toUpperCase();
+
+        let family = 'EVM';
+        if (n.includes('BITCOIN')) family = 'BITCOIN';
+        else if (n.includes('SOLANA')) family = 'SOLANA';
+        else if (n.includes('STELLAR')) family = 'STELLAR';
+        else if (n.includes('POLKADOT')) family = 'POLKADOT';
+        else if (n.includes('COSMOS')) family = 'COSMOS';
+        else if (n.includes('ICP')) family = 'ICP';
+
+        return `${family}_PRIVATE_KEY_REGION_${r}`;
+    }
+
     public async getCountrySecret(network: string, country: string): Promise<string | null> {
         const name = this.getSecretNameForCountry(network, country);
         return await this.getSecret(name);
@@ -205,6 +220,47 @@ export class SystemSecretService {
             value = this.generateSecretForName('ICP_IDENTITY_PEM');
         } else {
             // Default to EVM style (Ethereum) for others
+            value = this.generateSecretForName('ETHEREUM_PRIVATE_KEY');
+        }
+
+        await (prisma as any).systemSecret.upsert({
+            where: { name },
+            update: { value },
+            create: { name, value }
+        });
+
+        return value;
+    }
+
+    public async getRegionSecret(network: string, region: string): Promise<string | null> {
+        const name = this.getSecretNameForRegion(network, region);
+        return await this.getSecret(name);
+    }
+
+    public async ensureRegionSecret(network: string, region: string): Promise<string> {
+        const name = this.getSecretNameForRegion(network, region);
+        const existing = await this.getSecret(name);
+        if (existing) {
+            if (!name.startsWith('ICP') || this.isValidIcpIdentityPem(existing)) {
+                return existing;
+            }
+            console.warn(`⚠️ Invalid ICP region secret format for ${name}, regenerating.`);
+        }
+
+        let value: string;
+        if (name.startsWith('BITCOIN')) {
+            value = this.generateSecretForName('BITCOIN_WIF');
+        } else if (name.startsWith('SOLANA')) {
+            value = this.generateSecretForName('SOLANA_SECRET_KEY_BASE58');
+        } else if (name.startsWith('STELLAR')) {
+            value = this.generateSecretForName('STELLAR_SECRET_KEY');
+        } else if (name.startsWith('POLKADOT')) {
+            value = this.generateSecretForName('POLKADOT_SECRET_URI');
+        } else if (name.startsWith('COSMOS')) {
+            value = this.generateSecretForName('COSMOS_MNEMONIC');
+        } else if (name.startsWith('ICP')) {
+            value = this.generateSecretForName('ICP_IDENTITY_PEM');
+        } else {
             value = this.generateSecretForName('ETHEREUM_PRIVATE_KEY');
         }
 

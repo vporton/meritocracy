@@ -231,6 +231,70 @@ async function testHighGasCostDefersPayments(): Promise<void> {
   console.log('✅ High gas cost guardrail yields deferred distribution as expected.');
 }
 
+async function testEuRegionalDistributionFiltersRecipients(): Promise<void> {
+  const networkId = 'mock-region-net';
+  const euScopedNetworkId = `${networkId}-EU`;
+  const context: GasTokenNetworkContext = {
+    adapterType: 'MOCK',
+    networkId,
+    networkName: 'Mock Regional Network',
+    nativeTokenSymbol: 'MOCK',
+    nativeTokenDecimals: 18,
+    tokenSymbol: 'MOCK',
+    tokenDecimals: 18,
+    tokenType: 'NATIVE'
+  } as GasTokenNetworkContext;
+
+  const adapter = new PaymentTestMockAdapter([context], {
+    balances: { [euScopedNetworkId]: 5 },
+    defaultGasCostToken: 0
+  });
+
+  const service = new MultiNetworkGasTokenDistributionService(prisma, [adapter]);
+  const euUser = await createTestUser({ shareInGDP: 1, residenceCountry: 'FR' });
+  const nonEuUser = await createTestUser({ shareInGDP: 1, residenceCountry: 'CH' });
+  service.overrideEligibleUsers([euUser, nonEuUser]);
+
+  const secretName = 'EVM_PRIVATE_KEY_REGION_EU';
+  const existingSecret = await (prisma as any).systemSecret.findUnique({
+    where: { name: secretName }
+  });
+
+  try {
+    await service.processMultiNetworkDistribution({ region: 'EU' });
+  } finally {
+    if (existingSecret?.value) {
+      await (prisma as any).systemSecret.upsert({
+        where: { name: secretName },
+        update: { value: existingSecret.value },
+        create: { name: secretName, value: existingSecret.value }
+      });
+    } else {
+      await (prisma as any).systemSecret.deleteMany({
+        where: { name: secretName }
+      });
+    }
+  }
+
+  const sentRecords = await prisma.gasTokenDistribution.findMany({
+    where: { network: euScopedNetworkId, status: 'SENT' },
+    orderBy: { id: 'asc' }
+  });
+
+  assert(sentRecords.length === 1, 'EU regional distribution should only pay EU-resident users.');
+  assert(sentRecords[0]?.userId === euUser.id, 'The EU-resident user should receive the EU fund payment.');
+  assertApproximately(Number(sentRecords[0]?.amount ?? 0), 5, 'EU regional fund should distribute the full regional balance.');
+  assert(adapter.sendLog.length === 1, 'Only one regional EU transfer should be executed.');
+  assert(adapter.sendLog[0]?.networkId === euScopedNetworkId, 'The transfer must come from the EU regional treasury context.');
+
+  const swissRecord = await prisma.gasTokenDistribution.findFirst({
+    where: { network: euScopedNetworkId, userId: nonEuUser.id }
+  });
+  assert(!swissRecord, 'A non-EU resident must not receive payments from the EU regional fund.');
+
+  console.log('✅ EU regional distribution only targets EU residents.');
+}
+
 describe('Payment cycle integration', function (this: Mocha.Suite) {
   // Prisma + network adapters can be slow on CI / cold starts
   this.timeout(120_000);
@@ -258,5 +322,9 @@ describe('Payment cycle integration', function (this: Mocha.Suite) {
 
   it('defers payments when gas cost is prohibitive', async () => {
     await testHighGasCostDefersPayments();
+  });
+
+  it('limits EU regional distributions to EU residents', async () => {
+    await testEuRegionalDistributionFiltersRecipients();
   });
 });

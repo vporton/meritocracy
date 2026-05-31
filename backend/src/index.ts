@@ -8,6 +8,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import fs from 'fs';
+import path from 'path';
 import './db-secrets.js';
 
 import userRoutes from './routes/users.js';
@@ -31,6 +33,15 @@ registerAllRunners();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const apiUrl = process.env.API_URL || `http://localhost:${PORT}`;
+const frontendHost = new URL(frontendUrl).hostname;
+const frontendDistPath = path.resolve(process.cwd(), 'frontend/dist');
+const frontendIndexPath = path.join(frontendDistPath, 'index.html');
+const frontendAssetsAvailable = fs.existsSync(frontendIndexPath);
+const frontendStatic = frontendAssetsAvailable ? express.static(frontendDistPath, { index: false }) : null;
+
+const isFrontendHost = (host?: string) => Boolean(host && host === frontendHost);
 
 // Middleware
 app.use(helmet({
@@ -84,6 +95,26 @@ app.use('/api/cleanup', cleanupRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ban-voting', banVotingRoutes);
 
+if (frontendStatic) {
+  app.use((req, res, next) => {
+    if (!isFrontendHost(req.hostname) || req.method !== 'GET' || req.path.startsWith('/api')) {
+      next();
+      return;
+    }
+
+    frontendStatic(req, res, (err) => {
+      if (err) {
+        next(err);
+        return;
+      }
+
+      if (!res.headersSent) {
+        res.sendFile(frontendIndexPath);
+      }
+    });
+  });
+}
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -95,6 +126,18 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // 404 handler
 app.use((req, res) => {
+  if (isFrontendHost(req.hostname) && req.method === 'GET') {
+    res.sendFile(frontendIndexPath, (error) => {
+      if (error) {
+        res.status(404).json({
+          error: 'Route not found',
+          message: `Cannot ${req.method} ${req.originalUrl}`,
+        });
+      }
+    });
+    return;
+  }
+
   res.status(404).json({
     error: 'Route not found',
     message: `Cannot ${req.method} ${req.originalUrl}`,

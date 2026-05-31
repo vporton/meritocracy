@@ -4,7 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import './UserAuditLog.css';
 import { markdownToHtml } from '../utils/markdown';
 import Canonical from '../components/Canonical';
-import { User } from '../services/api';
+import { API_BASE_URL, User } from '../services/api';
+import { getFrontendOrigin } from '../config/origins';
 
 interface WorthValue {
     key: 'overall' | 'scientist' | 'fossDev' | 'scienceMarketer';
@@ -33,6 +34,7 @@ interface AssessmentsResponse {
 }
 
 export default function UserAuditLog() {
+    const frontendOrigin = getFrontendOrigin();
     const { userId } = useParams<{ userId: string }>();
     const [searchParams] = useSearchParams();
     const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
@@ -42,7 +44,7 @@ export default function UserAuditLog() {
         queryKey: ['user-assessments', userId, page],
         queryFn: async () => {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/ban-voting/${userId}/assessments?page=${page}&pageSize=3`
+                `${API_BASE_URL}/api/ban-voting/${userId}/assessments?page=${page}&pageSize=3`
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch assessments');
@@ -56,7 +58,7 @@ export default function UserAuditLog() {
         queryKey: ['user-profile', userId],
         queryFn: async () => {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/users/${userId}`
+                `${API_BASE_URL}/api/users/${userId}`
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch user profile');
@@ -181,7 +183,7 @@ export default function UserAuditLog() {
             <Helmet>
                 <title>{`Recommended Salary for "${displayName}"${page !== 1 ? ` (Archive page ${page})` : ""} - Meritocracy`}</title>
             </Helmet>
-            <Canonical baseUrl="https://merit.science-dao.org" />
+            <Canonical baseUrl={frontendOrigin} />
             <div className="container">
                 <header className="page-header">
                     <Link to="/ban-voting" className="back-link"><span data-nosnippet="data-nosnippet">← Back to Voting</span></Link>

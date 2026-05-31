@@ -294,8 +294,9 @@ POST /api/users
 ### Environment Variables for Production
 - Update `DATABASE_URL` with production database
 - Set `NODE_ENV=production`
-- Update `FRONTEND_URL` with production frontend URL
-- Update `VITE_API_URL` with production API URL
+- Update `FRONTEND_URL` with `https://merit.science-dao.org` or `https://merit-staging.science-dao.org`
+- Update `API_URL` with `https://api.merit.science-dao.org` or `https://api.merit-staging.science-dao.org`
+- Update `VITE_FRONTEND_URL` and `VITE_API_URL` to match the HTTPS hosts used in production
 
 ## 🤝 Contributing
 
@@ -318,10 +319,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Ensure database server is running (for PostgreSQL/MySQL)
 - Check network connectivity and credentials
 
-**Port Conflicts:**
-- Backend default port: 3001
-- Frontend default port: 5173
-- Change ports in environment variables if needed
+**Host Configuration:**
+- Production frontend host: `https://merit.science-dao.org`
+- Production API host: `https://api.merit.science-dao.org`
+- Staging frontend host: `https://merit-staging.science-dao.org`
+- Staging API host: `https://api.merit-staging.science-dao.org`
 
 **Prisma Issues:**
 - Run `npx prisma generate` after schema changes

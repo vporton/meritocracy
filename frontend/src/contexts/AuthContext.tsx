@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { User, AuthData, authApi } from '../services/api';
+import { API_BASE_URL, User, AuthData, authApi } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -33,8 +33,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
-
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   // Set up axios interceptor for auth token
   useEffect(() => {

@@ -37,6 +37,14 @@ export default defineConfig({
     include: ['buffer', 'crypto-browserify', 'stream-browserify', 'ethers', 'wagmi', 'axios'],
   },
   preview: {
-    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'meritocracy.fly.dev', 'meritocracy-staging.fly.dev', 'merit.science-dao.org'],
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0',
+      'merit.science-dao.org',
+      'api.merit.science-dao.org',
+      'merit-staging.science-dao.org',
+      'api.merit-staging.science-dao.org',
+    ],
   },
 })

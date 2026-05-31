@@ -5,12 +5,13 @@ import { AlertController } from '@reown/appkit-controllers';
 import { useConnection, useDisconnect, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
-import api, { User, authApi, usersApi } from '../services/api';
+import api, { User, authApi, usersApi, API_BASE_URL } from '../services/api';
 import { NonEvmAddressInput, validateNonEvmAddresses } from '../utils/addressValidation';
 import './ConnectForm.css';
 import Canonical from './Canonical';
 import { Helmet } from 'react-helmet-async';
 import { hasReownWalletModal } from '../config/wagmi';
+import { getFrontendOrigin } from '../config/origins';
 
 interface ConnectStatus {
   [provider: string]: string | undefined;
@@ -836,10 +837,10 @@ const ConnectForm = () => {
     console.log(`${provider} OAuth: currentToken ${currentToken ? 'present' : 'missing'}, stateParam: ${stateParam ? 'included' : 'not included'}`);
 
     const redirectUris: OAuthRedirectUris = {
-      github: `${import.meta.env.VITE_API_URL}/api/auth/github/callback`,
-      orcid: `${import.meta.env.VITE_API_URL}/api/auth/orcid/callback`,
-      bitbucket: `${import.meta.env.VITE_API_URL}/api/auth/bitbucket/callback`,
-      gitlab: `${import.meta.env.VITE_API_URL}/api/auth/gitlab/callback`,
+      github: `${API_BASE_URL}/api/auth/github/callback`,
+      orcid: `${API_BASE_URL}/api/auth/orcid/callback`,
+      bitbucket: `${API_BASE_URL}/api/auth/bitbucket/callback`,
+      gitlab: `${API_BASE_URL}/api/auth/gitlab/callback`,
     };
 
     const authUrls: OAuthAuthUrls = {
@@ -1530,7 +1531,7 @@ const ConnectForm = () => {
         <title>Meritocracy App - Connect Your Account and Receive Money</title>
         <meta name="description" content="Meritocracy App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
       </Helmet>
-      <Canonical baseUrl="https://merit.science-dao.org/connect" />
+      <Canonical baseUrl={`${getFrontendOrigin()}/connect`} />
       <h2>Connect to Meritocracy Platform</h2>
 
       {renderConnectedStatus()}

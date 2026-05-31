@@ -6,11 +6,11 @@ import { mainnet, sepolia } from '@reown/appkit/networks';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { createConfig, http } from 'wagmi';
 import { injected } from 'wagmi/connectors';
+import { getFrontendOrigin } from './origins';
 
 export const projectId = (import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '').trim();
 export const hasReownWalletModal = projectId.length > 0;
-const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
-const appUrl = (import.meta.env.VITE_FRONTEND_URL || runtimeOrigin || 'https://merit.science-dao.org').trim();
+const appUrl = getFrontendOrigin();
 
 const networks = [mainnet, sepolia] as const;
 // TODO@P3 Solana and Bitcoin AppKit integration is commented out because it appears to be causing the production build to fail.
@@ -19,7 +19,7 @@ const metadata = {
   name: 'Meritocracy DAO',
   description: 'Meritocracy funds scientists and open-source developers through transparent governance.',
   url: appUrl,
-  icons: ['https://merit.science-dao.org/logo.png'],
+  icons: [new URL('/logo.png', appUrl).toString()],
 };
 
 let config = createConfig({

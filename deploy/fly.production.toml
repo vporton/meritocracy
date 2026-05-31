@@ -13,7 +13,7 @@ max_unavailable = 1
 [build]
 
 [env]
-API_URL = 'https://merit.science-dao.org:445'
+API_URL = 'https://api.merit.science-dao.org'
 BITBUCKET_CLIENT_ID = 'PFdcCeTaGXXY723bfBuTe3deVJDstaf2'
 BITCOIN_ENABLED = 'true'
 ENABLE_BCH = 'true'
@@ -70,7 +70,7 @@ STELLAR_NETWORK_PASSPHRASE = 'Public Global Stellar Network ; September 2015'
 
 [[services]]
 protocol = ''
-internal_port = 4173
+internal_port = 3001
 auto_stop_machines = 'suspend'
 auto_start_machines = true
 min_machines_running = 0
@@ -83,23 +83,6 @@ force_https = true
 
 [[services.ports]]
 port = 443
-handlers = ['tls', 'http']
-
-[[services.tcp_checks]]
-interval = '2s'
-timeout = '2s'
-grace_period = '60s'
-
-[[services]]
-protocol = ''
-internal_port = 3001
-auto_stop_machines = 'suspend'
-auto_start_machines = true
-min_machines_running = 0
-processes = ['app']
-
-[[services.ports]]
-port = 445
 handlers = ['tls', 'http']
 
 [[services.tcp_checks]]

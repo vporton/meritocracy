@@ -11,7 +11,7 @@ max_unavailable = 1
 
 [env]
   TEST_INSTANCE = 'true'
-  API_URL = 'https://meritocracy-staging.fly.dev:445'
+  API_URL = 'https://api.merit-staging.science-dao.org'
   BITBUCKET_CLIENT_ID = 'PFdcCeTaGXXY723bfBuTe3deVJDstaf2'
   BITCOIN_ENABLED = 'true'
   BITCOIN_RPC_PASSWORD = ''
@@ -22,7 +22,7 @@ max_unavailable = 1
   DIDIT_APP_ID = 'a4efc76a-f3bf-4e99-84c2-859718ad1827'
   DIDIT_WORKFLOW_RECEIVING_ID = 'c7d40f00-c3dd-4044-9104-e01c4206494d'
   DIDIT_WORKFLOW_VOTING_ID = '00514a1a-aa74-47a6-a50f-fe4722952b86'
-  FRONTEND_URL = 'https://meritocracy-staging.fly.dev'
+  FRONTEND_URL = 'https://merit-staging.science-dao.org'
   GITHUB_CLIENT_ID = 'Iv23livDuDi7dm9P5vli'
   GITLAB_CLIENT_ID = '8a8b4b40b8d3d78ccde78b4c80ffd69db99ca6f022a42ac0159ab21c8d148da6'
   HEDERA_ENABLED = 'true'
@@ -56,7 +56,7 @@ max_unavailable = 1
 
 [[services]]
   protocol = ''
-  internal_port = 4173
+  internal_port = 3001
   auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
@@ -69,23 +69,6 @@ max_unavailable = 1
 
   [[services.ports]]
     port = 443
-    handlers = ['tls', 'http']
-
-  [[services.tcp_checks]]
-    interval = '2s'
-    timeout = '2s'
-    grace_period = '60s'
-
-[[services]]
-  protocol = ''
-  internal_port = 3001
-  auto_stop_machines = 'suspend'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
-
-  [[services.ports]]
-    port = 445
     handlers = ['tls', 'http']
 
   [[services.tcp_checks]]

@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import './db-secrets.js';
 
 import userRoutes from './routes/users.js';
@@ -36,7 +37,8 @@ const PORT = process.env.PORT || 3001;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 const apiUrl = process.env.API_URL || `http://localhost:${PORT}`;
 const frontendHost = new URL(frontendUrl).hostname;
-const frontendDistPath = path.resolve(process.cwd(), 'frontend/dist');
+const backendDirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDistPath = path.resolve(backendDirname, '../../frontend/dist');
 const frontendIndexPath = path.join(frontendDistPath, 'index.html');
 const frontendAssetsAvailable = fs.existsSync(frontendIndexPath);
 const frontendStatic = frontendAssetsAvailable ? express.static(frontendDistPath, { index: false }) : null;

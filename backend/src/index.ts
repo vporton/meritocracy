@@ -77,6 +77,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.get('/', (req, res) => {
+  if (isFrontendHost(req.hostname) && frontendAssetsAvailable) {
+    res.sendFile(frontendIndexPath);
+    return;
+  }
+
   res.json({
     message: 'Meritocracy API Server',
     version: '0.0.1',

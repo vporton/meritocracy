@@ -178,3 +178,4 @@
 * Codex for Open Source https://openai.com/form/codex-for-oss/ - submitted 7 Mar 2026
 * Renaissance Philanthropy https://www.renaissancephilanthropy.org - contacted 8 Mar 2026
 * Science Philanthropy Alliance - contacted 9 Mar 2026
+* DIV Fund https://www.div.fund/apply - TODO apply on rolling basis [need to read a long text]

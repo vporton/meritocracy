@@ -2,8 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 // import environment from 'vite-plugin-environment';
 import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 dotenv.config();
+
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const randomfillShim = path.resolve(rootDir, 'src/shims/randomfill.ts');
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -31,7 +36,7 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       buffer: 'buffer',
-      randomfill: '/home/porton/Projects/meritocracy/frontend/src/shims/randomfill.ts',
+      randomfill: randomfillShim,
     },
   },
   optimizeDeps: {

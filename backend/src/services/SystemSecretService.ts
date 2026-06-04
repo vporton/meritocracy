@@ -72,7 +72,7 @@ export class SystemSecretService {
         }
 
         // fallback to process.env if not in DB (for transition)
-        return process.env[name] || null; // FIXME@P3: nonsense
+        return process.env[name] ?? null;
     }
 
     public async ensureSecret(name: string, defaultValue?: string): Promise<string> {

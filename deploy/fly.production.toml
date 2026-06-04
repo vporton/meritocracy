@@ -2,6 +2,7 @@
 
 app = 'meritocracy'
 primary_region = 'iad'
+swap_size_mb = 512
 
 [deploy]
 # TODO@P3 Having more than one machine would lead to duplicate cron tasks executing
@@ -94,4 +95,3 @@ grace_period = '60s'
 memory = '512mb'
 cpus = 1
 memory_mb = 512
-swap_size_mb = 512

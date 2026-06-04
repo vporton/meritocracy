@@ -41,8 +41,6 @@
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
 
-- TODO@P3 `Disconnect Receiver KYC before disconnecting KYC Level 1` makes no sense.
-
 - TODO@P3 Google Analytics for such things as user registration.
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.

@@ -1494,10 +1494,6 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
         res.status(400).json({ error: 'KYC Level 1 not verified' });
         return;
       }
-      if (user.kycStatus === 'APPROVED') {
-        res.status(400).json({ error: 'Disconnect Receiver KYC before disconnecting KYC Level 1' });
-        return;
-      }
 
       const updateData = {
         kycVotingStatus: null,

@@ -1,6 +1,3 @@
-- TODO@P2 Against prompt injection add random strings to output and JSON labels.
-  (Effective?)
-
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
 
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
@@ -31,8 +28,6 @@
 
 - TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.
 
-- TODO@P2 Use a defense pattern similar to that in the 2025 paper Robustness via Referencing: ask the LLM to tag which part of its output corresponds to which instruction, then reject outputs that reference instructions not issued by your system.
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
@@ -50,8 +45,6 @@
 - TODO@P2 Implement tech support.
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
-
-- TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
 
 - TODO@P3 Run tasks in parallel.
 

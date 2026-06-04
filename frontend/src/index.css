@@ -194,13 +194,17 @@ button:focus-visible {
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 4px;
   text-decoration: none;
   transition: background-color 0.25s;
   box-sizing: border-box;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  flex: 0 0 auto;
 }
 
 .nav-link:hover,
@@ -218,11 +222,14 @@ button:focus-visible {
 .nav-user {
   color: #fff;
   font-weight: 500;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  flex: 0 0 auto;
 }
 
 .nav-logout {
+  flex: 0 0 auto;
   padding: 0.4rem 0.8rem;
   background-color: #dc2626;
   color: white;
@@ -231,6 +238,7 @@ button:focus-visible {
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.25s;
+  white-space: nowrap;
 }
 
 .nav-logout:hover {
@@ -240,6 +248,7 @@ button:focus-visible {
 .nav-loading {
   color: #888;
   font-style: italic;
+  white-space: nowrap;
 }
 
 .loading {

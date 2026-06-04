@@ -3,10 +3,21 @@ import { Helmet } from 'react-helmet-async';
 import { adminApi } from '../services/api';
 import './Admin.css';
 
+type WeeklyCronStatus = {
+    running: boolean;
+    schedule: string;
+    nextRun?: string | null;
+};
+
+type AdminStatus = {
+    gasDistributionEnabled: boolean;
+    cronStatus: WeeklyCronStatus;
+};
+
 const Admin: React.FC = () => {
     const [password, setPassword] = useState(localStorage.getItem('adminPassword') || '');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [status, setStatus] = useState<{ gasDistributionEnabled: boolean; cronStatus: any } | null>(null);
+    const [status, setStatus] = useState<AdminStatus | null>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [triggering, setTriggering] = useState(false);
@@ -154,12 +165,18 @@ const Admin: React.FC = () => {
                         <div className="status-item">
                             <span className="label">Next Scheduled Run:</span>
                             <span className="value">
-                                {status?.cronStatus?.nextRun ? new Date(status.cronStatus.nextRun).toLocaleString() : 'Not scheduled'}
+                                {status?.cronStatus?.nextRun
+                                    ? `${new Date(status.cronStatus.nextRun).toLocaleString()} (testing only)`
+                                    : 'Testing only'}
                             </span>
                         </div>
                         <div className="status-item">
-                            <span className="label">Schedule:</span>
+                            <span className="label">Weekly Schedule (UTC):</span>
                             <span className="value">{status?.cronStatus?.schedule || 'Unknown'}</span>
+                        </div>
+                        <div className="status-item">
+                            <span className="label">Execution State:</span>
+                            <span className="value">{status?.cronStatus?.running ? 'Running now' : 'Idle'}</span>
                         </div>
                     </div>
 

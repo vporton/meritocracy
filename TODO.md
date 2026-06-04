@@ -31,8 +31,6 @@
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
-- FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
-
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
@@ -53,8 +51,6 @@
 - TODO@P3 `Disconnect Receiver KYC before disconnecting KYC Level 1` makes no sense.
 
 - TODO@P3 Google Analytics for such things as user registration.
-
-- FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.
@@ -88,5 +84,3 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 Improve Logs UI.
 
 - TODO@P3 For ck tokens provide direct links to topping up dapps (maybe to Etherscan instead, to increase safety).
-
-- FIXME@P3 At `/admin` there is displayed wrong data on when Cron is run.

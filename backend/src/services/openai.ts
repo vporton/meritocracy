@@ -18,6 +18,7 @@ const openai = new OpenAI({
 
 // Ensure downstream libraries see the same instance type even if multiple openai copies exist in node_modules.
 const openaiForFlex = openai as any;
+export type OpenAIFlexMode = 'batch' | 'nonbatch';
 
 /**
  * OpenAI Service Configuration
@@ -149,10 +150,20 @@ class OurNonBatchStore extends OurClearer implements FlexibleNonBatchStore {
   }
 }
 
-const openAIFlexMode = process.env.OPENAI_FLEX_MODE as 'batch' | 'nonbatch';
+const defaultOpenAIFlexMode: OpenAIFlexMode =
+  process.env.OPENAI_FLEX_MODE === 'nonbatch' ? 'nonbatch' : 'batch';
+
+function resolveOpenAIFlexMode(modeOverride?: OpenAIFlexMode): OpenAIFlexMode {
+  return modeOverride ?? defaultOpenAIFlexMode;
+}
 
 /// Centralized code. Probably, should be refactored.
-export async function createAIBatchStore(storeId: string | undefined, taskId: number) {
+export async function createAIBatchStore(
+  storeId: string | undefined,
+  taskId: number,
+  modeOverride?: OpenAIFlexMode
+) {
+  const openAIFlexMode = resolveOpenAIFlexMode(modeOverride);
   const result = openAIFlexMode === 'batch' ?
     new OurBatchStore(prisma, storeId, taskId) :
     new OurNonBatchStore(prisma, storeId, taskId);
@@ -162,7 +173,11 @@ export async function createAIBatchStore(storeId: string | undefined, taskId: nu
   return result;
 }
 
-export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+export async function createAIRunner(
+  store: FlexibleBatchStore | FlexibleNonBatchStore,
+  modeOverride?: OpenAIFlexMode
+) {
+  const openAIFlexMode = resolveOpenAIFlexMode(modeOverride);
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatch(openaiForFlex, "/v1/responses", new FlexibleBatchStoreCache(store as FlexibleBatchStore)) :
     new FlexibleOpenAINonBatch(openaiForFlex, "/v1/responses", store as FlexibleNonBatchStore);
@@ -170,7 +185,11 @@ export async function createAIRunner(store: FlexibleBatchStore | FlexibleNonBatc
   return result;
 }
 
-export async function createAIOutputter(store: FlexibleBatchStore | FlexibleNonBatchStore) {
+export async function createAIOutputter(
+  store: FlexibleBatchStore | FlexibleNonBatchStore,
+  modeOverride?: OpenAIFlexMode
+) {
+  const openAIFlexMode = resolveOpenAIFlexMode(modeOverride);
   const result = openAIFlexMode === 'batch' ?
     new FlexibleOpenAIBatchOutput(openaiForFlex, store as FlexibleBatchStore) :
     new FlexibleOpenAINonBatchOutput(store as FlexibleNonBatchStore);

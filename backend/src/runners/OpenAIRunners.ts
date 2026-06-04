@@ -9,6 +9,7 @@ import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 import { isConfigValueTrue } from '../services/utils.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 import { extractVerifiedEmails } from '../services/userEmailUtils.js';
+import type { OpenAIFlexMode } from '../services/openai.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -177,6 +178,10 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     return undefined;
   }
 
+  protected useBatchMode(): boolean {
+    return true;
+  }
+
   protected useWebSearchTool(): boolean {
     return false;
   }
@@ -259,13 +264,14 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     options: ResponseCreateParams | undefined = {},
     taskId: number
   ): Promise<OpenAIRequestResult> {
-    const store = await createAIBatchStore(undefined, taskId);
+    const openAIFlexMode: OpenAIFlexMode | undefined = this.useBatchMode() ? undefined : 'nonbatch';
+    const store = await createAIBatchStore(undefined, taskId, openAIFlexMode);
     const storeId = store.getStoreId();
     await this.prisma.task.update({
       where: { id: taskId },
       data: { storeId }
     });
-    const runner = await createAIRunner(store);
+    const runner = await createAIRunner(store, openAIFlexMode);
 
     const requestBody = <ResponseCreateParamsNonStreaming | { max_tool_calls: number }>{
       instructions: prompt, // system/developer message.
@@ -379,7 +385,8 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     let fakeResponse: any = {};
 
     // TODO@P3: Seems out-of-place here.
-    const store = await createAIBatchStore(undefined, task.id);
+    const openAIFlexMode: OpenAIFlexMode | undefined = this.useBatchMode() ? undefined : 'nonbatch';
+    const store = await createAIBatchStore(undefined, task.id, openAIFlexMode);
     const storeId = store.getStoreId();
     await this.prisma.task.update({ // Replace this by one `.insert`.
       where: { id: task.id },
@@ -775,6 +782,10 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     return {
       temperature: 1.0, // We want randomized responses.
     };
+  }
+
+  protected useBatchMode(): boolean {
+    return false;
   }
 
   /**

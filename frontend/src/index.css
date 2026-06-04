@@ -1,3 +1,13 @@
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -26,10 +36,11 @@ a:hover {
 
 body {
   margin: 0;
-  padding: 0; /* TODO@P3: This is introduces as a proposed fix against not fitting viewport horizontally on mobile. We should investigate the root cause and remove this if possible. */
+  padding: 0;
   display: block;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 h1 {

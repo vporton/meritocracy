@@ -38,12 +38,14 @@ export class TaskManager {
       }
 
       // Check if all dependencies are completed
-      const incompleteDependencies = task.dependencies.filter(
-        (dep) => dep.dependency.status !== TaskStatus.COMPLETED
-      );
+      const incompleteIds: number[] = [];
+      for (const dep of task.dependencies) {
+        if (dep.dependency.status !== TaskStatus.COMPLETED) {
+          incompleteIds.push(dep.dependency.id);
+        }
+      }
 
-      if (incompleteDependencies.length > 0) {
-        const incompleteIds = incompleteDependencies.map(dep => dep.dependency.id);
+      if (incompleteIds.length > 0) {
         console.log(`Task ${taskId} cannot be run - dependencies not completed: ${incompleteIds.join(', ')}`);
         return false;
       }
@@ -174,7 +176,6 @@ export class TaskManager {
             taskStatusChanged ||= executedNonBatch;
 
             if (executedNonBatch) {
-              executed++; // TODO@P3: Seems to calculate wrongly.
               console.log(`Task ${task.id} output checked and completed`);
             } else {
               // Check if task was cancelled or failed during output checking

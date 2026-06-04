@@ -1,18 +1,11 @@
-- TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
-
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
 - TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
   If this is the case, we should rewrite this in ICP. Use ZenDB to replace SQL.
 
-- TODO@P3 Always run prompt randomization as non-batch, because its cost is low.
-
 - TODO@P3 Give back token like GIV of Giveth.
 
 - TODO@P3 Delete disconnected accounts, when disconnect, not in Cron.
-
-- TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"
-  to "Disconnect Email" state through browser inter-windows communication.
 
 - TODO@P3 Task Execution Logs are empty (CASCADE DELETE?)
 
@@ -65,9 +58,6 @@
 5. Подключенная аналитика
 6. Раньше работало, сейчас хз
 https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
-
-- TODO@P3 On the phones Galaxy A25 5G 90E7 and other real devices design does not fit horizontally.
-  The effect is not repeatable in Chrome Dev Tools.
 
 - FIXME@P3 Binance Webapp isn't working: https://github.com/reown-com/appkit/issues/5584
 

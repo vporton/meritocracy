@@ -175,7 +175,7 @@ export class TaskExecutor {
     }
 
     return task.dependencies.every((dep: any) =>
-      dep.dependency.status !== TaskStatus.NOT_STARTED
+      dep.dependency.status === TaskStatus.COMPLETED
     );
   }
 

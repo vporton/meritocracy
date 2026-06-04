@@ -1420,8 +1420,6 @@ const ConnectForm = () => {
     const status = connectStatus[provider];
     const isConnected = isProviderConnected(provider);
 
-    console.log(`Button text for ${provider}:`, { status, isConnected });
-
     // Map provider names to display names
     const providerDisplayNames: Record<string, string> = {
       ethereum: 'Ethereum',
@@ -1437,6 +1435,14 @@ const ConnectForm = () => {
 
     // Special handling for email: check verification status
     if (provider === 'email' && !status) {
+      if (verifiedEmails.length > 0) {
+        return 'Disconnect Email';
+      }
+
+      if (pendingEmails.length > 0) {
+        return 'Waiting for Email Verification';
+      }
+
       return userEmails.length > 0 ? 'Add Email' : 'Connect with Email';
     }
 
@@ -1508,10 +1514,10 @@ const ConnectForm = () => {
 
     // Special handling for email verification status
     if (provider === 'email' && !status) {
-      if (pendingEmails.length > 0) {
-        className += ' waiting-for-verification';
-      } else if (userEmails.length > 0) {
+      if (verifiedEmails.length > 0) {
         className += ' connected';
+      } else if (pendingEmails.length > 0) {
+        className += ' waiting-for-verification';
       }
     } else if (provider === 'votingKyc' && !status) {
       if (user?.kycVotingStatus === 'APPROVED') {
@@ -1526,6 +1532,15 @@ const ConnectForm = () => {
     }
 
     return className;
+  };
+
+  const handleEmailButtonClick = async () => {
+    if (!connectStatus.email && verifiedEmails.length > 0) {
+      await handleEmailRemove(verifiedEmails[0].email);
+      return;
+    }
+
+    await handleEmailConnect();
   };
 
   const hasConnectedAccounts = (): boolean => {
@@ -1706,7 +1721,7 @@ const ConnectForm = () => {
         {/* Email Connect */}
         <button
           className={getButtonClass('email')}
-          onClick={handleEmailConnect}
+          onClick={handleEmailButtonClick}
           disabled={isLoading || connectStatus.email === 'connecting' || connectStatus.email === 'disconnecting'}
         >
           <span className="connect-icon">📧</span>

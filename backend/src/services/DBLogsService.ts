@@ -26,6 +26,7 @@ export interface DBLogEntry {
   details: any;
   status?: string;
   error?: string;
+  deleted?: boolean;
 }
 
 export interface LogsFilter {
@@ -176,15 +177,25 @@ export class DBLogsService {
    * Get Task execution logs
    */
   private async getTaskLogs(filter: LogsFilter): Promise<DBLogEntry[]> {
-    const where: any = {
-      isDeleted: false
-    };
+    const where: any = {};
+    const andConditions: any[] = [];
 
     if (filter.userId) {
-      // Find tasks that contain this userId in their runnerData
-      where.runnerData = {
-        contains: `"userId":${filter.userId}`
-      };
+      // Task runner data is stored as JSON text, so accept both compact and spaced encodings.
+      andConditions.push({
+        OR: [
+          {
+            runnerData: {
+              contains: `"userId":${filter.userId}`
+            }
+          },
+          {
+            runnerData: {
+              contains: `"userId": ${filter.userId}`
+            }
+          }
+        ]
+      });
     }
 
     if (filter.taskId) {
@@ -199,6 +210,10 @@ export class DBLogsService {
       if (filter.endDate) {
         where.createdAt.lte = filter.endDate;
       }
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     const tasks = await this.prisma.task.findMany({
@@ -264,6 +279,7 @@ export class DBLogsService {
         action,
         details,
         status: task.status,
+        deleted: task.isDeleted,
         error: task.status === 'CANCELLED' ? 'Task was cancelled' : undefined
       };
     });
@@ -401,7 +417,8 @@ export class DBLogsService {
   }> {
     const [openaiCount, taskCount, userCount, sessionCount] = await Promise.all([
       this.prisma.openAILog.count(),
-      this.prisma.task.count({ where: { isDeleted: false } }),
+      // Tasks are part of the historical audit trail, so count soft-deleted rows too.
+      this.prisma.task.count(),
       this.prisma.user.count(),
       this.prisma.session.count()
     ]);

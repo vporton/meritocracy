@@ -21,6 +21,10 @@ export async function getCurrentUserFromToken(req: express.Request): Promise<num
       return null;
     }
 
+    if (session.user.isDeleted) {
+      return null;
+    }
+
     return session.user.id;
   } catch (error) {
     console.error('Error extracting user from token:', error);

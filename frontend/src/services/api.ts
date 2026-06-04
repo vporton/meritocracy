@@ -23,6 +23,7 @@ interface User {
   id: number;
   email?: string;
   emailVerified?: boolean;
+  isDeleted?: boolean;
   emails?: Array<{
     email: string;
     verified: boolean;
@@ -172,6 +173,7 @@ interface DBLogEntry {
   };
   status?: string;
   error?: string;
+  deleted?: boolean;
 }
 
 interface LogsFilter {
@@ -243,7 +245,7 @@ export const authApi = {
     api.post('/api/auth/verify/email', { token }),
   resendVerification: (email?: string): Promise<AxiosResponse<{ message: string }>> =>
     api.post('/api/auth/resend-verification', email ? { email } : {}),
-  disconnectProvider: (provider: string, payload?: Record<string, unknown>): Promise<AxiosResponse<{ message: string; user: User }>> =>
+  disconnectProvider: (provider: string, payload?: Record<string, unknown>): Promise<AxiosResponse<{ message: string; user: User | null; deleted?: boolean }>> =>
     api.post(`/api/auth/disconnect/${provider}`, payload || {}),
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),

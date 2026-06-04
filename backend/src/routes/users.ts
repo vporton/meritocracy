@@ -1,9 +1,9 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { isValidEthereumAddress, validateNonEvmAddresses } from '../utils/addressValidation.js';
-import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
+import { softDeleteUser } from '../services/userDeletionUtils.js';
 import { prisma } from '../lib/prisma.js';
-import { normalizeEmail, removeAllUserEmails, syncPrimaryEmail } from '../services/userEmailUtils.js';
+import { normalizeEmail, syncPrimaryEmail } from '../services/userEmailUtils.js';
 
 const router = express.Router();
 
@@ -399,7 +399,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       await tx.user.update({
         where: { id: parseInt(id as string) },
         data: {
-          ...(name !== undefined && (name && { name })), // FIXME@P3
+          ...(name !== undefined && { name: name === null ? null : String(name).trim() || null }),
           ...(normalizedEthereumAddress !== undefined && { ethereumAddress: normalizedEthereumAddress }),
           ...(solanaAddress !== undefined && { solanaAddress: solanaAddress ? String(solanaAddress).trim() : null }),
           ...(bitcoinAddress !== undefined && { bitcoinAddress: bitcoinAddress ? String(bitcoinAddress).trim() : null }),
@@ -446,10 +446,10 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
     const deletionTimestamp = new Date();
     // Legal requirement: User logs must be preserved for potential lawsuits, so we soft-delete instead of removing rows.
     await prisma.$transaction(async (tx) => {
-      await removeAllUserEmails(tx, parseInt(id as string));
-      await tx.user.update({
-        where: { id: parseInt(id as string) },
-        data: makeUserSoftDeletePayload(deletionTimestamp)
+      await softDeleteUser(tx, parseInt(id as string), {
+        deletionTimestamp,
+        removeEmails: true,
+        removeSessions: true
       });
     });
 

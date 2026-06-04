@@ -302,7 +302,7 @@ const connectInjectedSolanaWallet = async (): Promise<string | null> => {
 */
 
 const ConnectForm = () => {
-  const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
+  const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData, logout } = useAuth();
   const navigate = useNavigate();
   const { open: openAppKit } = useAppKit();
   const { open: isAppKitOpen, loading: isAppKitLoading, connectingWallet, initialized: isAppKitInitialized, activeChain } = useAppKitState();
@@ -786,6 +786,11 @@ const ConnectForm = () => {
       const response = await authApi.disconnectProvider(provider, payload);
       if (provider === 'ethereum' && isConnected) {
         await disconnectWalletAsync();
+      }
+      if (response.data.deleted || response.data.user?.isDeleted) {
+        await logout();
+        setConnectStatus({});
+        return;
       }
       if (response.data.user) {
         await refreshUser();

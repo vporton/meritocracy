@@ -5,10 +5,6 @@
 
 - TODO@P3 Give back token like GIV of Giveth.
 
-- TODO@P3 Delete disconnected accounts, when disconnect, not in Cron.
-
-- TODO@P3 Task Execution Logs are empty (CASCADE DELETE?)
-
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
 
 - TODO@P3 Donation to the system through MetaMask et al.

@@ -22,7 +22,6 @@ const queryClient = new QueryClient()
 
 function App() {
   const testVar = import.meta.env.VITE_TEST_INSTANCE;
-  console.log("ENV:", import.meta.env); // TODO@P3: Remove this.
   const isTest = testVar === 'true';
   return (
     <HelmetProvider>

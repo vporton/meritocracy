@@ -7,9 +7,6 @@
 
 - TODO@P3 Delete disconnected accounts, when disconnect, not in Cron.
 
-- TODO@P3 When email is confirmed, the Connect Email button should change from "Waiting from Email"
-  to "Disconnect Email" state through browser inter-windows communication.
-
 - TODO@P3 Task Execution Logs are empty (CASCADE DELETE?)
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
@@ -61,9 +58,6 @@
 5. Подключенная аналитика
 6. Раньше работало, сейчас хз
 https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
-
-- TODO@P3 On the phones Galaxy A25 5G 90E7 and other real devices design does not fit horizontally.
-  The effect is not repeatable in Chrome Dev Tools.
 
 - FIXME@P3 Binance Webapp isn't working: https://github.com/reown-com/appkit/issues/5584
 

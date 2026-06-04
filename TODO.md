@@ -7,8 +7,6 @@
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
 
-- Make our AI to summarize each time when it asserts worth and save work and/or go further building on it the next time.
-
 - TODO@P3 Option to donate back to AIIM automatically.
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.

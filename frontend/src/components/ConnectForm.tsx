@@ -330,6 +330,10 @@ const ConnectForm = () => {
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const latestEthereumConnectionRef = useRef<{ isConnected: boolean; address?: string }>({
+    isConnected: false,
+    address: undefined,
+  });
   const userEmails = user?.emails?.length
     ? user.emails
     : user?.email
@@ -403,6 +407,13 @@ const ConnectForm = () => {
       setPendingWalletAuth(true);
     }
   }, [connectStatus.ethereum, isConnected, address]);
+
+  useEffect(() => {
+    latestEthereumConnectionRef.current = {
+      isConnected,
+      address: typeof address === 'string' ? address.trim() : undefined,
+    };
+  }, [isConnected, address]);
 
   useEffect(() => {
     const syncAlertState = () => {
@@ -559,6 +570,36 @@ const ConnectForm = () => {
       void persistAddressFormRef.current?.({ solanaAddress: updatedValue });
     }
   }, [solanaAccount.address, solanaAccount.allAccounts, user]);
+
+  useEffect(() => {
+    const effectiveAddress = typeof address === 'string' ? address.trim() : '';
+    const currentValue = addressFormRef.current.ethereumAddress.trim();
+
+    if (!effectiveAddress || effectiveAddress === currentValue) {
+      return;
+    }
+
+    const nextForm = {
+      ...addressFormRef.current,
+      ethereumAddress: effectiveAddress,
+    };
+
+    addressFormRef.current = nextForm;
+    setAddressForm(nextForm);
+
+    setAddressErrors(prev => {
+      if (!prev.ethereumAddress) {
+        return prev;
+      }
+
+      const { ethereumAddress: _removed, ...rest } = prev;
+      return rest;
+    });
+
+    if (user) {
+      void persistAddressFormRef.current?.({ ethereumAddress: effectiveAddress });
+    }
+  }, [address, user]);
 
   useEffect(() => {
     const updatedValue = syncWalletAddressField('bitcoinAddress', bitcoinWalletAddress);
@@ -807,8 +848,19 @@ const ConnectForm = () => {
       setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
       console.log('Opening Reown wallet chooser...');
       await openAppKit({ view: 'Connect', namespace: 'eip155' });
+
+      const latestWalletState = latestEthereumConnectionRef.current;
+      if (latestWalletState.isConnected && latestWalletState.address) {
+        setPendingWalletAuth(true);
+      }
     } catch (error: any) {
       console.error('Wallet selection error:', error);
+      const latestWalletState = latestEthereumConnectionRef.current;
+      if (latestWalletState.isConnected && latestWalletState.address) {
+        setPendingWalletAuth(true);
+        return;
+      }
+
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
         setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
       } else {

@@ -37,6 +37,7 @@ const PORT = process.env.PORT || 3001;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 const apiUrl = process.env.API_URL || `http://localhost:${PORT}`;
 const frontendHost = new URL(frontendUrl).hostname;
+const frontendOrigin = new URL(frontendUrl).origin;
 const backendDirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDistPath = path.resolve(backendDirname, '../../frontend/dist');
 const frontendIndexPath = path.join(frontendDistPath, 'index.html');
@@ -44,6 +45,18 @@ const frontendAssetsAvailable = fs.existsSync(frontendIndexPath);
 const frontendStatic = frontendAssetsAvailable ? express.static(frontendDistPath, { index: false }) : null;
 
 const isFrontendHost = (host?: string) => Boolean(host && host === frontendHost);
+const isLocalhostOrigin = (origin?: string) => {
+  if (!origin) {
+    return false;
+  }
+
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '::1';
+  } catch {
+    return false;
+  }
+};
 
 // Middleware
 app.use(helmet({
@@ -62,7 +75,19 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (origin === frontendOrigin || isLocalhostOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS blocked for origin ${origin}`));
+  },
   credentials: true,
 }));
 app.use(morgan('combined'));

@@ -8,9 +8,9 @@ import { createPublicClient, http, type Address, type Hex } from 'viem';
 import { mainnet, sepolia } from 'viem/chains';
 import { getCurrentUserFromToken } from '../middleware/auth.js';
 import EmailService from '../services/EmailService.js';
-import { makeUserSoftDeletePayload } from '../services/userDeletionUtils.js';
+import { isImmediateDeletionCandidate, makeUserSoftDeletePayload, softDeleteUser } from '../services/userDeletionUtils.js';
 import { prisma } from '../lib/prisma.js';
-import { normalizeEmail, removeAllUserEmails, syncPrimaryEmail } from '../services/userEmailUtils.js';
+import { normalizeEmail, syncPrimaryEmail } from '../services/userEmailUtils.js';
 
 const router = express.Router();
 
@@ -89,11 +89,50 @@ const userWithEmailsInclude: Prisma.UserInclude = {
   }
 };
 
+const disconnectedAccountSelect: Prisma.UserSelect = {
+  emailVerified: true,
+  bannedTill: true,
+  onboarded: true,
+  isDeleted: true,
+  kycStatus: true,
+  kycVotingStatus: true,
+  ethereumAddress: true,
+  solanaAddress: true,
+  bitcoinAddress: true,
+  bitcoinCashAddress: true,
+  polkadotAddress: true,
+  cosmosAddress: true,
+  stellarAddress: true,
+  icpAddress: true,
+  orcidId: true,
+  githubHandle: true,
+  bitbucketHandle: true,
+  gitlabHandle: true
+};
+
 async function getUserWithEmails(userId: number) {
   return prisma.user.findUnique({
     where: { id: userId },
     include: userWithEmailsInclude
   });
+}
+
+async function maybeSoftDeleteDisconnectedAccount(tx: Prisma.TransactionClient, userId: number): Promise<boolean> {
+  const candidate = await tx.user.findUnique({
+    where: { id: userId },
+    select: disconnectedAccountSelect
+  });
+
+  if (!candidate || !isImmediateDeletionCandidate(candidate)) {
+    return false;
+  }
+
+  await softDeleteUser(tx, userId, {
+    removeEmails: true,
+    removeSessions: true
+  });
+
+  return true;
 }
 
 // Helper function to find or create user based on provided data.
@@ -837,6 +876,11 @@ router.get('/me', async (req, res): Promise<void> => {
       return;
     }
 
+    if (session.user.isDeleted) {
+      res.status(401).json({ error: 'User account has been deleted' });
+      return;
+    }
+
     res.json({ user: session.user });
   } catch (error: any) {
     console.error('Get current user error:', error);
@@ -1459,75 +1503,86 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
 
     const user = session.user;
 
-    // Handle KYC disconnection specially
-    if (provider === 'kyc') {
-      if (user.kycStatus !== 'APPROVED') {
-        res.status(400).json({ error: 'KYC not verified' });
-        return;
+    const result = await prisma.$transaction(async (tx) => {
+      // Handle KYC disconnection specially
+      if (provider === 'kyc') {
+        if (user.kycStatus !== 'APPROVED') {
+          res.status(400).json({ error: 'KYC not verified' });
+          return null;
+        }
+
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            kycStatus: null,
+            kycVerifiedAt: null,
+            kycRejectedAt: null,
+            kycRejectionReason: null,
+            issuingState: null,
+            personalNumber: null,
+            residenceCountry: null
+          }
+        });
+
+        if (await maybeSoftDeleteDisconnectedAccount(tx, user.id)) {
+          return {
+            deleted: true,
+            message: 'KYC disconnected and account deleted successfully',
+            user: null
+          };
+        }
+
+        return {
+          deleted: false,
+          message: 'KYC disconnected successfully',
+          user: updatedUser
+        };
       }
 
-      // Clear all KYC-related fields
-      const updateData = {
-        kycStatus: null,
-        kycVerifiedAt: null,
-        kycRejectedAt: null,
-        kycRejectionReason: null,
-        issuingState: null,
-        personalNumber: null,
-        residenceCountry: null
-      };
+      if (provider === 'votingKyc') {
+        if (user.kycVotingStatus !== 'APPROVED') {
+          res.status(400).json({ error: 'KYC Level 1 not verified' });
+          return null;
+        }
 
-      const updatedUser = await prisma.user.update({
-        where: { id: user.id },
-        data: updateData
-      });
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            kycVotingStatus: null,
+            kycVotingVerifiedAt: null,
+            kycVotingRejectedAt: null,
+            kycVotingRejectionReason: null,
+            kycVotingData: null
+          }
+        });
 
-      res.json({
-        message: 'KYC disconnected successfully',
-        user: updatedUser
-      });
-      return;
-    }
+        if (await maybeSoftDeleteDisconnectedAccount(tx, user.id)) {
+          return {
+            deleted: true,
+            message: 'KYC Level 1 disconnected and account deleted successfully',
+            user: null
+          };
+        }
 
-    if (provider === 'votingKyc') {
-      if (user.kycVotingStatus !== 'APPROVED') {
-        res.status(400).json({ error: 'KYC Level 1 not verified' });
-        return;
+        return {
+          deleted: false,
+          message: 'KYC Level 1 disconnected successfully',
+          user: updatedUser
+        };
       }
 
-      const updateData = {
-        kycVotingStatus: null,
-        kycVotingVerifiedAt: null,
-        kycVotingRejectedAt: null,
-        kycVotingRejectionReason: null,
-        kycVotingData: null
-      };
+      if (provider === 'email') {
+        if (user.emails.length === 0 && !user.email) {
+          res.status(400).json({ error: 'Provider not connected' });
+          return null;
+        }
 
-      const updatedUser = await prisma.user.update({
-        where: { id: user.id },
-        data: updateData
-      });
+        const emailToRemove = requestedEmail || user.emails[0]?.email || user.email;
+        if (!emailToRemove) {
+          res.status(400).json({ error: 'Email is required' });
+          return null;
+        }
 
-      res.json({
-        message: 'KYC Level 1 disconnected successfully',
-        user: updatedUser
-      });
-      return;
-    }
-
-    if (provider === 'email') {
-      if (user.emails.length === 0 && !user.email) {
-        res.status(400).json({ error: 'Provider not connected' });
-        return;
-      }
-
-      const emailToRemove = requestedEmail || user.emails[0]?.email || user.email;
-      if (!emailToRemove) {
-        res.status(400).json({ error: 'Email is required' });
-        return;
-      }
-
-      const updatedUser = await prisma.$transaction(async (tx) => {
         await tx.emailVerificationToken.deleteMany({
           where: {
             userId: user.id,
@@ -1542,52 +1597,72 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
           }
         });
 
-        return syncPrimaryEmail(tx, user.id);
+        const updatedUser = await syncPrimaryEmail(tx, user.id);
+
+        if (await maybeSoftDeleteDisconnectedAccount(tx, user.id)) {
+          return {
+            deleted: true,
+            message: 'email disconnected and account deleted successfully',
+            user: null
+          };
+        }
+
+        return {
+          deleted: false,
+          message: 'email disconnected successfully',
+          user: updatedUser
+        };
+      }
+
+      // Determine which field to clear based on provider
+      const providerFields: Record<string, string> = {
+        ethereum: 'ethereumAddress',
+        orcid: 'orcidId',
+        github: 'githubHandle',
+        bitbucket: 'bitbucketHandle',
+        gitlab: 'gitlabHandle'
+      };
+
+      const fieldToClear = providerFields[provider];
+      if (!fieldToClear) {
+        res.status(400).json({ error: 'Invalid provider' });
+        return null;
+      }
+
+      // Check if the provider is actually connected
+      if (!(user as any)[fieldToClear]) {
+        res.status(400).json({ error: 'Provider not connected' });
+        return null;
+      }
+
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          [fieldToClear]: null
+        },
+        include: userWithEmailsInclude
       });
 
-      res.json({
-        message: 'email disconnected successfully',
+      if (await maybeSoftDeleteDisconnectedAccount(tx, user.id)) {
+        return {
+          deleted: true,
+          message: `${provider} disconnected and account deleted successfully`,
+          user: null
+        };
+      }
+
+      return {
+        deleted: false,
+        message: `${provider} disconnected successfully`,
         user: updatedUser
-      });
-      return;
-    }
-
-    // Determine which field to clear based on provider
-    const providerFields: Record<string, string> = {
-      ethereum: 'ethereumAddress',
-      orcid: 'orcidId',
-      github: 'githubHandle',
-      bitbucket: 'bitbucketHandle',
-      gitlab: 'gitlabHandle'
-    };
-
-    const fieldToClear = providerFields[provider];
-    if (!fieldToClear) {
-      res.status(400).json({ error: 'Invalid provider' });
-      return;
-    }
-
-    // Check if the provider is actually connected
-    if (!(user as any)[fieldToClear]) {
-      res.status(400).json({ error: 'Provider not connected' });
-      return;
-    }
-
-    // Update user to remove the provider connection
-    const updateData: any = {
-      [fieldToClear]: null
-    };
-
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: updateData,
-      include: userWithEmailsInclude
+      };
     });
 
-    res.json({
-      message: `${provider} disconnected successfully`,
-      user: updatedUser
-    });
+    if (!result) {
+      return;
+    }
+
+    res.json(result);
   } catch (error: any) {
     console.error('Disconnect error:', error);
     res.status(500).json({ error: 'Failed to disconnect provider' });

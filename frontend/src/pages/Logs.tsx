@@ -340,7 +340,7 @@ const Logs: React.FC = () => {
       <Canonical baseUrl={frontendOrigin} />
       <div className="logs-header">
         <h1>Meritocracy App Logs</h1>
-        <p>View and filter OpenAI API request and response logs</p>
+        <p>View and filter OpenAI, task, user, and session logs</p>
       </div>
 
       {error && (
@@ -563,7 +563,7 @@ const Logs: React.FC = () => {
               Previous
             </button>
             <span>
-              Showing {filter.offset || 0 + 1} to {Math.min((filter.offset || 0) + (filter.limit || 50), logs.length)}
+              Showing {(filter.offset || 0) + 1} to {Math.min((filter.offset || 0) + (filter.limit || 50), logs.length)}
               {logs.length === (filter.limit || 50) && ' (more available)'}
             </span>
             <button

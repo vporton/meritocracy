@@ -19,6 +19,8 @@ const OVERRIDE_MAX_TOOL_CALLS = process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS ?
   parseInt(process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS) : undefined;
 const DEFAULT_TEMPERATURE = 0.2;
 const BAN_DURATION_YEARS = 1;
+const FAILED_EVALUATION_RETRY_MONTHS = 5;
+const CRACKPOT_RETRY_YEARS = 5;
 const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE);
 
 /**
@@ -135,6 +137,7 @@ interface OpenAIRequestResult {
 
 interface ScientistCheckResponse {
   isActiveScientistOrFOSSDev: boolean;
+  failureCategory: 'NONE' | 'NOT_ACTIVE_OR_WRITER' | 'CRACKPOT';
   why: string;
 }
 
@@ -387,6 +390,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       case 'ScientistOnboardingRunner':
         fakeResponse = {
           isActiveScientistOrFOSSDev: true,
+          failureCategory: 'NONE',
           why: 'Fake mode: Always return true for onboarding'
         };
         break;
@@ -589,13 +593,53 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
 
-  // Simplify this and similar functions.
-  protected async onOutput(customId: string, output: any): Promise<void> {
-    if (output.isActiveScientistOrFOSSDev) {
-      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
-    } else {
-      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+  private getRetryUntil(failureCategory: ScientistCheckResponse['failureCategory']): Date {
+    const retryUntil = new Date();
+
+    if (failureCategory === 'CRACKPOT') {
+      retryUntil.setFullYear(retryUntil.getFullYear() + CRACKPOT_RETRY_YEARS);
+      return retryUntil;
     }
+
+    retryUntil.setMonth(retryUntil.getMonth() + FAILED_EVALUATION_RETRY_MONTHS);
+    return retryUntil;
+  }
+
+  protected async onOutput(customId: string, output: ScientistCheckResponse): Promise<void> {
+    const userId = this.data.userId;
+    if (!userId) {
+      throw new TaskRunnerError('User ID is required for onboarding decisions', this.taskId, this.constructor.name);
+    }
+
+    if (output.isActiveScientistOrFOSSDev) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          onboarded: true,
+          evaluationBlockedTill: null,
+          evaluationBlockReason: null
+        }
+      });
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+      return;
+    }
+
+    const failureCategory = output.failureCategory === 'CRACKPOT'
+      ? 'CRACKPOT'
+      : 'NOT_ACTIVE_OR_WRITER';
+    const retryUntil = this.getRetryUntil(failureCategory);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        onboarded: false,
+        shareInGDP: null,
+        evaluationBlockedTill: retryUntil,
+        evaluationBlockReason: failureCategory
+      }
+    });
+
+    await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
   }
 }
 

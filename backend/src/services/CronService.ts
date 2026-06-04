@@ -7,9 +7,9 @@ import { GlobalDataService } from './GlobalDataService.js';
 import { startApiSelfKeepAlive } from './SelfPingKeepAlive.js';
 
 export const cronJobMetadata = {
-  biMonthlyEvaluation: {
-    cron: '0 2 1 */2 *',
-    description: '1st of every other month at 2:00 AM UTC (bi-monthly evaluation)'
+  quarterlyEvaluation: {
+    cron: '0 2 1 */3 *',
+    description: '1st day of every 3rd month at 2:00 AM UTC (quarterly active-user review and re-worth assessment)'
   },
   weeklyGasDistribution: {
     cron: '0 20 * * 0',
@@ -89,9 +89,9 @@ export class CronService {
             startedAt: activeExecution.startedAt.toISOString()
           }
         : null,
-      biMonthlyEvaluation: {
-        running: activeTaskName === 'bi-monthly evaluation',
-        schedule: `${cronJobMetadata.biMonthlyEvaluation.cron} (${cronJobMetadata.biMonthlyEvaluation.description})`
+      quarterlyEvaluation: {
+        running: activeTaskName === 'quarterly evaluation',
+        schedule: `${cronJobMetadata.quarterlyEvaluation.cron} (${cronJobMetadata.quarterlyEvaluation.description})`
       },
       weeklyGasDistribution: {
         running: activeTaskName === 'weekly gas distribution',
@@ -291,12 +291,24 @@ export class CronService {
     });
   }
 
-  async runBiMonthlyEvaluation() {
-    return this.runWithExclusiveExecution('bi-monthly evaluation', async () => {
-      console.log('🔄 Starting bi-monthly evaluation process...');
-      const stopKeepAlive = startApiSelfKeepAlive('bi-monthly evaluation');
+  async runQuarterlyEvaluation(force: boolean = false) {
+    return this.runWithExclusiveExecution('quarterly evaluation', async () => {
+      console.log('🔄 Starting quarterly evaluation process...');
+      const stopKeepAlive = startApiSelfKeepAlive('quarterly evaluation');
 
       try {
+        if (!force && !this.shouldRunCurrentQuarter()) {
+          console.log('⏭️  Quarterly evaluation trigger received outside quarter boundary; skipping run.');
+          return {
+            eligibleUsers: 0,
+            successful: 0,
+            failed: 0,
+            errors: [] as string[],
+            skippedByQuarterlySchedule: true,
+            salaryStatsUpdated: false
+          };
+        }
+
         const eligibleUsers = await this.prisma.user.findMany({
           where: {
             onboarded: true
@@ -312,10 +324,10 @@ export class CronService {
           }
         });
 
-        console.log(`📊 Found ${eligibleUsers.length} eligible users for evaluation`);
+        console.log(`📊 Found ${eligibleUsers.length} eligible users for quarterly evaluation`);
 
         if (eligibleUsers.length === 0) {
-          console.log('ℹ️  No users eligible for bi-monthly evaluation');
+          console.log('ℹ️  No users eligible for quarterly evaluation');
           const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
           if (!salaryStatsUpdated) {
             console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
@@ -367,7 +379,7 @@ export class CronService {
           }
         }
 
-        console.log('📊 Bi-monthly evaluation process completed:');
+        console.log('📊 Quarterly evaluation process completed:');
         console.log(`  ✅ Successful: ${results.successful}`);
         console.log(`  ❌ Failed: ${results.failed}`);
 
@@ -390,12 +402,20 @@ export class CronService {
         };
 
       } catch (error) {
-        console.error('💥 Fatal error in bi-monthly evaluation process:', error);
+        console.error('💥 Fatal error in quarterly evaluation process:', error);
         throw error;
       } finally {
         stopKeepAlive();
       }
     });
+  }
+
+  async runBiMonthlyEvaluation() {
+    return this.runQuarterlyEvaluation();
+  }
+
+  private shouldRunCurrentQuarter(referenceDate: Date = new Date()): boolean {
+    return referenceDate.getUTCMonth() % 3 === 0;
   }
 
   private shouldRunCurrentWeek(referenceDate: Date = new Date()): boolean {

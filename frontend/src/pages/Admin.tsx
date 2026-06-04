@@ -183,7 +183,7 @@ const Admin: React.FC = () => {
                             onClick={triggerReWorthAssessment}
                             disabled={triggering || reassessing}
                         >
-                            {reassessing ? 'Running Re-worth-assessment...' : 'Run Re-worth-assessment for Onboarded Users'}
+                            {reassessing ? 'Running Quarterly Review...' : 'Run Quarterly Review for Onboarded Users'}
                         </button>
                     </div>
 
@@ -202,10 +202,10 @@ const Admin: React.FC = () => {
 
                 {reassessing && (
                     <div className="admin-card processing-card">
-                        <h2>Processing Re-worth-assessment</h2>
+                        <h2>Processing Quarterly Review</h2>
                         <div className="loader-container">
                             <div className="loader"></div>
-                            <p>The reassessment process is running for all onboarded users. This may take several minutes.</p>
+                            <p>The quarterly active-user review and re-worth-assessment is running for all onboarded users. This may take several minutes.</p>
                         </div>
                     </div>
                 )}

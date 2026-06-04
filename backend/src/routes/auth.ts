@@ -259,6 +259,23 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
           updateData.bannedTill = existingUser.bannedTill;
         }
 
+        // Preserve the longer evaluation retry lock, if any.
+        if (existingUser.evaluationBlockedTill && currentUser.evaluationBlockedTill) {
+          const existingWins = existingUser.evaluationBlockedTill > currentUser.evaluationBlockedTill;
+          updateData.evaluationBlockedTill = existingWins
+            ? existingUser.evaluationBlockedTill
+            : currentUser.evaluationBlockedTill;
+          updateData.evaluationBlockReason = existingWins
+            ? existingUser.evaluationBlockReason
+            : currentUser.evaluationBlockReason;
+        } else if (existingUser.evaluationBlockedTill) {
+          updateData.evaluationBlockedTill = existingUser.evaluationBlockedTill;
+          updateData.evaluationBlockReason = existingUser.evaluationBlockReason;
+        } else if (currentUser.evaluationBlockedTill) {
+          updateData.evaluationBlockedTill = currentUser.evaluationBlockedTill;
+          updateData.evaluationBlockReason = currentUser.evaluationBlockReason;
+        }
+
         // Transfer related data from existing user to current user
         // Transfer sessions
         await tx.session.updateMany({

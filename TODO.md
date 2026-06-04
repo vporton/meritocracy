@@ -1,6 +1,5 @@
 - TODO@P2 Against prompt injection add random strings to output and JSON labels.
-
-- TODO@P2 Require to check liveliness every 2 months (provided that the salary is not zero), to avoid dead users.
+  (Effective?)
 
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
 
@@ -29,8 +28,6 @@
 - TODO@P3 Option to donate back to AIIM automatically.
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
-
-- TODO@P3 Ability to re-onboard a user, especially if his/her account was empty.
 
 - TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.
 

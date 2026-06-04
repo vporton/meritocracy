@@ -92,13 +92,13 @@ router.post('/trigger-distribution', authAdmin, async (req, res) => {
 
 /**
  * POST /api/admin/trigger-re-worth-assessment
- * Manually trigger re-worth-assessment for all onboarded users
+ * Manually trigger quarterly active-user review and re-worth-assessment for all onboarded users
  */
 router.post('/trigger-re-worth-assessment', authAdmin, async (_req, res) => {
     try {
-        const result = await cronService.runBiMonthlyEvaluation();
+        const result = await cronService.runQuarterlyEvaluation(true);
         res.json({
-            message: 'Re-worth-assessment triggered successfully',
+            message: 'Quarterly active-user review and re-worth-assessment triggered successfully',
             result
         });
     } catch (error) {
@@ -111,9 +111,9 @@ router.post('/trigger-re-worth-assessment', authAdmin, async (_req, res) => {
             });
             return;
         }
-        console.error('Error triggering re-worth-assessment:', error);
+        console.error('Error triggering quarterly re-worth-assessment:', error);
         res.status(500).json({
-            error: 'Failed to trigger re-worth-assessment',
+            error: 'Failed to trigger quarterly re-worth-assessment',
             message: error instanceof Error ? error.message : 'Unknown error'
         });
     }

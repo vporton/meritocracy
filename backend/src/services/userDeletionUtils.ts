@@ -16,6 +16,8 @@ export function makeUserSoftDeletePayload(deletionTimestamp: Date) {
     bitbucketHandle: null,
     gitlabHandle: null,
     onboarded: false,
-    emailVerified: false
+    emailVerified: false,
+    evaluationBlockedTill: null,
+    evaluationBlockReason: null
   };
 }

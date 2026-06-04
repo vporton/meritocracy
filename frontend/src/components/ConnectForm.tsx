@@ -1542,8 +1542,12 @@ const ConnectForm = () => {
     return hasSocial && hasEmail && hasEth;
   };
 
+  const evaluationRetryBlockedUntil = user?.evaluationBlockedTill && new Date(user.evaluationBlockedTill) > new Date()
+    ? user.evaluationBlockedTill
+    : null;
+
   const handleStartEvaluation = async () => {
-    if (!user || !isAuthenticated || onboardingLoading || user.onboarded || !hasConnectedAccounts()) {
+    if (!user || !isAuthenticated || onboardingLoading || user.onboarded || !hasConnectedAccounts() || evaluationRetryBlockedUntil) {
       return;
     }
 
@@ -1571,7 +1575,8 @@ const ConnectForm = () => {
       }
     } catch (error) {
       console.error('Start evaluation error:', error);
-      alert('Failed to start evaluation. Please try again.');
+      const message = (error as any)?.response?.data?.message || 'Failed to start evaluation. Please try again.';
+      alert(message);
     } finally {
       setOnboardingLoading(false);
     }
@@ -1591,11 +1596,17 @@ const ConnectForm = () => {
 
       {isAuthenticated && user && !user.onboarded && (
         <div className="evaluation-start-card">
-          <p>{hasConnectedAccounts() ? 'All required accounts are connected.' : 'Add the required accounts and an Ethereum address to start evaluation.'}</p>
+          <p>
+            {evaluationRetryBlockedUntil
+              ? `Re-evaluation will be available after ${new Date(evaluationRetryBlockedUntil).toLocaleString()}.`
+              : hasConnectedAccounts()
+                ? 'All required accounts are connected.'
+                : 'Add the required accounts and an Ethereum address to start evaluation.'}
+          </p>
           <button
             className="connect-button start-evaluation-button"
             onClick={handleStartEvaluation}
-            disabled={!hasConnectedAccounts() || onboardingLoading}
+            disabled={!hasConnectedAccounts() || onboardingLoading || !!evaluationRetryBlockedUntil}
           >
             <span className="connect-icon">🚀</span>
             {onboardingLoading ? 'Starting Evaluation...' : 'Start Evaluation'}

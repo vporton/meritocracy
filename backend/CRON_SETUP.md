@@ -25,8 +25,8 @@ The handlers do **not** wait for the job to finish before responding. They immed
 ## Monitoring
 
 - **Status**: `GET /api/cron/status` returns whether a job is currently running and restates the cron expressions. This endpoint is safe to call without authentication.
-- **Admin triggers**: There are still admin-only endpoints (`/api/admin/trigger-distribution`, `/api/admin/trigger-re-worth-assessment`) that can start the weekly distribution or bi-monthly evaluation manually; they share the same locking logic as the cron jobs.
-- **Logs**: Each job prints start/end markers and, for the bi-monthly evaluation, it logs the per-user successes/failures plus salary statistics updates.
+- **Admin triggers**: There are still admin-only endpoints (`/api/admin/trigger-distribution`, `/api/admin/trigger-re-worth-assessment`) that can start the weekly distribution or quarterly evaluation manually; they share the same locking logic as the cron jobs.
+- **Logs**: Each job prints start/end markers and, for the quarterly evaluation, it logs the per-user successes/failures plus salary statistics updates.
 
 ## Summary
 

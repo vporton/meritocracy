@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { useSendTransaction, useWriteContract } from 'wagmi'
+import { parseEther, parseUnits, type Address } from 'viem'
 import api from '../services/api'
+import { hasReownWalletModal } from '../config/wagmi'
 import { countries } from '../utils/countries'
 
 interface NetworkInfo {
@@ -52,7 +56,48 @@ type FundingAddress = {
   label: string;
   address: string;
   note?: string;
+  kind?: 'btc-deposit' | 'eth-deposit' | 'erc20-deposit' | 'manual';
+  receiverPrincipal?: string;
+  receiverPrincipalBytes32?: string;
+  tokenContractAddress?: string;
 };
+
+const ETH_DEPOSIT_HELPER_ABI = [
+  {
+    type: 'function',
+    name: 'deposit',
+    stateMutability: 'payable',
+    inputs: [{ name: 'receiver', type: 'bytes32' }],
+    outputs: []
+  }
+] as const;
+
+const ERC20_APPROVE_ABI = [
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [{ name: '', type: 'bool' }]
+  }
+] as const;
+
+const ERC20_DEPOSIT_HELPER_ABI = [
+  {
+    type: 'function',
+    name: 'deposit',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+      { name: 'receiver', type: 'bytes32' }
+    ],
+    outputs: []
+  }
+] as const;
 
 const explorerLinkMap: Record<string, ExplorerLinkConfig> = {
   mainnet: { label: 'Etherscan', buildUrl: address => `https://etherscan.io/address/${encodeURIComponent(address)}` },
@@ -108,6 +153,12 @@ const getExplorerLinkForNetwork = (networkId: string, address: string) => {
   };
 };
 
+const normalizeAmountInput = (value: string) => value.trim().replace(/,/g, '');
+const isPositiveAmount = (value: string) => {
+  const parsed = Number(normalizeAmountInput(value));
+  return Number.isFinite(parsed) && parsed > 0;
+};
+
 function MultiNetworkGasBalances() {
   const [networkStatus, setNetworkStatus] = useState<MultiNetworkStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -115,9 +166,16 @@ function MultiNetworkGasBalances() {
   const [error, setError] = useState<string | null>(null)
   const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
   const [tokenQuotes, setTokenQuotes] = useState<Record<string, TokenPriceQuote>>({})
+  const [fundingAmounts, setFundingAmounts] = useState<Record<string, string>>({})
+  const [fundingStatusMessage, setFundingStatusMessage] = useState<string | null>(null)
+  const [activeFundingKey, setActiveFundingKey] = useState<string | null>(null)
 
   const [scope, setScope] = useState<'GLOBAL' | 'REGION_EU' | 'COUNTRY'>('GLOBAL');
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
+  const { open: openAppKit } = useAppKit()
+  const { isConnected } = useAppKitAccount()
+  const { sendTransactionAsync } = useSendTransaction()
+  const { writeContractAsync } = useWriteContract()
 
   const usdFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -166,6 +224,7 @@ function MultiNetworkGasBalances() {
       setNetworkStatus(null)
       setLoadingNetworks({})
       setTokenQuotes({})
+      setFundingStatusMessage(null)
 
       const params = new URLSearchParams()
       if (currentScope === 'COUNTRY') {
@@ -191,9 +250,7 @@ function MultiNetworkGasBalances() {
       if (listResponse.data.success) {
         const listData = listResponse.data.data
         const rawNetworks = listData.networkDetails || []
-        const networks = currentScope === 'GLOBAL'
-          ? rawNetworks.filter((net: any) => !net.baseNetworkId)
-          : rawNetworks
+        const networks = rawNetworks
         const initialNetworks: Record<string, NetworkInfo> = {}
         const initialLoading: Record<string, boolean> = {}
 
@@ -324,6 +381,127 @@ function MultiNetworkGasBalances() {
     return latest
   }, null)
 
+  const getFundingAmount = (key: string) => fundingAmounts[key] ?? ''
+
+  const setFundingAmount = (key: string, value: string) => {
+    setFundingAmounts(prev => ({
+      ...prev,
+      [key]: value
+    }))
+  }
+
+  const requireEvmWallet = async () => {
+    if (isConnected) {
+      return true
+    }
+
+    if (!hasReownWalletModal) {
+      throw new Error('Wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable funding from wallet.')
+    }
+
+    await openAppKit({ view: 'Connect', namespace: 'eip155' })
+    return false
+  }
+
+  const handleNativeEvmFunding = async (networkName: string, networkInfo: NetworkInfo) => {
+    const targetAddress = networkInfo.address?.trim()
+    const amount = normalizeAmountInput(getFundingAmount(networkName))
+    if (!targetAddress || isPlaceholderAddress(targetAddress)) {
+      throw new Error('Treasury address is not available for this network.')
+    }
+    if (!isPositiveAmount(amount)) {
+      throw new Error('Enter a positive amount before funding.')
+    }
+
+    const connected = await requireEvmWallet()
+    if (!connected) {
+      setFundingStatusMessage('Wallet chooser opened. Connect a wallet, then submit the transfer again.')
+      return
+    }
+
+    setActiveFundingKey(networkName)
+    try {
+      const hash = await sendTransactionAsync({
+        to: targetAddress as Address,
+        value: parseEther(amount)
+      })
+      setFundingStatusMessage(`Native transfer submitted on ${networkInfo.networkName ?? networkName}: ${hash}`)
+    } finally {
+      setActiveFundingKey(null)
+    }
+  }
+
+  const handleCkEthFunding = async (networkName: string, funding: FundingAddress) => {
+    const amount = normalizeAmountInput(getFundingAmount(networkName))
+    if (!funding.receiverPrincipalBytes32) {
+      throw new Error('Treasury principal encoding is missing for this ckETH deposit.')
+    }
+    if (!isPositiveAmount(amount)) {
+      throw new Error('Enter a positive amount before funding.')
+    }
+
+    const connected = await requireEvmWallet()
+    if (!connected) {
+      setFundingStatusMessage('Wallet chooser opened. Connect a wallet, then submit the deposit again.')
+      return
+    }
+
+    setActiveFundingKey(networkName)
+    try {
+      const hash = await writeContractAsync({
+        address: funding.address as Address,
+        abi: ETH_DEPOSIT_HELPER_ABI,
+        functionName: 'deposit',
+        args: [funding.receiverPrincipalBytes32 as `0x${string}`],
+        value: parseEther(amount)
+      })
+      setFundingStatusMessage(`ckETH deposit submitted: ${hash}`)
+    } finally {
+      setActiveFundingKey(null)
+    }
+  }
+
+  const handleCkErc20Funding = async (networkName: string, funding: FundingAddress, tokenDecimals: number) => {
+    const amount = normalizeAmountInput(getFundingAmount(networkName))
+    if (!funding.receiverPrincipalBytes32 || !funding.tokenContractAddress) {
+      throw new Error('Treasury deposit metadata is incomplete for this token.')
+    }
+    if (!isPositiveAmount(amount)) {
+      throw new Error('Enter a positive amount before funding.')
+    }
+
+    const connected = await requireEvmWallet()
+    if (!connected) {
+      setFundingStatusMessage('Wallet chooser opened. Connect a wallet, then submit the deposit again.')
+      return
+    }
+
+    const amountUnits = parseUnits(amount, tokenDecimals)
+    setActiveFundingKey(networkName)
+    try {
+      await writeContractAsync({
+        address: funding.tokenContractAddress as Address,
+        abi: ERC20_APPROVE_ABI,
+        functionName: 'approve',
+        args: [funding.address as Address, amountUnits]
+      })
+
+      const hash = await writeContractAsync({
+        address: funding.address as Address,
+        abi: ERC20_DEPOSIT_HELPER_ABI,
+        functionName: 'deposit',
+        args: [
+          funding.tokenContractAddress as Address,
+          amountUnits,
+          funding.receiverPrincipalBytes32 as `0x${string}`
+        ]
+      })
+      setFundingStatusMessage(`${funding.label.replace(' helper contract', '')} deposit submitted: ${hash}`)
+    } finally {
+      setActiveFundingKey(null)
+    }
+  }
+
   useEffect(() => {
     fetchMultiNetworkStatus(scope, selectedCountry)
   }, [scope, selectedCountry])
@@ -439,12 +617,17 @@ function MultiNetworkGasBalances() {
         <p style={{ margin: '0.5rem 0 0 0', color: '#0c4a6e', fontSize: '0.9rem' }}>
           {networkStatus.totalNetworks} networks enabled: {networkStatus.enabledNetworks.join(', ')}
         </p>
-        {latestQuoteTime && (
-          <p style={{ margin: '0.5rem 0 0 0', color: '#075985', fontSize: '0.8rem' }}>
-            USD quotes from CoinGecko. Last update: {new Date(latestQuoteTime).toLocaleString()}
-          </p>
-        )}
-      </div>
+      {latestQuoteTime && (
+        <p style={{ margin: '0.5rem 0 0 0', color: '#075985', fontSize: '0.8rem' }}>
+          USD quotes from CoinGecko. Last update: {new Date(latestQuoteTime).toLocaleString()}
+        </p>
+      )}
+      {fundingStatusMessage && (
+        <p style={{ margin: '0.5rem 0 0 0', color: '#065f46', fontSize: '0.85rem', fontWeight: 600 }}>
+          {fundingStatusMessage}
+        </p>
+      )}
+    </div>
 
       {/* Network Details */}
       <div style={{ display: 'grid', gap: '1rem' }} data-nosnippet="data-nosnippet">
@@ -585,6 +768,61 @@ function MultiNetworkGasBalances() {
                     </a>
                   </p>
                 )}
+                {typeof networkInfo.chainId === 'number' && address !== 'N/A' && !isPlaceholderAddress(address) && (
+                  <div style={{
+                    marginTop: '0.75rem',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)'
+                  }}>
+                    <p style={{ margin: '0 0 0.35rem 0', color: '#dbeafe', fontWeight: 600 }}>
+                      Fund from browser wallet
+                    </p>
+                    <p style={{ margin: '0 0 0.5rem 0', color: '#bfdbfe', fontSize: '0.8rem' }}>
+                      Send the native asset directly from the injected wallet exposed by Reown.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Amount"
+                        value={getFundingAmount(networkName)}
+                        onChange={(event) => setFundingAmount(networkName, event.target.value)}
+                        style={{
+                          padding: '0.45rem 0.6rem',
+                          minWidth: '140px',
+                          borderRadius: '6px',
+                          border: '1px solid #93c5fd',
+                          background: '#fff',
+                          color: '#111827'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        disabled={activeFundingKey === networkName}
+                        onClick={async () => {
+                          try {
+                            await handleNativeEvmFunding(networkName, networkInfo)
+                          } catch (fundingError) {
+                            setFundingStatusMessage(fundingError instanceof Error ? fundingError.message : String(fundingError))
+                          }
+                        }}
+                        style={{
+                          padding: '0.45rem 0.8rem',
+                          borderRadius: '6px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: activeFundingKey === networkName ? '#64748b' : '#2563eb',
+                          color: '#fff',
+                          fontWeight: 600
+                        }}
+                      >
+                        {isConnected ? (activeFundingKey === networkName ? 'Sending...' : 'Send from wallet') : 'Connect wallet'}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {networkInfo.fundingAddresses && networkInfo.fundingAddresses.length > 0 && (
                   <div style={{ marginTop: '0.75rem' }}>
                     <p style={{ margin: '0 0 0.4rem 0', color: '#d1d5db', fontWeight: 600 }}>
@@ -592,6 +830,16 @@ function MultiNetworkGasBalances() {
                     </p>
                     {networkInfo.fundingAddresses.map((funding, index) => {
                       const fundingKey = `${networkName}-funding-${index}`
+                      const fundingAmountKey = `${networkName}-funding-${index}`
+                      const tokenDecimals = Number.isFinite(networkInfo.tokenDecimals)
+                        ? Number(networkInfo.tokenDecimals)
+                        : 6
+                      const actionLabel =
+                        funding.kind === 'eth-deposit'
+                          ? 'Deposit ETH'
+                          : funding.kind === 'erc20-deposit'
+                            ? 'Approve & deposit'
+                            : null
                       return (
                         <div key={fundingKey} style={{ marginBottom: '0.5rem' }}>
                           <p style={{ margin: '0.1rem 0', color: '#9ca3af' }}>
@@ -619,6 +867,65 @@ function MultiNetworkGasBalances() {
                               {copiedAddressKey === fundingKey ? 'Copied!' : 'Copy'}
                             </button>
                           </p>
+                          {actionLabel && funding.kind !== 'manual' && (
+                            <div style={{
+                              margin: '0.4rem 0 0.1rem 0',
+                              padding: '0.6rem',
+                              borderRadius: '8px',
+                              background: 'rgba(15, 23, 42, 0.55)',
+                              border: '1px solid rgba(148, 163, 184, 0.25)'
+                            }}>
+                              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="Amount"
+                                  value={getFundingAmount(fundingAmountKey)}
+                                  onChange={(event) => setFundingAmount(fundingAmountKey, event.target.value)}
+                                  style={{
+                                    padding: '0.4rem 0.6rem',
+                                    minWidth: '120px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #475569',
+                                    background: '#fff',
+                                    color: '#111827'
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  disabled={activeFundingKey === fundingAmountKey}
+                                  onClick={async () => {
+                                    try {
+                                      if (funding.kind === 'erc20-deposit') {
+                                        await handleCkErc20Funding(fundingAmountKey, funding, tokenDecimals)
+                                        return
+                                      }
+
+                                      if (funding.kind === 'eth-deposit') {
+                                        await handleCkEthFunding(fundingAmountKey, funding)
+                                        return
+                                      }
+
+                                      setFundingStatusMessage('This funding path requires a wallet that can send BTC directly.')
+                                    } catch (fundingError) {
+                                      setFundingStatusMessage(fundingError instanceof Error ? fundingError.message : String(fundingError))
+                                    }
+                                  }}
+                                  style={{
+                                    padding: '0.4rem 0.75rem',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: activeFundingKey === fundingAmountKey ? '#64748b' : '#7c3aed',
+                                    color: '#fff',
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  {activeFundingKey === fundingAmountKey ? 'Working...' : actionLabel}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                           {funding.note && (
                             <p style={{ margin: '0.1rem 0', color: '#9ca3af', fontSize: '0.8rem' }}>
                               {funding.note}

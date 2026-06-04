@@ -66,5 +66,3 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 Increase LLM "power" parameters.
 
 - TODO@P3 Improve Logs UI.
-
-- TODO@P3 For ck tokens provide direct links to topping up dapps (maybe to Etherscan instead, to increase safety).

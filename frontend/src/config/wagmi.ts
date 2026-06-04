@@ -1,7 +1,6 @@
 import { createAppKit } from '@reown/appkit/react';
-import { mainnet, sepolia } from '@reown/appkit/networks';
-// import { bitcoin, solana } from '@reown/appkit/networks';
-// import { BitcoinAdapter } from '@reown/appkit-adapter-bitcoin';
+import { bitcoin, mainnet, sepolia } from '@reown/appkit/networks';
+import { BitcoinAdapter } from '@reown/appkit-adapter-bitcoin';
 // import { SolanaAdapter } from '@reown/appkit-adapter-solana';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { createConfig, http } from 'wagmi';
@@ -12,9 +11,10 @@ export const projectId = (import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '').t
 export const hasReownWalletModal = projectId.length > 0;
 const appUrl = getFrontendOrigin();
 
-const networks = [mainnet, sepolia] as const;
-// TODO@P3 Solana and Bitcoin AppKit integration is commented out because it appears to be causing the production build to fail.
-// const networks = [mainnet, sepolia, solana, bitcoin] as const;
+const evmNetworks = [mainnet, sepolia] as const;
+const wagmiNetworks = [...evmNetworks];
+const bitcoinNetworks = [bitcoin];
+const networks = [...wagmiNetworks, ...bitcoinNetworks] as [typeof mainnet, typeof sepolia, typeof bitcoin];
 const metadata = {
   name: 'Meritocracy DAO',
   description: 'Meritocracy funds scientists and open-source developers through transparent governance.',
@@ -22,8 +22,8 @@ const metadata = {
   icons: [new URL('/logo.png', appUrl).toString()],
 };
 
-let config = createConfig({
-  chains: networks,
+let config: ReturnType<typeof createConfig> = createConfig({
+  chains: evmNetworks,
   connectors: [injected()],
   transports: {
     [mainnet.id]: http(),
@@ -34,15 +34,15 @@ let config = createConfig({
 if (hasReownWalletModal) {
   const wagmiAdapter = new WagmiAdapter({
     projectId,
-    networks,
+    networks: wagmiNetworks,
   });
   // const solanaAdapter = new SolanaAdapter({
   //   registerWalletStandard: true,
   // });
-  // const bitcoinAdapter = new BitcoinAdapter();
+  const bitcoinAdapter = new BitcoinAdapter({ projectId });
 
   createAppKit({
-    adapters: [wagmiAdapter],
+    adapters: [wagmiAdapter, bitcoinAdapter],
     // adapters: [wagmiAdapter, solanaAdapter, bitcoinAdapter],
     metadata,
     networks,
@@ -58,7 +58,7 @@ if (hasReownWalletModal) {
     },
   });
 
-  config = wagmiAdapter.wagmiConfig;
+  config = wagmiAdapter.wagmiConfig as ReturnType<typeof createConfig>;
 }
 
 export { config };

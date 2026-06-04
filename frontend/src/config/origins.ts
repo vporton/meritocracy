@@ -38,7 +38,7 @@ export const getFrontendOrigin = (): string => {
 
   const { hostname, origin, protocol } = runtimeLocation
   if (isLocalHost(hostname)) {
-    return configuredFrontendOrigin() || LOCAL_FRONTEND_URL
+    return configuredFrontendOrigin() || origin
   }
 
   if (hostname.startsWith(API_HOST_PREFIX)) {

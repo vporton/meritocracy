@@ -2,6 +2,8 @@
 
 ## Guidelines
 
+- Use `nvm use stable` to setup the correct version of Node.js environment.
+
 - After accomplishing a task remove the corresponding TODO/FIXME item from `TODO.md`.
   (Also remove the empty line before or after the item.)
 

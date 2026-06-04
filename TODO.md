@@ -1,6 +1,3 @@
-- TODO@P2 Against prompt injection add random strings to output and JSON labels.
-  (Effective?)
-
 - TODO@P3 Inefficient checking for whether all dependencies are COMPLETE.
 
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
@@ -31,12 +28,8 @@
 
 - TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.
 
-- TODO@P2 Use a defense pattern similar to that in the 2025 paper Robustness via Referencing: ask the LLM to tag which part of its output corresponds to which instruction, then reject outputs that reference instructions not issued by your system.
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
-
-- FIXME@P3 When I select Belarus fund, it shows "Bitcoin Mainnet (BY)" but "mainnet" (without BY). That's inconsistent.
 
 - TODO@P3 Ensure that payments are sent, even if the process is interrupted.
 
@@ -51,8 +44,6 @@
 
 - TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
 
-- TODO@P2 More secure prompts: https://chatgpt.com/s/t_696d6def807c8191a8b9f09fc4000906
-
 - TODO@P3 Run tasks in parallel.
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
@@ -60,8 +51,6 @@
 - TODO@P3 `Disconnect Receiver KYC before disconnecting KYC Level 1` makes no sense.
 
 - TODO@P3 Google Analytics for such things as user registration.
-
-- FIXME@P3 The Polygon gas is MATIC rather than displayed POL. https://github.com/wevm/viem/issues/4358
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.
@@ -95,5 +84,3 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 Improve Logs UI.
 
 - TODO@P3 For ck tokens provide direct links to topping up dapps (maybe to Etherscan instead, to increase safety).
-
-- FIXME@P3 At `/admin` there is displayed wrong data on when Cron is run.

@@ -369,7 +369,7 @@ function MultiNetworkGasBalances() {
           <p><strong>Supported Networks:</strong></p>
           <ul style={{ textAlign: 'left', margin: '0.5rem 0' }}>
             <li>mainnet - Ethereum Mainnet</li>
-            <li>polygon - Polygon (MATIC)</li>
+            <li>polygon - Polygon (POL)</li>
             <li>arbitrum - Arbitrum One</li>
             <li>optimism - Optimism</li>
             <li>base - Base (Coinbase L2)</li>
@@ -454,7 +454,9 @@ function MultiNetworkGasBalances() {
           const lastDistribution = networkInfo.lastDistribution
 
           const displayName =
-            networkInfo.name ?? networkInfo.networkName ?? networkName
+            networkInfo.baseNetworkId
+              ? networkInfo.networkName ?? networkInfo.name ?? networkName
+              : networkInfo.name ?? networkInfo.networkName ?? networkName
           const chainBadgeText = typeof networkInfo.chainId === 'number'
             ? `Chain ${networkInfo.chainId}`
             : networkInfo.adapterType

@@ -43,6 +43,37 @@ const frontendDistPath = path.resolve(backendDirname, '../../frontend/dist');
 const frontendIndexPath = path.join(frontendDistPath, 'index.html');
 const frontendAssetsAvailable = fs.existsSync(frontendIndexPath);
 const frontendStatic = frontendAssetsAvailable ? express.static(frontendDistPath, { index: false }) : null;
+const reownConnectSrc = [
+  'https://rpc.walletconnect.com',
+  'https://rpc.walletconnect.org',
+  'https://relay.walletconnect.com',
+  'https://relay.walletconnect.org',
+  'wss://relay.walletconnect.com',
+  'wss://relay.walletconnect.org',
+  'https://pulse.walletconnect.com',
+  'https://pulse.walletconnect.org',
+  'https://api.web3modal.com',
+  'https://api.web3modal.org',
+  'https://keys.walletconnect.com',
+  'https://keys.walletconnect.org',
+  'https://notify.walletconnect.com',
+  'https://notify.walletconnect.org',
+  'https://echo.walletconnect.com',
+  'https://echo.walletconnect.org',
+  'https://push.walletconnect.com',
+  'https://push.walletconnect.org',
+  'wss://www.walletlink.org',
+  'https://cca-lite.coinbase.com',
+] as const;
+const evmRpcConnectSrc = [
+  'https://eth.merkle.io',
+  'https://11155111.rpc.thirdweb.com',
+  'https://polygon-rpc.com',
+  'https://arb1.arbitrum.io/rpc',
+  'https://mainnet.optimism.io',
+  'https://mainnet.base.org',
+  'https://forno.celo.org',
+] as const;
 
 const isFrontendHost = (host?: string) => Boolean(host && host === frontendHost);
 const isLocalhostOrigin = (origin?: string) => {
@@ -66,13 +97,14 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", process.env.API_URL!],
-      frameSrc: ["'self'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://fonts.reown.com'],
+      connectSrc: ["'self'", process.env.API_URL!, ...reownConnectSrc, ...evmRpcConnectSrc],
+      frameSrc: ["'self'", 'https://verify.walletconnect.com', 'https://verify.walletconnect.org', 'https://secure.walletconnect.com', 'https://secure.walletconnect.org'],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
   },
-  crossOriginOpenerPolicy: { policy: "unsafe-none" },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
 }));
 app.use(cors({
   origin: (origin, callback) => {

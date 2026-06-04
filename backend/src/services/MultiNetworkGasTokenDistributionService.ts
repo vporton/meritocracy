@@ -1610,46 +1610,40 @@ export class MultiNetworkGasTokenDistributionService {
       const networkResults = new Map<string, NetworkDistributionResult>();
       const errors: string[] = [];
 
-      const networkPromises = Array.from(networkDistributions.entries()).map(
-        async ([networkId, payload]) => {
-          const { adapter, context, distributions } = payload;
+      for (const [networkId, payload] of networkDistributions.entries()) {
+        const { adapter, context, distributions } = payload;
 
-          try {
-            if (distributions.length === 0) {
-              networkResults.set(networkId, {
-                networkId: context.networkId,
-                networkName: context.networkName,
-                adapterType: context.adapterType,
-                tokenSymbol: context.tokenSymbol,
-                tokenType: context.tokenType,
-                tokenDecimals: context.tokenDecimals,
-                distributedAmount: 0,
-                reservedAmount: 0,
-                errors: [],
-                distributed: 0,
-                reserved: 0
-              });
-              return;
-            }
-
-            const networkResult = await this.processNetworkDistribution(
-              adapter,
-              context,
-              distributions
-            );
-            networkResults.set(networkId, networkResult);
-            errors.push(
-              ...networkResult.errors.map(error => `[${context.networkName}] ${error} `)
-            );
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
-            console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        try {
+          if (distributions.length === 0) {
+            networkResults.set(networkId, {
+              networkId: context.networkId,
+              networkName: context.networkName,
+              adapterType: context.adapterType,
+              tokenSymbol: context.tokenSymbol,
+              tokenType: context.tokenType,
+              tokenDecimals: context.tokenDecimals,
+              distributedAmount: 0,
+              reservedAmount: 0,
+              errors: [],
+              distributed: 0,
+              reserved: 0
+            });
+            continue;
           }
-        }
-      );
 
-      await Promise.all(networkPromises);
+          const networkResult = await this.processNetworkDistribution(
+            adapter,
+            context,
+            distributions
+          );
+          networkResults.set(networkId, networkResult);
+          errors.push(...networkResult.errors.map(error => `[${context.networkName}] ${error} `));
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
+          console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        }
+      }
 
       const result: MultiNetworkDistributionResult = {
         networkResults,
@@ -1705,47 +1699,41 @@ export class MultiNetworkGasTokenDistributionService {
       const networkResults = new Map<string, NetworkDistributionResult>();
       const errors: string[] = [];
 
-      const networkPromises = Array.from(networkDistributions.entries()).map(
-        async ([networkId, payload]) => {
-          const { adapter, context, distributions } = payload;
+      for (const [networkId, payload] of networkDistributions.entries()) {
+        const { adapter, context, distributions } = payload;
 
-          try {
-            if (distributions.length === 0) {
-              networkResults.set(networkId, {
-                networkId: context.networkId,
-                networkName: context.networkName,
-                adapterType: context.adapterType,
-                tokenSymbol: context.tokenSymbol,
-                tokenType: context.tokenType,
-                tokenDecimals: context.tokenDecimals,
-                distributedAmount: 0,
-                reservedAmount: 0,
-                errors: [],
-                distributed: 0,
-                reserved: 0
-              });
-              return;
-            }
-
-            // Use two-stage processing instead of immediate execution
-            const networkResult = await this.processNetworkDistributionTwoStage(
-              adapter,
-              context,
-              distributions
-            );
-            networkResults.set(networkId, networkResult);
-            errors.push(
-              ...networkResult.errors.map(error => `[${context.networkName}] ${error} `)
-            );
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
-            console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        try {
+          if (distributions.length === 0) {
+            networkResults.set(networkId, {
+              networkId: context.networkId,
+              networkName: context.networkName,
+              adapterType: context.adapterType,
+              tokenSymbol: context.tokenSymbol,
+              tokenType: context.tokenType,
+              tokenDecimals: context.tokenDecimals,
+              distributedAmount: 0,
+              reservedAmount: 0,
+              errors: [],
+              distributed: 0,
+              reserved: 0
+            });
+            continue;
           }
-        }
-      );
 
-      await Promise.all(networkPromises);
+          // Use two-stage processing instead of immediate execution
+          const networkResult = await this.processNetworkDistributionTwoStage(
+            adapter,
+            context,
+            distributions
+          );
+          networkResults.set(networkId, networkResult);
+          errors.push(...networkResult.errors.map(error => `[${context.networkName}] ${error} `));
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
+          console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        }
+      }
 
       const result: MultiNetworkDistributionResult = {
         networkResults,

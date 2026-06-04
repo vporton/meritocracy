@@ -48,9 +48,8 @@ if (hasReownWalletModal) {
     networks,
     projectId,
     enableNetworkSwitch: false,
-    // TODO@P3
-    // Coinbase Wallet breaks the production app because its telemetry loader appends an inline UMD script.
-    enableCoinbase: true,
+    // Coinbase Wallet telemetry currently breaks the production bundle with an inline UMD script.
+    enableCoinbase: false,
     debug: true,
     enableReconnect: false,
     features: {

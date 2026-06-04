@@ -75,6 +75,15 @@ function Navigation() {
           >
             Help
           </Link>
+          <a
+            href="https://github.com/vporton/meritocracy/issues"
+            className="nav-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={closeMenu}
+          >
+            Report a bug
+          </a>
         </div>
 
         <div className="nav-right">

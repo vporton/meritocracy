@@ -51,7 +51,7 @@
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^7.0.11",
+    "nodemailer": "^8.0.5",
     "openai": "^6.22.0",
     "passport": "^0.7.0",
     "passport-bitbucket-oauth2": "^0.1.2",
@@ -61,8 +61,8 @@
     "passport-oauth2": "^1.8.0",
     "pg": "^8.18.0",
     "tiny-secp256k1": "^2.2.4",
-    "uuid": "^13.0.0",
-    "viem": "^2.46.2"
+    "uuid": "^14.0.0",
+    "viem": "^2.52.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -78,7 +78,7 @@
     "@types/uuid": "^11.0.0",
     "mocha": "^11.7.5",
     "nodemon": "^3.1.14",
-    "prisma": "^7.4.2",
+    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

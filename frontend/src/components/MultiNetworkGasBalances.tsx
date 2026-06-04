@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
+import type { BitcoinConnector } from '@reown/appkit-adapter-bitcoin'
 import { useSendTransaction, useWriteContract } from 'wagmi'
 import { parseEther, parseUnits, type Address } from 'viem'
 import api from '../services/api'
@@ -18,6 +19,8 @@ interface NetworkInfo {
   tokenDecimals?: number;
   tokenType?: string;
   baseNetworkId?: string;
+  country?: string;
+  region?: string;
   gasPrice?: string;
   balance?: string;
   address?: string;
@@ -159,6 +162,18 @@ const isPositiveAmount = (value: string) => {
   return Number.isFinite(parsed) && parsed > 0;
 };
 
+const btcAmountToSatoshis = (amount: string) => {
+  const normalized = normalizeAmountInput(amount);
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,8})?$/.test(normalized)) {
+    throw new Error('Enter a valid BTC amount with up to 8 decimal places.');
+  }
+
+  const [wholePart, fractionPart = ''] = normalized.split('.');
+  const whole = BigInt(wholePart);
+  const fraction = BigInt(fractionPart.padEnd(8, '0').slice(0, 8));
+  return (whole * BigInt(100000000) + fraction).toString();
+};
+
 function MultiNetworkGasBalances() {
   const [networkStatus, setNetworkStatus] = useState<MultiNetworkStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -174,6 +189,12 @@ function MultiNetworkGasBalances() {
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
   const { open: openAppKit } = useAppKit()
   const { isConnected } = useAppKitAccount()
+  const { walletProvider: bitcoinWalletProvider } = useAppKitProvider<BitcoinConnector>('bip122')
+  const bitcoinAccount = useAppKitAccount({ namespace: 'bip122' }) as {
+    address?: string;
+    isConnected?: boolean;
+    allAccounts?: Array<{ namespace?: string; type?: string; address?: string }>;
+  }
   const { sendTransactionAsync } = useSendTransaction()
   const { writeContractAsync } = useWriteContract()
 
@@ -250,7 +271,9 @@ function MultiNetworkGasBalances() {
       if (listResponse.data.success) {
         const listData = listResponse.data.data
         const rawNetworks = listData.networkDetails || []
-        const networks = rawNetworks
+        const networks = currentScope === 'GLOBAL'
+          ? rawNetworks.filter((net: any) => !net.country && !net.region)
+          : rawNetworks
         const initialNetworks: Record<string, NetworkInfo> = {}
         const initialLoading: Record<string, boolean> = {}
 
@@ -497,6 +520,39 @@ function MultiNetworkGasBalances() {
         ]
       })
       setFundingStatusMessage(`${funding.label.replace(' helper contract', '')} deposit submitted: ${hash}`)
+    } finally {
+      setActiveFundingKey(null)
+    }
+  }
+
+  const handleCkBtcFunding = async (networkName: string, funding: FundingAddress) => {
+    const amount = normalizeAmountInput(getFundingAmount(networkName))
+    if (!funding.address || isPlaceholderAddress(funding.address)) {
+      throw new Error('Treasury Bitcoin deposit address is not available.')
+    }
+
+    const satoshis = btcAmountToSatoshis(amount)
+    if (BigInt(satoshis) <= BigInt(0)) {
+      throw new Error('Enter a positive BTC amount before funding.')
+    }
+
+    const isBitcoinConnected = bitcoinAccount.isConnected ?? isConnected
+    if (!isBitcoinConnected || !bitcoinWalletProvider) {
+      if (hasReownWalletModal) {
+        await openAppKit({ view: 'Connect', namespace: 'bip122' })
+        setFundingStatusMessage('Wallet chooser opened. Connect a Bitcoin wallet, then submit the transfer again.')
+        return
+      }
+      throw new Error('Bitcoin wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable ckBTC funding.')
+    }
+
+    setActiveFundingKey(networkName)
+    try {
+      const txid = await bitcoinWalletProvider.sendTransfer({
+        recipient: funding.address,
+        amount: satoshis
+      })
+      setFundingStatusMessage(`ckBTC BTC transfer submitted: ${txid}`)
     } finally {
       setActiveFundingKey(null)
     }
@@ -835,7 +891,9 @@ function MultiNetworkGasBalances() {
                         ? Number(networkInfo.tokenDecimals)
                         : 6
                       const actionLabel =
-                        funding.kind === 'eth-deposit'
+                        funding.kind === 'btc-deposit'
+                          ? 'Send BTC'
+                          : funding.kind === 'eth-deposit'
                           ? 'Deposit ETH'
                           : funding.kind === 'erc20-deposit'
                             ? 'Approve & deposit'
@@ -896,6 +954,11 @@ function MultiNetworkGasBalances() {
                                   disabled={activeFundingKey === fundingAmountKey}
                                   onClick={async () => {
                                     try {
+                                      if (funding.kind === 'btc-deposit') {
+                                        await handleCkBtcFunding(fundingAmountKey, funding)
+                                        return
+                                      }
+
                                       if (funding.kind === 'erc20-deposit') {
                                         await handleCkErc20Funding(fundingAmountKey, funding, tokenDecimals)
                                         return
@@ -906,7 +969,7 @@ function MultiNetworkGasBalances() {
                                         return
                                       }
 
-                                      setFundingStatusMessage('This funding path requires a wallet that can send BTC directly.')
+                                      setFundingStatusMessage('This funding path does not currently have a direct wallet action.')
                                     } catch (fundingError) {
                                       setFundingStatusMessage(fundingError instanceof Error ? fundingError.message : String(fundingError))
                                     }

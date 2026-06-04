@@ -2036,7 +2036,9 @@ export class MultiNetworkGasTokenDistributionService {
         walletAddress: sanitized.walletAddress,
         tokenSymbol: sanitized.tokenSymbol,
         tokenType: sanitized.tokenType,
-        baseNetworkId: sanitized.baseNetworkId
+        baseNetworkId: sanitized.baseNetworkId,
+        country: sanitized.country,
+        region: sanitized.region
       };
     });
   }

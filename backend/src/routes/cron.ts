@@ -52,12 +52,21 @@ const respondToJobRequest = (jobName: string, result: ReturnType<typeof schedule
 };
 
 /**
- * POST /api/cron/bi-monthly-evaluation
+ * POST /api/cron/quarterly-evaluation
  * scheduled via https://cron-job.org
  */
+router.post('/quarterly-evaluation', ensureCronAuth, (req, res) => {
+  const result = scheduleCronJob('quarterly evaluation', cronJobMetadata.quarterlyEvaluation.cron, () => cronService.runQuarterlyEvaluation());
+  respondToJobRequest('quarterly evaluation', result, res, 'Quarterly evaluation queued (background job is running).');
+});
+
+/**
+ * POST /api/cron/bi-monthly-evaluation
+ * Backward-compatible alias; now runs the quarterly evaluation cadence.
+ */
 router.post('/bi-monthly-evaluation', ensureCronAuth, (req, res) => {
-  const result = scheduleCronJob('bi-monthly evaluation', cronJobMetadata.biMonthlyEvaluation.cron, () => cronService.runBiMonthlyEvaluation());
-  respondToJobRequest('bi-monthly evaluation', result, res, 'Bi-monthly evaluation queued (background job is running).');
+  const result = scheduleCronJob('quarterly evaluation', cronJobMetadata.quarterlyEvaluation.cron, () => cronService.runQuarterlyEvaluation());
+  respondToJobRequest('quarterly evaluation', result, res, 'Quarterly evaluation queued (background job is running).');
 });
 
 /**

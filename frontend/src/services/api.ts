@@ -44,6 +44,8 @@ interface User {
   gitlabHandle?: string;
   onboarded: boolean;
   shareInGDP?: number;
+  evaluationBlockedTill?: string | null;
+  evaluationBlockReason?: string | null;
   // KYC fields
   kycStatus?: string;
   kycVerifiedAt?: string;

@@ -27,6 +27,7 @@ import banVotingRoutes from './routes/banVoting.js';
 // Register TaskRunners
 import { registerAllRunners } from './runners/OpenAIRunners.js';
 import { GlobalDataService } from './services/GlobalDataService.js';
+import { multiNetworkGasTokenDistributionService } from './services/MultiNetworkGasTokenDistributionService.js';
 import { prisma } from './lib/prisma.js';
 
 // Register all TaskRunners on startup
@@ -213,6 +214,11 @@ async function initializeApp() {
   try {
     console.log('🔄 Initializing global data...');
     await GlobalDataService.initializeGlobalData();
+
+    // Resume any distributions that were left pending when the process was interrupted.
+    void multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000).catch(error => {
+      console.error('❌ Failed to recover pending gas token transactions on startup:', error);
+    });
 
     // Set up monthly GDP update check
     setInterval(async () => {

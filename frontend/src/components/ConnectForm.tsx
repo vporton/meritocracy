@@ -12,6 +12,7 @@ import Canonical from './Canonical';
 import { Helmet } from 'react-helmet-async';
 import { hasReownWalletModal } from '../config/wagmi';
 import { getFrontendOrigin } from '../config/origins';
+import { trackAnalyticsEvent } from '../utils/analytics';
 
 interface ConnectStatus {
   [provider: string]: string | undefined;
@@ -187,7 +188,6 @@ const serializeDebugData = (value: unknown) => {
   }
 };
 
-/* TODO@P3 White-screen bug in production: disabling Solana/Bitcoin wallet autofill helpers until we can fix the crash.
 const normalizeSolanaProvider = (value: unknown): SolanaWalletProvider | undefined => {
   if (!value || typeof value !== 'object') {
     return undefined;
@@ -236,7 +236,9 @@ const getInjectedSolanaWallets = (): SolanaWalletOption[] => {
     { id: 'Injected Solana', provider: rootProvider },
   ];
 
-  for (const [index, provider] of (rootProvider?.providers ?? []).entries()) {
+  const injectedProviders = Array.isArray(rootProvider?.providers) ? rootProvider.providers : [];
+
+  for (const [index, provider] of injectedProviders.entries()) {
     candidateEntries.push({
       id: `Injected Solana ${index + 1}`,
       provider,
@@ -265,7 +267,7 @@ const selectInjectedSolanaWallet = (wallets: SolanaWalletOption[]): SolanaWallet
     return null;
   }
 
-  if (wallets.length === 1 || typeof window === 'undefined') {
+  if (wallets.length === 1 || typeof window === 'undefined' || typeof window.prompt !== 'function') {
     return wallets[0];
   }
 
@@ -276,30 +278,34 @@ const selectInjectedSolanaWallet = (wallets: SolanaWalletOption[]): SolanaWallet
   }
 
   const selectedIndex = Number.parseInt(selection, 10) - 1;
-  return wallets[selectedIndex] ?? null;
+  return wallets[selectedIndex] ?? wallets[0] ?? null;
 };
 
 const connectInjectedSolanaWallet = async (): Promise<string | null> => {
-  const wallets = getInjectedSolanaWallets();
-  const selectedWallet = selectInjectedSolanaWallet(wallets);
-  if (!selectedWallet) {
+  try {
+    const wallets = getInjectedSolanaWallets();
+    const selectedWallet = selectInjectedSolanaWallet(wallets);
+    if (!selectedWallet) {
+      return null;
+    }
+
+    const { provider } = selectedWallet;
+    const result = provider.connect
+      ? await provider.connect()
+      : await provider.request?.({ method: 'connect' });
+    const resultPublicKey = typeof result === 'string' ? result : result?.publicKey;
+    const publicKey = resultPublicKey ?? provider.publicKey;
+
+    if (!publicKey) {
+      return null;
+    }
+
+    return typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
+  } catch (error) {
+    console.error('Failed to connect injected Solana wallet:', error);
     return null;
   }
-
-  const { provider } = selectedWallet;
-  const result = provider.connect
-    ? await provider.connect()
-    : await provider.request?.({ method: 'connect' });
-  const resultPublicKey = typeof result === 'string' ? result : result?.publicKey;
-  const publicKey = resultPublicKey ?? provider.publicKey;
-
-  if (!publicKey) {
-    return null;
-  }
-
-  return typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
 };
-*/
 
 const ConnectForm = () => {
   const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData, logout } = useAuth();
@@ -1166,6 +1172,11 @@ const ConnectForm = () => {
           console.log('Email registration success:', result.message);
         }
 
+        trackAnalyticsEvent('sign_up', {
+          method: 'email',
+          status: result.requiresVerification ? 'verification_required' : 'verified',
+        });
+
         if (result.requiresVerification) {
           // Show "verification sent" status instead of success
           setConnectStatus(prev => ({ ...prev, email: 'verification-sent' }));
@@ -1344,7 +1355,6 @@ const ConnectForm = () => {
     await persistAddressForm();
   };
 
-  /* TODO@P3 White-screen bug in production: disable Solana/Bitcoin wallet connect helper until we can fix the crash.
   const handleWalletAddressConnect = async (
     field: 'solanaAddress' | 'bitcoinAddress',
     namespace: 'solana' | 'bip122'
@@ -1392,7 +1402,6 @@ const ConnectForm = () => {
       }));
     }
   };
-  */
 
   // Helper function to check if a provider is connected
   const isProviderConnected = (provider: string): boolean => {
@@ -1781,8 +1790,6 @@ const ConnectForm = () => {
           </div>
           <div className="form-group">
             <label htmlFor="solanaAddress">Solana Address</label>
-            {/* TODO@P3 White-screen bug in production: disabling the Solana wallet autofill button until we fix the crash. */}
-            {/*
             <button
               type="button"
               className="cancel-button"
@@ -1791,7 +1798,6 @@ const ConnectForm = () => {
             >
               Connect Solana wallet
             </button>
-            */}
             <input
               type="text"
               id="solanaAddress"
@@ -1806,8 +1812,6 @@ const ConnectForm = () => {
           </div>
           <div className="form-group">
             <label htmlFor="bitcoinAddress">Bitcoin Address</label>
-            {/* TODO@P3 White-screen bug in production: disabling the Bitcoin wallet autofill button until we fix the crash. */}
-            {/*
             <button
               type="button"
               className="cancel-button"
@@ -1816,7 +1820,6 @@ const ConnectForm = () => {
             >
               Connect Bitcoin wallet
             </button>
-            */}
             <input
               type="text"
               id="bitcoinAddress"

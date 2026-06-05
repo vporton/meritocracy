@@ -11,8 +11,6 @@
 
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
-- TODO@P3 Show all blockchains before loading balances and gas prices. Obtain them in parallel.
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
@@ -26,8 +24,6 @@
   - Russia: Нужна красивая и понятная презентация на Русском без всплывашки с просьбой доната для начала, показать Гос. выгоду от использовния, посчитать цену внедрения, показать реальные примеры УЖЕ существующие, писать надо в профильные комитеты ГД и министерств, 3-5 лет доработок и после всех согласований если очень поезет то может быть что-то будут точечно тестировать
 
 - TODO@P2 Implement tech support.
-
-- TODO@P3 `startMonthlyCleanupCron` seems to be superfluous.
 
 - TODO@P3 Run tasks in parallel.
 

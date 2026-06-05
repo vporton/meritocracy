@@ -7,6 +7,7 @@ interface EmailConfig {
   host: string;
   port: number;
   secure: boolean;
+  senderEmail: string;
   auth: {
     user: string;
     pass: string;
@@ -28,6 +29,7 @@ class EmailService {
       host: process.env.SMTP_HOST || 'localhost',
       port: parseInt(process.env.SMTP_PORT || '25'),
       secure: process.env.SMTP_SECURE === 'true',
+      senderEmail: process.env.SMTP_SENDER_EMAIL || process.env.SMTP_USER || 'no-reply@localhost',
       auth: {
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || ''
@@ -77,11 +79,9 @@ class EmailService {
       const normalizedEmail = normalizeEmail(email);
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
-      // Use a proper sender address - in development mode, use a default one
-      // If the user doesn't contain a domain (no @ symbol), use localhost domain
-      const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
+      const senderEmail = this.config?.senderEmail ?? this.config?.auth.user ?? 'no-reply@localhost';
 
-        const mailOptions = {
+      const mailOptions = {
         from: `"Meritocracy Platform" <${senderEmail}>`,
         to: normalizedEmail,
         subject: 'Verify Your Email Address - Meritocracy Platform',

@@ -6,13 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
 import { getFrontendOrigin } from '../config/origins'
-
-interface WorldGdpData {
-  worldGdp: number;
-  formatted: string;
-  currency: string;
-  lastUpdated: string;
-}
+import { useWorldGdp } from '../hooks/useWorldGdp'
 
 interface UserGdpShareData {
   userId: number;
@@ -27,11 +21,11 @@ export default function Home() {
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
   const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
-  const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
   const showEvaluationCTA = !user?.onboarded
+  const worldGdp = useWorldGdp()
 
   const formatUsd = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
@@ -53,22 +47,6 @@ export default function Home() {
     }
 
     fetchPrimaryNetworkAddress()
-  }, [])
-
-  // TODO@P3: duplicate code
-  useEffect(() => {
-    const fetchWorldGdp = async () => {
-      try {
-        const response = await api.get('/api/global/gdp')
-        if (response.data.success) {
-          setWorldGdp(response.data.data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch world GDP:', error)
-      }
-    }
-
-    fetchWorldGdp()
   }, [])
 
   useEffect(() => {

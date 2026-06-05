@@ -23,6 +23,32 @@ type LeaderboardUser = {
   kycData: string | null;
 };
 
+type UpdateUserBody = {
+  email?: string | null;
+  name?: string | null;
+  ethereumAddress?: string | null;
+  solanaAddress?: string | null;
+  bitcoinAddress?: string | null;
+  bitcoinCashAddress?: string | null;
+  polkadotAddress?: string | null;
+  cosmosAddress?: string | null;
+  stellarAddress?: string | null;
+  icpAddress?: string | null;
+  votingPleaUnsubscribed?: string | boolean | null;
+};
+
+function normalizeOptionalBoolean(value: string | boolean | null | undefined): boolean | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return value === 'true';
+}
+
 function extractKycName(kycData: string | null): string | null {
   if (!kycData) return null;
   try {
@@ -315,20 +341,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       stellarAddress,
       icpAddress,
       votingPleaUnsubscribed
-    }: {
-      // TODO@P3: This typing is a bit messy - we should standardize on one type for "not provided" vs "explicitly null" across the board.
-      email: string | null | undefined,
-      name: string | null | undefined,
-      ethereumAddress: string | null | undefined,
-      solanaAddress: string | null | undefined,
-      bitcoinAddress: string | null | undefined,
-      bitcoinCashAddress: string | null | undefined,
-      polkadotAddress: string | null | undefined,
-      cosmosAddress: string | null | undefined,
-      stellarAddress: string | null | undefined,
-      icpAddress: string | null | undefined,
-      votingPleaUnsubscribed: string | null | undefined
-    } = req.body;
+    } = req.body as UpdateUserBody;
     const authenticatedUserId = (req as any).userId;
 
     // Check if user is trying to update their own account
@@ -361,10 +374,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    let normalizedVotingPleaPreference: string | boolean | null | undefined = votingPleaUnsubscribed; // TODO@P3: Use one type, not two.
-    if (typeof normalizedVotingPleaPreference === 'string') {
-      normalizedVotingPleaPreference = normalizedVotingPleaPreference === 'true';
-    }
+    const normalizedVotingPleaPreference = normalizeOptionalBoolean(votingPleaUnsubscribed);
 
     let normalizedEthereumAddress: string | null | undefined;
     if (ethereumAddress === undefined) {
@@ -408,8 +418,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
           ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null }),
           ...(stellarAddress !== undefined && { stellarAddress: stellarAddress ? String(stellarAddress).trim() : null }),
           ...(icpAddress !== undefined && { icpAddress: icpAddress ? String(icpAddress).trim() : null }),
-          // TODO@P3: `undefined` vs `null`:
-          ...(normalizedVotingPleaPreference !== undefined && normalizedVotingPleaPreference !== null && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
+          ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
         },
       });
 

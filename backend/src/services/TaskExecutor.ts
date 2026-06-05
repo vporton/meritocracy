@@ -1,6 +1,6 @@
 import { PrismaClient, Task, } from '@prisma/client';
 import { TaskStatus, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
-import { createAIBatchStore, createAIOutputter, createAIRunner } from './openai.js';
+import { createAIBatchStore, createAIOutputter } from './openai.js';
 import { BaseOpenAIRunner } from '@/runners/OpenAIRunners.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 
@@ -204,7 +204,7 @@ export class TaskExecutor {
     }
 
     let executed = false;
-    const task = await this.prisma.task.findUniqueOrThrow({ // TODO@P3: Avoid repeated database queries.
+    const task = await this.prisma.task.findUniqueOrThrow({
       where: { id: taskId },
       select: {
         storeId: true,
@@ -215,10 +215,11 @@ export class TaskExecutor {
         },
       },
     });
+    const store = await createAIBatchStore(task.storeId ?? undefined, taskId);
+    const outputter = await createAIOutputter(store);
+
     for (const nonBatch of task.NonBatches) {
       for (const mapping of nonBatch.nonbatchMappings) {
-        const store = await createAIBatchStore(task.storeId!, taskId);
-        const outputter = await createAIOutputter(store);
         const output = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
         if (output === undefined) {
           await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);

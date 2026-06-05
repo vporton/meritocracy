@@ -14,8 +14,6 @@
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 
-- TODO@P3 Ensure that payments are sent, even if the process is interrupted.
-
 - TODO@P2 Discourse forum software: https://community.fly.io/t/running-discourse-on-fly/3349
 
 - TODO@P3 Multi-AI agentic framework https://www.openresponses.org
@@ -28,8 +26,6 @@
 - TODO@P3 Run tasks in parallel.
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
-
-- TODO@P3 Google Analytics for such things as user registration.
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
   So, now acceleration is off.

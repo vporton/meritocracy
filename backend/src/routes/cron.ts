@@ -16,6 +16,7 @@ function ensureCronAuth(req: Request, res: Response, next: () => void) {
   }
 
   const providedHeader = req.header('Authorization');
+  console.log(`MYXXX: ${providedHeader} != ${cronJobAuthHeader}`);
   if (providedHeader !== cronJobAuthHeader) {
     res.status(401).json({ success: false, error: 'Invalid Authorization header for cron job' });
     return;

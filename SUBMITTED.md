@@ -17,7 +17,7 @@
   * https://grants.bitcoindevs.xyz/apply - applied to OpenSats 28 Sep 2025.
   * https://www.coinfabrik.com/web3-grants/
     * TODO
-    * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025.
+    * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025 - rejected 23 Mar 2026 "due to high number of applicants"
     * Moonbeam - submitted 29 Sep 2025 - rejected 10 Oct 2025 ("high volume of applications received").
     * Arbitrum - 29 Sep 2025:
       * Phase 3 of the Arbitrum Foundation Grant Program has now ended!

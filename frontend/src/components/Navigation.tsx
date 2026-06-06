@@ -76,7 +76,7 @@ function Navigation() {
             Help
           </Link>
           <a
-            href="https://github.com/vporton/meritocracy/issues"
+            href="https://github.com/vporton/meritocracy/issues/new"
             className="nav-link"
             target="_blank"
             rel="noopener noreferrer"

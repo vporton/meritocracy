@@ -69,6 +69,73 @@ class EmailService {
     }
   }
 
+  async sendEvaluationStatusChangeEmail(
+    userId: number,
+    recipientName: string | null | undefined,
+    previousStatus: string,
+    nextStatus: string
+  ): Promise<boolean> {
+    if (!this.transporter) {
+      console.error('Email service not configured - cannot send evaluation status change email');
+      return false;
+    }
+
+    try {
+      const recipientEmails = await getVerifiedEmailAddresses(prisma, userId);
+      if (recipientEmails.length === 0) {
+        console.log(`No verified email addresses found for user ${userId}; skipping evaluation status notification`);
+        return false;
+      }
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config?.auth.user || `no-reply@${new URL(frontendUrl).hostname}`;
+      const subject = `Your Meritocracy evaluation status changed to ${this.formatEvaluationStatusLabel(nextStatus)}`;
+      const safeRecipientName = this.escapeHtml(recipientName || 'there');
+      const previousLabel = this.formatEvaluationStatusLabel(previousStatus);
+      const nextLabel = this.formatEvaluationStatusLabel(nextStatus);
+      const text = `
+Dear ${recipientName || 'there'},
+
+Your Meritocracy evaluation status changed from ${previousLabel} to ${nextLabel}.
+
+If you think this is wrong, you can revisit your connected accounts and try again when re-evaluation is available.
+
+— Meritocracy Platform
+      `.trim();
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #111;">
+          <h2 style="color: #1f2937;">Meritocracy evaluation update</h2>
+          <p>Dear ${safeRecipientName},</p>
+          <p>Your Meritocracy evaluation status changed from <strong>${this.escapeHtml(previousLabel)}</strong> to <strong>${this.escapeHtml(nextLabel)}</strong>.</p>
+          <p>If you think this is wrong, review your connected accounts and try again when re-evaluation is available.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+          <p style="font-size: 12px; color: #6b7280;">Meritocracy Platform</p>
+        </div>
+      `;
+
+      let sentAny = false;
+      for (const recipientEmail of recipientEmails) {
+        try {
+          await this.transporter.sendMail({
+            from: `"Meritocracy Platform" <${senderEmail}>`,
+            to: recipientEmail,
+            subject,
+            html,
+            text
+          });
+          sentAny = true;
+        } catch (error) {
+          console.error(`Failed to send evaluation status email to user ${userId} at ${recipientEmail}`, error);
+        }
+      }
+
+      return sentAny;
+    } catch (error) {
+      console.error('Failed to send evaluation status change email:', error);
+      return false;
+    }
+  }
+
   async sendVerificationEmail(email: string, verificationToken: string, userId: number): Promise<boolean> {
     if (!this.transporter) {
       console.error('Email service not configured - cannot send verification email');
@@ -576,6 +643,31 @@ You can stop receiving these emails from your account preferences on the Connect
 
   generateKycToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  private formatEvaluationStatusLabel(status: string): string {
+    if (status === 'ACTIVE_RESEARCHER') {
+      return 'active researcher';
+    }
+
+    if (status === 'CRACKPOT') {
+      return 'crackpot';
+    }
+
+    if (status === 'NOT_ACTIVE_OR_WRITER') {
+      return 'not active researcher or writer';
+    }
+
+    return status.toLowerCase().replace(/_/g, ' ');
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }
 

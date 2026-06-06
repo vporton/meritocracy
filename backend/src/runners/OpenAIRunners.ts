@@ -9,6 +9,7 @@ import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 import { isConfigValueTrue } from '../services/utils.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 import { extractVerifiedEmails } from '../services/userEmailUtils.js';
+import emailService from '../services/EmailService.js';
 import type { OpenAIFlexMode } from '../services/openai.js';
 
 // Constants
@@ -618,6 +619,26 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
       throw new TaskRunnerError('User ID is required for onboarding decisions', this.taskId, this.constructor.name);
     }
 
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        onboarded: true,
+        evaluationBlockedTill: true,
+        evaluationBlockReason: true
+      }
+    });
+
+    if (!currentUser) {
+      throw new TaskRunnerError(`User ${userId} was not found while applying onboarding outcome`, this.taskId, this.constructor.name);
+    }
+
+    const previousStatus = this.getEvaluationStatus(
+      currentUser.onboarded,
+      currentUser.evaluationBlockedTill,
+      currentUser.evaluationBlockReason
+    );
+
     if (output.isActiveScientistOrFOSSDev) {
       await this.prisma.user.update({
         where: { id: userId },
@@ -627,6 +648,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
           evaluationBlockReason: null
         }
       });
+      await this.notifyStatusChangeIfNeeded(userId, currentUser.name, previousStatus, 'ACTIVE_RESEARCHER');
       await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
       return;
     }
@@ -646,7 +668,41 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
       }
     });
 
+    const nextStatus = failureCategory === 'CRACKPOT'
+      ? 'CRACKPOT'
+      : 'NOT_ACTIVE_OR_WRITER';
+    await this.notifyStatusChangeIfNeeded(userId, currentUser.name, previousStatus, nextStatus);
+
     await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+  }
+
+  private getEvaluationStatus(
+    onboarded: boolean,
+    evaluationBlockedTill: Date | null,
+    evaluationBlockReason: string | null
+  ): 'ACTIVE_RESEARCHER' | 'CRACKPOT' | 'NOT_ACTIVE_OR_WRITER' {
+    if (onboarded) {
+      return 'ACTIVE_RESEARCHER';
+    }
+
+    if (evaluationBlockedTill && evaluationBlockedTill > new Date() && evaluationBlockReason === 'CRACKPOT') {
+      return 'CRACKPOT';
+    }
+
+    return 'NOT_ACTIVE_OR_WRITER';
+  }
+
+  private async notifyStatusChangeIfNeeded(
+    userId: number,
+    userName: string | null,
+    previousStatus: 'ACTIVE_RESEARCHER' | 'CRACKPOT' | 'NOT_ACTIVE_OR_WRITER',
+    nextStatus: 'ACTIVE_RESEARCHER' | 'CRACKPOT' | 'NOT_ACTIVE_OR_WRITER'
+  ): Promise<void> {
+    if (previousStatus === nextStatus) {
+      return;
+    }
+
+    await emailService.sendEvaluationStatusChangeEmail(userId, userName, previousStatus, nextStatus);
   }
 }
 

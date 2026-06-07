@@ -179,3 +179,9 @@
 * Renaissance Philanthropy https://www.renaissancephilanthropy.org - contacted 8 Mar 2026
 * Science Philanthropy Alliance - contacted 9 Mar 2026
 * DIV Fund https://www.div.fund/apply - TODO apply on rolling basis [need to read a long text]
+* https://www.google.com/search?q=open-science+foundations
+  * OSSF https://openscience.software/ - emailed 7 Jul 2026
+  * Open Science Foundation https://opening.science - emailed 7 Jul 2026
+  * GRIOS https://www.grios.org/ - wrote 7 Jul 2026
+  * Science Europe https://scienceeurope.org - emailed 7 Jul 2026
+  * TODO

@@ -184,4 +184,4 @@
   * Open Science Foundation https://opening.science - emailed 7 Jul 2026
   * GRIOS https://www.grios.org/ - wrote 7 Jul 2026
   * Science Europe https://scienceeurope.org - emailed 7 Jul 2026
-  * TODO
+  * openscience.bg - emailed 7 Jul 2026

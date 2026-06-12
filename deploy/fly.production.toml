@@ -2,7 +2,7 @@
 
 app = 'meritocracy'
 primary_region = 'iad'
-swap_size_mb = 512
+# swap_size_mb = 512  # Machines with swap are not eligible to suspend
 
 [deploy]
 # TODO@P3 Having more than one machine would lead to duplicate cron tasks executing
@@ -101,6 +101,7 @@ timeout = '2s'
 grace_period = '60s'
 
 [[vm]]
-memory = '512mb'
+# memory = '512mb'  # not enough
+memory = '1024mb'  # <=2GB to be eligible for suspend
 cpus = 1
 memory_mb = 512

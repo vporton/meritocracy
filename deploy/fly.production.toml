@@ -79,7 +79,7 @@ ICP_CKEURC_LEDGER_CANISTER_ID = 'pe5t5-diaaa-aaaar-qahwa-cai'
 ICP_CKEURC_ERC20_CONTRACT_ADDRESS = ''
 
 [[services]]
-protocol = ''
+protocol = 'tcp'
 internal_port = 3001
 auto_stop_machines = 'suspend'
 auto_start_machines = true

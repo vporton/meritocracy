@@ -187,3 +187,4 @@
   * openscience.bg - emailed 7 Jun 2026
 * Nature journal - sent ChatGPT-generated pitch 9 Jun 2026
 * Surplus - applied 12 Jun 2026
+* Western Union Global Fellowship Program https://watson.is - submitted 16 Jub 2026

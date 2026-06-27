@@ -81,7 +81,7 @@
   * https://futo.org/fellows/ - applied 8 Sep 2025
   * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025 - rejected 8 Dec 2025
   * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025 - rejected 28 May 2026 (too many applicants)
-  * https://techforgood.zendesk.com - submitted 12 Oct 2025
+  * https://techforgood.zendesk.com - submitted 12 Oct 2025, 27 Jun 2026
   * www.globalgiving.org (they require me to provide annual reports, brochures, newsletters, or news reports)
   * https://rashi.org.il - contacted 12 Oct 2025
   * https://accelerator.ou.org/apply
@@ -162,7 +162,7 @@
     * Peters Family Foundation 
     * TODO
 * University of Liverpool https://liverpool.ac.uk - contacted on a partnership 7 Feb 2026 - TODO: My site is broken during submission.
-* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission) - again considered since 28 Feb 2026
+* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission) - again considered since 28 Feb 2026 - encourage you to apply at a later time when you'll have achieved more sizeable impact
 * OSV Fellowship https://osv.llc - applied 14 Feb 2026 - rejected 20 Feb 2026 "Due to a high volume of applications"
 * https://www.google.com/search?q=crypto+grants
   * https://blockchaingrants.org
@@ -188,3 +188,8 @@
 * Nature journal - sent ChatGPT-generated pitch 9 Jun 2026
 * Surplus - applied 12 Jun 2026
 * Western Union Global Fellowship Program https://watson.is - submitted 16 Jub 2026
+* techtotherescue.org - requires PDF impact report
+* Global Good Fund Fellowship "The enterprise must have at least one full-time employee in addition to the candidate."
+* 10x Impact Labs: AI for Nonprofits Accelerator 10ximpact.in - applied 20 Jun 2026
+* Fund for Innovation in Development https://fundinnovation.dev - must be implemented in a low-income country
+* Just Tech Fellowship https://www.ssrc.org/programs/just-tech/just-tech-fellowship/ - emailed 20 Jun 2026

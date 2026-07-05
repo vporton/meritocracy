@@ -193,3 +193,4 @@
 * 10x Impact Labs: AI for Nonprofits Accelerator 10ximpact.in - applied 20 Jun 2026
 * Fund for Innovation in Development https://fundinnovation.dev - must be implemented in a low-income country
 * Just Tech Fellowship https://www.ssrc.org/programs/just-tech/just-tech-fellowship/ - emailed 20 Jun 2026
+* Templeton.org - submitted 5 Jul 2025 (Notification by October 09, 2026)

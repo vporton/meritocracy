@@ -8,7 +8,7 @@
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction
       * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause - submitted to CeloPG 27 Sep 2025.
-      * https://celo.org/builders - TODO
+      * https://celo.org/builders - seems not to work for me
     * Ethereum Foundation - unlikely to support: They impower builders, not end users.
     * TODO
 * https://www.google.com/search?q=bitcoin+grants

@@ -1,5 +1,5 @@
   * https://airtable.com/app19BOc2TF5bAstw/shr86elKgWTSCP4AY/tbld93rVIguyQLORG
-    * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU The site does not work 26 Sep 2025; 12 Jan 2026.
+    * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU - submitted 5 Jul 2026
     * https://open.harmony.one/300m-on-bounties-grants-daos/apply-for-grants-or-dao - paused  
     * https://algorand.co/ - seem to have ended grants program.
     * https://solana.org/grants-funding - submitted 27 Sep 2025 - rejected 15 Oct 2025 "didn't see a sufficient public good for the Solana ecosystem".

@@ -11,6 +11,8 @@
       * https://celo.org/builders - seems not to work for me
     * Ethereum Foundation - unlikely to support: They impower builders, not end users.
     * TODO
+    * 4EVERLAND - submitted 5 Jul 2026
+    * TODO
 * https://www.google.com/search?q=bitcoin+grants
   * Kraken - https://www.kraken.com/features/grants - submitted 28 Sep 2025.
   * https://hrf.org/program/financial-freedom/bitcoin-development-fund/ - submitted 28 Sep 2025 - rejected 4 Oct 2025 "the project does not align with the goal of our Fund"

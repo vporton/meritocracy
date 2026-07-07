@@ -200,4 +200,5 @@
 * Experiment.com - submitted about 6 Jul 2026
 * ResearchHub.com - submitted about 6 Jul 2026
 * WeSci.org - submitted 7 Jul 2026
+* researchr.us - submitted 7 Jul 2026
 

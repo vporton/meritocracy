@@ -197,3 +197,7 @@
 * Fund for Innovation in Development https://fundinnovation.dev - must be implemented in a low-income country
 * Just Tech Fellowship https://www.ssrc.org/programs/just-tech/just-tech-fellowship/ - emailed 20 Jun 2026
 * Templeton.org - submitted 5 Jul 2025 (Notification by October 09, 2026)
+* Experiment.com - submitted about 6 Jul 2026
+* ResearchHub.com - submitted about 6 Jul 2026
+* WeSci.org - submitted 7 Jul 2026
+

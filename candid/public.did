@@ -1,0 +1,72 @@
+// Public, browser-facing interface for meritocracy_core.
+// All update results use Result; callers authenticate with their ICP principal
+// (normally an Internet Identity delegation). No bearer sessions are accepted.
+type ApiVersion = record { major : nat16; minor : nat16 };
+type Timestamp = nat64; // nanoseconds since Unix epoch
+type Version = nat64;
+type Id = text; // opaque, bounded, canonical identifier
+type Hash = blob; // commitment/digest; never a secret or PII
+type Amount = nat; // non-negative smallest units; never float
+type Cursor = text; // opaque, signed/encoded cursor; no ordering semantics for clients
+type PageRequest = record { cursor : opt Cursor; limit : nat16 };
+type Page = record { items : vec Item; next_cursor : opt Cursor };
+type Item = variant { profile : PublicProfile; assessment : AssessmentSummary; vote_period : VotePeriod; obligation : ObligationSummary; audit : AuditSummary };
+
+type ErrorCode = variant {
+  invalid_input; unauthenticated; unauthorized; not_found; conflict;
+  duplicate_operation; invalid_state_transition; resource_limit;
+  external_dependency_unavailable; temporary_failure; internal_invariant_violation
+};
+type ApiError = record { code : ErrorCode; message : text; retryable : bool; correlation_id : opt Id; field : opt text };
+type Result = variant { ok : Item; err : ApiError };
+type EmptyResult = variant { ok : record {}; err : ApiError };
+type CertifiedResult = variant { ok : record { value : Item; certificate : blob; witness : blob; version : Version }; err : ApiError };
+
+type AccountStatus = variant { claimed; active; restricted; tombstoned };
+type AssessmentStatus = variant { not_started; requested; evaluating; accepted; rejected; expired; blocked };
+type HoldStatus = variant { none; held; released };
+type VoteKind = variant { ban; unban };
+type VotePeriodStatus = variant { scheduled; open; closing; finalized; appealed; settled };
+type ObligationStatus = variant { created; authorized; executing; settled; retryable; failed; reconcile_required; cancelled };
+type ProfilePatch = record { display_name : opt text; pseudonym : opt text; public_addresses : opt vec text; publish_profile : opt bool; expected_version : Version; idempotency_key : Id };
+type PublicProfile = record { account : principal; display_name : opt text; pseudonym : opt text; public_addresses : vec text; eligible : bool; assessment_status : AssessmentStatus; share_e8 : opt nat64; version : Version; updated_at : Timestamp };
+type AccountView = record { account : principal; status : AccountStatus; assessment_status : AssessmentStatus; hold_status : HoldStatus; share_e8 : opt nat64; consented_profile : opt PublicProfile; version : Version };
+type AssessmentRequest = record { expected_account_version : Version; idempotency_key : Id; client_schema_version : ApiVersion };
+type AssessmentSummary = record { run_id : Id; account : principal; status : AssessmentStatus; policy_version : Version; requested_at : Timestamp; completed_at : opt Timestamp; share_e8 : opt nat64; evidence_commitment : opt Hash };
+type VoteRequest = record { target : principal; period_id : Id; kind : VoteKind; message : opt text; expected_period_version : Version; idempotency_key : Id };
+type VoteReceipt = record { vote_id : Id; period_id : Id; target : principal; kind : VoteKind; submitted_at : Timestamp; duplicate : bool };
+type VotePeriod = record { period_id : Id; target : principal; status : VotePeriodStatus; policy_version : Version; ban_votes : nat64; unban_votes : nat64; opens_at : Timestamp; closes_at : Timestamp; version : Version };
+type ObligationSummary = record { obligation_id : Id; asset : text; network : text; amount : Amount; status : ObligationStatus; created_at : Timestamp; settled_at : opt Timestamp; receipt_commitment : opt Hash };
+type AuditSummary = record { event_id : Id; action : text; entity_id : Id; occurred_at : Timestamp; correlation_id : Id };
+type LeaderboardRequest = record { page : PageRequest; minimum_share_e8 : opt nat64 };
+type AssessmentHistoryRequest = record { account : opt principal; page : PageRequest };
+type VotePeriodsRequest = record { target : opt principal; page : PageRequest };
+type ObligationHistoryRequest = record { page : PageRequest };
+type PublicStatus = record { api_version : ApiVersion; policy_version : Version; distribution_paused : bool; current_period : opt Id };
+type ReserveAggregate = record { policy_version : Version; asset_count : nat32; total_reserved_by_asset : vec record { asset : text; amount : Amount } };
+type DeletionRequest = record { expected_version : Version; idempotency_key : Id; reason_code : opt text };
+
+service : {
+  // Display-only ordinary queries. Results are bounded and sorted as documented in api-mapping.md.
+  get_public_profile : (record { account : principal }) -> (variant { ok : PublicProfile; err : ApiError }) query;
+  list_leaderboard : (LeaderboardRequest) -> (variant { ok : record { profiles : vec PublicProfile; next_cursor : opt Cursor }; err : ApiError }) query;
+  get_my_account : (record {}) -> (variant { ok : AccountView; err : ApiError }) query;
+  get_my_assessment : (record {}) -> (variant { ok : AssessmentSummary; err : ApiError }) query;
+  list_my_assessments : (AssessmentHistoryRequest) -> (variant { ok : record { assessments : vec AssessmentSummary; next_cursor : opt Cursor }; err : ApiError }) query;
+  get_vote_period : (record { period_id : Id; target : principal }) -> (variant { ok : VotePeriod; err : ApiError }) query;
+  list_vote_periods : (VotePeriodsRequest) -> (variant { ok : record { periods : vec VotePeriod; next_cursor : opt Cursor }; err : ApiError }) query;
+  list_my_obligations : (ObligationHistoryRequest) -> (variant { ok : record { obligations : vec ObligationSummary; next_cursor : opt Cursor }; err : ApiError }) query;
+  get_public_status : (record {}) -> (variant { ok : PublicStatus; err : ApiError }) query;
+
+  // Decision-relevant public facts. Clients must verify the returned certificate/witness.
+  get_certified_public_status : (record {}) -> (variant { ok : record { value : PublicStatus; certificate : blob; witness : blob; version : Version }; err : ApiError }) query;
+  get_certified_vote_period : (record { period_id : Id; target : principal }) -> (variant { ok : record { value : VotePeriod; certificate : blob; witness : blob; version : Version }; err : ApiError }) query;
+  get_certified_reserve_aggregate : (record {}) -> (variant { ok : record { value : ReserveAggregate; certificate : blob; witness : blob; version : Version }; err : ApiError }) query;
+
+  // Principal-authenticated updates. Each mutating request has an idempotency key.
+  update_my_profile : (ProfilePatch) -> (variant { ok : PublicProfile; err : ApiError });
+  request_assessment : (AssessmentRequest) -> (variant { ok : AssessmentSummary; err : ApiError });
+  retry_assessment : (AssessmentRequest) -> (variant { ok : AssessmentSummary; err : ApiError });
+  submit_vote : (VoteRequest) -> (variant { ok : VoteReceipt; err : ApiError });
+  tombstone_my_account : (DeletionRequest) -> (EmptyResult);
+}

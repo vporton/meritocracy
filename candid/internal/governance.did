@@ -1,0 +1,18 @@
+// Restricted meritocracy_core governance interface. Controllers/governance
+// principals are configured on-chain; this interface is never served to browsers.
+type Id = text; type Version = nat64; type Timestamp = nat64; type Amount = nat;
+type ApiError = record { code : variant { invalid_input; unauthenticated; unauthorized; not_found; conflict; duplicate_operation; invalid_state_transition; resource_limit; external_dependency_unavailable; temporary_failure; internal_invariant_violation }; message : text; retryable : bool; correlation_id : opt Id; field : opt text };
+type Result = variant { ok : record { receipt_id : Id; version : Version; duplicate : bool }; err : ApiError };
+type PolicyDraft = record { schema_version : nat16; proposal_id : Id; expected_active_version : Version; distribution_paused : bool; max_page_size : nat16; accepted_assets : vec record { network : text; asset : text }; idempotency_key : Id };
+type FinalizePeriodRequest = record { period_id : Id; target : principal; expected_version : Version; idempotency_key : Id };
+type AllocationRequest = record { period_id : Id; account : principal; network : text; asset : text; amount : Amount; destination_commitment : blob; expected_reserve_version : Version; idempotency_key : Id };
+type BatchRequest = record { operation_id : Id; cursor : opt text; limit : nat16; expected_version : Version; idempotency_key : Id };
+type AccountRoleRequest = record { account : principal; role : variant { governance; moderator; auditor }; enabled : bool; expected_version : Version; idempotency_key : Id };
+service : {
+  activate_policy : (PolicyDraft) -> (Result);
+  set_account_role : (AccountRoleRequest) -> (Result);
+  finalize_vote_period : (FinalizePeriodRequest) -> (Result);
+  create_payment_obligation : (AllocationRequest) -> (Result);
+  run_maintenance_batch : (BatchRequest) -> (Result);
+  import_migration_batch : (BatchRequest) -> (Result);
+}

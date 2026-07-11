@@ -1,0 +1,7 @@
+// Called only by an allow-listed evaluation worker; raw prompts/results stay off-chain.
+type Id = text; type Version = nat64; type Timestamp = nat64;
+type ApiError = record { code : variant { invalid_input; unauthenticated; unauthorized; not_found; conflict; duplicate_operation; invalid_state_transition; resource_limit; external_dependency_unavailable; temporary_failure; internal_invariant_violation }; message : text; retryable : bool; correlation_id : opt Id; field : opt text };
+type WorkClaim = record { work_id : Id; lease_token : blob; expected_work_version : Version };
+type WorkDescriptor = record { work_id : Id; run_id : Id; account : principal; policy_version : Version; lease_expires_at : Timestamp; payload_reference : Id };
+type AssessmentProposal = record { work_id : Id; lease_token : blob; result_id : Id; run_id : Id; expected_run_version : Version; schema_version : nat16; share_e8 : nat64; evidence_commitment : blob; sources : vec record { ordinal : nat16; url_hash : blob; title_hash : blob }; completed_at : Timestamp };
+service : { claim_evaluation_work : (WorkClaim) -> (variant { ok : WorkDescriptor; err : ApiError }); submit_assessment : (AssessmentProposal) -> (variant { ok : record { run_id : Id; accepted : bool; duplicate : bool; account_version : Version }; err : ApiError }) }

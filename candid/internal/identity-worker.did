@@ -1,0 +1,6 @@
+// Called only by allow-listed identity/KYC workers after private verification.
+type Id = text; type Version = nat64; type Timestamp = nat64;
+type ApiError = record { code : variant { invalid_input; unauthenticated; unauthorized; not_found; conflict; duplicate_operation; invalid_state_transition; resource_limit; external_dependency_unavailable; temporary_failure; internal_invariant_violation }; message : text; retryable : bool; correlation_id : opt Id; field : opt text };
+type AttestationProposal = record { event_id : Id; account : principal; kind : variant { email; kyc; social; wallet }; provider : text; subject_commitment : blob; evidence_commitment : blob; issued_at : Timestamp; expires_at : opt Timestamp; schema_version : nat16; expected_account_version : Version };
+type AttestationDecision = record { attestation_id : Id; account_version : Version; accepted : bool; duplicate : bool };
+service : { propose_attestation : (AttestationProposal) -> (variant { ok : AttestationDecision; err : ApiError }); revoke_attestation : (record { event_id : Id; attestation_id : Id; account : principal; expected_account_version : Version; reason_code : text }) -> (variant { ok : AttestationDecision; err : ApiError }) }

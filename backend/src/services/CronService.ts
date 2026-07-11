@@ -311,7 +311,13 @@ export class CronService {
 
         const eligibleUsers = await this.prisma.user.findMany({
           where: {
-            onboarded: true
+            // A crank finding temporarily removes a user from funding, but it
+            // must not prevent the next scheduled assessment from considering
+            // them again. Other non-onboarded users still require onboarding.
+            OR: [
+              { onboarded: true },
+              { evaluationBlockReason: 'CRACKPOT' }
+            ]
           },
           select: {
             id: true,

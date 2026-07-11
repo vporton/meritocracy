@@ -1,8 +1,5 @@
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
-- TODO@P2 Probably, we can create secure OAuth in ICP dapp using https://mops.one/liminal -
-  If this is the case, we should rewrite this in ICP. Use ZenDB to replace SQL.
-
 - TODO@P3 Give back token like GIV of Giveth.
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.

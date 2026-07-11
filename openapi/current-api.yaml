@@ -1,0 +1,118 @@
+openapi: 3.1.0
+info:
+  title: Meritocracy current API
+  version: 0.0.1-observed
+  description: |
+    Observed Express routes, not a design contract. Source: backend/src/index.ts and routes/*.ts.
+    `UNKNOWN` means the handler delegates to a service/provider whose response is dynamically shaped.
+servers: [{url: /}]
+tags: [{name: public}, {name: account}, {name: operations}, {name: cron}]
+components:
+  securitySchemes:
+    sessionBearer: {type: http, scheme: bearer, description: "Opaque DB session token (not JWT verification)."}
+    adminPassword: {type: apiKey, in: header, name: x-admin-password}
+    cronAuthorization: {type: apiKey, in: header, name: Authorization}
+  schemas:
+    Error: {type: object, required: [error], properties: {error: {type: string}, message: {type: string}}}
+    User: {type: object, description: "Prisma User serialization; fields vary by select/include. See database/schema.sql.", additionalProperties: true}
+    Success: {type: object, additionalProperties: true}
+  responses:
+    BadRequest: {description: Validation failure, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Unauthorized: {description: Missing/invalid/expired credential, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Forbidden: {description: Authenticated but not allowed, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+    Internal: {description: Handler/provider/database failure, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+paths:
+  /:
+    get: {tags: [public], summary: API banner or SPA HTML, responses: {'200': {description: "JSON {message,version,status}, or frontend index when Host matches FRONTEND_URL"}}}
+  /api/users:
+    get: {tags: [public], summary: "List every User; exposes fields including email/identity/KYC data", responses: {'200': {description: User array, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/User'}}}}, '500': {$ref: '#/components/responses/Internal'}}}
+    post: {tags: [account], summary: Create email user (unauthenticated), requestBody: {required: true, content: {application/json: {schema: {type: object, required: [email], properties: {email: {type: string}, name: {type: [string, 'null']}}}}}}, responses: {'201': {description: User plus email relation}, '400': {$ref: '#/components/responses/BadRequest'}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "Creates users/user_emails; lowercases/trims email; unique conflict→400."}
+  /api/users/leaderboard:
+    get: {tags: [public], parameters: [{in: query, name: limit, schema: {type: integer, maximum: 100, default: 100}}], responses: {'200': {description: "{success,data:{leaderboard,total,limit}} ordered shareInGDP DESC"}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/users/salary-stats:
+    get: {tags: [public], responses: {'200': {description: GDP salary snapshot}, '404': {description: GDP/stat snapshot absent}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/users/{id}:
+    parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+    get: {tags: [public], summary: "Selected public-ish user fields (includes KYC status/reasons)", responses: {'200': {description: User}, '404': {description: User absent}, '500': {$ref: '#/components/responses/Internal'}}}
+    put: {tags: [account], security: [{sessionBearer: []}], summary: "Owner-only partial profile update", requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {email: {type: [string,'null']}, name: {type: [string,'null']}, ethereumAddress: {type: [string,'null']}, solanaAddress: {type: [string,'null']}, bitcoinAddress: {type: [string,'null']}, bitcoinCashAddress: {type: [string,'null']}, polkadotAddress: {type: [string,'null']}, cosmosAddress: {type: [string,'null']}, stellarAddress: {type: [string,'null']}, icpAddress: {type: [string,'null']}, votingPleaUnsubscribed: {type: [boolean,string,'null']}}}}}}, responses: {'200': {description: updated user}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '403': {$ref: '#/components/responses/Forbidden'}, '404': {description: user absent}, '500': {$ref: '#/components/responses/Internal'}}, x-validation: "Ethereum/non-EVM address validators; email conflict; email creates unverified related record in a transaction."}
+    delete: {tags: [account], security: [{sessionBearer: []}], summary: Owner-only soft delete, responses: {'204': {description: "Soft deleted; sessions/emails removed"}, '401': {$ref: '#/components/responses/Unauthorized'}, '403': {$ref: '#/components/responses/Forbidden'}, '404': {description: user absent}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/users/me/gdp-share:
+    get: {tags: [account], security: [{sessionBearer: []}], responses: {'200': {description: caller GDP share (nullable)}, '401': {$ref: '#/components/responses/Unauthorized'}, '404': {description: user absent}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/evaluation/start:
+    post: {tags: [account], security: [{sessionBearer: []}], summary: Start and synchronously run onboarding evaluation, responses: {'200': {description: '{success,message,userId,executed}'}, '400': {description: already onboarded}, '401': {$ref: '#/components/responses/Unauthorized'}, '403': {description: connections absent or retry-blocked}, '404': {description: user absent}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "Creates/runs task graph, calls AI/network services; response may take long."}
+  /api/ban-voting:
+    get: {tags: [public], responses: {'200': {description: evaluated users/current-week vote stats, dynamic service schema}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/ban-voting/vote:
+    post: {tags: [account], security: [{sessionBearer: []}], requestBody: {required: true, content: {application/json: {schema: {type: object, required: [targetUserId], properties: {targetUserId: {type: integer}, message: {type: string}, type: {enum: [BAN, UNBAN]}}}}}}, responses: {'201': {description: created vote}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '403': {$ref: '#/components/responses/Forbidden'}, '409': {description: duplicate weekly vote}, '500': {$ref: '#/components/responses/Internal'}}, x-validation: "Cannot vote self; service authorization UNKNOWN."}
+  /api/ban-voting/{userId}/assessments:
+    get: {tags: [public], parameters: [{in: path, name: userId, required: true, schema: {type: integer}}, {in: query, name: page, schema: {type: integer, default: 1}}, {in: query, name: pageSize, schema: {type: integer, default: 3}}], responses: {'200': {description: dynamic paginated assessment schema}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/auth/login/{provider}:
+    post: {tags: [account], summary: "Provider-specific direct login", parameters: [{in: path, name: provider, required: true, schema: {enum: [ethereum,orcid,github,bitbucket,gitlab]}}], requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: true}}}}, responses: {'200': {description: '{user,session:{token,expiresAt}}'}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Ethereum requires address/signature/message and verifies signature. The four social handlers require only identifier; supplied accessToken/name/email are not used in displayed handler."}
+  /api/auth/register/email:
+    post: {tags: [account], security: [{}, {sessionBearer: []}], requestBody: {required: true, content: {application/json: {schema: {type: object, required: [email], properties: {email: {type: string}, name: {type: string}}}}}}, responses: {'200': {description: registration/attachment result, unauthenticated result includes session}, '400': {$ref: '#/components/responses/BadRequest'}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "Creates/attaches email, creates verification token and calls mail service."}
+  /api/auth/verify/email:
+    post: {tags: [account], requestBody: {required: true, content: {application/json: {schema: {type: object, required: [token], properties: {token: {type: string}}}}}}, responses: {'200': {description: verified user}, '400': {$ref: '#/components/responses/BadRequest'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/auth/resend-verification:
+    post: {tags: [account], security: [{sessionBearer: []}], requestBody: {content: {application/json: {schema: {type: object, properties: {email: {type: string}}}}}}, responses: {'200': {description: mail queued}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/auth/logout:
+    post: {tags: [account], security: [{sessionBearer: []}], responses: {'200': {description: session deleteMany completed}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/auth/me:
+    get: {tags: [account], security: [{sessionBearer: []}], responses: {'200': {description: current user plus emails}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/auth/kyc/status:
+    get: {tags: [account], security: [{sessionBearer: []}], responses: {'200': {description: KYC state and government identity fields}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/auth/{provider}/callback:
+    get: {tags: [account], summary: "OAuth redirect callback", parameters: [{in: path,name: provider,required: true,schema:{type:string}}, {in: query,name: code,schema:{type:string}}, {in: query,name: state,schema:{type:string}}], responses: {'302': {description: frontend redirect; dynamic}, '400': {$ref: '#/components/responses/BadRequest'}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Provider allow-list/state handling must be verified in full auth.ts callback implementation."}
+  /api/auth/disconnect/{provider}:
+    post: {tags: [account], security: [{sessionBearer: []}], parameters: [{in: path,name: provider,required: true,schema:{type:string}}], responses: {'200': {description: provider removed or account soft deleted}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "KYC/votingKYC or connection deletion; conditional soft delete."}
+  /api/auth/kyc/didit/callback:
+    post: {tags: [operations], summary: "Didit KYC webhook", requestBody: {content: {application/json: {schema: {type: object, additionalProperties: true}}}}, responses: {'200': {description: dynamic webhook acknowledgement}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Signature/auth validation UNKNOWN pending callback internals."}
+  /api/auth/kyc/initiate:
+    post: {tags: [account], security: [{sessionBearer: []}], responses: {'200': {description: dynamic provider session/URL}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "Creates KYC token/provider session; external Didit call."}
+  /api/auth/sessions/cleanup:
+    delete: {tags: [operations], summary: "Deletes expired sessions; auth requirement must be reviewed", responses: {'200': {description: delete count/dynamic}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "No route middleware; handler-level authorization UNKNOWN."}
+  /api/global/gdp:
+    get: {tags: [public], responses: {'200': {description: '{success,data:{worldGdp,formatted,currency,lastUpdated}}'}, '404': {description: no GDP}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/global/refresh-gdp:
+    post: {tags: [operations], summary: "Refresh GDP (PUBLIC: no middleware)", responses: {'200': {description: refreshed GDP}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "External HTTP fetch and global-row update."}
+  /api/global/token-prices:
+    get: {tags: [public], parameters: [{in: query,name: symbols,schema:{type:string,description:"comma-delimited; normalized uppercase"}}], responses: {'200': {description: CoinGecko quote map}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "External price-provider request."}
+  /api/logs:
+    get: {tags: [operations], summary: "Read logs (PUBLIC: exposes request/response data)", parameters: [{in: query,name:userId,schema:{type:integer}}, {in: query,name:taskId,schema:{type:integer}}, {in: query,name:type,schema:{enum:[openai,task,user,session]}}, {in: query,name:startDate,schema:{type:string,format:date-time}}, {in: query,name:endDate,schema:{type:string,format:date-time}}, {in: query,name:limit,schema:{type:integer,minimum:1,maximum:1000}}, {in: query,name:offset,schema:{type:integer,minimum:0}}], responses: {'200': {description: '{success,logs,count,filter}'}, '400': {$ref: '#/components/responses/BadRequest'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/logs/my:
+    get: {tags: [account], security: [{sessionBearer: []}], responses: {'200': {description: caller logs (emails obfuscated)}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Unlike /logs, query type/date/limit values are passed without route validation."}
+  /api/logs/user/{userId}:
+    get: {tags: [account], security: [{sessionBearer: []}], parameters: [{in:path,name:userId,required:true,schema:{type:integer}}], responses: {'200': {description: owner logs}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '403': {$ref: '#/components/responses/Forbidden'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/logs/stats:
+    get: {tags: [operations], summary: "Log statistics (PUBLIC)", responses: {'200': {description: stats}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/logs/types:
+    get: {tags: [public], responses: {'200': {description: static log type descriptions}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/cleanup/stats:
+    get: {tags: [operations], security: [{sessionBearer: []}], parameters: [{in:query,name:gracePeriodDays,schema:{type:integer,minimum:1,maximum:365,default:30}}], responses: {'200': {description: all-account cleanup statistics}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Any authenticated user, not admin."}
+  /api/cleanup/dry-run:
+    post: {tags: [operations], security: [{sessionBearer: []}], requestBody: {content: {application/json: {schema:{type:object,properties:{gracePeriodDays:{type:integer,minimum:1,maximum:365,default:30}}}}}}, responses: {'200': {description: prospective cleanup result}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/cleanup/execute:
+    post: {tags: [operations], security: [{sessionBearer: []}], requestBody: {required:true,content:{application/json:{schema:{type:object,required:[confirmDeletion],properties:{gracePeriodDays:{type:integer,minimum:1,maximum:365,default:30},confirmDeletion:{const:true}}}}}}, responses: {'200': {description: permanent cleanup result}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Any authenticated session can trigger system-wide deletion."}
+  /api/admin/status:
+    get: {tags: [operations], security: [{adminPassword: []}], responses: {'200': {description: distribution and cron status}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/admin/toggle-distribution:
+    post: {tags: [operations], security: [{adminPassword: []}], requestBody: {required:true,content:{application/json:{schema:{type:object,required:[enabled],properties:{enabled:{type:boolean}}}}}}, responses: {'200': {description: updated flag}, '400': {$ref: '#/components/responses/BadRequest'}, '401': {$ref: '#/components/responses/Unauthorized'}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/admin/trigger-distribution:
+    post: {tags: [operations], security: [{adminPassword: []}], responses: {'200': {description: distribution result}, '401': {$ref: '#/components/responses/Unauthorized'}, '409': {description: cron lock}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/admin/trigger-re-worth-assessment:
+    post: {tags: [operations], security: [{adminPassword: []}], responses: {'200': {description: task result}, '401': {$ref: '#/components/responses/Unauthorized'}, '409': {description: cron lock}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/multi-network-gas/{operation}:
+    get: {tags: [public], summary: "Operations list/status/reserve-status/distribution-history are public", parameters: [{in:path,name:operation,required:true,schema:{enum:[list,status,reserve-status,distribution-history]}}, {in:query,name:tokenType,schema:{enum:[NATIVE,ERC20,ICRC1]}}, {in:query,name:tokenSymbol,schema:{type:string,pattern:'^[A-Za-z0-9._-]+$'}}, {in:query,name:country,schema:{type:string,minLength:2,maxLength:2}}, {in:query,name:region,schema:{enum:[EU]}}, {in:query,name:network,schema:{type:string}}, {in:query,name:userId,schema:{type:integer}}, {in:query,name:limit,schema:{type:integer,default:100}}], responses: {'200': {description: dynamic service schema}, '500': {$ref: '#/components/responses/Internal'}}, x-observed: "Invalid optional overrides are silently ignored; history limit has no validation."}
+  /api/multi-network-gas/network/{networkName}/{operation}:
+    get: {tags: [public], parameters: [{in:path,name:networkName,required:true,schema:{type:string}}, {in:path,name:operation,required:true,schema:{enum:[status,distribution-history]}}, {in:query,name:limit,schema:{type:integer,default:100}}], responses: {'200': {description: dynamic network status/history}, '404': {description: status operation only, unknown network}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/multi-network-gas/user/{userId}/distribution-history:
+    get: {tags: [public], parameters: [{in:path,name:userId,required:true,schema:{type:integer}}, {in:query,name:limit,schema:{type:integer,default:100}}], responses: {'200': {description: user distribution history (no ownership check)}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/multi-network-gas/run-distribution:
+    post: {tags: [operations], summary: "Manual distribution (PUBLIC)", requestBody: {content:{application/json:{schema:{type:object,properties:{tokenType:{enum:[NATIVE,ERC20,ICRC1]},tokenSymbol:{type:string},country:{type:string},region:{enum:[EU]}}}}}}, responses: {'200': {description: network results/errors}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "Creates/executes financial blockchain transfers; no authentication middleware."}
+  /api/multi-network-gas/ensure-country-account:
+    post: {tags: [operations], summary: "Create country wallet secrets (PUBLIC)", requestBody:{required:true,content:{application/json:{schema:{type:object,required:[country],properties:{country:{type:string,minLength:2,maxLength:2}}}}}}, responses:{'200':{description: created per network},'400':{$ref:'#/components/responses/BadRequest'},'500':{$ref:'#/components/responses/Internal'}}, x-side-effects: "Writes system secrets and clears cache; no auth."}
+  /api/multi-network-gas/ensure-region-account:
+    post: {tags: [operations], summary: "Create EU wallet secrets (PUBLIC)", requestBody:{required:true,content:{application/json:{schema:{type:object,required:[region],properties:{region:{const:EU}}}}}}, responses:{'200':{description: created per network},'400':{$ref:'#/components/responses/BadRequest'},'500':{$ref:'#/components/responses/Internal'}}, x-side-effects: "Writes system secrets and clears cache; no auth."}
+  /api/cron/status:
+    get: {tags: [public], responses: {'200': {description: configured cron metadata/status}, '500': {$ref: '#/components/responses/Internal'}}}
+  /api/cron/{job}:
+    post: {tags: [cron], security: [{cronAuthorization: []}], parameters: [{in:path,name:job,required:true,schema:{enum:[quarterly-evaluation,bi-monthly-evaluation,weekly-gas-distribution,compensation-payout,monthly-cleanup,world-gdp-refresh]}}], responses: {'202': {description: accepted; background work started}, '401': {$ref: '#/components/responses/Unauthorized'}, '409': {description: another cron/admin task lock}, '500': {$ref: '#/components/responses/Internal'}}, x-side-effects: "Schedules background work; compatibility alias bi-monthly actually runs quarterly."}

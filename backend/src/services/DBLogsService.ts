@@ -139,8 +139,15 @@ export class DBLogsService {
         createdAt: 'desc'
       }
     });
+    const results = await this.prisma.aiResult.findMany({
+      where: { customId: { in: logs.map(log => log.customId) } },
+      include: { sources: { orderBy: { ordinal: 'asc' } } },
+    });
+    const resultByCustomId = new Map(results.map(result => [result.customId, result]));
 
-    return logs.map(log => ({
+    return logs.map(log => {
+      const result = resultByCustomId.get(log.customId);
+      return {
       id: `openai-${log.id}`,
       type: 'openai' as const,
       timestamp: log.createdAt,
@@ -163,14 +170,15 @@ export class DBLogsService {
         status: 'sent'
       },
       response: {
-        data: log.responseData ? JSON.parse(log.responseData) : null,
-        timestamp: log.responseReceived,
-        status: log.responseReceived ? 'received' : 'pending',
+        data: result ? { result: result.result, sources: result.sources.map(source => source.url) } : null,
+        timestamp: result?.responseReceived ?? log.responseReceived,
+        status: result?.status.toLowerCase() ?? (log.responseReceived ? 'received' : 'pending'),
         error: log.errorMessage || null
       },
-      status: log.responseReceived ? 'completed' : 'pending',
+      status: result?.status.toLowerCase() ?? (log.responseReceived ? 'completed' : 'pending'),
       error: log.errorMessage || undefined
-    }));
+    };
+    });
   }
 
   /**

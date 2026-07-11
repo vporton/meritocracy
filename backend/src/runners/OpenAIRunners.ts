@@ -11,6 +11,7 @@ import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 import { extractVerifiedEmails } from '../services/userEmailUtils.js';
 import emailService from '../services/EmailService.js';
 import type { OpenAIFlexMode } from '../services/openai.js';
+import { aiResultKindForRunner, extractAiSources, getStoredAiResult, storeAiResult } from '../services/aiResults.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -236,7 +237,9 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         where: { customId },
         data: {
           responseReceived: new Date(),
-          responseData: responseData ? JSON.stringify(responseData) : null,
+          // Full provider replies are deliberately not persisted.  The compact,
+          // validated result is stored in ai_results instead.
+          responseData: null,
           errorMessage: errorMessage || null
         }
       });
@@ -246,6 +249,16 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         error: error instanceof Error ? error.message : String(error)
       });
     }
+  }
+
+  protected async storeCanonicalResult(customId: string, result: object, sources: string[] = []): Promise<void> {
+    await storeAiResult(this.prisma, {
+      customId,
+      taskId: this.taskId,
+      resultKind: aiResultKindForRunner(this.constructor.name),
+      result,
+      sources,
+    });
   }
 
   /**
@@ -442,13 +455,12 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     //   }]
     // };
 
-    // Only store if we have a non-batch store (which has storeResponseByCustomId method)
-    if ('storeResponseByCustomId' in store) {
-      await (store as any).storeResponseByCustomId({
-        customId,
-        response: fakeResponse/*fakeOpenAIResponse*/ as any
-      });
-    }
+    await storeAiResult(this.prisma, {
+      customId,
+      taskId: task.id,
+      resultKind: aiResultKindForRunner(runnerName),
+      result: fakeResponse,
+    });
 
     // Update task with fake response
     await this.prisma.task.update({
@@ -614,6 +626,7 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   }
 
   protected async onOutput(customId: string, output: ScientistCheckResponse): Promise<void> {
+    await this.storeCanonicalResult(customId, output);
     const userId = this.data.userId;
     if (!userId) {
       throw new TaskRunnerError('User ID is required for onboarding decisions', this.taskId, this.constructor.name);
@@ -745,6 +758,8 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
       sources: sources
     };
 
+    await this.storeCanonicalResult(customId, output, sources);
+
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, outputWithSources);
   }
 
@@ -757,22 +772,11 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
       throw new Error('No storeId found for task');
     }
 
-    const store = await createAIBatchStore(task.storeId, this.taskId);
-    const outputter = await createAIOutputter(store);
-
     try {
-      const response = (await outputter.getOutput(customId))!;
-
-      // Persist the response in the mapping table for future lookups (e.g. Audit Logs)
-      try {
-        if ('storeResponseByCustomId' in store) {
-          await (store as any).storeResponseByCustomId({ customId, response });
-        }
-      } catch (storeError) {
-        this.log('error', `Failed to store response in mapping table`, { customId, error: String(storeError) });
-      }
-
-      return response;
+      const stored = await getStoredAiResult(this.prisma, customId);
+      if (stored) return stored;
+      const store = await createAIBatchStore(task.storeId, this.taskId);
+      return (await createAIOutputter(store)).getOutput(customId) ?? null;
     } catch (error) {
       this.log('error', 'Failed to get full OpenAI response', { customId, error });
       return null;
@@ -783,47 +787,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
    * Extract sources from OpenAI response
    */
   private extractSourcesFromResponse(response: any): string[] {
-    if (!response || !response.output) {
-      return [];
-    }
-
-    const sources: string[] = [];
-
-    // Look through all output messages for web search results
-    for (const message of response.output) {
-      if (message && message.content) {
-        for (const content of message.content) {
-          if (content.type === 'text' && content.text) {
-            // Look for URLs in the text content
-            const urlMatches = content.text.match(/https?:\/\/[^\s\)]+/g);
-            if (urlMatches) {
-              sources.push(...urlMatches);
-            }
-          }
-
-          // Look for web search sources in the content
-          if (content.sources && Array.isArray(content.sources)) {
-            for (const source of content.sources) {
-              if (source.url) {
-                sources.push(source.url);
-              }
-            }
-          }
-        }
-      }
-
-      // Look for web search calls in the message
-      if (message.web_search_call && message.web_search_call.action && message.web_search_call.action.sources) {
-        for (const source of message.web_search_call.action.sources) {
-          if (source.url) {
-            sources.push(source.url);
-          }
-        }
-      }
-    }
-
-    // Remove duplicates
-    return [...new Set(sources)];
+    return extractAiSources(response);
   }
 }
 
@@ -858,6 +822,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
+    await this.storeCanonicalResult(customId, output);
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
   }
 }
@@ -1012,6 +977,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
+    await this.storeCanonicalResult(customId, output);
     if (output.hasPromptInjectionOrPlagiarism) {
       // Get the task to pass to handleInjectionDetected
       const task = await this.getTaskWithDependencies(this.taskId);

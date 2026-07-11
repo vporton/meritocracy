@@ -270,16 +270,7 @@ export class BanVotingService {
         }
       },
       include: {
-        Batches: {
-          include: {
-            batchMappings: true
-          }
-        },
-        NonBatches: {
-          include: {
-            nonbatchMappings: true
-          }
-        }
+        aiResults: { include: { sources: { orderBy: { ordinal: 'asc' } } } }
       },
       orderBy: { createdAt: 'desc' },
       take: 200
@@ -288,17 +279,7 @@ export class BanVotingService {
     const results: any[] = [];
 
     for (const task of tasks) {
-      // Find all mappings associated with this task
-      const batchMappings = task.Batches.flatMap(b => b.batchMappings);
-      const nonbatchMappings = task.NonBatches.flatMap(nb => nb.nonbatchMappings);
-
-      const allMappings = [
-        ...batchMappings.map(m => ({ customId: m.customId, response: m.response, createdAt: m.createdAt })),
-        ...nonbatchMappings.map(m => ({ customId: m.customId, response: m.response, createdAt: m.createdAt }))
-      ];
-
-      if (allMappings.length === 0) {
-        // If no mappings yet, it might be pending
+      if (task.aiResults.length === 0) {
         if (task.status === 'NOT_STARTED' || task.status === 'INITIATED') {
           results.push({
             text: 'Research in progress... The AI is currently searching for info or analyzing data.',
@@ -310,13 +291,13 @@ export class BanVotingService {
         continue;
       }
 
-      for (const mapping of allMappings) {
-        if (!mapping.response) {
+      for (const aiResult of task.aiResults) {
+        if (aiResult.status !== 'SUCCEEDED' || !aiResult.result) {
           if (task.status === 'NOT_STARTED' || task.status === 'INITIATED') {
             results.push({
               text: 'Research in progress... Response not yet stored.',
               sources: [],
-              timestamp: mapping.createdAt,
+              timestamp: aiResult.createdAt,
               isPending: true
             });
           }
@@ -324,79 +305,15 @@ export class BanVotingService {
         }
 
         try {
-          const response = JSON.parse(mapping.response);
-          const sources: string[] = [];
-          let rationale = '';
+          const response = aiResult.result as Record<string, unknown>;
+          const sources = aiResult.sources.map(source => source.url);
+          const rationale = typeof response.why === 'string' ? response.why : '';
           let worthValues: AssessmentWorthValue[] = this.extractWorthValues(response, worldGdp);
-
-          // 1. Check root level for common fields (e.g. from Fake Mode)
-          if (response.why) rationale = response.why;
-
-          if (response.sources && Array.isArray(response.sources)) {
-            sources.push(...response.sources);
-          }
-
-          // 2. Explore nested structures (OpenAI Output structure)
-          // The response structure typically has an "output" array
-          const outputArr = response.output || (response.choices ? [response] : []);
-
-          outputArr.forEach((item: any) => {
-            // Extract sources from web_search_call
-            if (item.type === 'web_search_call') {
-              if (item.action?.url) sources.push(item.action.url);
-              if (item.action?.sources) {
-                item.action.sources.forEach((s: any) => {
-                  if (s.url) sources.push(s.url);
-                });
-              }
-            }
-
-            // Extract rationale and citations from message content
-            if (item.content) {
-              item.content.forEach((c: any) => {
-                // Support both 'text' and 'output_text' (new GPT-5 mini format)
-                if ((c.type === 'text' || c.type === 'output_text') && c.text) {
-                  // Extract citations from annotations if present
-                  if (c.annotations && Array.isArray(c.annotations)) {
-                    c.annotations.forEach((ann: any) => {
-                      if (ann.type === 'url_citation' && ann.url) {
-                        sources.push(ann.url);
-                      }
-                    });
-                  }
-
-                  // Try to parse the text as JSON to find hidden 'why'
-                  try {
-                    const json = JSON.parse(c.text);
-                    if (json.why) rationale = json.why;
-                    if (json.sources && Array.isArray(json.sources)) {
-                      sources.push(...json.sources);
-                    }
-                    worthValues = this.mergeWorthValues(worthValues, this.extractWorthValues(json, worldGdp));
-                  } catch (e) {
-                    // Not JSON, or doesn't have 'why' - use as raw text if we don't have rationale yet
-                    if (!rationale) rationale = c.text;
-                  }
-                }
-              });
-            } else if (item.choices?.[0]?.message?.content) {
-              // Standard chat completion structure
-              const content = item.choices[0].message.content;
-              try {
-                const json = JSON.parse(content);
-                if (json.why) rationale = json.why;
-                if (json.sources && Array.isArray(json.sources)) sources.push(...json.sources);
-                worthValues = this.mergeWorthValues(worthValues, this.extractWorthValues(json, worldGdp));
-              } catch (e) {
-                if (!rationale) rationale = content;
-              }
-            }
-          });
 
           results.push({
             text: obfuscateEmailsInValue(rationale || 'No rationale available in stored response.', userEmails),
             sources: obfuscateEmailsInValue([...new Set(sources)], userEmails),
-            timestamp: task.completedAt || mapping.createdAt,
+            timestamp: task.completedAt || aiResult.createdAt,
             worthValues,
             isError: task.status === 'CANCELLED'
           });
@@ -404,7 +321,7 @@ export class BanVotingService {
           results.push({
             text: `Error parsing stored response for assessment.`,
             sources: [],
-            timestamp: mapping.createdAt,
+            timestamp: aiResult.createdAt,
             isError: true
           });
         }

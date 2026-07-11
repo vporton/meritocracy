@@ -152,7 +152,7 @@ model NonBatches {
 model NonBatchMapping {
   id         Int        @id @default(autoincrement())
   customId   String     @unique
-  response   String
+  response   String?
   nonBatchId Int
   createdAt  DateTime   @default(now())
   batch      NonBatches @relation(fields: [nonBatchId], references: [id], onDelete: Cascade)
@@ -173,6 +173,7 @@ model Task {
   Batches         Batches[]
   NonBatches      NonBatches[]
   openaiLogs      OpenAILog[]
+  aiResults       AiResult[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
 
@@ -185,6 +186,40 @@ model Task {
   @@index([lockTime])
   @@index([isDeleted])
   @@map("tasks")
+}
+
+// Canonical, provider-neutral AI outcome.  Do not store the provider's full
+// response here: `result` is the validated application response only.
+model AiResult {
+  id               Int              @id @default(autoincrement())
+  customId         String           @unique
+  taskId           Int?
+  resultKind       String
+  status           String           @default("PENDING")
+  result           Json?
+  errorMessage     String?
+  requestInitiated DateTime         @default(now())
+  responseReceived DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  task             Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  sources          AiResultSource[]
+
+  @@index([taskId])
+  @@index([resultKind])
+  @@map("ai_results")
+}
+
+model AiResultSource {
+  id         Int      @id @default(autoincrement())
+  aiResultId Int
+  ordinal    Int
+  url        String
+  aiResult   AiResult @relation(fields: [aiResultId], references: [id], onDelete: Cascade)
+
+  @@unique([aiResultId, ordinal])
+  @@unique([aiResultId, url])
+  @@map("ai_result_sources")
 }
 
 model TaskDependency {

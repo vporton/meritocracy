@@ -4,6 +4,7 @@ import { createAIBatchStore, createAIOutputter } from '../services/openai.js';
 import OpenAI from 'openai';
 import { isConfigValueTrue } from '../services/utils.js';
 import { prisma } from '../lib/prisma.js';
+import { getStoredAiResult } from '../services/aiResults.js';
 
 // Constants
 const DEFAULT_THRESHOLD = 1e-11;
@@ -216,7 +217,7 @@ export abstract class BaseRunner implements TaskRunner {
         where: { customId },
         data: {
           responseReceived: new Date(),
-          responseData: responseData ? JSON.stringify(responseData) : null,
+          responseData: null,
           errorMessage: errorMessage || null
         }
       });
@@ -474,6 +475,8 @@ export abstract class BaseRunner implements TaskRunner {
    * ```
    */
   protected async getOpenAIResult({ customId, storeId }: { customId: string; storeId: string }): Promise<any> {
+    const stored = await getStoredAiResult(this.prisma, customId);
+    if (stored) return stored;
     const store = await createAIBatchStore(storeId, this.taskId);
     const outputter = await createAIOutputter(store);
     if (OPEN_AI_FAKE) {
@@ -486,15 +489,6 @@ export abstract class BaseRunner implements TaskRunner {
     try {
       const response = (await outputter.getOutput(customId))!;
 
-      // Persist the response in the mapping table for future lookups (e.g. Audit Logs)
-      try {
-        if ('storeResponseByCustomId' in store) {
-          await (store as any).storeResponseByCustomId({ customId, response });
-        }
-      } catch (storeError) {
-        this.log('warn', `Failed to store response in mapping table`, { customId, error: String(storeError) });
-      }
-
       const text = (response.output[response.output.length - 1]! as any).content[0].text;
       if (!text) {
         throw new OpenAIError('No response content received from OpenAI', customId);
@@ -502,7 +496,7 @@ export abstract class BaseRunner implements TaskRunner {
       const content = JSON.parse(text);
 
       // Log the response to the database
-      await this.logOpenAIResponse(customId, response, undefined);
+      await this.logOpenAIResponse(customId, undefined, undefined);
 
       return content;
     } catch (error) {

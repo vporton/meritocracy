@@ -3,6 +3,7 @@ import { TaskStatus, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js
 import { createAIBatchStore, createAIOutputter } from './openai.js';
 import { BaseOpenAIRunner } from '@/runners/OpenAIRunners.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
+import { aiResultKindForRunner, extractAiSources, extractAiStructuredResult, storeAiResult } from './aiResults.js';
 
 export class TaskExecutor {
   private prisma: PrismaClient;
@@ -208,6 +209,7 @@ export class TaskExecutor {
       where: { id: taskId },
       select: {
         storeId: true,
+        runnerClassName: true,
         NonBatches: {
           include: {
             nonbatchMappings: true,
@@ -224,8 +226,30 @@ export class TaskExecutor {
         if (output === undefined) {
           await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
         } else {
-          await TaskRunnerRegistry.completeTask(this.prisma, taskId, output);
-          executed = true;
+          const result = extractAiStructuredResult(output);
+          if (!result) {
+            await storeAiResult(this.prisma, {
+              customId: mapping.customId,
+              taskId,
+              resultKind: aiResultKindForRunner(task.runnerClassName),
+              errorMessage: 'Provider reply did not contain a structured result',
+            });
+            await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
+          } else {
+            const sources = extractAiSources(output);
+            await storeAiResult(this.prisma, {
+              customId: mapping.customId,
+              taskId,
+              resultKind: aiResultKindForRunner(task.runnerClassName),
+              result,
+              sources,
+            });
+            await TaskRunnerRegistry.completeTask(this.prisma, taskId, {
+              ...result,
+              ...(sources.length > 0 ? { sources } : {}),
+            });
+            executed = true;
+          }
         }
       }
     }

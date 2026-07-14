@@ -199,4 +199,6 @@
 * Templeton.org - submitted 5 Jul 2025 (Notification by October 09, 2026)
 * https://greenpill.network
   * https://bread.coop - submitted post-capitalist idea 7 Jul 2026, submitted my project 7 Jul 2026
-  * TODO  
+  * TODO
+* aisafety.com
+  * grantmaking.ai

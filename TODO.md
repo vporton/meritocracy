@@ -24,10 +24,6 @@
 
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
 
-- TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.
-  So, now acceleration is off.
-  "pass either `adapter` for a direct database connection or `accelerateUrl` for Accelerate to the `PrismaClient` constructor. See https://pris.ly/d/config-datasource and https://pris.ly/d/prisma7-client-config"
-
 - ProductHunter:
 Для продакта нужно:
 1. Нормально выглядящий (адаптивный, как минимум), рабочий сайт (желательно готовый к приёму 500-10к трафика) - или хорошо показать функционал + список ожидания
@@ -49,5 +45,3 @@ https://www.producthunt.com/launch/before-launch#hunters:-do-you-need-one
 - TODO@P3 If a user is a citizen of several countries, which funds are distributed to him/her?
 
 - TODO@P3 Increase LLM "power" parameters.
-
-- TODO@P3 Improve Logs UI.

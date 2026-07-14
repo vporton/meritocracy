@@ -17,24 +17,22 @@ const Logs: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<LogsFilter>({
-    type: 'openai', // Default to OpenAI logs only
     limit: 50,
     offset: 0
   });
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const initialUserId = Number.parseInt(searchParams.get('userId') || '', 10);
+  const hasInitialUserId = Number.isSafeInteger(initialUserId) && initialUserId > 0;
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(hasInitialUserId ? initialUserId : null);
   const [showMyLogs, setShowMyLogs] = useState(false);
+  const [showUserLogs, setShowUserLogs] = useState(hasInitialUserId);
 
   useEffect(() => {
-    const userId = searchParams.get('userId');
-    if (userId) {
-      setSelectedUserId(parseInt(userId));
-    }
     loadInitialData();
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     loadLogs();
-  }, [filter, selectedUserId, showMyLogs]);
+  }, [filter, selectedUserId, showMyLogs, showUserLogs]);
 
   const loadInitialData = async () => {
     try {
@@ -61,8 +59,11 @@ const Logs: React.FC = () => {
       let response;
       if (showMyLogs) {
         response = await logsApi.getMy(filter);
-      } else if (selectedUserId) {
+      } else if (showUserLogs && selectedUserId) {
         response = await logsApi.getUser(selectedUserId, filter);
+      } else if (showUserLogs) {
+        setLogs([]);
+        return;
       } else {
         response = await logsApi.getAll(filter);
       }
@@ -84,9 +85,18 @@ const Logs: React.FC = () => {
   };
 
   const handleUserIdChange = (userId: string) => {
-    const id = userId ? parseInt(userId) : null;
+    const parsedId = Number.parseInt(userId, 10);
+    const id = Number.isSafeInteger(parsedId) && parsedId > 0 ? parsedId : null;
     setSelectedUserId(id);
     setShowMyLogs(false);
+    setShowUserLogs(true);
+  };
+
+  const clearFilters = () => {
+    setFilter({ limit: 50, offset: 0 });
+    setSelectedUserId(null);
+    setShowMyLogs(false);
+    setShowUserLogs(false);
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -340,7 +350,7 @@ const Logs: React.FC = () => {
       <Canonical baseUrl={frontendOrigin} />
       <div className="logs-header">
         <h1>Meritocracy App Logs</h1>
-        <p>View and filter OpenAI, task, user, and session logs</p>
+        <p>Inspect OpenAI, task, account, and session activity.</p>
       </div>
 
       {error && (
@@ -372,7 +382,15 @@ const Logs: React.FC = () => {
 
       {/* Filters */}
       <div className="filters-section">
-        <h3>Filters</h3>
+        <div className="filters-heading">
+          <div>
+            <h3>Filters</h3>
+            <p>Results update when a filter changes.</p>
+          </div>
+          <button className="reset-filters" type="button" onClick={clearFilters} disabled={loading}>
+            Reset filters
+          </button>
+        </div>
         <div className="filters-grid">
           <div className="filter-group">
             <label>View Mode</label>
@@ -381,10 +399,11 @@ const Logs: React.FC = () => {
                 <input
                   type="radio"
                   name="viewMode"
-                  checked={!showMyLogs && !selectedUserId}
+                  checked={!showMyLogs && !showUserLogs}
                   onChange={() => {
                     setShowMyLogs(false);
                     setSelectedUserId(null);
+                    setShowUserLogs(false);
                   }}
                 />
                 All Logs
@@ -394,7 +413,10 @@ const Logs: React.FC = () => {
                   type="radio"
                   name="viewMode"
                   checked={showMyLogs}
-                  onChange={() => setShowMyLogs(true)}
+                  onChange={() => {
+                    setShowMyLogs(true);
+                    setShowUserLogs(false);
+                  }}
                 />
                 My Logs
               </label>
@@ -402,33 +424,41 @@ const Logs: React.FC = () => {
                 <input
                   type="radio"
                   name="viewMode"
-                  checked={!showMyLogs && selectedUserId !== null}
-                  onChange={() => setSelectedUserId(0)}
+                  checked={showUserLogs}
+                  onChange={() => {
+                    setShowMyLogs(false);
+                    setShowUserLogs(true);
+                  }}
                 />
                 User Logs
               </label>
             </div>
           </div>
 
-          {!showMyLogs && (
+          {showUserLogs && (
             <div className="filter-group">
               <label>User ID</label>
               <input
                 type="number"
-                value={selectedUserId || ''}
+                value={selectedUserId ?? ''}
                 onChange={(e) => handleUserIdChange(e.target.value)}
                 placeholder="Enter user ID"
+                min="1"
                 disabled={showMyLogs}
               />
+              {selectedUserId === null && (
+                <span className="filter-help">Enter a positive user ID to view one user’s logs.</span>
+              )}
             </div>
           )}
 
           <div className="filter-group">
             <label>Log Type</label>
             <select
-              value={filter.type || 'openai'}
-              onChange={(e) => handleFilterChange('type', e.target.value || 'openai')}
+              value={filter.type || ''}
+              onChange={(e) => handleFilterChange('type', e.target.value || undefined)}
             >
+              <option value="">All log types</option>
               {logTypes && Object.entries(logTypes).map(([key, type]) => (
                 <option key={key} value={key}>{type.name}</option>
               ))}
@@ -471,19 +501,17 @@ const Logs: React.FC = () => {
           <button onClick={loadLogs} disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
           </button>
-          <button onClick={() => {
-            setFilter({ type: 'openai', limit: 50, offset: 0 });
-            setSelectedUserId(null);
-            setShowMyLogs(false);
-          }}>
-            Clear Filters
-          </button>
         </div>
       </div>
 
       {/* Logs List */}
       <div className="logs-section">
-        <h3>Logs ({logs.length})</h3>
+        <div className="logs-section-heading">
+          <h3>Logs</h3>
+          <span aria-live="polite">
+            {loading ? 'Updating…' : `${logs.length} result${logs.length === 1 ? '' : 's'}`}
+          </span>
+        </div>
 
         {logs.length === 0 ? (
           <div className="no-logs">No logs found matching the current filters.</div>
@@ -563,7 +591,7 @@ const Logs: React.FC = () => {
               Previous
             </button>
             <span>
-              Showing {(filter.offset || 0) + 1} to {Math.min((filter.offset || 0) + (filter.limit || 50), logs.length)}
+              Showing {(filter.offset || 0) + 1} to {(filter.offset || 0) + logs.length}
               {logs.length === (filter.limit || 50) && ' (more available)'}
             </span>
             <button

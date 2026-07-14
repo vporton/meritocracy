@@ -21,6 +21,33 @@ Each migration has immutable definition metadata:
 
 Migration metadata, cursor, row receipts and audit events are canonical stable state. ZenDB rebuild cursors and metadata are also mirrored in the collection metadata but cannot be the only checkpoint.
 
+## ZenDB integration boundary
+
+The `meritocracy_core` canister uses one ZenDB stable store and its default database
+namespace. ZenDB collections are typed, bounded read/history projections; canonical
+account, identity, vote, policy, reserve, obligation, work, migration-receipt, and
+audit indexes remain Motoko stable state. A ZenDB unique constraint or index improves
+document access but is never the sole enforcement point for a domain invariant.
+
+- Use `ZenDB.newStableStore` with `#stableMemory` for production collections. The
+  canister's configured stable-memory page cap is a release setting, reviewed with
+  the storage projection; it is not inferred from ZenDB's maximum capacity.
+- Every collection has an exact Motoko record/variant schema, explicit `Candify`
+  `to_candid`/`from_candid` conversion, collection schema version, field byte caps,
+  and only the indexes required by declared bounded queries.
+- ZenDB `Result` values are converted to the target typed error taxonomy. Invalid
+  input, duplicate projection data, unavailable collection, or failed index work
+  must return a controlled result; they must not trap a migration batch.
+- Creating or rebuilding an index is resumable bounded work. A new index generation
+  remains inactive until count/key-digest verification against canonical state passes.
+- A core mutation writes canonical state, its indexes, the ZenDB projection, receipt,
+  and redacted audit fact before returning and without `await`. The application must
+  not assume an unverified multi-operation ZenDB transaction spans those writes;
+  recovery rebuilds projections from canonical state.
+- Only `public_profiles`, `assessment_runs`, and `payment_obligations` are ZenDB
+  collections in the initial design. Raw prompts, KYC, sessions, tokens, secrets,
+  private keys, and unbounded logs remain outside canister and ZenDB state.
+
 ## Bounded batch algorithm
 
 `start_migration` is governance-only and writes `planned` metadata after validating source/target compatibility, transform allow-list, snapshot and batch policy. `run_migration_batch(migrationId, expectedVersion, limit)` is governance or a delegated migration operator command:

@@ -89,9 +89,44 @@
 
 .filters-section h3 {
   color: #1f2937;
-  margin-bottom: 20px;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
+}
+
+.filters-heading,
+.logs-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.filters-heading p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 4px 0 0;
+}
+
+.reset-filters {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.reset-filters:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+.reset-filters:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
 .filters-grid {
@@ -111,6 +146,13 @@
   font-weight: 500;
   margin-bottom: 6px;
   font-size: 0.9rem;
+}
+
+.filter-help {
+  color: #6b7280;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  margin-top: 6px;
 }
 
 .filter-group input,
@@ -186,9 +228,14 @@
 
 .logs-section h3 {
   color: #1f2937;
-  margin-bottom: 20px;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
+}
+
+.logs-section-heading > span {
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .no-logs {
@@ -507,5 +554,12 @@
   
   .filter-actions button {
     flex: 1;
+  }
+
+  .filters-heading,
+  .logs-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 }

@@ -205,4 +205,3 @@
   * Leo Gao's Experimental  Microgranting Program - applied 14 Jul 2026
   * https://bluedot.org/programs/rapid-grants - applied 14 Jul 2026
   * AI Alignment Foundation (AIAF) aialignmentfoundation.org - applied 14 Jul 2026
-  * TODO

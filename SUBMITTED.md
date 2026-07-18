@@ -207,3 +207,4 @@
     * https://bluedot.org/programs/rapid-grants - applied 14 Jul 2026
     * AI Alignment Foundation (AIAF) aialignmentfoundation.org - applied 14 Jul 2026
   * AI Safety Research Fund - applied 14 Jul 2026
+* ICP Alliance - applied 18 Jul 2026

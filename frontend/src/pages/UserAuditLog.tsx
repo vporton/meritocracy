@@ -18,6 +18,7 @@ interface Assessment {
     text: string;
     sources: string[];
     timestamp: string;
+    modelVersion?: string;
     worthValues?: WorthValue[];
     isPending?: boolean;
     isError?: boolean;
@@ -227,6 +228,11 @@ export default function UserAuditLog() {
                                             {badgeLabel}
                                         </span>
                                     </div>
+                                    {assessment.modelVersion && (
+                                        <p className="model-version" data-nosnippet="data-nosnippet">
+                                            <strong>AI model/version:</strong> {assessment.modelVersion}
+                                        </p>
+                                    )}
                                     <div className="assessment-content">
                                         {assessment.worthValues && assessment.worthValues.length > 0 && (
                                             <section className="worth-section">

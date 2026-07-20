@@ -22,6 +22,15 @@ interface PaginatedAssessments {
   pagination: AssessmentPagination;
 }
 
+function getModelVersion(requestData: string): string | undefined {
+  try {
+    const request = JSON.parse(requestData) as { model?: unknown };
+    return typeof request.model === 'string' ? request.model : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export class BanVotingService {
   /**
    * Get the start of the current week (Monday 00:00:00).
@@ -270,7 +279,13 @@ export class BanVotingService {
         }
       },
       include: {
-        aiResults: { include: { sources: { orderBy: { ordinal: 'asc' } } } }
+        aiResults: { include: { sources: { orderBy: { ordinal: 'asc' } } } },
+        openaiLogs: {
+          select: {
+            customId: true,
+            requestData: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
       take: 200
@@ -309,12 +324,14 @@ export class BanVotingService {
           const sources = aiResult.sources.map(source => source.url);
           const rationale = typeof response.why === 'string' ? response.why : '';
           let worthValues: AssessmentWorthValue[] = this.extractWorthValues(response, worldGdp);
+          const openaiLog = task.openaiLogs.find(log => log.customId === aiResult.customId);
 
           results.push({
             text: obfuscateEmailsInValue(rationale || 'No rationale available in stored response.', userEmails),
             sources: obfuscateEmailsInValue([...new Set(sources)], userEmails),
             timestamp: task.completedAt || aiResult.createdAt,
             worthValues,
+            modelVersion: openaiLog ? getModelVersion(openaiLog.requestData) : undefined,
             isError: task.status === 'CANCELLED'
           });
         } catch (e) {

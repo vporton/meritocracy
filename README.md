@@ -14,6 +14,11 @@ Actually, this "meritocracy" is quite capitalistic, as it hinted to me (the auth
 
 It is a full-stack application built with Node.js, React, and Prisma ORM.
 
+## Codex Use
+
+Code 5.6 Terra was used for work on and about:
+`docs/LONG-DESCRIPTION.txt` about creating a fully-onchain ICP blockchain app.
+
 ## 🚀 Tech Stack
 
 ### Backend

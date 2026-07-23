@@ -23,8 +23,6 @@
 
 - TODO@P2 Implement tech support.
 
-- TODO@P3 Run tasks in parallel.
-
 - TODO@P3 Downloadable badges of "a contributor to world economy" or "a contributor to Internet".
 
 - TODO@P3 `prisma+postgres://accelerate.prisma-data.net/?api_key=XXX` URLs no more work after updating Prisma.

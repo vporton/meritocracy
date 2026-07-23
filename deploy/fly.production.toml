@@ -8,7 +8,7 @@ primary_region = 'iad'
 # TODO@P3 Having more than one machine would lead to duplicate cron tasks executing
 # and to keep-alive ping going to a wrong machine.
 # As a temporary solution, I remove the duplicators and leave just one machine deployed.
-strategy = "rolling" # "bluegreen" # TODO@P3: Neither makes zero downtime :-(
+strategy = "bluegreen"
 max_unavailable = 1
 
 [build]

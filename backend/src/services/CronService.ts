@@ -5,6 +5,8 @@ import { MultiNetworkGasTokenDistributionService, multiNetworkGasTokenDistributi
 import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupService.js';
 import { GlobalDataService } from './GlobalDataService.js';
 import { startApiSelfKeepAlive } from './SelfPingKeepAlive.js';
+import emailService from './EmailService.js';
+import { getVerifiedEmailAddresses } from './userEmailUtils.js';
 
 export const cronJobMetadata = {
   quarterlyEvaluation: {
@@ -18,6 +20,10 @@ export const cronJobMetadata = {
   compensationPayout: {
     cron: '0 * * * *',
     description: 'Hourly at minute 0 UTC (compensation payout release)'
+  },
+  livelinessCheck: {
+    cron: '0 9 * * *',
+    description: 'Daily at 09:00 UTC (send due Didit Liveliness renewal requests before payout)'
   },
   monthlyCleanup: {
     cron: '0 4 1 * *',
@@ -100,6 +106,10 @@ export class CronService {
       compensationPayout: {
         running: activeTaskName === 'compensation payouts',
         schedule: `${cronJobMetadata.compensationPayout.cron} (${cronJobMetadata.compensationPayout.description})`
+      },
+      livelinessCheck: {
+        running: activeTaskName === 'liveliness checks',
+        schedule: `${cronJobMetadata.livelinessCheck.cron} (${cronJobMetadata.livelinessCheck.description})`
       },
       monthlyCleanup: {
         running: activeTaskName === 'monthly cleanup',
@@ -186,7 +196,9 @@ export class CronService {
               { bannedTill: null },
               { bannedTill: { lt: new Date() } }
             ],
-            paymentHoldStartedAt: null
+            paymentHoldStartedAt: null,
+            livelinessStatus: 'APPROVED',
+            livelinessDueAt: { gt: new Date() }
           },
           select: {
             id: true
@@ -229,6 +241,67 @@ export class CronService {
       } finally {
         stopKeepAlive();
       }
+    });
+  }
+
+  async runLivelinessChecks() {
+    return this.runWithExclusiveExecution('liveliness checks', async () => {
+      if (!process.env.DIDIT_WORKFLOW_LIVELINESS_ID) {
+        console.warn('⚠️  DIDIT_WORKFLOW_LIVELINESS_ID is not configured; skipping Liveliness renewal emails.');
+        return { dueUsers: 0, emailsSent: 0, skipped: 0, configurationMissing: true };
+      }
+
+      const now = new Date();
+      const reminderThreshold = new Date(now);
+      reminderThreshold.setDate(reminderThreshold.getDate() - 7);
+      const dueUsers = await this.prisma.user.findMany({
+        where: {
+          onboarded: true,
+          shareInGDP: { not: null },
+          kycStatus: 'APPROVED',
+          OR: [
+            { livelinessDueAt: null },
+            { livelinessDueAt: { lte: now } }
+          ],
+          AND: [
+            {
+              OR: [
+                { livelinessRequestedAt: null },
+                { livelinessRequestedAt: { lte: reminderThreshold } }
+              ]
+            }
+          ]
+        },
+        select: { id: true, name: true }
+      });
+
+      let emailsSent = 0;
+      let skipped = 0;
+      for (const user of dueUsers) {
+        const emails = await getVerifiedEmailAddresses(this.prisma, user.id);
+        if (emails.length === 0) {
+          skipped++;
+          continue;
+        }
+
+        const token = emailService.generateKycToken();
+        await emailService.storeKycToken(token, user.id);
+        const deliveryResults = await Promise.all(
+          emails.map(email => emailService.sendLivelinessRequestEmail(email, token, user.name || undefined))
+        );
+        if (deliveryResults.some(Boolean)) {
+          emailsSent += deliveryResults.filter(Boolean).length;
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { livelinessStatus: 'PENDING', livelinessRequestedAt: now }
+          });
+        } else {
+          skipped++;
+        }
+      }
+
+      console.log(`🫡 Didit Liveliness: ${dueUsers.length} due users, ${emailsSent} emails sent, ${skipped} skipped.`);
+      return { dueUsers: dueUsers.length, emailsSent, skipped, configurationMissing: false };
     });
   }
 

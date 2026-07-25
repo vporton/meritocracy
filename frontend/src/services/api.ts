@@ -52,6 +52,9 @@ interface User {
   kycVerifiedAt?: string;
   kycRejectedAt?: string;
   kycRejectionReason?: string;
+  livelinessStatus?: string;
+  livelinessVerifiedAt?: string;
+  livelinessDueAt?: string;
   createdAt: string;
   updatedAt: string;
   votingPleaUnsubscribed?: boolean;
@@ -253,6 +256,8 @@ export const authApi = {
   // KYC API
   initiateKyc: (kycToken?: string): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User; skipped?: boolean; message?: string }>> =>
     api.post('/api/auth/kyc/initiate', { kycToken }),
+  initiateLiveliness: (livelinessToken?: string): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User }>> =>
+    api.post('/api/auth/liveliness/initiate', { livelinessToken }),
   getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> =>
     api.get('/api/auth/kyc/status'),
 }

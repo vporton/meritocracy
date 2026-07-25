@@ -41,6 +41,10 @@ model User {
   kycRejectedAt           DateTime?
   kycRejectionReason      String?
   kycData                 String?
+  livelinessStatus        String?
+  livelinessVerifiedAt    DateTime?
+  livelinessDueAt         DateTime?
+  livelinessRequestedAt   DateTime?
   kycVotingStatus         String?
   kycVotingVerifiedAt     DateTime?
   kycVotingRejectedAt     DateTime?
@@ -67,6 +71,7 @@ model User {
   @@index([paymentHoldStartedAt])
   @@index([compensationDueAt])
   @@index([kycStatus])
+  @@index([livelinessDueAt])
   @@index([cosmosAddress])
   @@index([icpAddress])
   @@unique([issuingState, personalNumber])

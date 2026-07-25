@@ -423,7 +423,7 @@ export class MultiNetworkGasTokenDistributionService {
 
   /**
    * Fetch users eligible for distribution calculations.
-   * Users currently blocked by ban/review are handled downstream by deferring their payout,
+   * Users currently blocked by ban/review or an overdue Liveliness check are handled downstream by deferring their payout,
    * so their owed amount can be released quickly after unban.
    */
   private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
@@ -446,7 +446,14 @@ export class MultiNetworkGasTokenDistributionService {
     const now = new Date();
     const isBanned = !!(user.bannedTill && user.bannedTill > now);
     const isUnderReview = !!user.paymentHoldStartedAt;
-    return isBanned || isUnderReview;
+    const isLivelinessExpired = user.livelinessStatus !== 'APPROVED' || !user.livelinessDueAt || user.livelinessDueAt <= now;
+    return isBanned || isUnderReview || isLivelinessExpired;
+  }
+
+  private getPaymentHoldReason(user: User): string {
+    if (user.bannedTill && user.bannedTill > new Date()) return 'BANNED_HOLD';
+    if (user.paymentHoldStartedAt) return 'UNDER_REVIEW_HOLD';
+    return 'LIVELINESS_REQUIRED';
   }
 
   private async getTokenReserve(context: GasTokenNetworkContext): Promise<number> {
@@ -702,9 +709,7 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         if (this.isUserPaymentBlocked(user)) {
-          const holdReason = user.bannedTill && user.bannedTill > new Date()
-            ? 'BANNED_HOLD'
-            : 'UNDER_REVIEW_HOLD';
+          const holdReason = this.getPaymentHoldReason(user);
 
           result.reservedAmount += dist.amountToken;
 
@@ -1028,9 +1033,7 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         if (this.isUserPaymentBlocked(user)) {
-          const holdReason = user.bannedTill && user.bannedTill > new Date()
-            ? 'BANNED_HOLD'
-            : 'UNDER_REVIEW_HOLD';
+          const holdReason = this.getPaymentHoldReason(user);
 
           result.reservedAmount += dist.amountToken;
 

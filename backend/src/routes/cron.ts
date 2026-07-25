@@ -88,6 +88,15 @@ router.post('/compensation-payout', ensureCronAuth, (req, res) => {
 });
 
 /**
+ * POST /api/cron/liveliness-check
+ * scheduled daily via https://cron-job.org
+ */
+router.post('/liveliness-check', ensureCronAuth, (req, res) => {
+  const result = scheduleCronJob('liveliness checks', cronJobMetadata.livelinessCheck.cron, () => cronService.runLivelinessChecks());
+  respondToJobRequest('liveliness checks', result, res, 'Liveliness renewal check queued (background job is running).');
+});
+
+/**
  * POST /api/cron/monthly-cleanup
  * scheduled via https://cron-job.org
  */

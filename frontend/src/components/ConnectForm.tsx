@@ -323,6 +323,7 @@ const ConnectForm = () => {
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
   const kycTokenParam = searchParams.get('kycToken') || '';
+  const livelinessTokenParam = searchParams.get('livelinessToken') || '';
   const [addressForm, setAddressForm] = useState<AddressFormValues>(getEmptyAddressForm());
   const addressFormRef = useRef<AddressFormValues>(getEmptyAddressForm());
   const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({});
@@ -1099,6 +1100,28 @@ const ConnectForm = () => {
     autoHandleReceiverKyc();
   }, [kycTokenParam, connectStatus.kyc, updateAuthData, refreshUser]);
 
+  const startLivelinessCheck = async (token?: string) => {
+    try {
+      setConnectStatus(prev => ({ ...prev, liveliness: 'connecting' }));
+      const response = await authApi.initiateLiveliness(token);
+      const data = response.data;
+      if (data.session && data.user) {
+        updateAuthData(data.user, data.session.token);
+      }
+      if (!data.url) throw new Error('No Liveliness URL received');
+      window.location.href = data.url;
+    } catch (error: any) {
+      console.error('Liveliness connection error:', error);
+      setConnectStatus(prev => ({ ...prev, liveliness: 'error', error: error.message }));
+    }
+  };
+
+  // Email links start the renewal without requiring the recipient to sign in first.
+  useEffect(() => {
+    if (!livelinessTokenParam || connectStatus.liveliness) return;
+    void startLivelinessCheck(livelinessTokenParam);
+  }, [livelinessTokenParam, connectStatus.liveliness]);
+
 
   // Voting KYC connection handler
   const handleVotingKycConnect = async () => {
@@ -1653,6 +1676,20 @@ const ConnectForm = () => {
 
       {user?.kycStatus !== 'APPROVED' && !kycTokenParam && (
         <p className="kyc-notice">KYC verification will be requested via email once funds are allocated to you.</p>
+      )}
+
+      {user?.onboarded && (!user.livelinessDueAt || user.livelinessStatus !== 'APPROVED' || new Date(user.livelinessDueAt) <= new Date()) && !livelinessTokenParam && (
+        <div className="kyc-notice">
+          <p>Your Didit Liveliness check needs renewal, so payouts are paused until it is completed. This check confirms that you are present; it does not require recent work.</p>
+          <button
+            className="connect-button kyc-button"
+            onClick={() => void startLivelinessCheck()}
+            disabled={isLoading || connectStatus.liveliness === 'connecting'}
+          >
+            {connectStatus.liveliness === 'connecting' ? 'Starting Liveliness check...' : 'Renew Didit Liveliness check'}
+          </button>
+          {connectStatus.liveliness === 'error' && <span className="error-message">{connectStatus.error}</span>}
+        </div>
       )}
 
       <p style={{ color: 'red' }}>BitBucket is not supported yet.</p>

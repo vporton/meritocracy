@@ -14,6 +14,14 @@ import { normalizeEmail, syncPrimaryEmail } from '../services/userEmailUtils.js'
 
 const router = express.Router();
 
+function getLivelinessDueAt(verifiedAt: Date = new Date()): Date {
+  const configuredMonths = Number.parseInt(process.env.DIDIT_LIVELINESS_INTERVAL_MONTHS || '3', 10);
+  const intervalMonths = Number.isFinite(configuredMonths) && configuredMonths > 0 ? configuredMonths : 3;
+  const dueAt = new Date(verifiedAt);
+  dueAt.setMonth(dueAt.getMonth() + intervalMonths);
+  return dueAt;
+}
+
 // Track ongoing OAuth requests to prevent duplicates
 const ongoingOAuthRequests = new Map<string, number>();
 // Cache successful OAuth results for a short time to handle duplicates
@@ -1810,11 +1818,19 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const updateData: any = {};
 
     const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
+    const isLivelinessFlow = metadata?.workflow_type === 'LIVELINESS' ||
+      (!!process.env.DIDIT_WORKFLOW_LIVELINESS_ID && workflow_id === process.env.DIDIT_WORKFLOW_LIVELINESS_ID);
 
     // Handle different statuses according to Didit webhook format
     // Trust the main status 'Approved' as authoritative for the session
     if (status === 'Approved') {
-      if (isVotingFlow) {
+      if (isLivelinessFlow) {
+        const verifiedAt = new Date();
+        updateData.livelinessStatus = 'APPROVED';
+        updateData.livelinessVerifiedAt = verifiedAt;
+        updateData.livelinessDueAt = getLivelinessDueAt(verifiedAt);
+        updateData.livelinessRequestedAt = null;
+      } else if (isVotingFlow) {
         // Voting KYC Flow: Sets ONLY Voting Status
         updateData.kycVotingStatus = 'APPROVED';
         updateData.kycVotingVerifiedAt = new Date();
@@ -1851,7 +1867,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
 
       // Store additional verification data if available
-      if (decision && decision.id_verification) {
+      if (!isLivelinessFlow && decision && decision.id_verification) {
         const idData = decision.id_verification;
 
         console.log(`KYC first/last name 2: ${idData.first_name} ${idData.last_name}`);
@@ -1886,7 +1902,9 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
           expirationDate: idData.expiration_date
         });
 
-        if (isVotingFlow) {
+        if (isLivelinessFlow) {
+          // Liveliness does not store KYC rejection details.
+        } else if (isVotingFlow) {
           updateData.kycVotingData = kycDataStr;
         } else {
           updateData.kycData = kycDataStr;
@@ -1894,7 +1912,9 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
     } else if (status === 'Declined' || aml?.status === 'Rejected') {
       const reason = 'Verification declined by Didit';
-      if (isVotingFlow) {
+      if (isLivelinessFlow) {
+        updateData.livelinessStatus = 'REJECTED';
+      } else if (isVotingFlow) {
         updateData.kycVotingStatus = 'REJECTED';
         updateData.kycVotingRejectedAt = new Date();
         updateData.kycVotingRejectionReason = reason;
@@ -1919,7 +1939,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       }
 
       // Send OFAC report only for AML rejections (sanctions screening)
-      if (aml?.status === 'Rejected') {
+      if (!isLivelinessFlow && aml?.status === 'Rejected') {
         try {
           const kycData = decision?.id_verification ? {
             documentType: decision.id_verification.document_type,
@@ -1944,10 +1964,12 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         }
       }
     } else if (status === 'In Review') {
-      if (isVotingFlow) updateData.kycVotingStatus = 'PENDING';
+      if (isLivelinessFlow) updateData.livelinessStatus = 'PENDING';
+      else if (isVotingFlow) updateData.kycVotingStatus = 'PENDING';
       else updateData.kycStatus = 'PENDING';
     } else if (status === 'Abandoned') {
-      if (isVotingFlow) updateData.kycVotingStatus = 'ABANDONED';
+      if (isLivelinessFlow) updateData.livelinessStatus = 'ABANDONED';
+      else if (isVotingFlow) updateData.kycVotingStatus = 'ABANDONED';
       else updateData.kycStatus = 'ABANDONED';
     }
 
@@ -2155,6 +2177,94 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('KYC initiation error:', error);
     res.status(500).json({ error: 'Failed to initiate KYC verification' });
+  }
+});
+
+// Didit Liveliness initiation. An email link may authenticate the user with a
+// one-time token; an already signed-in user may also restart an overdue check.
+router.post('/liveliness/initiate', async (req, res): Promise<void> => {
+  try {
+    const { livelinessToken } = req.body as { livelinessToken?: string };
+    const authHeader = req.headers.authorization;
+    let session: any = null;
+    let user: any = null;
+    let tokenAuthenticated = false;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      session = await prisma.session.findUnique({
+        where: { token: authHeader.substring(7) },
+        include: { user: true }
+      });
+      if (!session || session.expiresAt < new Date()) {
+        res.status(401).json({ error: 'Invalid or expired token' });
+        return;
+      }
+      user = session.user;
+      if (livelinessToken) {
+        const verification = await EmailService.verifyKycToken(livelinessToken, user.id);
+        if (!verification.success) {
+          res.status(403).json({ error: verification.error });
+          return;
+        }
+      }
+    } else {
+      if (!livelinessToken) {
+        res.status(401).json({ error: 'Please log in or use the link from the Liveliness email' });
+        return;
+      }
+      const tokenRecord = await (prisma as any).kycToken.findUnique({
+        where: { token: livelinessToken },
+        include: { user: true }
+      });
+      if (!tokenRecord || tokenRecord.used || tokenRecord.expiresAt < new Date()) {
+        res.status(403).json({ error: 'Invalid or expired Liveliness token' });
+        return;
+      }
+      user = tokenRecord.user;
+      session = await createSession(user.id);
+      tokenAuthenticated = true;
+    }
+
+    const workflowId = process.env.DIDIT_WORKFLOW_LIVELINESS_ID;
+    if (!workflowId || !process.env.INSTALLATION_UID || !process.env.DIDIT_API_KEY) {
+      res.status(500).json({ error: 'Liveliness service configuration missing' });
+      return;
+    }
+
+    const diditResponse = await fetch('https://verification.didit.me/v2/session/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.DIDIT_API_KEY },
+      body: JSON.stringify({
+        workflow_id: workflowId,
+        vendor_data: process.env.INSTALLATION_UID,
+        metadata: { session_id: session!.id, workflow_type: 'LIVELINESS' }
+      })
+    });
+    if (!diditResponse.ok) {
+      console.error('Didit Liveliness API error:', diditResponse.status, await diditResponse.text());
+      res.status(500).json({ error: 'Failed to initiate Didit Liveliness check' });
+      return;
+    }
+    const diditData: any = await diditResponse.json();
+    if (!diditData.url) {
+      res.status(500).json({ error: 'Invalid response from Liveliness service' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { livelinessStatus: 'PENDING', livelinessRequestedAt: new Date() }
+    });
+
+    const response: any = { url: diditData.url, sessionId: diditData.session_id || null };
+    if (tokenAuthenticated) {
+      response.session = { token: session!.token, expiresAt: session!.expiresAt };
+      response.user = user;
+    }
+    res.json(response);
+  } catch (error) {
+    console.error('Liveliness initiation error:', error);
+    res.status(500).json({ error: 'Failed to initiate Didit Liveliness check' });
   }
 });
 

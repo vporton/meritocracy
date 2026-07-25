@@ -13,6 +13,7 @@ Each cron job is exposed as a dedicated `POST /api/cron/*` endpoint. The jobs ar
 | Bi-monthly user evaluation | `POST /api/cron/bi-monthly-evaluation` | `0 2 1 */2 *` | Runs on the 1st day of every other month at 02:00 UTC to re-run the evaluation flow for every onboarded user. |
 | Weekly gas distribution | `POST /api/cron/weekly-gas-distribution` | `0 20 * * 0` | Runs every Sunday at 20:00 UTC (biweekly toggle respected) to process the multi-network gas token distribution. |
 | Compensation payout | `POST /api/cron/compensation-payout` | `0 * * * *` | Runs hourly on the hour to release held balances once compensation becomes due. |
+| Didit Liveliness renewal | `POST /api/cron/liveliness-check` | `0 9 * * *` | Sends renewal links to payout-eligible users whose Liveliness check is due or overdue. |
 | Monthly connected account cleanup | `POST /api/cron/monthly-cleanup` | `0 4 1 * *` | Runs on the 1st day of every month at 04:00 UTC to remove disconnected accounts. |
 | World GDP refresh | `POST /api/cron/world-gdp-refresh` | `0 6 1 * *` | Runs on the 1st day of every month at 06:00 UTC to refresh the stored world GDP value when the cached copy is older than a month. |
 

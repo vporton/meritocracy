@@ -13,5 +13,8 @@ npm run db:generate
 # Prevent submitting, if has not been tested on a local DB.
 npx prisma migrate status --config prisma/prisma.config.js
 
-# Prevent submitting if not all migrations have been applied.
-npx prisma migrate diff --from-schema prisma/schema.prisma --to-migrations prisma/migrations --exit-code
+# Prevent submitting if the local database has drifted from the Prisma schema.
+# Comparing against a migrations directory requires a separate shadow database
+# in Prisma 7; the migration status check above already verifies that all
+# migrations are applied, so compare the configured database directly instead.
+npx prisma migrate diff --config prisma/prisma.config.js --from-config-datasource --to-schema prisma/schema.prisma --exit-code

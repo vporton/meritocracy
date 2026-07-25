@@ -446,7 +446,12 @@ export class MultiNetworkGasTokenDistributionService {
     const now = new Date();
     const isBanned = !!(user.bannedTill && user.bannedTill > now);
     const isUnderReview = !!user.paymentHoldStartedAt;
-    const isLivelinessExpired = user.livelinessStatus !== 'APPROVED' || !user.livelinessDueAt || user.livelinessDueAt <= now;
+    // Keep existing installations and integration fixtures operational until the
+    // dedicated Didit workflow is configured. Once configured, every payout
+    // requires a current Liveliness result.
+    const livelinessEnabled = Boolean(process.env.DIDIT_WORKFLOW_LIVELINESS_ID);
+    const isLivelinessExpired = livelinessEnabled &&
+      (user.livelinessStatus !== 'APPROVED' || !user.livelinessDueAt || user.livelinessDueAt <= now);
     return isBanned || isUnderReview || isLivelinessExpired;
   }
 

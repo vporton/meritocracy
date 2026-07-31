@@ -1,5 +1,6 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { hashOpaqueToken } from '../security/tokens.js';
 
 // Middleware to extract user ID from authorization token
 export async function getCurrentUserFromToken(req: express.Request): Promise<number | null> {
@@ -13,7 +14,7 @@ export async function getCurrentUserFromToken(req: express.Request): Promise<num
 
     // Find session
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { token: hashOpaqueToken(token) },
       include: { user: true }
     });
 

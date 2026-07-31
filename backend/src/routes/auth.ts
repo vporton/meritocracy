@@ -1,6 +1,4 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { ethers } from 'ethers';
 import { Prisma } from '@prisma/client';
@@ -11,8 +9,23 @@ import EmailService from '../services/EmailService.js';
 import { isImmediateDeletionCandidate, makeUserSoftDeletePayload, softDeleteUser } from '../services/userDeletionUtils.js';
 import { prisma } from '../lib/prisma.js';
 import { normalizeEmail, syncPrimaryEmail } from '../services/userEmailUtils.js';
+import { requireAdmin } from '../middleware/privilegedAuth.js';
+import { fixedWindowRateLimit } from '../middleware/rateLimit.js';
+import {
+  createOpaqueToken,
+  hashOpaqueToken,
+  signOAuthState,
+  timingSafeEqualString,
+  verifyOAuthState,
+  type OAuthProvider,
+} from '../security/tokens.js';
 
 const router = express.Router();
+const challengeRateLimit = fixedWindowRateLimit({ name: 'ethereum-challenge', windowMs: 5 * 60_000, max: 20 });
+const loginRateLimit = fixedWindowRateLimit({ name: 'login', windowMs: 5 * 60_000, max: 20 });
+const emailRateLimit = fixedWindowRateLimit({ name: 'email-auth', windowMs: 15 * 60_000, max: 10 });
+const oauthRateLimit = fixedWindowRateLimit({ name: 'oauth-start', windowMs: 10 * 60_000, max: 30 });
+const kycRateLimit = fixedWindowRateLimit({ name: 'kyc-initiate', windowMs: 10 * 60_000, max: 10 });
 
 function getLivelinessDueAt(verifiedAt: Date = new Date()): Date {
   const configuredMonths = Number.parseInt(process.env.DIDIT_LIVELINESS_INTERVAL_MONTHS || '3', 10);
@@ -21,11 +34,6 @@ function getLivelinessDueAt(verifiedAt: Date = new Date()): Date {
   dueAt.setMonth(dueAt.getMonth() + intervalMonths);
   return dueAt;
 }
-
-// Track ongoing OAuth requests to prevent duplicates
-const ongoingOAuthRequests = new Map<string, number>();
-// Cache successful OAuth results for a short time to handle duplicates
-const oauthResultCache = new Map<string, any>();
 
 const ethereumVerificationClients = [
   createPublicClient({
@@ -88,6 +96,13 @@ interface UserData {
   residenceCountry?: string;
 }
 
+class IdentityConflictError extends Error {
+  constructor() {
+    super('This verified identity is already linked to another account');
+    this.name = 'IdentityConflictError';
+  }
+}
+
 const userWithEmailsInclude: Prisma.UserInclude = {
   emails: {
     orderBy: [
@@ -143,20 +158,14 @@ async function maybeSoftDeleteDisconnectedAccount(tx: Prisma.TransactionClient, 
   return true;
 }
 
-// Helper function to find or create user based on provided data.
-//
-// TODO@P3: Document in more details.
-// Consider we have two users:
-// A0 A1
-// B0 B1
-// and set B1 to A1. Then we need to deal only with two users, because A1!=B1.
-// We delete that user that had been previously set to our data!
+// Find or create only from provider-verified identity data. Linking an identity
+// claimed by a different account is rejected rather than merging accounts.
 async function findOrCreateUser(userData: UserData, currentUserId: number | null = null) {
   const { email, name, ethereumAddress, orcidId, githubHandle, bitbucketHandle, gitlabHandle, issuingState, personalNumber, residenceCountry } = userData;
   // First, check for exact matches using unique fields
-  const searchConditions: UserData[] = [];
+  const searchConditions: Prisma.UserWhereInput[] = [];
   if (email) searchConditions.push({ email });
-  if (ethereumAddress) searchConditions.push({ ethereumAddress });
+  if (ethereumAddress) searchConditions.push({ ethereumAddress: { equals: ethereumAddress, mode: 'insensitive' } });
   if (orcidId) searchConditions.push({ orcidId });
   if (githubHandle) searchConditions.push({ githubHandle });
   if (bitbucketHandle) searchConditions.push({ bitbucketHandle });
@@ -226,171 +235,10 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
   } else {
     // One user found, update with new information
     if (currentUserId !== null && currentUserId !== existingUser.id) {
-      // Get the current user to check for conflicting KYC data
-      const currentUser = await prisma.user.findUnique({
-        where: { id: currentUserId }
-      });
-
-      if (!currentUser) {
-        throw new Error('Current user not found');
-      }
-
-      // Check if users have different (issuingState, personalNumber) - don't allow merge
-      const existingKycData = existingUser.issuingState && existingUser.personalNumber
-        ? { issuingState: existingUser.issuingState, personalNumber: existingUser.personalNumber }
-        : null;
-      const currentKycData = currentUser.issuingState && currentUser.personalNumber
-        ? { issuingState: currentUser.issuingState, personalNumber: currentUser.personalNumber }
-        : null;
-
-      if (existingKycData && currentKycData &&
-        (existingKycData.issuingState !== currentKycData.issuingState ||
-          existingKycData.personalNumber !== currentKycData.personalNumber)) {
-        throw new Error('Cannot merge users with different KYC data (issuingState, personalNumber)');
-      }
-
-      const updateData: any = {};
-      if (email || existingUser.email) updateData.email = email || existingUser.email;
-      if (name || existingUser.name) updateData.name = name || existingUser.name;
-      if (ethereumAddress || existingUser.ethereumAddress) updateData.ethereumAddress = ethereumAddress || existingUser.ethereumAddress;
-      if (orcidId || existingUser.orcidId) updateData.orcidId = orcidId || existingUser.orcidId;
-      if (githubHandle || existingUser.githubHandle) updateData.githubHandle = githubHandle || existingUser.githubHandle;
-      if (bitbucketHandle || existingUser.bitbucketHandle) updateData.bitbucketHandle = bitbucketHandle || existingUser.bitbucketHandle;
-      if (gitlabHandle || existingUser.gitlabHandle) updateData.gitlabHandle = gitlabHandle || existingUser.gitlabHandle;
-      if (issuingState || existingUser.issuingState) updateData.issuingState = issuingState || existingUser.issuingState;
-      if (personalNumber || existingUser.personalNumber) updateData.personalNumber = personalNumber || existingUser.personalNumber;
-      if (residenceCountry || existingUser.residenceCountry) updateData.residenceCountry = residenceCountry || existingUser.residenceCountry;
-
-      // Preserve boolean and numerical flags
-      updateData.onboarded = existingUser.onboarded || currentUser.onboarded;
-      updateData.emailVerified = existingUser.emailVerified || currentUser.emailVerified;
-      if (existingUser.shareInGDP !== null || currentUser.shareInGDP !== null) {
-        updateData.shareInGDP = Math.max(existingUser.shareInGDP || 0, currentUser.shareInGDP || 0);
-      }
-
-      // Preserve KYC Status (Receiver)
-      if (existingUser.kycStatus === 'APPROVED' || currentUser.kycStatus === 'APPROVED') {
-        updateData.kycStatus = 'APPROVED';
-        updateData.kycVerifiedAt = (existingUser.kycVerifiedAt && currentUser.kycVerifiedAt)
-          ? (existingUser.kycVerifiedAt > currentUser.kycVerifiedAt ? existingUser.kycVerifiedAt : currentUser.kycVerifiedAt)
-          : (existingUser.kycVerifiedAt || currentUser.kycVerifiedAt);
-        updateData.kycData = existingUser.kycData || currentUser.kycData;
-      } else if (existingUser.kycStatus === 'PENDING' || currentUser.kycStatus === 'PENDING') {
-        updateData.kycStatus = 'PENDING';
-      } else {
-        updateData.kycStatus = existingUser.kycStatus || currentUser.kycStatus;
-      }
-
-      // Preserve KYC Voting Status (Level 1)
-      if (existingUser.kycVotingStatus === 'APPROVED' || currentUser.kycVotingStatus === 'APPROVED') {
-        updateData.kycVotingStatus = 'APPROVED';
-        updateData.kycVotingVerifiedAt = (existingUser.kycVotingVerifiedAt && currentUser.kycVotingVerifiedAt)
-          ? (existingUser.kycVotingVerifiedAt > currentUser.kycVotingVerifiedAt ? existingUser.kycVotingVerifiedAt : currentUser.kycVotingVerifiedAt)
-          : (existingUser.kycVotingVerifiedAt || currentUser.kycVotingVerifiedAt);
-        updateData.kycVotingData = existingUser.kycVotingData || currentUser.kycVotingData;
-      } else if (existingUser.kycVotingStatus === 'PENDING' || currentUser.kycVotingStatus === 'PENDING') {
-        updateData.kycVotingStatus = 'PENDING';
-      } else {
-        updateData.kycVotingStatus = existingUser.kycVotingStatus || currentUser.kycVotingStatus;
-      }
-
-      // If there's a current user that's different from the existing user,
-      // merge the existing user's data into the current user and delete the existing user.
-      return await prisma.$transaction(async (tx) => {
-        // Handle bannedTill - use the more restrictive ban (later date)
-        if (existingUser.bannedTill && currentUser.bannedTill) {
-          updateData.bannedTill = existingUser.bannedTill > currentUser.bannedTill
-            ? existingUser.bannedTill
-            : currentUser.bannedTill;
-        } else if (existingUser.bannedTill) {
-          updateData.bannedTill = existingUser.bannedTill;
-        }
-
-        // Preserve the longer evaluation retry lock, if any.
-        if (existingUser.evaluationBlockedTill && currentUser.evaluationBlockedTill) {
-          const existingWins = existingUser.evaluationBlockedTill > currentUser.evaluationBlockedTill;
-          updateData.evaluationBlockedTill = existingWins
-            ? existingUser.evaluationBlockedTill
-            : currentUser.evaluationBlockedTill;
-          updateData.evaluationBlockReason = existingWins
-            ? existingUser.evaluationBlockReason
-            : currentUser.evaluationBlockReason;
-        } else if (existingUser.evaluationBlockedTill) {
-          updateData.evaluationBlockedTill = existingUser.evaluationBlockedTill;
-          updateData.evaluationBlockReason = existingUser.evaluationBlockReason;
-        } else if (currentUser.evaluationBlockedTill) {
-          updateData.evaluationBlockedTill = currentUser.evaluationBlockedTill;
-          updateData.evaluationBlockReason = currentUser.evaluationBlockReason;
-        }
-
-        // Transfer related data from existing user to current user
-        // Transfer sessions
-        await tx.session.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        // Transfer gas token distributions
-        await tx.gasTokenDistribution.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        // Transfer OpenAI logs
-        await tx.openAILog.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        // Transfer email verification tokens
-        await tx.emailVerificationToken.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        await tx.userEmail.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        // Transfer KYC tokens
-        await tx.kycToken.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        // Transfer pending transactions
-        await tx.pendingTransaction.updateMany({
-          where: { userId: existingUser.id },
-          data: { userId: currentUserId }
-        });
-
-        // Transfer ban votes cast by the user
-        await tx.banVote.updateMany({
-          where: { voterUserId: existingUser.id },
-          data: { voterUserId: currentUserId }
-        });
-
-        // Transfer ban votes received by the user
-        await tx.banVote.updateMany({
-          where: { targetUserId: existingUser.id },
-          data: { targetUserId: currentUserId }
-        });
-
-        // Legal requirement: user logs must remain for potential lawsuits, so we soft-delete instead of dropping rows.
-        const deletionTimestamp = new Date();
-        await tx.user.update({
-          where: { id: existingUser.id },
-          data: makeUserSoftDeletePayload(deletionTimestamp)
-        });
-
-        // Update the current user with merged data
-        return await tx.user.update({
-          where: { id: currentUserId },
-          data: updateData,
-          include: userWithEmailsInclude
-        });
-      });
+      // Account linking must never merge or transfer another account's sessions,
+      // financial history, KYC state, or votes merely because a provider identity
+      // is already claimed.
+      throw new IdentityConflictError();
     } else {
       // Either no current user or current user is the same as existing user
       const updateData: any = {};
@@ -416,9 +264,7 @@ async function findOrCreateUser(userData: UserData, currentUserId: number | null
 
 // Helper function to create session
 async function createSession(userId: number) {
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET!, {
-    expiresIn: '7d'
-  });
+  const rawToken = createOpaqueToken();
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
@@ -426,18 +272,52 @@ async function createSession(userId: number) {
   const session = await prisma.session.create({
     data: {
       userId,
-      token,
+      token: hashOpaqueToken(rawToken),
       expiresAt
     }
   });
 
-  return session;
+  return { ...session, token: rawToken };
 }
 
-// Ethereum login endpoint
-router.post('/login/ethereum', async (req, res): Promise<void> => {
+router.post('/challenge/ethereum', challengeRateLimit, async (req, res): Promise<void> => {
   try {
-    const { ethereumAddress, signature, message, name } = req.body;
+    const rawAddress = typeof req.body?.ethereumAddress === 'string' ? req.body.ethereumAddress.trim() : '';
+    if (!ethers.isAddress(rawAddress)) {
+      res.status(400).json({ error: 'Valid Ethereum address is required' });
+      return;
+    }
+
+    const address = ethers.getAddress(rawAddress).toLowerCase();
+    const challengeId = createOpaqueToken(24);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const message = [
+      'Sign in to Meritocracy',
+      `Address: ${address}`,
+      `Nonce: ${challengeId}`,
+      `Expires at: ${expiresAt.toISOString()}`,
+      'This request will not trigger a blockchain transaction.'
+    ].join('\n');
+
+    await prisma.ethereumAuthChallenge.create({
+      data: { id: challengeId, address, message, expiresAt }
+    });
+
+    await prisma.ethereumAuthChallenge.deleteMany({
+      where: { expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+    });
+
+    res.status(201).json({ challengeId, message, expiresAt });
+  } catch (error) {
+    console.error('Ethereum challenge creation failed:', error);
+    res.status(500).json({ error: 'Failed to create authentication challenge' });
+  }
+});
+
+// Ethereum login endpoint
+router.post('/login/ethereum', loginRateLimit, async (req, res): Promise<void> => {
+  try {
+    const { ethereumAddress, signature, message, challengeId } = req.body;
 
     if (!ethereumAddress) {
       res.status(400).json({ error: 'Ethereum address is required' });
@@ -454,9 +334,36 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
       return;
     }
 
+    if (typeof challengeId !== 'string' || challengeId.length < 16 || !ethers.isAddress(ethereumAddress)) {
+      res.status(400).json({ error: 'Valid authentication challenge is required' });
+      return;
+    }
+
+    const normalizedAddress = ethers.getAddress(ethereumAddress).toLowerCase();
+    const challenge = await prisma.ethereumAuthChallenge.findUnique({ where: { id: challengeId } });
+    if (
+      !challenge ||
+      challenge.usedAt ||
+      challenge.expiresAt <= new Date() ||
+      challenge.address !== normalizedAddress ||
+      challenge.message !== message
+    ) {
+      res.status(401).json({ error: 'Authentication challenge is invalid, expired, or already used' });
+      return;
+    }
+
     // Verify the Ethereum signature
-    if (!await verifyEthereumSignature(ethereumAddress, message, signature)) {
+    if (!await verifyEthereumSignature(normalizedAddress, message, signature)) {
       res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
+
+    const consumed = await prisma.ethereumAuthChallenge.updateMany({
+      where: { id: challengeId, usedAt: null, expiresAt: { gt: new Date() } },
+      data: { usedAt: new Date() }
+    });
+    if (consumed.count !== 1) {
+      res.status(401).json({ error: 'Authentication challenge has already been used' });
       return;
     }
 
@@ -464,7 +371,7 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
     const currentUserId = await getCurrentUserFromToken(req);
 
     const user = await findOrCreateUser({
-      ethereumAddress,
+      ethereumAddress: normalizedAddress,
     }, currentUserId);
 
     const session = await createSession(user.id);
@@ -478,146 +385,34 @@ router.post('/login/ethereum', async (req, res): Promise<void> => {
     });
   } catch (error: any) {
     console.error('Ethereum login error:', error);
+    if (error instanceof IdentityConflictError) {
+      res.status(409).json({ error: error.message });
+      return;
+    }
     res.status(500).json({ error: 'Failed to authenticate with Ethereum' });
   }
 });
 
-// ORCID OAuth callback endpoint
-router.post('/login/orcid', async (req, res): Promise<void> => {
-  try {
-    const { orcidId, accessToken, name, email } = req.body;
-
-    if (!orcidId) {
-      res.status(400).json({ error: 'ORCID ID is required' });
-      return;
-    }
-
-    // Get current user ID from token if present
-    const currentUserId = await getCurrentUserFromToken(req);
-
-    const user = await findOrCreateUser({
-      orcidId,
-    }, currentUserId);
-
-    const session = await createSession(user.id);
-
-    res.json({
-      user,
-      session: {
-        token: session.token,
-        expiresAt: session.expiresAt
-      }
-    });
-  } catch (error: any) {
-    console.error('ORCID login error:', error);
-    res.status(500).json({ error: 'Failed to authenticate with ORCID' });
-  }
-});
-
-// GitHub OAuth callback endpoint
-router.post('/login/github', async (req, res): Promise<void> => {
-  try {
-    const { githubHandle, accessToken, name, email } = req.body;
-
-    if (!githubHandle) {
-      res.status(400).json({ error: 'GitHub handle is required' });
-      return;
-    }
-
-    // Get current user ID from token if present
-    const currentUserId = await getCurrentUserFromToken(req);
-
-    const user = await findOrCreateUser({
-      githubHandle,
-    }, currentUserId);
-
-    const session = await createSession(user.id);
-
-    res.json({
-      user,
-      session: {
-        token: session.token,
-        expiresAt: session.expiresAt
-      }
-    });
-  } catch (error: any) {
-    console.error('GitHub login error:', error);
-    res.status(500).json({ error: 'Failed to authenticate with GitHub' });
-  }
-});
-
-// BitBucket OAuth callback endpoint
-router.post('/login/bitbucket', async (req, res): Promise<void> => {
-  try {
-    const { bitbucketHandle, accessToken, name, email } = req.body;
-
-    if (!bitbucketHandle) {
-      res.status(400).json({ error: 'BitBucket handle is required' });
-      return;
-    }
-
-    // Get current user ID from token if present
-    const currentUserId = await getCurrentUserFromToken(req);
-
-    const user = await findOrCreateUser({
-      bitbucketHandle,
-    }, currentUserId);
-
-    const session = await createSession(user.id);
-
-    res.json({
-      user,
-      session: {
-        token: session.token,
-        expiresAt: session.expiresAt
-      }
-    });
-  } catch (error: any) {
-    console.error('BitBucket login error:', error);
-    res.status(500).json({ error: 'Failed to authenticate with BitBucket' });
-  }
-});
-
-// GitLab OAuth callback endpoint
-router.post('/login/gitlab', async (req, res): Promise<void> => {
-  try {
-    const { gitlabHandle, accessToken, name, email } = req.body;
-
-    if (!gitlabHandle) {
-      res.status(400).json({ error: 'GitLab handle is required' });
-      return;
-    }
-
-    // Get current user ID from token if present
-    const currentUserId = await getCurrentUserFromToken(req);
-
-    const user = await findOrCreateUser({
-      gitlabHandle,
-    }, currentUserId);
-
-    const session = await createSession(user.id);
-
-    res.json({
-      user,
-      session: {
-        token: session.token,
-        expiresAt: session.expiresAt
-      }
-    });
-  } catch (error: any) {
-    console.error('GitLab login error:', error);
-    res.status(500).json({ error: 'Failed to authenticate with GitLab' });
-  }
-});
+// Provider handles are not credentials. Social authentication must use the OAuth flow below.
+for (const provider of ['orcid', 'github', 'bitbucket', 'gitlab']) {
+  router.post(`/login/${provider}`, (_req, res): void => {
+    res.status(410).json({ error: `Use the verified ${provider} OAuth flow` });
+  });
+}
 
 // Email registration endpoint
-router.post('/register/email', async (req, res): Promise<void> => {
+router.post('/register/email', emailRateLimit, async (req, res): Promise<void> => {
   try {
     const normalizedEmail = normalizeEmail(req.body.email || '');
     const { name } = req.body;
 
-    if (!normalizedEmail) {
+    if (!normalizedEmail || normalizedEmail.length > 320) {
       res.status(400).json({ error: 'Email is required' });
+      return;
+    }
+
+    if (name !== undefined && (typeof name !== 'string' || name.trim().length > 200)) {
+      res.status(400).json({ error: 'Name must be a string of at most 200 characters' });
       return;
     }
 
@@ -706,7 +501,7 @@ router.post('/register/email', async (req, res): Promise<void> => {
 
     if (requiresVerification) {
       const verificationToken = EmailService.generateVerificationToken();
-      console.log('About to send verification email for:', normalizedEmail, 'user:', user.id, 'token:', verificationToken);
+      console.log('Sending verification email for user:', user.id);
       const emailSent = await EmailService.sendVerificationEmail(normalizedEmail, verificationToken, user.id);
 
       if (!emailSent) {
@@ -728,18 +523,11 @@ router.post('/register/email', async (req, res): Promise<void> => {
       return;
     }
 
-    // For new users, create a temporary session that requires email verification
-    const session = await createSession(user.id);
-
     const responseMessage = 'Registration successful. Please check your email to verify your account.';
 
     res.json({
       message: responseMessage,
       user,
-      session: {
-        token: session.token,
-        expiresAt: session.expiresAt
-      },
       requiresVerification
     });
   } catch (error: any) {
@@ -749,7 +537,7 @@ router.post('/register/email', async (req, res): Promise<void> => {
 });
 
 // Email verification endpoint
-router.post('/verify/email', async (req, res): Promise<void> => {
+router.post('/verify/email', emailRateLimit, async (req, res): Promise<void> => {
   try {
     const { token } = req.body;
 
@@ -765,12 +553,22 @@ router.post('/verify/email', async (req, res): Promise<void> => {
       return;
     }
 
-    // Get the updated user data
+    // Possession of the one-time email link is the authentication proof. Do not
+    // create an authenticated session during registration, before that proof.
     const user = await getUserWithEmails(result.userId!);
+    if (!user || user.isDeleted) {
+      res.status(400).json({ error: 'User account is unavailable' });
+      return;
+    }
+    const session = await createSession(user.id);
 
     res.json({
       message: 'Email verified successfully',
-      user
+      user,
+      session: {
+        token: session.token,
+        expiresAt: session.expiresAt
+      }
     });
   } catch (error: any) {
     console.error('Email verification error:', error);
@@ -779,7 +577,7 @@ router.post('/verify/email', async (req, res): Promise<void> => {
 });
 
 // Resend verification email endpoint
-router.post('/resend-verification', async (req, res): Promise<void> => {
+router.post('/resend-verification', emailRateLimit, async (req, res): Promise<void> => {
   try {
     const requestedEmail = req.body?.email ? normalizeEmail(req.body.email) : null;
     const authHeader = req.headers.authorization;
@@ -792,7 +590,7 @@ router.post('/resend-verification', async (req, res): Promise<void> => {
 
     // Find session and get user
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { token: hashOpaqueToken(token) },
       include: {
         user: {
           include: userWithEmailsInclude
@@ -800,7 +598,7 @@ router.post('/resend-verification', async (req, res): Promise<void> => {
       }
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date() || session.user.isDeleted) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
@@ -848,7 +646,7 @@ router.post('/logout', async (req, res): Promise<void> => {
 
     // Delete the session
     await prisma.session.deleteMany({
-      where: { token }
+      where: { token: hashOpaqueToken(token) }
     });
 
     res.json({ message: 'Logged out successfully' });
@@ -871,7 +669,7 @@ router.get('/me', async (req, res): Promise<void> => {
 
     // Find session
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { token: hashOpaqueToken(token) },
       include: {
         user: {
           include: userWithEmailsInclude
@@ -879,7 +677,7 @@ router.get('/me', async (req, res): Promise<void> => {
       }
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date() || session.user.isDeleted) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
@@ -909,11 +707,11 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
 
     // Find session
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { token: hashOpaqueToken(token) },
       include: { user: true }
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date() || session.user.isDeleted) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
@@ -935,203 +733,168 @@ router.get('/kyc/status', async (req, res): Promise<void> => {
   }
 });
 
-// OAuth callback endpoints for secure token exchange
-// GET route for OAuth provider redirects
+const oauthProviders = new Set<OAuthProvider>(['github', 'orcid', 'bitbucket', 'gitlab']);
+const oauthCookieName = 'meritocracy_oauth_nonce';
+
+function getOAuthProvider(value: unknown): OAuthProvider | null {
+  return typeof value === 'string' && oauthProviders.has(value as OAuthProvider) ? value as OAuthProvider : null;
+}
+
+function getOAuthStateSecret(): string | null {
+  const secret = process.env.OAUTH_STATE_SECRET || process.env.JWT_SECRET;
+  return secret && Buffer.byteLength(secret, 'utf8') >= 32 ? secret : null;
+}
+
+function getCookie(req: express.Request, name: string): string | null {
+  const cookieHeader = req.header('cookie');
+  if (!cookieHeader) return null;
+  for (const entry of cookieHeader.split(';')) {
+    const separator = entry.indexOf('=');
+    if (separator < 0) continue;
+    if (entry.slice(0, separator).trim() === name) {
+      return entry.slice(separator + 1).trim();
+    }
+  }
+  return null;
+}
+
+function oauthCookie(value: string, maxAgeSeconds: number): string {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `${oauthCookieName}=${value}; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}; Path=/api/auth${secure}`;
+}
+
+function getOAuthAuthorizationUrl(provider: OAuthProvider, state: string): string | null {
+  const apiUrl = process.env.API_URL;
+  if (!apiUrl) return null;
+  const redirectUri = `${apiUrl}/api/auth/${provider}/callback`;
+
+  if (provider === 'github' && process.env.GITHUB_CLIENT_ID) {
+    const params = new URLSearchParams({ client_id: process.env.GITHUB_CLIENT_ID, redirect_uri: redirectUri, state });
+    return `https://github.com/login/oauth/authorize?${params}`;
+  }
+  if (provider === 'orcid' && process.env.ORCID_CLIENT_ID) {
+    const orcidDomain = process.env.ORCID_DOMAIN === 'sandbox.orcid.org' ? 'sandbox.orcid.org' : 'orcid.org';
+    const params = new URLSearchParams({ client_id: process.env.ORCID_CLIENT_ID, response_type: 'code', scope: '/authenticate', redirect_uri: redirectUri, state });
+    return `https://${orcidDomain}/oauth/authorize?${params}`;
+  }
+  if (provider === 'bitbucket' && process.env.BITBUCKET_CLIENT_ID) {
+    const params = new URLSearchParams({ client_id: process.env.BITBUCKET_CLIENT_ID, response_type: 'code', redirect_uri: redirectUri, state });
+    return `https://bitbucket.org/site/oauth2/authorize?${params}`;
+  }
+  if (provider === 'gitlab' && process.env.GITLAB_CLIENT_ID) {
+    const params = new URLSearchParams({ client_id: process.env.GITLAB_CLIENT_ID, response_type: 'code', scope: 'read_user openid', redirect_uri: redirectUri, state });
+    return `https://gitlab.com/oauth/authorize?${params}`;
+  }
+  return null;
+}
+
+function sendOAuthPopupMessage(res: express.Response, payload: unknown, status = 200): void {
+  const frontendOrigin = new URL(process.env.FRONTEND_URL || 'http://localhost:5173').origin;
+  const serializedPayload = JSON.stringify(payload).replace(/[<>&\u2028\u2029]/g, character => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`);
+  res.status(status);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");
+  res.send(`<!doctype html><meta charset="utf-8"><title>OAuth result</title><script>if(window.opener){window.opener.postMessage(${serializedPayload},${JSON.stringify(frontendOrigin)});}window.close();</script>`);
+}
+
+router.post('/oauth/:provider/start', oauthRateLimit, async (req, res): Promise<void> => {
+  const provider = getOAuthProvider(req.params.provider);
+  const stateSecret = getOAuthStateSecret();
+  if (!provider) {
+    res.status(400).json({ error: 'Unsupported OAuth provider' });
+    return;
+  }
+  if (!stateSecret) {
+    res.status(503).json({ error: 'OAuth state protection is not configured' });
+    return;
+  }
+
+  const nonce = createOpaqueToken(24);
+  const state = signOAuthState({
+    provider,
+    nonce,
+    userId: await getCurrentUserFromToken(req),
+    expiresAt: Date.now() + 10 * 60 * 1000
+  }, stateSecret);
+  const authorizationUrl = getOAuthAuthorizationUrl(provider, state);
+  if (!authorizationUrl) {
+    res.status(503).json({ error: `${provider} OAuth is not configured` });
+    return;
+  }
+
+  res.setHeader('Set-Cookie', oauthCookie(nonce, 10 * 60));
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ authorizationUrl });
+});
+
+// OAuth providers redirect here. The response sends credentials directly to the
+// exact configured frontend origin; provider codes and bearer tokens never enter URLs.
 router.get('/:provider/callback', async (req, res): Promise<void> => {
-  const { provider } = req.params;
-  const { code, state } = req.query as unknown as { code: string, state?: string };
+  const provider = getOAuthProvider(req.params.provider);
+  const code = typeof req.query.code === 'string' ? req.query.code : '';
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+  const stateSecret = getOAuthStateSecret();
+  res.setHeader('Set-Cookie', oauthCookie('', 0));
 
   try {
-    console.log(`=== OAuth Callback for ${provider} ===`);
-    console.log('Request details:', {
-      provider,
-      code: code ? `${String(code).substring(0, 10)}...` : 'null',
-      codeLength: code ? String(code).length : 0,
-      fullCode: code, // For debugging - remove in production
-      state: state ? `${String(state).substring(0, 10)}...` : 'null',
-      stateLength: state ? String(state).length : 0,
-      bodyKeys: req.body && typeof req.body === 'object' ? Object.keys(req.body) : [],
-      headers: {
-        'content-type': req.headers['content-type'],
-        'user-agent': req.headers['user-agent'],
-        origin: req.headers.origin,
-        authorization: req.headers.authorization ? 'present' : 'missing'
-      }
-    });
-
-    if (!code) {
-      console.error('No authorization code provided');
-      res.status(400).json({ error: 'Authorization code is required' });
+    if (!provider || !code || code.length > 4096 || !state || !stateSecret) {
+      sendOAuthPopupMessage(res, { type: 'OAUTH_ERROR', provider: provider || req.params.provider, error: 'Invalid OAuth callback' }, 400);
       return;
     }
 
-    // Check for duplicate requests and cached results
-    const requestKey = `${provider}:${code}`;
-
-    // First check if we have a cached result for this exact request
-    if (oauthResultCache.has(requestKey)) {
-      console.log('Returning cached OAuth result for duplicate request:', requestKey);
-      const cachedResult = oauthResultCache.get(requestKey);
-      res.json(cachedResult);
+    const statePayload = verifyOAuthState(state, stateSecret);
+    const stateCookie = getCookie(req, oauthCookieName);
+    if (
+      !statePayload ||
+      statePayload.provider !== provider ||
+      statePayload.expiresAt < Date.now() ||
+      !timingSafeEqualString(statePayload.nonce, stateCookie)
+    ) {
+      sendOAuthPopupMessage(res, { type: 'OAUTH_ERROR', provider, error: 'OAuth state validation failed' }, 401);
       return;
     }
-
-    // Check if the same request is currently in progress
-    if (ongoingOAuthRequests.has(requestKey)) {
-      console.log('Duplicate OAuth request detected, rejecting to avoid API errors:', requestKey);
-      res.status(429).json({ error: 'OAuth request already processing, please wait' });
-      return;
-    }
-
-    // Mark request as ongoing
-    ongoingOAuthRequests.set(requestKey, Date.now());
-
-    // Clean up the request tracking after completion (with timeout)
-    const cleanup = () => {
-      ongoingOAuthRequests.delete(requestKey);
-      // Also clean up cache after 5 minutes
-      setTimeout(() => {
-        oauthResultCache.delete(requestKey);
-      }, 5 * 60 * 1000);
-    };
-    setTimeout(cleanup, 30000); // Cleanup after 30 seconds regardless
 
     let userData: UserData;
-
     switch (provider) {
-      case 'github':
-        console.log('Calling GitHub OAuth handler...');
-        userData = await handleGitHubOAuth(code);
-        break;
-      case 'orcid':
-        console.log('Calling ORCID OAuth handler...');
-        userData = await handleORCIDOAuth(code);
-        break;
-      case 'bitbucket':
-        console.log('Calling BitBucket OAuth handler...');
-        userData = await handleBitBucketOAuth(code);
-        break;
-      case 'gitlab':
-        console.log('Calling GitLab OAuth handler...');
-        userData = await handleGitLabOAuth(code);
-        break;
-      default:
-        console.error('Unsupported OAuth provider:', provider);
-        res.status(400).json({ error: 'Unsupported OAuth provider' });
-        return;
+      case 'github': userData = await handleGitHubOAuth(code); break;
+      case 'orcid': userData = await handleORCIDOAuth(code); break;
+      case 'bitbucket': userData = await handleBitBucketOAuth(code); break;
+      case 'gitlab': userData = await handleGitLabOAuth(code); break;
     }
 
-    console.log('OAuth handler completed, user data:', {
-      provider,
-      userData: {
-        ...userData,
-        // Redact sensitive info in logs
-        email: userData.email ? '***@***.***' : null,
-        // name: userData.name || null
-      }
-    });
-
-    // Get current user ID from state parameter (OAuth state) or authorization header
-    let currentUserId: number | null = null;
-    if (state) {
-      // Token provided in state parameter (from OAuth redirect)
-      const session = await prisma.session.findUnique({
-        where: { token: state },
-        include: { user: true }
-      });
-      if (session && session.expiresAt > new Date()) {
-        currentUserId = session.user.id;
-      }
-    } else {
-      // Fallback to authorization header
-      currentUserId = await getCurrentUserFromToken(req);
-    }
-
-    // Use the existing login logic
-    const user = await findOrCreateUser(userData, currentUserId);
-
-    // If user was already authenticated, don't create a new session
-    let session;
+    let currentUserId = statePayload.userId;
     if (currentUserId !== null) {
-      // User was already authenticated, find their existing session
-      const existingSession = await prisma.session.findFirst({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' }
-      });
-      if (existingSession && existingSession.expiresAt > new Date()) {
-        session = existingSession;
-      } else {
-        session = await createSession(user.id);
-      }
-    } else {
-      // New user, create a new session
-      session = await createSession(user.id);
+      const currentUser = await prisma.user.findUnique({ where: { id: currentUserId }, select: { isDeleted: true } });
+      if (!currentUser || currentUser.isDeleted) currentUserId = null;
     }
 
-    console.log('User created/found and session created successfully');
-
-    // Prepare the response
-    const response = {
-      user,
-      session: {
-        token: session.token,
-        expiresAt: session.expiresAt
-      }
-    };
-
-    // Cache the successful result
-    oauthResultCache.set(requestKey, response);
-
-    // Clean up request tracking on success
-    cleanup();
-
-    // Redirect to frontend with success message
-    const frontendUrl = `${process.env.FRONTEND_URL}/auth/${provider}/callback?code=${code}`;
-    res.redirect(frontendUrl);
-  } catch (error: any) {
-    console.error(`=== ${req.params.provider} OAuth Error ===`);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+    const user = await findOrCreateUser(userData, currentUserId);
+    const session = await createSession(user.id);
+    sendOAuthPopupMessage(res, {
+      type: 'OAUTH_SUCCESS',
+      provider,
+      authData: { user, session: { token: session.token, expiresAt: session.expiresAt } }
     });
-
-    // Clean up request tracking on error
-    if (code) {
-      const requestKey = `${req.params.provider}:${code}`;
-      ongoingOAuthRequests.delete(requestKey);
-    }
-
-    res.status(500).json({
-      error: `Failed to authenticate with ${req.params.provider}`,
-      details: error.message
-    });
+  } catch (error) {
+    console.error(`${provider || 'unknown'} OAuth callback failed:`, error instanceof Error ? error.message : error);
+    const isConflict = error instanceof IdentityConflictError;
+    sendOAuthPopupMessage(
+      res,
+      { type: 'OAUTH_ERROR', provider: provider || req.params.provider, error: isConflict ? error.message : 'OAuth authentication failed' },
+      isConflict ? 409 : 502
+    );
   }
 });
 
 // OAuth handler functions
 async function handleGitHubOAuth(code: string): Promise<UserData> {
-  console.log('=== GitHub OAuth Handler ===');
-  console.log('Code received:', {
-    code: code ? `${String(code).substring(0, 10)}...` : 'null',
-    codeLength: code ? String(code).length : 0,
-    fullCode: code // Log full code for debugging
-  });
-
   const requestBody = {
     client_id: process.env.GITHUB_CLIENT_ID!,
     client_secret: process.env.GITHUB_CLIENT_SECRET!,
     code: code,
     redirect_uri: `${process.env.API_URL}/api/auth/github/callback`,
   };
-
-  console.log('GitHub token exchange request:', {
-    url: 'https://github.com/login/oauth/access_token',
-    client_id: requestBody.client_id,
-    redirect_uri: requestBody.redirect_uri,
-    code_preview: code ? `${String(code).substring(0, 10)}...` : 'null',
-    frontend_url: process.env.FRONTEND_URL
-  });
 
   // Exchange code for access token
   const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -1144,63 +907,32 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
   });
 
   const responseText = await tokenResponse.text();
-  console.log('GitHub token response:', {
-    status: tokenResponse.status,
-    statusText: tokenResponse.statusText,
-    headers: Object.fromEntries((tokenResponse.headers as any).entries()),
-    body: responseText
-  });
-
   if (!tokenResponse.ok) {
-    console.error('GitHub token exchange failed:', {
-      status: tokenResponse.status,
-      statusText: tokenResponse.statusText,
-      body: responseText
-    });
-    throw new Error(`Failed to exchange code for GitHub access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
+    throw new Error(`GitHub token exchange failed with status ${tokenResponse.status}`);
   }
 
   let tokenData: any;
   try {
     tokenData = JSON.parse(responseText);
   } catch (parseError) {
-    console.error('Failed to parse GitHub token response as JSON:', parseError);
-    throw new Error(`Invalid JSON response from GitHub: ${responseText}`);
+    throw new Error('GitHub returned an invalid token response');
   }
 
   if (tokenData.error) {
-    console.error('GitHub OAuth token error:', tokenData);
-    throw new Error(`GitHub OAuth error: ${tokenData.error_description || tokenData.error}`);
+    throw new Error('GitHub rejected the OAuth code');
   }
 
-  console.log('GitHub token exchange successful:', {
-    access_token: tokenData.access_token ? 'present' : 'missing',
-    token_type: tokenData.token_type,
-    scope: tokenData.scope
-  });
-  // Get user data from GitHub API
-  console.log('Fetching user data from GitHub API...');
+  if (typeof tokenData.access_token !== 'string') {
+    throw new Error('GitHub token response did not include an access token');
+  }
   const userResponse = await fetch('https://api.github.com/user', {
     headers: {
       'Authorization': `Bearer ${tokenData.access_token}`,
     },
   });
 
-  console.log('GitHub user API response:', {
-    status: userResponse.status,
-    statusText: userResponse.statusText,
-    ok: userResponse.ok
-  });
-
   if (!userResponse.ok) {
-    const errorText = await userResponse.text();
-    console.error('GitHub user API error response:', {
-      status: userResponse.status,
-      statusText: userResponse.statusText,
-      body: errorText,
-      headers: Object.fromEntries((userResponse.headers as any).entries())
-    });
-    throw new Error(`Failed to fetch GitHub user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
+    throw new Error(`GitHub user lookup failed with status ${userResponse.status}`);
   }
 
   const userData: any = await userResponse.json();
@@ -1213,13 +945,6 @@ async function handleGitHubOAuth(code: string): Promise<UserData> {
 }
 
 async function handleORCIDOAuth(code: string): Promise<UserData> {
-  console.log('=== ORCID OAuth Handler ===');
-  console.log('Code received:', {
-    code: code ? `${String(code).substring(0, 10)}...` : 'null',
-    codeLength: code ? String(code).length : 0,
-    fullCode: code // Log full code for debugging
-  });
-
   // Use sandbox domain for development/testing
   const orcidDomain = process.env.ORCID_DOMAIN || 'orcid.org';
   const tokenUrl = `https://${orcidDomain}/oauth/token`;
@@ -1232,14 +957,6 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
     redirect_uri: `${process.env.API_URL}/api/auth/orcid/callback`,
   };
 
-  console.log('ORCID token exchange request:', {
-    url: tokenUrl,
-    client_id: requestBody.client_id,
-    redirect_uri: requestBody.redirect_uri,
-    code_preview: code ? `${String(code).substring(0, 10)}...` : 'null',
-    orcid_domain: orcidDomain
-  });
-
   // Exchange code for access token
   const tokenResponse = await fetch(tokenUrl, {
     method: 'POST',
@@ -1251,41 +968,24 @@ async function handleORCIDOAuth(code: string): Promise<UserData> {
   });
 
   const responseText = await tokenResponse.text();
-  console.log('ORCID token response:', {
-    status: tokenResponse.status,
-    statusText: tokenResponse.statusText,
-    headers: Object.fromEntries((tokenResponse.headers as any).entries()),
-    body: responseText
-  });
-
   if (!tokenResponse.ok) {
-    console.error('ORCID token exchange failed:', {
-      status: tokenResponse.status,
-      statusText: tokenResponse.statusText,
-      body: responseText
-    });
-    throw new Error(`Failed to exchange code for ORCID access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
+    throw new Error(`ORCID token exchange failed with status ${tokenResponse.status}`);
   }
 
   let tokenData: any;
   try {
     tokenData = JSON.parse(responseText);
   } catch (parseError) {
-    console.error('Failed to parse ORCID token response as JSON:', parseError);
-    throw new Error(`Invalid JSON response from ORCID: ${responseText}`);
+    throw new Error('ORCID returned an invalid token response');
   }
 
   if (tokenData.error) {
-    console.error('ORCID OAuth token error:', tokenData);
-    throw new Error(`ORCID OAuth error: ${tokenData.error_description || tokenData.error}`);
+    throw new Error('ORCID rejected the OAuth code');
   }
 
-  console.log('ORCID token exchange successful:', {
-    access_token: tokenData.access_token ? 'present' : 'missing',
-    token_type: tokenData.token_type,
-    scope: tokenData.scope,
-    orcid: tokenData.orcid || 'not provided'
-  });
+  if (typeof tokenData.orcid !== 'string') {
+    throw new Error('ORCID token response did not include an ORCID identifier');
+  }
 
   // // Get user data from ORCID API
   // console.log('Fetching user data from ORCID API...');
@@ -1374,13 +1074,6 @@ async function handleBitBucketOAuth(code: string): Promise<UserData> {
 }
 
 async function handleGitLabOAuth(code: string): Promise<UserData> {
-  console.log('=== GitLab OAuth Handler ===');
-  console.log('Code received:', {
-    code: code ? `${String(code).substring(0, 10)}...` : 'null',
-    codeLength: code ? String(code).length : 0,
-    fullCode: code // Log full code for debugging
-  });
-
   const requestBody = {
     client_id: process.env.GITLAB_CLIENT_ID!,
     client_secret: process.env.GITLAB_CLIENT_SECRET!,
@@ -1388,13 +1081,6 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
     grant_type: 'authorization_code',
     redirect_uri: `${process.env.API_URL}/api/auth/gitlab/callback`,
   };
-
-  console.log('GitLab token exchange request:', {
-    url: 'https://gitlab.com/oauth/token',
-    client_id: requestBody.client_id,
-    redirect_uri: requestBody.redirect_uri,
-    code_preview: code ? `${String(code).substring(0, 10)}...` : 'null'
-  });
 
   // Exchange code for access token
   const tokenResponse = await fetch('https://gitlab.com/oauth/token', {
@@ -1406,74 +1092,35 @@ async function handleGitLabOAuth(code: string): Promise<UserData> {
   });
 
   const responseText = await tokenResponse.text();
-  console.log('GitLab token response:', {
-    status: tokenResponse.status,
-    statusText: tokenResponse.statusText,
-    headers: Object.fromEntries((tokenResponse.headers as any).entries()),
-    body: responseText
-  });
-
   if (!tokenResponse.ok) {
-    console.error('GitLab token exchange failed:', {
-      status: tokenResponse.status,
-      statusText: tokenResponse.statusText,
-      body: responseText
-    });
-    throw new Error(`Failed to exchange code for GitLab access token: ${tokenResponse.status} ${tokenResponse.statusText} - ${responseText}`);
+    throw new Error(`GitLab token exchange failed with status ${tokenResponse.status}`);
   }
 
   let tokenData: any;
   try {
     tokenData = JSON.parse(responseText);
   } catch (parseError) {
-    console.error('Failed to parse GitLab token response as JSON:', parseError);
-    throw new Error(`Invalid JSON response from GitLab: ${responseText}`);
+    throw new Error('GitLab returned an invalid token response');
   }
 
   if (tokenData.error) {
-    console.error('GitLab OAuth token error:', tokenData);
-    throw new Error(`GitLab OAuth error: ${tokenData.error_description || tokenData.error}`);
+    throw new Error('GitLab rejected the OAuth code');
   }
 
-  console.log('GitLab token exchange successful:', {
-    access_token: tokenData.access_token ? 'present' : 'missing',
-    token_type: tokenData.token_type,
-    scope: tokenData.scope
-  });
-
-  // Get user data from GitLab API (using V4 API instead of OIDC userinfo)
-  console.log('Fetching user data from GitLab V4 API...');
+  if (typeof tokenData.access_token !== 'string') {
+    throw new Error('GitLab token response did not include an access token');
+  }
   const userResponse = await fetch('https://gitlab.com/api/v4/user', {
     headers: {
       'Authorization': `Bearer ${tokenData.access_token}`,
     },
   });
 
-  console.log('GitLab user API response:', {
-    status: userResponse.status,
-    statusText: userResponse.statusText,
-    ok: userResponse.ok
-  });
-
   if (!userResponse.ok) {
-    const errorText = await userResponse.text();
-    console.error('GitLab user API error response:', {
-      status: userResponse.status,
-      statusText: userResponse.statusText,
-      body: errorText,
-      headers: Object.fromEntries((userResponse.headers as any).entries())
-    });
-    throw new Error(`Failed to fetch GitLab user data: ${userResponse.status} ${userResponse.statusText} - ${errorText}`);
+    throw new Error(`GitLab user lookup failed with status ${userResponse.status}`);
   }
 
   const userData: any = await userResponse.json();
-  console.log('GitLab user data received:', {
-    id: userData.id,
-    username: userData.username,
-    name: userData.name,
-    email: userData.email ? 'present' : 'not provided'
-  });
-
   return {
     gitlabHandle: userData.username,
     // name: userData.name,
@@ -1496,7 +1143,7 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
 
     // Find session and get user
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { token: hashOpaqueToken(token) },
       include: {
         user: {
           include: userWithEmailsInclude
@@ -1504,7 +1151,7 @@ router.post('/disconnect/:provider', async (req, res): Promise<void> => {
       }
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date() || session.user.isDeleted) {
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
@@ -1690,7 +1337,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const webhookSecretKey = process.env.DIDIT_WEBHOOK_KEY;
 
     // Ensure all required data is present
-    if (!signature || !timestamp || !webhookSecretKey) {
+    if (!signature || !timestamp || !webhookSecretKey || typeof rawBodyString !== 'string' || !rawBody || typeof rawBody !== 'object') {
       console.error('Missing required webhook verification data');
       res.status(401).json({ message: 'Unauthorized' });
       return;
@@ -1699,7 +1346,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     // Validate the timestamp to ensure the request is fresh (within 5 minutes)
     const currentTime = Math.floor(Date.now() / 1000);
     const incomingTime = parseInt(timestamp, 10);
-    if (Math.abs(currentTime - incomingTime) > 300) {
+    if (!Number.isFinite(incomingTime) || Math.abs(currentTime - incomingTime) > 300) {
       console.error('Request timestamp is stale');
       res.status(401).json({ message: 'Request timestamp is stale.' });
       return;
@@ -1710,22 +1357,11 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
     const expectedSignature = hmac.update(rawBodyString).digest('hex');
 
     // Compare using timingSafeEqual for security
-    const expectedSignatureBuffer = Buffer.from(expectedSignature, 'utf8');
-    const providedSignatureBuffer = Buffer.from(signature, 'utf8');
-
-    if (
-      expectedSignatureBuffer.length !== providedSignatureBuffer.length ||
-      !crypto.timingSafeEqual(expectedSignatureBuffer, providedSignatureBuffer)
-    ) {
-      console.error(`Invalid signature. Computed (${expectedSignature}), Provided (${signature})`);
-      res.status(401).json({
-        message: `Invalid signature. Computed (${expectedSignature}), Provided (${signature})`,
-      });
+    if (!timingSafeEqualString(expectedSignature, signature)) {
+      console.error('Didit webhook signature verification failed');
+      res.status(401).json({ message: 'Unauthorized' });
       return;
     }
-
-    // Signature is valid, proceed with processing
-    console.log('Didit KYC callback received and verified:', JSON.stringify(rawBody));
 
     const { session_id, status, webhook_type, vendor_data, decision, aml_screenings: aml, workflow_id } = rawBody;
 
@@ -1735,91 +1371,39 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       return;
     }
 
-    // Find the session by session_id from metadata (vendor_data is INSTALLATION_UID)
-    let session;
-    let user;
+    if (!['Approved', 'Declined', 'In Review', 'Abandoned'].includes(status)) {
+      res.status(400).json({ error: 'Unsupported KYC status' });
+      return;
+    }
 
-    // The session_id should be in the metadata from the Didit callback
     const metadata = rawBody.metadata;
     const sessionId = metadata?.session_id;
-
-    if (sessionId) {
-      // Find the session by session ID
-      session = await prisma.session.findUnique({
-        where: { id: sessionId },
-        include: { user: true }
-      });
-      if (session) {
-        user = session.user;
-      }
+    if (!process.env.INSTALLATION_UID || vendor_data !== process.env.INSTALLATION_UID || typeof sessionId !== 'string') {
+      res.status(401).json({ error: 'Webhook is not bound to this installation and session' });
+      return;
     }
 
-    if (!user) {
-      console.log('Session not found, creating new user for KYC webhook:', {
-        session_id,
-        vendor_data,
-        sessionId,
-        webhook_type,
-        status
-      });
-
-      // Create a new user for this KYC session
-      const kycData = decision?.id_verifications?.[0];
-      let userName: string | null = null;
-      let userEmail = null;
-
-      // Extract user information from KYC data if available
-      if (kycData) {
-        console.log(`KYC first/last name: ${kycData.first_name} ${kycData.last_name}`);
-        if (kycData.first_name && kycData.last_name) {
-          userName = `${kycData.first_name} ${kycData.last_name}`.trim();
-        } else if (kycData.first_name) {
-          userName = kycData.first_name;
-        } else if (kycData.last_name) {
-          userName = kycData.last_name;
-        }
-      }
-
-      // Create new user
-      user = await prisma.user.create({
-        data: {
-          name: userName,
-          ethereumAddress: null,
-          orcidId: null,
-          githubHandle: null,
-          bitbucketHandle: null,
-          gitlabHandle: null,
-          onboarded: false,
-          // Initialize correct status based on workflow
-          // If Voting Workflow: Set kycVotingStatus = PENDING
-          // If Receiver Workflow: Set kycStatus = PENDING (and kycVotingStatus = PENDING?)
-          kycStatus: workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID ? undefined : 'PENDING',
-          kycVotingStatus: 'PENDING' // Always set Voting to PENDING if we are creating a user via KYC? 
-          // If Receiver flow, we are starting a process that verifies identity, so effectively Voting is pending too.
-          // If Voting flow, obviously Voting is pending.
-          // So kycVotingStatus = 'PENDING' is safe for both.
-          // kycStatus (Receiver) should ONLY be PENDING if it is Receiver flow.
-        } as any
-      });
-
-      // Create a new session for this user
-      session = await createSession(user.id);
-
-      console.log('Created new user and session for KYC webhook:', {
-        userId: user.id,
-        sessionId: session.id,
-        originalSessionId: sessionId,
-        userName,
-        userEmail
-      });
+    const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
+    const isLivelinessFlow = !!process.env.DIDIT_WORKFLOW_LIVELINESS_ID && workflow_id === process.env.DIDIT_WORKFLOW_LIVELINESS_ID;
+    const isReceivingFlow = workflow_id === process.env.DIDIT_WORKFLOW_RECEIVING_ID;
+    const expectedWorkflowType = isLivelinessFlow ? 'LIVELINESS' : isVotingFlow ? 'VOTING' : isReceivingFlow ? 'RECEIVING' : null;
+    if (!expectedWorkflowType || metadata?.workflow_type !== expectedWorkflowType) {
+      res.status(400).json({ error: 'Unexpected KYC workflow' });
+      return;
     }
+
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId },
+      include: { user: true }
+    });
+    if (!session || session.user.isDeleted) {
+      res.status(404).json({ error: 'KYC session binding not found' });
+      return;
+    }
+    const user = session.user;
 
     // Update user KYC status based on Didit response
     const updateData: any = {};
-
-    const isVotingFlow = workflow_id === process.env.DIDIT_WORKFLOW_VOTING_ID;
-    const isLivelinessFlow = metadata?.workflow_type === 'LIVELINESS' ||
-      (!!process.env.DIDIT_WORKFLOW_LIVELINESS_ID && workflow_id === process.env.DIDIT_WORKFLOW_LIVELINESS_ID);
 
     // Handle different statuses according to Didit webhook format
     // Trust the main status 'Approved' as authoritative for the session
@@ -1870,7 +1454,6 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
       if (!isLivelinessFlow && decision && decision.id_verification) {
         const idData = decision.id_verification;
 
-        console.log(`KYC first/last name 2: ${idData.first_name} ${idData.last_name}`);
         // Store user name from KYC verification data
         if (idData.first_name && idData.last_name) {
           updateData.name = `${idData.first_name} ${idData.last_name}`.trim();
@@ -2022,7 +1605,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
 });
 
 // KYC initiation endpoint
-router.post('/kyc/initiate', async (req, res): Promise<void> => {
+router.post('/kyc/initiate', kycRateLimit, async (req, res): Promise<void> => {
   try {
     const { kycToken } = req.body;
 
@@ -2035,11 +1618,11 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
       const token = authHeader.substring(7);
 
       session = await prisma.session.findUnique({
-        where: { token },
+        where: { token: hashOpaqueToken(token) },
         include: { user: true }
       });
 
-      if (!session || session.expiresAt < new Date()) {
+      if (!session || session.expiresAt < new Date() || session.user.isDeleted) {
         res.status(401).json({ error: 'Invalid or expired token' });
         return;
       }
@@ -2048,7 +1631,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
 
       // Validate the KYC token if provided (Level 2)
       if (kycToken) {
-        const verificationResult = await EmailService.verifyKycToken(kycToken, user.id);
+        const verificationResult = await EmailService.consumeKycToken(kycToken, user.id);
         if (!verificationResult.success) {
           res.status(403).json({ error: verificationResult.error });
           return;
@@ -2061,28 +1644,16 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
         return;
       }
 
-      // Look up user by KYC token
-      const tokenRecord = await (prisma as any).kycToken.findUnique({
-        where: { token: kycToken },
-        include: { user: true }
-      });
-
-      if (!tokenRecord) {
-        res.status(403).json({ error: 'Invalid KYC token' });
+      const tokenResult = await EmailService.consumeKycToken(kycToken);
+      if (!tokenResult.success || !tokenResult.userId) {
+        res.status(403).json({ error: tokenResult.error || 'Invalid KYC token' });
         return;
       }
-
-      if (tokenRecord.used) {
-        res.status(403).json({ error: 'KYC token has already been used' });
+      user = await prisma.user.findUnique({ where: { id: tokenResult.userId } });
+      if (!user || user.isDeleted) {
+        res.status(403).json({ error: 'KYC account is unavailable' });
         return;
       }
-
-      if (tokenRecord.expiresAt < new Date()) {
-        res.status(403).json({ error: 'KYC token has expired' });
-        return;
-      }
-
-      user = tokenRecord.user;
 
       // Create a session for this user so they are authenticated
       session = await createSession(user.id);
@@ -2128,11 +1699,9 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
     });
 
     if (!diditResponse.ok) {
-      const errorText = await diditResponse.text();
       console.error('Didit API error:', {
         status: diditResponse.status,
-        statusText: diditResponse.statusText,
-        body: errorText
+        statusText: diditResponse.statusText
       });
       res.status(500).json({ error: 'Failed to initiate KYC session' });
       return;
@@ -2141,7 +1710,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
     const diditData: any = await diditResponse.json();
 
     if (!diditData.url) {
-      console.error('Didit API response missing URL:', diditData);
+      console.error('Didit API response did not include a verification URL');
       res.status(500).json({ error: 'Invalid response from KYC service' });
       return;
     }
@@ -2182,7 +1751,7 @@ router.post('/kyc/initiate', async (req, res): Promise<void> => {
 
 // Didit Liveliness initiation. An email link may authenticate the user with a
 // one-time token; an already signed-in user may also restart an overdue check.
-router.post('/liveliness/initiate', async (req, res): Promise<void> => {
+router.post('/liveliness/initiate', kycRateLimit, async (req, res): Promise<void> => {
   try {
     const { livelinessToken } = req.body as { livelinessToken?: string };
     const authHeader = req.headers.authorization;
@@ -2192,16 +1761,16 @@ router.post('/liveliness/initiate', async (req, res): Promise<void> => {
 
     if (authHeader?.startsWith('Bearer ')) {
       session = await prisma.session.findUnique({
-        where: { token: authHeader.substring(7) },
+        where: { token: hashOpaqueToken(authHeader.substring(7)) },
         include: { user: true }
       });
-      if (!session || session.expiresAt < new Date()) {
+      if (!session || session.expiresAt < new Date() || session.user.isDeleted) {
         res.status(401).json({ error: 'Invalid or expired token' });
         return;
       }
       user = session.user;
       if (livelinessToken) {
-        const verification = await EmailService.verifyKycToken(livelinessToken, user.id);
+        const verification = await EmailService.consumeKycToken(livelinessToken, user.id);
         if (!verification.success) {
           res.status(403).json({ error: verification.error });
           return;
@@ -2212,15 +1781,16 @@ router.post('/liveliness/initiate', async (req, res): Promise<void> => {
         res.status(401).json({ error: 'Please log in or use the link from the Liveliness email' });
         return;
       }
-      const tokenRecord = await (prisma as any).kycToken.findUnique({
-        where: { token: livelinessToken },
-        include: { user: true }
-      });
-      if (!tokenRecord || tokenRecord.used || tokenRecord.expiresAt < new Date()) {
-        res.status(403).json({ error: 'Invalid or expired Liveliness token' });
+      const tokenResult = await EmailService.consumeKycToken(livelinessToken);
+      if (!tokenResult.success || !tokenResult.userId) {
+        res.status(403).json({ error: tokenResult.error || 'Invalid or expired Liveliness token' });
         return;
       }
-      user = tokenRecord.user;
+      user = await prisma.user.findUnique({ where: { id: tokenResult.userId } });
+      if (!user || user.isDeleted) {
+        res.status(403).json({ error: 'Liveliness account is unavailable' });
+        return;
+      }
       session = await createSession(user.id);
       tokenAuthenticated = true;
     }
@@ -2241,7 +1811,7 @@ router.post('/liveliness/initiate', async (req, res): Promise<void> => {
       })
     });
     if (!diditResponse.ok) {
-      console.error('Didit Liveliness API error:', diditResponse.status, await diditResponse.text());
+      console.error('Didit Liveliness API error:', diditResponse.status);
       res.status(500).json({ error: 'Failed to initiate Didit Liveliness check' });
       return;
     }
@@ -2269,7 +1839,7 @@ router.post('/liveliness/initiate', async (req, res): Promise<void> => {
 });
 
 // Cleanup expired sessions (should be called periodically)
-router.delete('/sessions/cleanup', async (req, res) => {
+router.delete('/sessions/cleanup', requireAdmin, async (req, res) => {
   try {
     const deletedSessions = await prisma.session.deleteMany({
       where: {

@@ -8,7 +8,6 @@ import Navigation from './components/Navigation'
 import Home from './pages/Home'
 import Logs from './pages/Logs'
 import ConnectForm from './components/ConnectForm'
-import OAuthCallback from './components/OAuthCallback'
 import VerifyEmail from './pages/VerifyEmail'
 import Admin from './pages/Admin'
 import BanVoting from './pages/BanVoting'
@@ -48,10 +47,6 @@ function App() {
                       <Route path="/treasury" element={<Treasury />} />
                       {/* Redirect old login route to new connect route */}
                       <Route path="/login" element={<Navigate to="/connect" replace />} />
-                      <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
-                      <Route path="/auth/orcid/callback" element={<OAuthCallback provider="orcid" />} />
-                      <Route path="/auth/bitbucket/callback" element={<OAuthCallback provider="bitbucket" />} />
-                      <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
                     </Routes>
                   </main>
                   <footer>

@@ -310,8 +310,10 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   private async getLedger(config: IcpNetworkConfig): Promise<LedgerCanister> {
     if (!this.ledger) {
       this.ledger = LedgerCanister.create({
-        agent: await this.getAgent(config),
-        canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID)
+        // The ledger wrapper still exposes legacy @dfinity structural types while
+        // the implementation uses the equivalent @icp-sdk/core runtime values.
+        agent: await this.getAgent(config) as any,
+        canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID) as any
       });
     }
     return this.ledger;

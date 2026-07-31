@@ -1,6 +1,7 @@
 import express from 'express';
 import { GlobalDataService } from '../services/GlobalDataService.js';
 import { TokenPriceService } from '../services/TokenPriceService.js';
+import { requireAdmin } from '../middleware/privilegedAuth.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get('/gdp', async (req, res) => {
  * POST /api/global/refresh-gdp
  * Manually refresh world GDP data
  */
-router.post('/refresh-gdp', async (req, res) => {
+router.post('/refresh-gdp', requireAdmin, async (req, res) => {
   try {
     const success = await GlobalDataService.fetchAndUpdateWorldGdp();
     

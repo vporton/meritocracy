@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { multiNetworkGasTokenDistributionService } from '../services/MultiNetworkGasTokenDistributionService.js';
 import type { TokenDistributionOptions } from '../services/gas-networks/types.js';
 import { multiNetworkEthereumService } from '../services/MultiNetworkEthereumService.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/privilegedAuth.js';
 
 const router = Router();
 
@@ -9,6 +11,14 @@ const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') return undefined;
   const num = Number(value);
   return Number.isNaN(num) ? undefined : num;
+};
+
+const parseHistoryLimit = (value: unknown): number | null => {
+  const parsed = Number(value ?? 100);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 500) {
+    return null;
+  }
+  return parsed;
 };
 
 const parseTokenDistributionOverrides = (source: any): TokenDistributionOptions => {
@@ -75,7 +85,7 @@ router.get('/list', async (req, res) => {
     console.error('Error getting multi-network list:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to get network list'
     });
   }
 });
@@ -119,7 +129,7 @@ router.get('/status', async (req, res) => {
     console.error('Error getting multi-network status:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to get network status'
     });
   }
 });
@@ -145,7 +155,7 @@ router.get('/reserve-status', async (req, res) => {
     console.error('Error getting reserve status:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to get reserve status'
     });
   }
 });
@@ -154,27 +164,33 @@ router.get('/reserve-status', async (req, res) => {
  * GET /api/multi-network-gas/distribution-history
  * Get distribution history across all networks
  */
-router.get('/distribution-history', async (req, res) => {
+router.get('/distribution-history', requireAdmin, async (req, res) => {
   try {
     const { network, userId, limit = 100 } = req.query;
+    const historyLimit = parseHistoryLimit(limit);
+    if (historyLimit === null) {
+      res.status(400).json({ success: false, error: 'Limit must be an integer between 1 and 500' });
+      return;
+    }
 
     let distributions;
     if (network && typeof network === 'string') {
-      distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(network);
+      distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(network, historyLimit);
     } else if (userId && typeof userId === 'string') {
-      distributions = await multiNetworkGasTokenDistributionService.getUserDistributionHistory(parseInt(userId));
+      const parsedUserId = Number(userId);
+      if (!Number.isSafeInteger(parsedUserId) || parsedUserId < 1) {
+        res.status(400).json({ success: false, error: 'Invalid user ID' });
+        return;
+      }
+      distributions = await multiNetworkGasTokenDistributionService.getUserDistributionHistory(parsedUserId, historyLimit);
     } else {
-      distributions = await multiNetworkGasTokenDistributionService.getAllDistributionHistory();
+      distributions = await multiNetworkGasTokenDistributionService.getAllDistributionHistory(historyLimit);
     }
-
-    // Apply limit
-    const limitedDistributions = distributions.slice(0, parseInt(limit as string));
 
     res.json({
       success: true,
-      data: limitedDistributions,
-      total: distributions.length,
-      returned: limitedDistributions.length
+      data: distributions,
+      returned: distributions.length
     });
   } catch (error) {
     console.error('Error getting distribution history:', error);
@@ -191,7 +207,11 @@ router.get('/distribution-history', async (req, res) => {
  */
 router.get('/network/:networkName/status', async (req, res) => {
   try {
-    const { networkName } = req.params;
+    const networkName = req.params.networkName;
+    if (typeof networkName !== 'string' || !networkName) {
+      res.status(400).json({ success: false, error: 'Network name is required' });
+      return;
+    }
     const overrides = parseTokenDistributionOverrides(req.query);
     const status = await multiNetworkGasTokenDistributionService.getSingleNetworkStatus(networkName, overrides);
 
@@ -214,7 +234,7 @@ router.get('/network/:networkName/status', async (req, res) => {
     console.error(`Error getting status for network %s: %s`, req.params.networkName, error);
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to get network status'
     });
   }
 });
@@ -223,19 +243,26 @@ router.get('/network/:networkName/status', async (req, res) => {
  * GET /api/multi-network-gas/network/:networkName/distribution-history
  * Get distribution history for a specific network
  */
-router.get('/network/:networkName/distribution-history', async (req, res) => {
+router.get('/network/:networkName/distribution-history', requireAdmin, async (req, res) => {
   try {
-    const { networkName } = req.params;
+    const networkName = req.params.networkName;
+    if (typeof networkName !== 'string' || !networkName) {
+      res.status(400).json({ success: false, error: 'Network name is required' });
+      return;
+    }
     const { limit = 100 } = req.query;
+    const historyLimit = parseHistoryLimit(limit);
+    if (historyLimit === null) {
+      res.status(400).json({ success: false, error: 'Limit must be an integer between 1 and 500' });
+      return;
+    }
 
-    const distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(networkName);
-    const limitedDistributions = distributions.slice(0, parseInt(limit as string));
+    const distributions = await multiNetworkGasTokenDistributionService.getNetworkDistributionHistory(networkName, historyLimit);
 
     res.json({
       success: true,
-      data: limitedDistributions,
-      total: distributions.length,
-      returned: limitedDistributions.length,
+      data: distributions,
+      returned: distributions.length,
       network: networkName
     });
   } catch (error) {
@@ -251,20 +278,34 @@ router.get('/network/:networkName/distribution-history', async (req, res) => {
  * GET /api/multi-network-gas/user/:userId/distribution-history
  * Get distribution history for a specific user across all networks
  */
-router.get('/user/:userId/distribution-history', async (req, res) => {
+router.get('/user/:userId/distribution-history', requireAuth, async (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 100 } = req.query;
+    const historyLimit = parseHistoryLimit(limit);
+    if (historyLimit === null) {
+      res.status(400).json({ success: false, error: 'Limit must be an integer between 1 and 500' });
+      return;
+    }
+    const requestedUserId = Number(userId);
+    const authenticatedUserId = (req as any).userId as number;
 
-    const distributions = await multiNetworkGasTokenDistributionService.getUserDistributionHistory(parseInt(userId));
-    const limitedDistributions = distributions.slice(0, parseInt(limit as string));
+    if (!Number.isSafeInteger(requestedUserId) || requestedUserId < 1) {
+      res.status(400).json({ success: false, error: 'Invalid user ID' });
+      return;
+    }
+    if (requestedUserId !== authenticatedUserId) {
+      res.status(403).json({ success: false, error: 'Forbidden' });
+      return;
+    }
+
+    const distributions = await multiNetworkGasTokenDistributionService.getUserDistributionHistory(requestedUserId, historyLimit);
 
     res.json({
       success: true,
-      data: limitedDistributions,
-      total: distributions.length,
-      returned: limitedDistributions.length,
-      userId: parseInt(userId)
+      data: distributions,
+      returned: distributions.length,
+      userId: requestedUserId
     });
   } catch (error) {
     console.error(`Error getting distribution history for user %s: %s`, req.params.userId, error);
@@ -280,7 +321,7 @@ router.get('/user/:userId/distribution-history', async (req, res) => {
  * Manually trigger multi-network gas token distribution
  * Note: This endpoint should be protected in production
  */
-router.post('/run-distribution', async (req, res) => {
+router.post('/run-distribution', requireAdmin, async (req, res) => {
   try {
     console.log('🔄 Manual multi-network gas token distribution triggered via API');
 
@@ -311,7 +352,7 @@ router.post('/run-distribution', async (req, res) => {
  * POST /api/multi-network-gas/ensure-country-account
  * Create accounts for a specific country if they don't exist
  */
-router.post('/ensure-country-account', async (req, res) => {
+router.post('/ensure-country-account', requireAdmin, async (req, res) => {
   try {
     const { country } = req.body;
     if (!country || typeof country !== 'string' || country.length !== 2) {
@@ -358,7 +399,7 @@ router.post('/ensure-country-account', async (req, res) => {
  * POST /api/multi-network-gas/ensure-region-account
  * Create accounts for a specific region if they don't exist
  */
-router.post('/ensure-region-account', async (req, res) => {
+router.post('/ensure-region-account', requireAdmin, async (req, res) => {
   try {
     const { region } = req.body;
     const normalizedRegion = typeof region === 'string' ? region.trim().toUpperCase() : '';

@@ -3,6 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import './UserAuditLog.css';
 import { markdownToHtml } from '../utils/markdown';
+
+function safeExternalUrl(value: string): string | null {
+    try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
+    } catch {
+        return null;
+    }
+}
 import Canonical from '../components/Canonical';
 import { API_BASE_URL, User } from '../services/api';
 import { getFrontendOrigin } from '../config/origins';
@@ -264,9 +273,11 @@ export default function UserAuditLog() {
                                                     <ul>
                                                         {assessment.sources.map((source, sIndex) => (
                                                             <li key={sIndex}>
-                                                                <a href={source} target="_blank" rel="noopener noreferrer">
-                                                                    {source}
-                                                                </a>
+                                                        {safeExternalUrl(source) ? (
+                                                            <a href={safeExternalUrl(source)!} target="_blank" rel="noopener noreferrer">
+                                                                {source}
+                                                            </a>
+                                                        ) : source}
                                                             </li>
                                                         ))}
                                                     </ul>

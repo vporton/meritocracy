@@ -2,32 +2,15 @@ import express from 'express';
 import { GlobalDataService } from '../services/GlobalDataService.js';
 import { CronExecutionLockedError } from '../services/CronService.js';
 import { cronService } from '../services/cronServiceInstance.js';
+import { requireAdmin } from '../middleware/privilegedAuth.js';
 
 const router = express.Router();
-
-// Middleware to check admin password
-const authAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const providedPassword = req.headers['x-admin-password'];
-
-    if (!adminPassword) {
-        res.status(500).json({ error: 'Admin password not configured on server' });
-        return;
-    }
-
-    if (providedPassword !== adminPassword) {
-        res.status(401).json({ error: 'Unauthorized: Invalid admin password' });
-        return;
-    }
-
-    next();
-};
 
 /**
  * GET /api/admin/status
  * Get the current status of the crypto distribution
  */
-router.get('/status', authAdmin, async (req, res) => {
+router.get('/status', requireAdmin, async (req, res) => {
     try {
         const isEnabled = await GlobalDataService.isGasDistributionEnabled();
         const cronStatus = cronService.getCronStatus();
@@ -45,7 +28,7 @@ router.get('/status', authAdmin, async (req, res) => {
  * POST /api/admin/toggle-distribution
  * Enable or disable crypto distribution
  */
-router.post('/toggle-distribution', authAdmin, async (req: express.Request, res: express.Response) => {
+router.post('/toggle-distribution', requireAdmin, async (req: express.Request, res: express.Response) => {
     const { enabled } = req.body;
 
     if (typeof enabled !== 'boolean') {
@@ -69,7 +52,7 @@ router.post('/toggle-distribution', authAdmin, async (req: express.Request, res:
  * POST /api/admin/trigger-distribution
  * Manually trigger the crypto distribution
  */
-router.post('/trigger-distribution', authAdmin, async (req, res) => {
+router.post('/trigger-distribution', requireAdmin, async (req, res) => {
     try {
         // Note: This starts the distribution process in the background if it's long-running,
         // or waits for it if it's manageable. In CronService it returns the result.
@@ -94,7 +77,7 @@ router.post('/trigger-distribution', authAdmin, async (req, res) => {
  * POST /api/admin/trigger-re-worth-assessment
  * Manually trigger quarterly active-user review and re-worth-assessment for all onboarded users
  */
-router.post('/trigger-re-worth-assessment', authAdmin, async (_req, res) => {
+router.post('/trigger-re-worth-assessment', requireAdmin, async (_req, res) => {
     try {
         const result = await cronService.runQuarterlyEvaluation(true);
         res.json({

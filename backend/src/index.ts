@@ -114,7 +114,7 @@ app.use(cors({
       return;
     }
 
-    if (origin === frontendOrigin || isLocalhostOrigin(origin)) {
+    if (origin === frontendOrigin || (process.env.NODE_ENV !== 'production' && isLocalhostOrigin(origin))) {
       callback(null, true);
       return;
     }
@@ -126,6 +126,7 @@ app.use(cors({
 app.use(morgan('combined'));
 // Configure body parsing with raw body capture for webhook signature verification
 app.use(express.json({
+  limit: '256kb',
   verify: (req, res, buf, encoding) => {
     if (buf && buf.length) {
       // Store the raw body in the request object for webhook signature verification
@@ -133,7 +134,7 @@ app.use(express.json({
     }
   },
 }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '64kb' }));
 
 // Routes
 app.get('/', (req, res) => {

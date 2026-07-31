@@ -9,18 +9,9 @@ const router = express.Router();
 
 // Remove duplicate auth middleware - now imported from shared module
 
-type KycNameData = {
-  firstName?: string;
-  lastName?: string;
-  first_name?: string;
-  last_name?: string;
-};
-
 type LeaderboardUser = {
   id: number;
   name: string | null;
-  kycVotingData: string | null;
-  kycData: string | null;
 };
 
 type UpdateUserBody = {
@@ -49,39 +40,30 @@ function normalizeOptionalBoolean(value: string | boolean | null | undefined): b
   return value === 'true';
 }
 
-function extractKycName(kycData: string | null): string | null {
-  if (!kycData) return null;
-  try {
-    const parsed = JSON.parse(kycData) as KycNameData;
-    const firstName = parsed.firstName ?? parsed.first_name;
-    const lastName = parsed.lastName ?? parsed.last_name;
-    const name = [firstName, lastName].filter(Boolean).join(' ').trim();
-    return name || null;
-  } catch (error) {
-    console.warn('Failed to parse KYC data for display name:', error);
-    return null;
-  }
-}
-
 function getLeaderboardDisplayName(user: LeaderboardUser): string {
   const hasPlaceholderName = Boolean(user.name && /^User \d+$/.test(user.name));
   if (user.name && !hasPlaceholderName) {
     return user.name;
   }
 
-  const kycVotingName = extractKycName(user.kycVotingData);
-  if (kycVotingName) return kycVotingName;
-
-  const kycName = extractKycName(user.kycData);
-  if (kycName) return kycName;
-
   return user.name || `User ${user.id}`;
 }
 
-// GET /api/users - Get all users
+// GET /api/users - Get public user summaries only.
 router.get('/', async (req, res): Promise<void> => {
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({
+      where: { isDeleted: false },
+      select: {
+        id: true,
+        name: true,
+        onboarded: true,
+        shareInGDP: true,
+        createdAt: true
+      },
+      orderBy: { id: 'asc' },
+      take: 500
+    });
     res.json(users);
   } catch (error: any) {
     console.error('Error fetching users:', error);
@@ -92,10 +74,16 @@ router.get('/', async (req, res): Promise<void> => {
 // GET /api/users/leaderboard - Get GDP share leaderboard
 router.get('/leaderboard', async (req, res): Promise<void> => {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 100, 100); // Max 100 users
+    const requestedLimit = req.query.limit === undefined ? 100 : Number(req.query.limit);
+    if (!Number.isSafeInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+      res.status(400).json({ error: 'Limit must be an integer between 1 and 100' });
+      return;
+    }
+    const limit = requestedLimit;
 
     const users = await prisma.user.findMany({
       where: {
+        isDeleted: false,
         shareInGDP: {
           not: null
         }
@@ -103,8 +91,6 @@ router.get('/leaderboard', async (req, res): Promise<void> => {
       select: {
         id: true,
         name: true,
-        kycVotingData: true,
-        kycData: true,
         shareInGDP: true,
         // Don't include email for privacy
       },
@@ -187,37 +173,20 @@ router.get('/salary-stats', async (req, res): Promise<void> => {
 // GET /api/users/:id - Get user by ID
 router.get('/:id', async (req, res): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id < 1) {
+      res.status(400).json({ error: 'Invalid user ID' });
+      return;
+    }
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(id as string) },
+      where: { id, isDeleted: false },
       select: {
         id: true,
         name: true,
-        ethereumAddress: true,
-        solanaAddress: true,
-        bitcoinAddress: true,
-        bitcoinCashAddress: true,
-        polkadotAddress: true,
-        cosmosAddress: true,
-        stellarAddress: true,
-        icpAddress: true,
-        orcidId: true,
-        githubHandle: true,
-        bitbucketHandle: true,
-        gitlabHandle: true,
         onboarded: true,
         shareInGDP: true,
-        kycStatus: true,
-        kycVerifiedAt: true,
-        kycRejectedAt: true,
-        kycRejectionReason: true,
         createdAt: true,
-        updatedAt: true,
-        votingPleaUnsubscribed: true,
-        kycVotingStatus: true,
-        kycVotingVerifiedAt: true,
-        kycVotingRejectedAt: true,
-        kycVotingRejectionReason: true
+        updatedAt: true
       }
     });
 
@@ -283,46 +252,9 @@ router.get('/me/gdp-share', requireAuth, async (req, res): Promise<void> => {
   }
 });
 
-// POST /api/users - Create new user
+// Account creation must go through an authentication flow so ownership is established.
 router.post('/', async (req, res): Promise<void> => {
-  try {
-    const { email, name } = req.body;
-
-    if (!email) {
-      res.status(400).json({ error: 'Email is required' });
-      return;
-    }
-
-    const user = await prisma.user.create({
-      data: {
-        email: normalizeEmail(email),
-        name: name || null,
-        emails: {
-          create: {
-            email: normalizeEmail(email),
-            verified: false
-          }
-        }
-      },
-      include: {
-        emails: {
-          orderBy: [
-            { verified: 'desc' },
-            { createdAt: 'asc' }
-          ]
-        }
-      }
-    });
-
-    res.status(201).json(user);
-  } catch (error: any) {
-    console.error('Error creating user:', error);
-    if ((error as any).code === 'P2002') {
-      res.status(400).json({ error: 'Email already exists' });
-      return;
-    }
-    res.status(500).json({ error: 'Failed to create user' });
-  }
+  res.status(410).json({ error: 'Use /api/auth/register/email or a verified wallet/OAuth flow' });
 });
 
 // PUT /api/users/:id - Update user
@@ -343,10 +275,16 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       votingPleaUnsubscribed
     } = req.body as UpdateUserBody;
     const authenticatedUserId = (req as any).userId;
+    const parsedId = Number(id);
 
     // Check if user is trying to update their own account
-    if (parseInt(id as string) !== authenticatedUserId) {
+    if (!Number.isSafeInteger(parsedId) || parsedId < 1 || parsedId !== authenticatedUserId) {
       res.status(403).json({ error: 'Forbidden: You can only update your own account' });
+      return;
+    }
+
+    if (name !== undefined && name !== null && (typeof name !== 'string' || name.trim().length > 200)) {
+      res.status(400).json({ error: 'Name must be a string of at most 200 characters' });
       return;
     }
 
@@ -389,6 +327,9 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     const user = await prisma.$transaction(async (tx) => {
       if (email) {
         const normalized = normalizeEmail(email);
+        if (normalized.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+          throw Object.assign(new Error('Invalid email'), { code: 'INVALID_EMAIL' });
+        }
         const existingEmail = await tx.userEmail.findUnique({
           where: { email: normalized }
         });
@@ -407,7 +348,7 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       }
 
       await tx.user.update({
-        where: { id: parseInt(id as string) },
+        where: { id: parsedId },
         data: {
           ...(name !== undefined && { name: name === null ? null : String(name).trim() || null }),
           ...(normalizedEthereumAddress !== undefined && { ethereumAddress: normalizedEthereumAddress }),
@@ -436,6 +377,10 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       res.status(400).json({ error: 'Email already exists' });
       return;
     }
+    if ((error as any).code === 'INVALID_EMAIL') {
+      res.status(400).json({ error: 'Invalid email address' });
+      return;
+    }
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
@@ -445,9 +390,10 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
     const authenticatedUserId = (req as any).userId;
+    const parsedId = Number(id);
 
     // Check if user is trying to delete their own account
-    if (parseInt(id as string) !== authenticatedUserId) {
+    if (!Number.isSafeInteger(parsedId) || parsedId < 1 || parsedId !== authenticatedUserId) {
       res.status(403).json({ error: 'Forbidden: You can only delete your own account' });
       return;
     }
@@ -455,7 +401,7 @@ router.delete('/:id', requireAuth, async (req, res): Promise<void> => {
     const deletionTimestamp = new Date();
     // Legal requirement: User logs must be preserved for potential lawsuits, so we soft-delete instead of removing rows.
     await prisma.$transaction(async (tx) => {
-      await softDeleteUser(tx, parseInt(id as string), {
+      await softDeleteUser(tx, parsedId, {
         deletionTimestamp,
         removeEmails: true,
         removeSessions: true

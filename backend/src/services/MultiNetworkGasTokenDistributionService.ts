@@ -1782,29 +1782,36 @@ export class MultiNetworkGasTokenDistributionService {
   }
 
 
-  async getUserDistributionHistory(userId: number) {
+  async getUserDistributionHistory(userId: number, limit = 100) {
     return await this.prisma.gasTokenDistribution.findMany({
       where: { userId },
-      orderBy: { distributionDate: 'desc' }
+      orderBy: { distributionDate: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500)
     });
   }
 
-  async getNetworkDistributionHistory(networkId: string) {
+  async getNetworkDistributionHistory(networkId: string, limit = 100) {
     return await this.prisma.gasTokenDistribution.findMany({
       where: { network: networkId },
       include: {
-        user: true
+        user: {
+          select: { id: true, name: true }
+        }
       },
-      orderBy: { distributionDate: 'desc' }
+      orderBy: { distributionDate: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500)
     });
   }
 
-  async getAllDistributionHistory() {
+  async getAllDistributionHistory(limit = 100) {
     return await this.prisma.gasTokenDistribution.findMany({
       include: {
-        user: true
+        user: {
+          select: { id: true, name: true }
+        }
       },
-      orderBy: { distributionDate: 'desc' }
+      orderBy: { distributionDate: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500)
     });
   }
 

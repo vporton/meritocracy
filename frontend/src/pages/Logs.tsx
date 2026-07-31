@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { logsApi, DBLogEntry, LogsFilter, LogStats, LogTypes } from '../services/api';
+import { logsApi, DBLogEntry, LogsFilter, LogTypes } from '../services/api';
 import './Logs.css';
 import { Helmet } from 'react-helmet-async';
 import Canonical from '../components/Canonical';
@@ -10,9 +9,7 @@ type LogUserProfile = NonNullable<DBLogEntry['user']>;
 
 const Logs: React.FC = () => {
   const frontendOrigin = getFrontendOrigin();
-  const [searchParams] = useSearchParams();
   const [logs, setLogs] = useState<DBLogEntry[]>([]);
-  const [stats, setStats] = useState<LogStats | null>(null);
   const [logTypes, setLogTypes] = useState<LogTypes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,30 +18,19 @@ const Logs: React.FC = () => {
     limit: 50,
     offset: 0
   });
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [showMyLogs, setShowMyLogs] = useState(false);
 
   useEffect(() => {
-    const userId = searchParams.get('userId');
-    if (userId) {
-      setSelectedUserId(parseInt(userId));
-    }
     loadInitialData();
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     loadLogs();
-  }, [filter, selectedUserId, showMyLogs]);
+  }, [filter]);
 
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [statsResponse, typesResponse] = await Promise.all([
-        logsApi.getStats(),
-        logsApi.getTypes()
-      ]);
-
-      setStats(statsResponse.data.stats);
+      const typesResponse = await logsApi.getTypes();
       setLogTypes(typesResponse.data.logTypes);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load initial data');
@@ -58,14 +44,7 @@ const Logs: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      let response;
-      if (showMyLogs) {
-        response = await logsApi.getMy(filter);
-      } else if (selectedUserId) {
-        response = await logsApi.getUser(selectedUserId, filter);
-      } else {
-        response = await logsApi.getAll(filter);
-      }
+      const response = await logsApi.getMy(filter);
 
       setLogs(response.data.logs);
     } catch (err: any) {
@@ -81,12 +60,6 @@ const Logs: React.FC = () => {
       [key]: value,
       offset: 0 // Reset offset when filter changes
     }));
-  };
-
-  const handleUserIdChange = (userId: string) => {
-    const id = userId ? parseInt(userId) : null;
-    setSelectedUserId(id);
-    setShowMyLogs(false);
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -349,80 +322,10 @@ const Logs: React.FC = () => {
         </div>
       )}
 
-      {/* Stats Overview */}
-      {stats && (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>Total Logs</h3>
-            <p className="stat-number">{stats.totalLogs.toLocaleString()}</p>
-          </div>
-          <div className="stat-card">
-            <h3>Recent Activity</h3>
-            <p className="stat-number">{stats.recentActivity.toLocaleString()}</p>
-            <p className="stat-label">Last 24 hours</p>
-          </div>
-          {Object.entries(stats.logsByType).map(([type, count]) => (
-            <div key={type} className="stat-card">
-              <h3>{logTypes?.[type]?.name || type}</h3>
-              <p className="stat-number">{count.toLocaleString()}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Filters */}
       <div className="filters-section">
         <h3>Filters</h3>
         <div className="filters-grid">
-          <div className="filter-group">
-            <label>View Mode</label>
-            <div className="radio-group">
-              <label>
-                <input
-                  type="radio"
-                  name="viewMode"
-                  checked={!showMyLogs && !selectedUserId}
-                  onChange={() => {
-                    setShowMyLogs(false);
-                    setSelectedUserId(null);
-                  }}
-                />
-                All Logs
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="viewMode"
-                  checked={showMyLogs}
-                  onChange={() => setShowMyLogs(true)}
-                />
-                My Logs
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="viewMode"
-                  checked={!showMyLogs && selectedUserId !== null}
-                  onChange={() => setSelectedUserId(0)}
-                />
-                User Logs
-              </label>
-            </div>
-          </div>
-
-          {!showMyLogs && (
-            <div className="filter-group">
-              <label>User ID</label>
-              <input
-                type="number"
-                value={selectedUserId || ''}
-                onChange={(e) => handleUserIdChange(e.target.value)}
-                placeholder="Enter user ID"
-                disabled={showMyLogs}
-              />
-            </div>
-          )}
-
           <div className="filter-group">
             <label>Log Type</label>
             <select
@@ -473,8 +376,6 @@ const Logs: React.FC = () => {
           </button>
           <button onClick={() => {
             setFilter({ type: 'openai', limit: 50, offset: 0 });
-            setSelectedUserId(null);
-            setShowMyLogs(false);
           }}>
             Clear Filters
           </button>

@@ -128,6 +128,7 @@ interface AuthData {
   ethereumAddress?: string;
   signature?: string;
   message?: string;
+  challengeId?: string;
   name?: string;
   orcidId?: string;
   accessToken?: string;
@@ -244,7 +245,7 @@ export const authApi = {
     api.post(`/api/auth/login/${provider}`, userData),
   registerEmail: (email: string, name?: string): Promise<AxiosResponse<{ message: string; user: User; session?: { token: string; expiresAt: string }; requiresVerification?: boolean }>> =>
     api.post('/api/auth/register/email', { email, name }),
-  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User }>> =>
+  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User; session: { token: string; expiresAt: string } }>> =>
     api.post('/api/auth/verify/email', { token }),
   resendVerification: (email?: string): Promise<AxiosResponse<{ message: string }>> =>
     api.post('/api/auth/resend-verification', email ? { email } : {}),
@@ -252,6 +253,10 @@ export const authApi = {
     api.post(`/api/auth/disconnect/${provider}`, payload || {}),
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
+  createEthereumChallenge: (ethereumAddress: string): Promise<AxiosResponse<{ challengeId: string; message: string; expiresAt: string }>> =>
+    api.post('/api/auth/challenge/ethereum', { ethereumAddress }),
+  startOAuth: (provider: string): Promise<AxiosResponse<{ authorizationUrl: string }>> =>
+    api.post(`/api/auth/oauth/${provider}/start`, {}, { withCredentials: true }),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
   // KYC API
   initiateKyc: (kycToken?: string): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User; skipped?: boolean; message?: string }>> =>

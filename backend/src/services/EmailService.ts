@@ -194,11 +194,6 @@ If you think this is wrong, you can revisit your connected accounts and try agai
       const info = await this.transporter.sendMail(mailOptions);
       console.log('Verification email sent successfully:', info.messageId);
 
-      // In development mode, also log the verification details for easy testing
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Verification URL: ${verificationUrl}`);
-      }
-
       // Store the verification token in the database
       await this.storeVerificationToken(verificationToken, normalizedEmail, userId);
 
@@ -216,7 +211,7 @@ If you think this is wrong, you can revisit your connected accounts and try agai
 
       await prisma.emailVerificationToken.create({
         data: {
-          token,
+          token: this.hashVerificationToken(token),
           email,
           userId,
           expiresAt
@@ -231,7 +226,7 @@ If you think this is wrong, you can revisit your connected accounts and try agai
   async verifyEmailToken(token: string): Promise<{ success: boolean; userId?: number; error?: string }> {
     try {
       const verificationToken = await prisma.emailVerificationToken.findUnique({
-        where: { token },
+        where: { token: this.hashVerificationToken(token) },
         include: { user: true }
       });
 
@@ -247,11 +242,18 @@ If you think this is wrong, you can revisit your connected accounts and try agai
         return { success: false, error: 'Verification token has expired' };
       }
 
-      await prisma.$transaction(async (tx) => {
-        await tx.emailVerificationToken.update({
-          where: { id: verificationToken.id },
+      const consumed = await prisma.$transaction(async (tx) => {
+        const updateResult = await tx.emailVerificationToken.updateMany({
+          where: {
+            id: verificationToken.id,
+            used: false,
+            expiresAt: { gt: new Date() }
+          },
           data: { used: true }
         });
+        if (updateResult.count !== 1) {
+          return false;
+        }
 
         await tx.userEmail.upsert({
           where: { email: verificationToken.email },
@@ -267,7 +269,12 @@ If you think this is wrong, you can revisit your connected accounts and try agai
         });
 
         await syncPrimaryEmail(tx, verificationToken.userId);
+        return true;
       });
+
+      if (!consumed) {
+        return { success: false, error: 'Verification token has already been used or expired' };
+      }
 
       return { success: true, userId: verificationToken.userId };
     } catch (error) {
@@ -278,6 +285,10 @@ If you think this is wrong, you can revisit your connected accounts and try agai
 
   generateVerificationToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  private hashVerificationToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   async cleanupExpiredTokens(): Promise<void> {
@@ -626,7 +637,7 @@ You can stop receiving these emails from your account preferences on the Connect
 
       await (prisma as any).kycToken.create({
         data: {
-          token,
+          token: this.hashKycToken(token),
           userId,
           expiresAt
         }
@@ -637,17 +648,17 @@ You can stop receiving these emails from your account preferences on the Connect
     }
   }
 
-  async verifyKycToken(token: string, userId: number): Promise<{ success: boolean; error?: string }> {
+  async consumeKycToken(token: string, expectedUserId?: number): Promise<{ success: boolean; userId?: number; error?: string }> {
     try {
       const kycToken = await (prisma as any).kycToken.findUnique({
-        where: { token },
+        where: { token: this.hashKycToken(token) },
       });
 
       if (!kycToken) {
         return { success: false, error: 'Invalid KYC token' };
       }
 
-      if (kycToken.userId !== userId) {
+      if (expectedUserId !== undefined && kycToken.userId !== expectedUserId) {
         return { success: false, error: 'KYC token does not belong to this user' };
       }
 
@@ -659,26 +670,31 @@ You can stop receiving these emails from your account preferences on the Connect
         return { success: false, error: 'KYC token has expired' };
       }
 
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to verify KYC token:', error);
-      return { success: false, error: 'Failed to verify KYC token' };
-    }
-  }
-
-  async markKycTokenAsUsed(token: string): Promise<void> {
-    try {
-      await (prisma as any).kycToken.update({
-        where: { token },
+      const consumed = await (prisma as any).kycToken.updateMany({
+        where: {
+          id: kycToken.id,
+          used: false,
+          expiresAt: { gt: new Date() }
+        },
         data: { used: true }
       });
+      if (consumed.count !== 1) {
+        return { success: false, error: 'KYC token has already been used or expired' };
+      }
+
+      return { success: true, userId: kycToken.userId };
     } catch (error) {
-      console.error('Failed to mark KYC token as used:', error);
+      console.error('Failed to consume KYC token:', error);
+      return { success: false, error: 'Failed to verify KYC token' };
     }
   }
 
   generateKycToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  private hashKycToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   private formatEvaluationStatusLabel(status: string): string {

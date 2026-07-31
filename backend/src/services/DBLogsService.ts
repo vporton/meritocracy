@@ -137,7 +137,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
     const results = await this.prisma.aiResult.findMany({
       where: { customId: { in: logs.map(log => log.customId) } },
@@ -240,7 +241,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
 
     return tasks.map(task => {
@@ -331,7 +333,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
 
     return users.map(user => ({
@@ -392,7 +395,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
 
     return sessions.map(session => ({
@@ -403,7 +407,6 @@ export class DBLogsService {
       action: 'Authentication Session',
       details: {
         id: session.id,
-        token: session.token.substring(0, 20) + '...', // Truncate token for security
         expiresAt: session.expiresAt,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,

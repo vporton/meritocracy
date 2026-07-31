@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { adminApi } from '../services/api';
 import './Admin.css';
@@ -15,7 +15,7 @@ type AdminStatus = {
 };
 
 const Admin: React.FC = () => {
-    const [password, setPassword] = useState(localStorage.getItem('adminPassword') || '');
+    const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [status, setStatus] = useState<AdminStatus | null>(null);
     const [loading, setLoading] = useState(false);
@@ -23,19 +23,12 @@ const Admin: React.FC = () => {
     const [triggering, setTriggering] = useState(false);
     const [reassessing, setReassessing] = useState(false);
 
-    useEffect(() => {
-        if (password) {
-            checkStatus();
-        }
-    }, []);
-
     const checkStatus = async () => {
         setLoading(true);
         try {
             const response = await adminApi.getStatus(password);
             setStatus(response.data);
             setIsAuthenticated(true);
-            localStorage.setItem('adminPassword', password);
         } catch (error) {
             setIsAuthenticated(false);
             setMessage({ text: 'Invalid password or connection error', type: 'error' });
@@ -106,7 +99,6 @@ const Admin: React.FC = () => {
     };
 
     const logout = () => {
-        localStorage.removeItem('adminPassword');
         setIsAuthenticated(false);
         setPassword('');
         setStatus(null);

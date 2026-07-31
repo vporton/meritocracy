@@ -1,163 +1,31 @@
-# OAuth Troubleshooting Guide
+# OAuth troubleshooting
 
-## GitHub OAuth "Code passed is incorrect or expired" Error
+OAuth authorization starts at `POST /api/auth/oauth/:provider/start` and returns
+an authorization URL. All provider callbacks terminate on the backend.
 
-This error typically occurs due to one of the following issues:
+## Configuration checks
 
-### 1. Missing redirect_uri in Token Exchange
-**Issue**: GitHub requires the `redirect_uri` parameter to be included when exchanging the authorization code for an access token, and it must match exactly what was used in the authorization request.
+- `API_URL` is the externally reachable API origin, with no trailing path.
+- `FRONTEND_URL` is the exact browser origin allowed to receive the popup result.
+- `OAUTH_STATE_SECRET` contains at least 32 random bytes.
+- The provider client ID and secret exist only in backend configuration.
+- The provider callback exactly matches `${API_URL}/api/auth/<provider>/callback`.
+- Production API and frontend origins use HTTPS.
 
-**Solution**: ✅ **FIXED** - Added `redirect_uri` parameter to the token exchange request in `handleGitHubOAuth()`.
+There are no `VITE_*_CLIENT_ID` or frontend callback variables. If an old
+deployment still supplies them, remove those build arguments and rebuild.
 
-### 2. GitHub App Configuration Mismatch
-**Check these in your GitHub OAuth App settings:**
+## Common failures
 
-- **Authorization callback URL** must be exactly: `http://localhost:3001/api/auth/github/callback` (for development, assuming backend runs on port 3001)
-- **Client ID** must match your `GITHUB_CLIENT_ID` environment variable
-- **Client Secret** must match your `GITHUB_CLIENT_SECRET` environment variable
+| Symptom | Likely cause | Check |
+| --- | --- | --- |
+| `OAuth state protection is not configured` | Missing or short state secret | Set a 32-byte-or-longer `OAUTH_STATE_SECRET` |
+| `OAuth state validation failed` | Missing nonce cookie, stale popup, or tampered state | Allow the API cookie and start a fresh flow |
+| Provider reports redirect mismatch | Registered callback differs | Compare the provider setting with `API_URL` exactly |
+| Popup closes without login | Origin or opener mismatch | Check `FRONTEND_URL`, CORS, HTTPS, and popup blocking |
+| `OAuth authentication failed` | Code exchange or provider user lookup failed | Check backend connectivity and provider credentials |
+| Identity conflict | Provider identity already belongs to another user | Sign in to the owning account; accounts are not auto-merged |
 
-### 3. Environment Variables
-Ensure your `.env` files are properly configured:
-
-**Backend (.env):**
-```env
-GITHUB_CLIENT_ID=your-actual-github-client-id
-GITHUB_CLIENT_SECRET=your-actual-github-client-secret
-FRONTEND_URL=http://localhost:5173
-```
-
-**Frontend (.env):**
-```env
-VITE_GITHUB_CLIENT_ID=your-actual-github-client-id
-VITE_GITHUB_REDIRECT_URI=http://localhost:5173/auth/github/callback
-```
-
-### 4. Code Expiration
-OAuth authorization codes expire quickly (usually within 10 minutes). If there's a delay between:
-- User authorizing on GitHub → Code being sent to your callback → Backend processing
-The code might expire.
-
-### 5. Development vs Production URLs
-Make sure your GitHub OAuth App is configured for the correct environment:
-- **Development**: `http://localhost:5173/auth/github/callback`
-- **Production**: `https://yourdomain.com/auth/github/callback`
-
-## Debugging Steps
-
-### 1. Check Console Logs
-The updated backend now includes detailed logging. Check your backend console for:
-```
-OAuth callback for github: { code: 'abc123...', codeLength: 20 }
-GitHub token exchange failed: { status: 400, statusText: 'Bad Request', body: '...' }
-```
-
-### 2. Verify GitHub App Settings
-1. Go to GitHub → Settings → Developer settings → OAuth Apps
-2. Click on your app
-3. Verify:
-   - **Application name**: Any name you want
-   - **Homepage URL**: `http://localhost:5173`
-   - **Authorization callback URL**: `http://localhost:3001/api/auth/github/callback`
-
-### 3. Test OAuth Flow
-1. Clear browser cache/cookies
-2. Start backend: `cd backend && npm run dev`
-3. Start frontend: `cd frontend && npm run dev`
-4. Try GitHub login again
-5. Check browser network tab for failed requests
-6. Check backend console for detailed error logs
-
-### 4. Common GitHub OAuth Errors
-
-| Error | Cause | Solution |
-|-------|--------|----------|
-| `incorrect_client_credentials` | Wrong Client ID/Secret | Check environment variables |
-| `redirect_uri_mismatch` | Callback URL doesn't match | Update GitHub app settings |
-| `bad_verification_code` | Code expired or already used | Try fresh login attempt |
-
-## Automated Configuration Check
-
-> [!WARNING]
-> The automated configuration check script (`oauth-debug.js`) is currently under maintenance. Please follow the manual debugging steps below.
-
-## Manual Configuration Steps
-
-### Step 1: Create Environment Files
-
-If you haven't already, create your environment files:
-
-```bash
-# Backend
-cp backend/env.example backend/.env
-
-# Frontend  
-cp frontend/env.example frontend/.env
-```
-
-### Step 2: Configure GitHub OAuth App
-
-1. Go to GitHub → Settings → Developer settings → OAuth Apps → Your App
-2. Set these values:
-   - **Homepage URL**: `http://localhost:5173` 
-   - **Authorization callback URL**: `http://localhost:3001/api/auth/github/callback`
-
-### Step 3: Update Environment Variables
-
-**Backend (.env):**
-```env
-GITHUB_CLIENT_ID=your-actual-github-client-id-from-oauth-app
-GITHUB_CLIENT_SECRET=your-actual-github-client-secret-from-oauth-app
-FRONTEND_URL=http://localhost:5173
-```
-
-**Frontend (.env):**
-```env
-VITE_GITHUB_CLIENT_ID=your-actual-github-client-id-from-oauth-app
-VITE_GITHUB_REDIRECT_URI=http://localhost:5173/auth/github/callback
-```
-
-⚠️ **Important**: The `GITHUB_CLIENT_ID` must be identical in both files.
-
-### Step 4: Restart Servers
-
-```bash
-# Terminal 1 - Backend
-cd backend && npm run dev
-
-# Terminal 2 - Frontend
-cd frontend && npm run dev
-```
-
-## Enhanced Error Diagnostics
-
-The backend now includes detailed logging. When you encounter the error, check your backend console for output like:
-
-```
-=== OAuth Callback for github ===
-=== GitHub OAuth Handler ===
-GitHub token exchange request: { client_id: 'abc123', redirect_uri: 'http://localhost:5173/auth/github/callback' }
-GitHub OAuth token error: { error: 'bad_verification_code', error_description: 'The code passed is incorrect or expired.' }
-```
-
-This will help identify the specific issue (wrong client ID, mismatched redirect URI, expired code, etc.).
-
-## Quick Fixes for Common Issues
-
-### ❌ "incorrect_client_credentials"
-- Client ID or secret is wrong
-- Check GitHub OAuth App settings vs environment variables
-
-### ❌ "redirect_uri_mismatch" 
-- Callback URL in GitHub app ≠ redirect URI in code
-- Ensure both are exactly: `http://localhost:3001/api/auth/github/callback`
-
-### ❌ "bad_verification_code"
-- Code expired (try again immediately)
-- Code already used (try fresh login)
-- Network/timing issue (check for delays)
-
-### ❌ Missing environment variables
-- Ensure both frontend and backend .env files exist and are configured
-- Check that `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are correctly set in `backend/.env`
-
-If you're still experiencing issues, the enhanced logging will now provide much more specific error details to help identify the exact problem.
+The backend intentionally avoids logging authorization codes, provider access
+tokens, state values, or full provider responses. Diagnose with HTTP status,
+provider name, and correlation timestamps rather than adding secret-bearing logs.

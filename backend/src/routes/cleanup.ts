@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { DisconnectedAccountCleanupService } from '../services/DisconnectedAccountCleanupService.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/privilegedAuth.js';
 import { prisma } from '../lib/prisma.js';
 
 const router = Router();
@@ -9,9 +9,9 @@ const cleanupService = new DisconnectedAccountCleanupService(prisma);
 /**
  * GET /api/cleanup/stats
  * Get statistics about disconnected accounts without deleting them
- * Requires authentication
+ * Requires administrator authorization
  */
-router.get('/stats', requireAuth, async (req: Request, res: Response) => {
+router.get('/stats', requireAdmin, async (req: Request, res: Response) => {
   try {
     const gracePeriodDays = parseInt(req.query.gracePeriodDays as string) || 30;
     
@@ -58,9 +58,9 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
 /**
  * POST /api/cleanup/dry-run
  * Perform a dry run of the cleanup process to see what would be deleted
- * Requires authentication
+ * Requires administrator authorization
  */
-router.post('/dry-run', requireAuth, async (req: Request, res: Response) => {
+router.post('/dry-run', requireAdmin, async (req: Request, res: Response) => {
   try {
     const { gracePeriodDays = 30 } = req.body;
     
@@ -99,11 +99,11 @@ router.post('/dry-run', requireAuth, async (req: Request, res: Response) => {
 /**
  * POST /api/cleanup/execute
  * Execute the actual cleanup process to delete disconnected accounts
- * Requires authentication
+ * Requires administrator authorization
  * WARNING: This will permanently delete user accounts and their data
  * SECURITY: Banned and KYC accounts are never deleted to prevent ban evasion
  */
-router.post('/execute', requireAuth, async (req: Request, res: Response) => {
+router.post('/execute', requireAdmin, async (req: Request, res: Response) => {
   try {
     const { gracePeriodDays = 30, confirmDeletion = false } = req.body;
     

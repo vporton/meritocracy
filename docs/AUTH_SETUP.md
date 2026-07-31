@@ -1,196 +1,76 @@
-# Authentication System Setup Guide
+# Authentication setup
 
-## Overview
+The API is the OAuth client and the sole issuer of application sessions. The
+frontend never receives provider client secrets, never exchanges authorization
+codes, and never places bearer sessions in OAuth URLs.
 
-This application includes a comprehensive multi-provider authentication system that supports:
+## Required backend configuration
 
-- **Ethereum/Web3 Login** (using WAGMI)
-- **ORCID OAuth** (for academic users)
-- **GitHub OAuth** (for developers)
-- **BitBucket OAuth** (for Atlassian users)
-- **GitLab OAuth** (for GitLab users)
-
-## Key Features
-
-- **Automatic User Merging**: If you log in with different providers that belong to the same person, the system automatically merges your accounts
-- **Session Management**: JWT-based sessions with automatic cleanup
-- **Secure Authentication**: All OAuth flows handled securely with proper token management
-
-## Backend Setup
-
-### 1. Environment Configuration
-
-Copy the backend environment file and configure it:
-
-```bash
-cp backend/env.example backend/.env
-```
-
-Update the following variables in `backend/.env`:
+Copy `backend/env.example` to `backend/.env` and configure:
 
 ```env
-# Database
-DATABASE_URL="file:./dev.db"
+API_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:5173
+OAUTH_STATE_SECRET=<at-least-32-random-bytes>
 
-# JWT Secret (change this in production!)
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-
-# OAuth Provider Configuration
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
-
-ORCID_CLIENT_ID=your-orcid-client-id
-ORCID_CLIENT_SECRET=your-orcid-client-secret
-
-BITBUCKET_CLIENT_ID=your-bitbucket-client-id
-BITBUCKET_CLIENT_SECRET=your-bitbucket-client-secret
-
-GITLAB_CLIENT_ID=your-gitlab-client-id
-GITLAB_CLIENT_SECRET=your-gitlab-client-secret
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+ORCID_CLIENT_ID=...
+ORCID_CLIENT_SECRET=...
+BITBUCKET_CLIENT_ID=...
+BITBUCKET_CLIENT_SECRET=...
+GITLAB_CLIENT_ID=...
+GITLAB_CLIENT_SECRET=...
 ```
 
-### 2. Database Migration
+Generate `OAUTH_STATE_SECRET` with a cryptographically secure generator, for
+example `openssl rand -base64 48`. `JWT_SECRET` is accepted only as a temporary
+fallback and must also contain at least 32 bytes.
 
-The authentication system requires a database migration to add the Session model:
+Each provider callback must point to the API, not the frontend:
+
+- GitHub: `${API_URL}/api/auth/github/callback`
+- ORCID: `${API_URL}/api/auth/orcid/callback`
+- Bitbucket: `${API_URL}/api/auth/bitbucket/callback`
+- GitLab: `${API_URL}/api/auth/gitlab/callback`
+
+The frontend only needs `VITE_API_URL`, wallet configuration, and other
+non-OAuth public settings. OAuth client IDs do not belong in frontend build
+arguments.
+
+## Flow and security properties
+
+1. The frontend calls `POST /api/auth/oauth/:provider/start` with credentials
+   enabled.
+2. The API creates a signed, ten-minute state value and binds it to an HttpOnly,
+   SameSite nonce cookie.
+3. The popup navigates to the returned provider authorization URL.
+4. The provider redirects to the API callback. The API validates the signature,
+   provider, expiry, and nonce before exchanging the one-time code.
+5. The API sends the result directly to the exact configured frontend origin
+   with `postMessage`; authorization codes and bearer sessions never enter a URL.
+
+Provider handles submitted directly to `/login/:provider` are not credentials
+and are rejected. Ethereum login similarly requires a fresh API challenge and a
+valid wallet signature. Email registration does not authenticate the user;
+successful consumption of the one-time email verification link creates the
+session.
+
+Session, email-verification, and KYC email-link credentials are stored as
+SHA-256 digests. Applying migration `20260731000000_secure_authentication`
+invalidates legacy plaintext credentials and therefore signs existing users out.
+
+## Operations
+
+Run all workspace commands from the repository root:
 
 ```bash
-cd backend
-npm run db:migrate
+nvm use stable
+npm run db:setup
+npm run build
+npm test
 ```
 
-### 3. OAuth App Setup
-
-You need to create OAuth applications for each provider:
-
-#### GitHub OAuth App
-1. Go to GitHub Settings > Developer settings > OAuth Apps
-2. Click "New OAuth App"
-3. Set Authorization callback URL to: `http://localhost:3001/api/auth/github/callback`
-4. Copy the Client ID and Client Secret to your `.env` file
-
-> [!NOTE]
-> In development, both the frontend (`http://localhost:5173/auth/github/callback`) and the backend (`http://localhost:3001/api/auth/github/callback`) redirect URIs are used. The frontend initiates the flow and receives the code, then sends it to the backend.
-
-#### ORCID OAuth App
-1. Go to ORCID Developer Tools
-2. Register a new application
-3. Set redirect URI to: `http://localhost:3001/api/auth/orcid/callback`
-4. Copy the Client ID and Client Secret to your `.env` file
-
-#### BitBucket OAuth App
-1. Go to BitBucket Settings > OAuth consumers
-2. Create a new consumer
-3. Set callback URL to: `http://localhost:3001/api/auth/bitbucket/callback`
-4. Copy the Key and Secret to your `.env` file
-
-#### GitLab OAuth App
-1. Go to GitLab Applications settings
-2. Create a new application
-3. Set redirect URI to: `http://localhost:3001/api/auth/gitlab/callback`
-4. Select the **api**, **read_user**, and **openid** scopes in the Scopes section
-5. Copy the Application ID and Secret to your `.env` file
-
-## Frontend Setup
-
-### 1. Environment Configuration
-
-Copy the frontend environment file:
-
-```bash
-cp frontend/env.example frontend/.env
-```
-
-Update the following variables in `frontend/.env`:
-
-```env
-# API Configuration
-VITE_API_URL=http://localhost:3001
-
-# Web3/Ethereum Configuration
-VITE_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
-
-# OAuth Configuration (Client IDs only - secrets stay on backend)
-VITE_GITHUB_CLIENT_ID=your-github-client-id
-VITE_ORCID_CLIENT_ID=your-orcid-client-id
-VITE_BITBUCKET_CLIENT_ID=your-bitbucket-client-id
-VITE_GITLAB_CLIENT_ID=your-gitlab-client-id
-```
-
-### 2. WalletConnect Setup (for Ethereum login)
-
-1. Go to [WalletConnect Cloud](https://cloud.walletconnect.com/)
-2. Create a new project
-3. Copy the Project ID to your `.env` file as `VITE_WALLETCONNECT_PROJECT_ID`
-
-## Running the Application
-
-1. Start the backend:
-```bash
-cd backend
-npm run dev
-```
-
-2. Start the frontend:
-```bash
-cd frontend
-npm run dev
-```
-
-3. Visit `http://localhost:5173/login` to test the authentication system
-
-## API Endpoints
-
-The authentication system provides the following API endpoints:
-
-- `POST /api/auth/login/ethereum` - Ethereum wallet login
-- `POST /api/auth/login/orcid` - ORCID OAuth login
-- `POST /api/auth/login/github` - GitHub OAuth login
-- `POST /api/auth/login/bitbucket` - BitBucket OAuth login
-- `POST /api/auth/login/gitlab` - GitLab OAuth login
-- `POST /api/auth/register/email` - Register/Login with email (sends verification)
-- `POST /api/auth/verify/email` - Verify email with token
-- `POST /api/auth/resend-verification` - Resend verification email
-- `POST /api/auth/logout` - Logout (invalidate session)
-- `GET /api/auth/me` - Get current user profile
-- `GET /api/auth/kyc/status` - Get user KYC status
-- `POST /api/auth/disconnect/:provider` - Unlink a specific provider (ethereum, github, kyc, etc.)
-- `DELETE /api/auth/sessions/cleanup` - Cleanup expired sessions
-
-## User Matching Logic
-
-The system implements intelligent user matching and merging:
-
-1. **No existing user**: Creates a new user account
-2. **One matching user**: Updates the existing user with new provider information
-3. **Multiple matching users**: Deletes the old user accounts and creates a new merged account
-
-Matching is based on unique fields in the User model:
-- `email`
-- `ethereumAddress`
-- `orcidId`
-- `githubHandle`
-- `bitbucketHandle`
-- `gitlabHandle`
-
-## Security Considerations
-
-- JWT secrets should be strong and unique in production
-- OAuth client secrets must never be exposed to the frontend
-- All OAuth flows are handled securely with proper token validation
-- Sessions have automatic expiration (7 days by default)
-- Regular session cleanup prevents token accumulation
-
-## Troubleshooting
-
-### Common Issues
-
-1. **OAuth callback errors**: Ensure redirect URIs in OAuth apps match exactly what's in your `.env` file and point to the backend API (`http://localhost:3001/api/auth/{provider}/callback`)
-2. **Wallet connection issues**: Ensure WalletConnect Project ID is correctly configured
-3. **CORS issues**: Ensure frontend URL is properly configured in backend CORS settings
-
-### Testing OAuth Without Full Setup
-
-For development, you can test the authentication flow by:
-1. Commenting out OAuth provider buttons you haven't configured
-2. Using the Ethereum login with a test wallet
-3. Creating test user accounts manually in the database
+OAuth requires the browser to accept the API nonce cookie. Keep `API_URL` and
+`FRONTEND_URL` on compatible HTTPS origins in production and configure CORS for
+the exact frontend origin.

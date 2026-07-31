@@ -179,7 +179,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setToken(session.token);
         localStorage.setItem('authToken', session.token);
         notifyAuthSync();
-      } else {
+      } else if (localStorage.getItem('authToken')) {
+        // An already-authenticated user may be attaching an additional email.
         setUser(userData);
         notifyAuthSync();
       }
@@ -206,9 +207,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
 
       const response = await authApi.verifyEmail(token);
-      const { user: userData } = response.data;
+      const { user: userData, session } = response.data;
 
       setUser(userData);
+      setToken(session.token);
+      localStorage.setItem('authToken', session.token);
       notifyAuthSync();
 
       return {

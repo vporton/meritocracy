@@ -1,6 +1,7 @@
 import express from 'express';
 import { DBLogsService, LogsFilter } from '../services/DBLogsService.js';
-import { requireAuth, getCurrentUserFromToken } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/privilegedAuth.js';
 import { prisma } from '../lib/prisma.js';
 import { getUserEmailAddresses, obfuscateEmailsInValue } from '../services/userEmailUtils.js';
 
@@ -19,6 +20,27 @@ async function obfuscateUserEmailsInLogs(logs: any[], userId: number) {
   }));
 }
 
+function parseUserLogFilter(query: express.Request['query']): LogsFilter | null {
+  const validTypes = ['openai', 'task', 'user', 'session'];
+  const type = typeof query.type === 'string' ? query.type : undefined;
+  const startDate = typeof query.startDate === 'string' ? new Date(query.startDate) : undefined;
+  const endDate = typeof query.endDate === 'string' ? new Date(query.endDate) : undefined;
+  const limit = query.limit === undefined ? 100 : Number(query.limit);
+  const offset = query.offset === undefined ? 0 : Number(query.offset);
+
+  if (
+    (type !== undefined && !validTypes.includes(type)) ||
+    (startDate && Number.isNaN(startDate.getTime())) ||
+    (endDate && Number.isNaN(endDate.getTime())) ||
+    !Number.isSafeInteger(limit) || limit < 1 || limit > 200 ||
+    !Number.isSafeInteger(offset) || offset < 0 || offset > 10_000
+  ) {
+    return null;
+  }
+
+  return { type: type as LogsFilter['type'], startDate, endDate, limit, offset };
+}
+
 // Remove duplicate auth middleware - now imported from shared module
 
 /**
@@ -33,7 +55,7 @@ async function obfuscateUserEmailsInLogs(logs: any[], userId: number) {
  * - limit: Number of logs to return (default: 100)
  * - offset: Number of logs to skip (default: 0)
  */
-router.get('/', async (req, res): Promise<void> => {
+router.get('/', requireAdmin, async (req, res): Promise<void> => {
   try {
     const {
       userId,
@@ -118,8 +140,7 @@ router.get('/', async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Error fetching logs:', error);
     res.status(500).json({
-      error: 'Failed to fetch logs',
-      message: error.message
+      error: 'Failed to fetch logs'
     });
   }
 });
@@ -131,22 +152,12 @@ router.get('/', async (req, res): Promise<void> => {
 router.get('/my', requireAuth, async (req, res): Promise<void> => {
   try {
     const userId = (req as any).userId;
-    const {
-      type,
-      startDate,
-      endDate,
-      limit,
-      offset
-    } = req.query;
-
-    const filter: LogsFilter = {
-      userId,
-      type: type as any,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined
-    };
+    const parsedFilter = parseUserLogFilter(req.query);
+    if (!parsedFilter) {
+      res.status(400).json({ error: 'Invalid log filter' });
+      return;
+    }
+    const filter: LogsFilter = { ...parsedFilter, userId };
 
     const rawLogs = await dbLogsService.getUserLogs(userId, filter);
     const logs = await obfuscateUserEmailsInLogs(rawLogs, userId);
@@ -162,8 +173,7 @@ router.get('/my', requireAuth, async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Error fetching user logs:', error);
     res.status(500).json({
-      error: 'Failed to fetch user logs',
-      message: error.message
+      error: 'Failed to fetch user logs'
     });
   }
 });
@@ -188,22 +198,12 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    const {
-      type,
-      startDate,
-      endDate,
-      limit,
-      offset
-    } = req.query;
-
-    const filter: LogsFilter = {
-      userId: requestedUserId,
-      type: type as any,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined
-    };
+    const parsedFilter = parseUserLogFilter(req.query);
+    if (!parsedFilter) {
+      res.status(400).json({ error: 'Invalid log filter' });
+      return;
+    }
+    const filter: LogsFilter = { ...parsedFilter, userId: requestedUserId };
 
     const rawLogs = await dbLogsService.getUserLogs(requestedUserId, filter);
     const logs = await obfuscateUserEmailsInLogs(rawLogs, requestedUserId);
@@ -219,8 +219,7 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Error fetching user logs:', error);
     res.status(500).json({
-      error: 'Failed to fetch user logs',
-      message: error.message
+      error: 'Failed to fetch user logs'
     });
   }
 });
@@ -229,7 +228,7 @@ router.get('/user/:userId', requireAuth, async (req, res): Promise<void> => {
  * GET /api/logs/stats
  * Get log statistics
  */
-router.get('/stats', async (req, res): Promise<void> => {
+router.get('/stats', requireAdmin, async (req, res): Promise<void> => {
   try {
     const stats = await dbLogsService.getLogStats();
 
@@ -241,8 +240,7 @@ router.get('/stats', async (req, res): Promise<void> => {
   } catch (error: any) {
     console.error('Error fetching log stats:', error);
     res.status(500).json({
-      error: 'Failed to fetch log statistics',
-      message: error.message
+      error: 'Failed to fetch log statistics'
     });
   }
 });
@@ -277,7 +275,7 @@ router.get('/types', async (req, res): Promise<void> => {
       session: {
         name: 'Authentication Session Logs',
         description: 'User authentication sessions',
-        fields: ['token', 'expiresAt', 'isExpired']
+        fields: ['expiresAt', 'isExpired']
       }
     };
 

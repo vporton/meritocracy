@@ -123,6 +123,19 @@ model Session {
   @@map("sessions")
 }
 
+model EthereumAuthChallenge {
+  id        String    @id
+  address   String
+  message   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([address])
+  @@index([expiresAt])
+  @@map("ethereum_auth_challenges")
+}
+
 model Batches {
   id            Int            @id @default(autoincrement())
   createdAt     DateTime       @default(now())

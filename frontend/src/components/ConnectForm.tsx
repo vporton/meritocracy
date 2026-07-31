@@ -5,13 +5,13 @@ import { AlertController } from '@reown/appkit-controllers';
 import { useConnection, useDisconnect, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
-import api, { User, authApi, usersApi, API_BASE_URL } from '../services/api';
+import api, { User, authApi, usersApi } from '../services/api';
 import { NonEvmAddressInput, validateNonEvmAddresses } from '../utils/addressValidation';
 import './ConnectForm.css';
 import Canonical from './Canonical';
 import { Helmet } from 'react-helmet-async';
 import { hasReownWalletModal } from '../config/wagmi';
-import { getFrontendOrigin } from '../config/origins';
+import { getApiOrigin, getFrontendOrigin } from '../config/origins';
 import { trackAnalyticsEvent } from '../utils/analytics';
 
 interface ConnectStatus {
@@ -24,27 +24,6 @@ interface DisplayProvider {
   value: string;
   displayValue: string;
   isBlockchain: boolean;
-}
-
-interface OAuthClientIds {
-  github: string;
-  orcid: string;
-  bitbucket: string;
-  gitlab: string;
-}
-
-interface OAuthRedirectUris {
-  github: string;
-  orcid: string;
-  bitbucket: string;
-  gitlab: string;
-}
-
-interface OAuthAuthUrls {
-  github: string;
-  orcid: string;
-  bitbucket: string;
-  gitlab: string;
 }
 
 interface MessageEvent {
@@ -357,19 +336,16 @@ const ConnectForm = () => {
         return;
       }
 
-      console.log('Wallet connected, proceeding with authentication...', { address, isConnected });
 
       try {
         // Clear the pending flag immediately to prevent re-entry
         setPendingWalletAuth(false);
         setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
 
-        // Request signature
-        const message = `Connect to Meritocracy platform with address: ${address}`;
-        console.log('Requesting signature for message:', message);
+        const challengeResponse = await authApi.createEthereumChallenge(address);
+        const { challengeId, message } = challengeResponse.data;
 
         const signature = await signWalletMessageAsync({ message });
-        console.log('Signature received:', signature ? 'yes' : 'no');
 
         if (!signature) {
           throw new Error('Signature was cancelled');
@@ -382,7 +358,8 @@ const ConnectForm = () => {
         const authResult = await login({
           ethereumAddress: address,
           signature,
-          message
+          message,
+          challengeId
         }, 'ethereum');
 
         console.log('Authentication result:', authResult);
@@ -882,52 +859,30 @@ const ConnectForm = () => {
   };
 
   // OAuth Connect Handler
-  const handleOAuthConnect = (provider: string) => {
+  const handleOAuthConnect = async (provider: string) => {
     // Check if already connected and user wants to disconnect
     if (isProviderConnected(provider)) {
       return handleDisconnect(provider);
     }
-    const clientIds: OAuthClientIds = {
-      github: (import.meta.env.VITE_GITHUB_CLIENT_ID || '').trim(),
-      orcid: (import.meta.env.VITE_ORCID_CLIENT_ID || '').trim(),
-      bitbucket: (import.meta.env.VITE_BITBUCKET_CLIENT_ID || '').trim(),
-      gitlab: (import.meta.env.VITE_GITLAB_CLIENT_ID || '').trim(),
-    };
-
-    // Get current user's token to include in OAuth state parameter for user linking
-    const currentToken = localStorage.getItem('authToken');
-    const stateParam = currentToken ? encodeURIComponent(currentToken) : '';
-
-    console.log(`${provider} OAuth: currentToken ${currentToken ? 'present' : 'missing'}, stateParam: ${stateParam ? 'included' : 'not included'}`);
-
-    const redirectUris: OAuthRedirectUris = {
-      github: `${API_BASE_URL}/api/auth/github/callback`,
-      orcid: `${API_BASE_URL}/api/auth/orcid/callback`,
-      bitbucket: `${API_BASE_URL}/api/auth/bitbucket/callback`,
-      gitlab: `${API_BASE_URL}/api/auth/gitlab/callback`,
-    };
-
-    const authUrls: OAuthAuthUrls = {
-      github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=&state=${stateParam}`,
-      orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=/authenticate&redirect_uri=${encodeURIComponent(redirectUris.orcid)}&state=${stateParam}`,
-      bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}&state=${stateParam}`,
-      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=${encodeURIComponent('read_user openid')}&state=${stateParam}`,
-    };
-
-    if (!clientIds[provider as keyof OAuthClientIds]) {
-      alert(`${provider.toUpperCase()} client ID not configured`);
-      return;
-    }
-
-    // Open OAuth flow in popup window
-    const popup = window.open(
-      authUrls[provider as keyof OAuthAuthUrls],
-      `${provider}_oauth`,
-      'width=600,height=600,scrollbars=yes,resizable=yes'
-    );
+    // Open synchronously so browser popup protection does not block the window
+    // while the server creates a signed, cookie-bound OAuth state.
+    const popup = window.open('about:blank', `${provider}_oauth`, 'width=600,height=600,scrollbars=yes,resizable=yes');
 
     if (!popup) {
       alert('Popup was blocked. Please allow popups for this site.');
+      return;
+    }
+
+    try {
+      const { data } = await authApi.startOAuth(provider);
+      popup.location.href = data.authorizationUrl;
+    } catch (error: any) {
+      popup.close();
+      setConnectStatus(prev => ({
+        ...prev,
+        [provider]: 'error',
+        error: error.response?.data?.error || 'OAuth is not configured'
+      }));
       return;
     }
 
@@ -949,27 +904,13 @@ const ConnectForm = () => {
 
     // Handle the OAuth callback message
     const handleMessage = async (event: MessageEvent) => {
-      console.log(`XXX Message received for ${provider}:`, {
-        origin: event.origin,
-        expectedOrigin: window.location.origin,
-        data: event.data,
-        hasType: event.data?.type
-      });
-
-      if (event.origin !== window.location.origin) {
-        console.log(`XXX Message origin mismatch for ${provider}, ignoring`);
+      if (event.origin !== getApiOrigin() || event.source !== popup) {
         return;
       }
 
       // Only process OAuth-related messages, ignore other messages (like MetaMask)
       if (!event.data || typeof event.data !== 'object' || !event.data.type) {
-        console.log(`XXX Message has no type for ${provider}, ignoring`);
         return;
-      }
-
-      // Only log actual OAuth messages
-      if (event.data.type === 'OAUTH_SUCCESS' || event.data.type === 'OAUTH_ERROR') {
-        console.log(`XXX OAuth message received for ${provider}:`, event.data);
       }
 
       if (event.data.type === 'OAUTH_SUCCESS' && event.data.provider === provider) {
@@ -978,33 +919,17 @@ const ConnectForm = () => {
         // Don't close popup here - let the popup close itself
 
         try {
-          console.log(`OAuth success for ${provider}:`, event.data);
           setConnectStatus(prev => ({ ...prev, [provider]: 'success' }));
 
           // The backend already handled authentication, just update the frontend state
           const { user, session } = event.data.authData!;
 
-          console.log(`Updating auth data for ${provider}:`, {
-            user: {
-              id: user.id,
-              githubHandle: user.githubHandle,
-              orcidId: user.orcidId,
-              ethereumAddress: user.ethereumAddress,
-              bitbucketHandle: user.bitbucketHandle,
-              gitlabHandle: user.gitlabHandle
-            },
-            sessionToken: session.token ? 'present' : 'missing'
-          });
-
           // Update AuthContext with the new user and session
           updateAuthData(user, session.token);
-
-          console.log(`Auth data updated for ${provider}, clearing status in 2 seconds`);
 
           // Reset status after a short delay to allow connecting more accounts
           // Use a longer delay to ensure React state has updated
           setTimeout(() => {
-            console.log(`Clearing status for ${provider}`);
             setConnectStatus(prev => {
               const { [provider]: _, ...rest } = prev;
               return rest;
@@ -1041,7 +966,7 @@ const ConnectForm = () => {
 
       try {
         setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
-        console.log('Auto-initiating Receiver KYC with token:', kycTokenParam);
+        console.log('Auto-initiating Receiver KYC from an email link');
 
         // initiateKyc with token implies Receiver KYC
         const response = await authApi.initiateKyc(kycTokenParam);

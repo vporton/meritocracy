@@ -183,7 +183,6 @@ export class BanVotingService {
       select: {
         id: true,
         name: true,
-        email: true,
         shareInGDP: true,
         bannedTill: true, // Need this to know if they are banned
         githubHandle: true,
@@ -225,7 +224,6 @@ export class BanVotingService {
       return {
         id: user.id,
         name: user.name,
-        email: user.email,
         shareInGDP: user.shareInGDP,
         bannedTill: user.bannedTill,
         isBanned: !!(user.bannedTill && user.bannedTill > new Date()),

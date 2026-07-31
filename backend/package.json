@@ -23,6 +23,7 @@
     "@dfinity/identity": "^3.4.3",
     "@dfinity/ledger-icp": "^9.1.0",
     "@dfinity/principal": "^3.4.3",
+    "@dfinity/utils": "^4.2.1",
     "@icp-sdk/canisters": "^3.5.0",
     "@icp-sdk/core": "^5.0.0",
     "@polkadot/api": "^16.5.4",

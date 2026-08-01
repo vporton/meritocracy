@@ -29,7 +29,7 @@ Canonical encoding details are in `MIGRATION_RUNBOOK.md`.
 ## Target stores
 
 - `core/ZenDB`: versioned identity/role/profile/KYC/hold collections with explicit unique/sorted indexes and Motoko-authenticated mutation/recovery sagas in `core_canister`.
-- `workflow/ZenDB`: task/DAG/result/lease collections with Motoko claim/idempotency mutation sagas in `workflow_canister`.
+- `workflow/ZenDB`: canonical AI result/source, redacted audit, stable schedule/cursor, completion-receipt, and final-publication collections in `workflow_canister`. New AI execution has no task/DAG/lease/provider-batch collections; fixed bounded `llm` operations execute directly in versioned Motoko code.
 - `treasury/ZenDB`: append-only accounting, payment obligations/operations/attempts, and replay/finality collections with Motoko operation/reconciliation protocol in the unified treasury.
 - `evidence/ZenDB`: encrypted PII evidence plus Motoko access/hash indexes; no public document query.
 - `archive/ZenDB`: versioned, replaceable document collections for large AI/audit/raw legacy payloads.
@@ -81,15 +81,15 @@ Each document carries a unique indexed application logical ID, version, and cont
 
 | Source model | Field mapping and storage | Target invariants |
 | --- | --- | --- |
-| `Batches` | `id`, `createdAt`, `taskId` → `workflow/ZenDB.ProviderBatch` | Existing task required; task index explicit |
-| `BatchMapping` | `id`, `customId`, `batchId`, `response`, `createdAt` → ZenDB provider-item metadata; large/raw response canonical bytes/hash → `archive/ZenDB ai_artifact_v1` | `customId` unique; response state versioned; archive failure does not change task result |
-| `NonBatches` | `id`, `createdAt`, `taskId` → `workflow/ZenDB.ProviderRequestGroup` | Existing task required |
-| `NonBatchMapping` | `id`, `customId`, `response`, `nonBatchId`, `createdAt` → ZenDB provider-item metadata plus archive payload | Same invariants as batch mapping |
-| `Task` | every field `id,status,runnerClassName,runnerData,createdAt,updatedAt,completedAt,storeId,lockTime,isNeverDeleted,isDeleted` → typed `workflow/ZenDB.Task` | `runnerClassName` maps to closed task-kind variant; `runnerData` is parsed into typed ownership/input plus preserved canonical legacy bytes/hash; lock becomes epoch/owner/lease; terminal history tombstoned, not hard-deleted |
-| `AiResult` | every field → `workflow/ZenDB.AiResult`; original JSON canonical bytes/hash archived | Unique `customId`; closed kind/status; canonical validated result is authoritative after the workflow mutation-saga proof; task relation optional with explicit tombstone reason |
+| `Batches` | `id`, `createdAt`, `taskId` → restricted `archive/ZenDB.LegacyProviderBatch` | Historical only; imported task relation preserved; target never submits or stores a provider batch |
+| `BatchMapping` | `id`, `customId`, `batchId`, `response`, `createdAt` → restricted legacy provider-item metadata; large/raw response canonical bytes/hash → `archive/ZenDB ai_artifact_v1` | Historical-only `customId` uniqueness and relation preserved; no live provider-item state is created |
+| `NonBatches` | `id`, `createdAt`, `taskId` → restricted `archive/ZenDB.LegacyProviderRequestGroup` | Historical only; imported task relation preserved; target direct calls create no request-group row |
+| `NonBatchMapping` | `id`, `customId`, `response`, `nonBatchId`, `createdAt` → restricted legacy provider-item metadata plus archive payload | Historical-only invariants match the source; no live provider-item state is created |
+| `Task` | every field `id,status,runnerClassName,runnerData,createdAt,updatedAt,completedAt,storeId,lockTime,isNeverDeleted,isDeleted` → restricted `archive/ZenDB.LegacyTask` | Historical only: parse a typed owner/kind for restricted audit queries and preserve canonical legacy bytes/hash; lock/status are evidence, never converted into a live queue, claim, or lease |
+| `AiResult` | every field → `workflow/ZenDB.AiResult`; original JSON canonical bytes/hash archived | Unique `customId`; closed kind/status; canonical validated result is authoritative after the final-publication proof; imported task relation is optional historical metadata, while new results use deterministic evaluation cycle/operation keys and no task relation |
 | `AiResultSource` | every field → ordered ZenDB source references | Both `(result,ordinal)` and `(result,url)` unique; URL scheme/size validation; cascade becomes tombstone retention |
-| `TaskDependency` | every field → ZenDB DAG edge | Unique edge; both tasks must exist; reject self-edge and cycles for new data; legacy self/cycle becomes explicit exception and remains viewable |
-| `OpenAILog` | `id,userId,taskId,customId,storeId,runnerClassName,requestInitiated,responseReceived,errorMessage,createdAt,updatedAt` → ZenDB log metadata; `requestData,responseData` → hash-addressed `archive/ZenDB ai_artifact_v1` | Exact owner index; no textual JSON owner search; redaction classification; missing/nulled historical responses represented explicitly |
+| `TaskDependency` | every field → restricted `archive/ZenDB.LegacyTaskDependency` | Unique imported edge and both historical relations are validated; self/cycles become explicit exceptions and remain viewable; no new DAG edge is created because dependencies are typed local values in direct code |
+| `OpenAILog` | `id,userId,taskId,customId,storeId,runnerClassName,requestInitiated,responseReceived,errorMessage,createdAt,updatedAt` → ZenDB log metadata; `requestData,responseData` → hash-addressed `archive/ZenDB ai_artifact_v1` | Exact owner/evaluation-operation indexes; no textual JSON owner search; imported task reference is historical only; redaction classification; missing/nulled historical responses represented explicitly |
 
 ### Global and financial models
 
@@ -117,11 +117,11 @@ The 2026-07-11 migration selected `DISTINCT ON(customId)` without a complete det
 | User 1—N BanVote as voter/target | cascade | Both FKs required; votes retained after user tombstone with redacted public identity |
 | User 1—N GasTokenDistribution/PendingTransaction | cascade | Forbidden cascade; immutable financial references retain stable user ID |
 | User 1—N OpenAILog | database `SET NULL` | Preserve optional source user ID plus deletion/redaction state; no loss of historical link in restricted audit |
-| Task 1—N Batches/NonBatches | cascade | Required ZenDB FK guarded by Motoko relation checks; task tombstone retains provider history |
-| Batch/NonBatch 1—N mapping | cascade | Required ZenDB FK/index guarded by Motoko relation checks; tombstone retention |
-| Task 1—N AiResult | `SET NULL` | Optional typed task reference; source null preserved |
-| Task 1—N OpenAILog | database `SET NULL` | Optional exact task reference; restricted historical source ID retained |
-| Task N—N Task through TaskDependency | cascade both sides | ZenDB DAG adjacency indexes in both directions, guarded by Motoko cycle/orphan checks |
+| Task 1—N Batches/NonBatches | cascade | Preserve required imported relation inside restricted legacy history; no live counterpart is created |
+| Batch/NonBatch 1—N mapping | cascade | Preserve required imported legacy relation/index and tombstone history; no live counterpart is created |
+| Task 1—N AiResult | `SET NULL` | Preserve optional imported legacy task reference and source null; new results have no task relation |
+| Task 1—N OpenAILog | database `SET NULL` | Preserve optional imported legacy task reference; new logs use evaluation cycle/operation identity instead |
+| Task N—N Task through TaskDependency | cascade both sides | Preserve and validate both imported historical adjacency directions; no live DAG is created |
 | AiResult 1—N AiResultSource | cascade | ZenDB ordered set guarded by Motoko mutation protocol; result tombstone retains sources |
 
 All imported relations are validated after table load and before migration finalization. A dangling source FK is preserved in an exception record and blocks activation; it is never silently dropped.
@@ -137,15 +137,15 @@ Every source index is preserved as an access requirement, corrected when the sou
 | BanVote | PK; unique `(voter,target,week)` | `(target,week)` | Same imported key plus reverse `(voter,epoch,id)`; vote type does not permit second vote in same epoch unless policy explicitly versions key |
 | Session | PK; unique token | user; expiry | Historical primary/token fingerprint/user/expiry indexes; no live authentication |
 | EthereumAuthChallenge | PK | address; expiry | Historical; future primary/caller/action/expiry and single-use receipt |
-| Batches | PK | none | primary; task index added |
-| BatchMapping | PK; unique customId | none | primary; custom ID; batch index added |
-| NonBatches | PK | none | primary; task index added |
-| NonBatchMapping | PK; unique customId | none | primary; custom ID; group index added |
-| Task | PK | status; runner; completed; lock; deleted | primary; `(status,nextAttempt,id)` queue; exact owner; kind; lease expiry; completion; deletion; store ID as required by observed queries |
-| AiResult | PK; unique customId | task; kind | primary/custom/task/kind/status; exact source indexes |
+| Batches | PK | none | Historical primary and task relation index only; no live collection |
+| BatchMapping | PK; unique customId | none | Historical primary/custom ID/batch relation indexes only; no live collection |
+| NonBatches | PK | none | Historical primary and task relation index only; no live collection |
+| NonBatchMapping | PK; unique customId | none | Historical primary/custom ID/group relation indexes only; no live collection |
+| Task | PK | status; runner; completed; lock; deleted | Historical primary/status/runner/completion/deletion/store/typed-owner indexes needed by restricted audit; no queue, next-attempt, or lease-expiry index |
+| AiResult | PK; unique customId | task; kind | primary/custom/optional legacy-task/evaluation-cycle/operation/kind/status; exact source indexes |
 | AiResultSource | PK; unique `(result,ordinal)` and `(result,url)` | none | Same two unique indexes |
-| TaskDependency | PK; unique `(task,dependency)` | none | Same plus reverse dependency index; DAG validation |
-| OpenAILog | PK; unique customId | user; task; runner; created; store | ZenDB metadata indexes match all; global pagination `(created,id)`; composite payload indexes only for bounded document queries |
+| TaskDependency | PK; unique `(task,dependency)` | none | Historical unique edge plus reverse relation index for import validation/audit; no live adjacency index |
+| OpenAILog | PK; unique customId | user; task; runner; created; store | ZenDB metadata indexes match legacy queries plus evaluation-cycle/operation; imported task index is historical; global pagination `(created,id)`; composite payload indexes only for bounded document queries |
 | Global | PK only | none | One fixed config key; versioned snapshot sequence; reject extra active singleton |
 | GasTokenDistribution | PK; unique `(user,network,symbol,exact timestamp)` | user; network; status; date; `(network,symbol)` | Preserve legacy unique key in history; target obligation unique `(cycle,user,scope,asset)` and indexes by user/asset/status/cycle. Do not claim per-day uniqueness from timestamp |
 | GasTokenReserve | PK; unique `(network,symbol,type)` | none | Preserve source key; target balance/reserve by canonical asset ID and journal sequence |
@@ -185,10 +185,10 @@ Every ZenDB-backed row above uses the same boundary: the application first persi
 
 - Payment creation, external send, pending completion, and distribution completion can disagree; ambiguous attempts must be chain-reconciled before classification.
 - Reserve read/modify/write is not CAS and runtime display can double-count it; source reserve rows do not seed target balances without financial reconciliation.
-- Evaluation graph creation can leave a partial DAG; target creates a graph manifest and bounded idempotent nodes/edges before activation.
-- TaskManager can claim the same task concurrently; target uses one acknowledged, pinned ZenDB-side compare-and-set for lease epoch/owner.
+- Evaluation graph creation can leave a partial DAG; target creates no graph or task records and instead runs a fixed, bounded, versioned `llm` operation sequence directly, publishing only a complete final result/source set.
+- TaskManager can claim the same task concurrently; the target retires AI task claiming and leasing. Duplicate authorized triggers may restart the whole bounded evaluator, while a deterministic cycle/result key permits at most one canonical final publication.
 - AI result upsert, source replacement, and legacy raw cleanup can be partial; target stages a result version, confirms every logical-ID/hash write, then switches one manifest/visibility pointer active through a separately acknowledged write.
-- Ban vote, hold, tally, user ban/unban, task cancellation, and notification are separate; target activates the vote/hold only after its logical-ID/hash acknowledgement and drives idempotent derived actions.
+- Ban vote, hold, tally, user ban/unban, evaluation suppression, and notification are separate; target activates the vote/hold only after its logical-ID/hash acknowledgement and prevents or ignores direct evaluation publication for the held cycle without creating or cancelling task records.
 - KYC token consumption can precede provider session creation; target reserves a credential, creates provider session, and finalizes/returns safely via a saga.
 - KYC webhooks lack durable event IDs/order; target stores provider event receipt before state application.
 - Bulk disconnected cleanup can delete emails before user update; target stages bounded user tombstones and activates their manifest only after acknowledgement.
@@ -199,8 +199,8 @@ Every ZenDB-backed row above uses the same boundary: the application first persi
 | --- | --- |
 | Public users, leaderboard, salary stats | Certified/sanitized materialized indexes; stable cursor; no fixed first-500 truncation |
 | Exact self profile/GDP share/history/logs | Principal→user lookup then exact typed owner index; caller-supplied IDs do not authorize |
-| Ban candidates/votes/assessments | Explicit evaluated-user and task-owner indexes; deterministic epoch; no substring search or first-200 cap |
-| Task queue/dependencies/dependents | Queue and two-way adjacency indexes; bounded cursor/lease |
+| Ban candidates/votes/assessments | Explicit evaluated-user and evaluation-cycle indexes; deterministic epoch; no substring search or first-200 cap |
+| Legacy task queue/dependencies/dependents | Restricted historical indexes for migration validation/audit only; no live queue, DAG, claim, or lease query |
 | Logs merged from models | New append-only audit sequence gives one global `(time,sequence)` cursor; source-specific legacy views preserved |
 | Eligible user/payment scans | Persistent eligibility index and bounded cursor checkpoint per cycle/scope/asset |
 | Due compensation/liveliness/cleanup | `(dueTime,id)` indexes and idempotent bounded jobs |
@@ -209,7 +209,7 @@ Every ZenDB-backed row above uses the same boundary: the application first persi
 
 ## Cardinality and limits
 
-Current counts are unknown. Repository-derived growth is unbounded for credentials, votes (`O(users² × weeks)` worst case), task/AI history, distributions, and pending rows. Initial task construction produces 14 tasks for first onboarding, 6 for subsequent onboarding, and 5 for quarterly reevaluation. The tested envelopes/shard thresholds are in `ARCHITECTURE.md` and must be replaced/validated using the read-only inventory before G2.
+Current counts are unknown. Repository-derived growth is unbounded for credentials, votes (`O(users² × weeks)` worst case), imported task/AI history, new AI result/audit history, distributions, and pending rows. The legacy app constructs 14/6/5 tasks for first/subsequent/quarterly evaluation; the target executes the same bounded operation counts directly in code and creates no new task rows. The tested envelopes/shard thresholds are in `ARCHITECTURE.md` and must be replaced/validated using the read-only inventory before G2.
 
 Required inventory per physical table: row and index bytes/counts; min/max IDs/timestamps; max/percentile text/JSON sizes; null/distinct counts; normalized identity/address duplicates; FK orphans; status histograms; sequence state; exact decimal scale/range/sums; extra Global rows; AI-source conflicts; financial cross-table reconciliation; primary/replica identity and update/delete key; direct-CDC versus redacted-projection membership; and publication/output-plugin compatibility. Secret, bearer, and raw-token values are reported only by approved source identifier/fingerprint/digest.
 
@@ -217,7 +217,7 @@ Required inventory per physical table: row and index bytes/counts; min/max IDs/t
 
 - Source and destination count/hash match for all 22 tables.
 - Every imported ID/field has a canonical representation or explicit signed exception.
-- Every FK, unique key, normalized unique key, closed status, DAG, and index-consistency scan passes.
+- Every FK, unique key, normalized unique key, closed status, imported legacy DAG, and index-consistency scan passes.
 - PostgreSQL null-unique semantics and timestamp interpretation are tested with golden vectors.
 - Token decimal conversion is exact; source decimals and float bits remain available for historical proof.
 - Historical cascades are not reproduced as deletion; tombstones preserve required links.

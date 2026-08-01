@@ -93,31 +93,31 @@ Parity means preserving intended user/business capability, authorization, histor
 | US-011 | Country/personal-number/residence fields | Encrypted/restricted evidence; uniqueness fingerprint; never public/certified | DESIGNED / BLOCKED_G2 |
 | US-012 | GDP share and last-payment public/profile values | Preserve source bits/history; new exact deterministic share and asset-qualified payment history | INTENTIONALLY_CHANGED / BLOCKED_G2/G3 |
 
-## Evaluation, task graph, AI results, and logs
+## Evaluation, legacy task graph, AI results, and logs
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
 | EV-001 | `POST /api/evaluation/start`, authenticated with additional-connection requirement | Caller-authorized start, typed eligibility/hold state, idempotent cycle key | DESIGNED / BLOCKED_G2 |
-| EV-002 | First evaluation graph (14 tasks) | Versioned typed DAG reproduces intended inputs/dependencies/results; golden differential tests | DESIGNED / BLOCKED_G2 |
-| EV-003 | Subsequent/re-worth graph (6 tasks) | Versioned typed DAG, exact previous-result references, deterministic cycle | DESIGNED / BLOCKED_G2 |
-| EV-004 | Quarterly graph (5 tasks) | Durable scheduler creates idempotent per-user/cycle graphs | DESIGNED / BLOCKED_G2 |
-| EV-005 | Immediate OpenAI request flow | HTTPS outcall adapter, durable attempt/idempotency, bounded/redacted request/result | DESIGNED / BLOCKED_G2 |
-| EV-006 | OpenAI batch and non-batch provider mappings | Typed provider request/item state, exact custom ID uniqueness, resume/poll/retry | DESIGNED / BLOCKED_G2 |
+| EV-002 | First evaluation graph (14 tasks) | Versioned Motoko function executes 14 bounded `llm` operations directly, with typed local dependency values and golden differential tests; no live task/DAG persistence | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-003 | Subsequent/re-worth graph (6 tasks) | Versioned Motoko function executes 6 bounded operations directly with exact previous-result inputs and a deterministic cycle key; no live task/DAG persistence | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-004 | Quarterly graph (5 tasks) | Upgrade-safe scheduler invokes the 5-operation function directly per user/cycle and records only schedule cursor/completion plus canonical results, not task graphs | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-005 | Immediate OpenAI request flow | Direct `llm` invocation with bounded/redacted request/result, hard operation/cycle/spend limits, and deterministic final-result publication | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-006 | OpenAI batch and non-batch provider mappings | Retain imported mappings as read-only history; target uses only direct `llm` calls and creates no provider batch, item, polling, or resumable request state | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EV-007 | Web-search/result source records | Ordered unique source references with URL validation and evidence hash | DESIGNED / BLOCKED_G2 |
 | EV-008 | Prompt-injection screening and evaluation blocks | Versioned policy/result, false-positive review, adversarial tests, immutable reason history | DESIGNED / BLOCKED_G2 |
-| EV-009 | Task dependencies and terminal cleanup | ZenDB acyclic adjacency indexes plus Motoko bounded traversal/enforcement; tombstones retain history | DESIGNED / BLOCKED_G2 |
-| EV-010 | Task claim uses non-atomic read/update and process lock | One acknowledged pinned-store compare-and-set for epoch/owner/lease, with expiry and duplicate-worker tests | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EV-011 | Task graph creation can leave partial graph | One proven ZenDB-side bounded creation method or manifest-bound resumable saga | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-009 | Task dependencies and terminal cleanup | Preserve imported task/dependency rows and tombstones as restricted read-only history; new dependencies are code-local typed values and no live DAG is stored | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-010 | Task claim uses non-atomic read/update and process lock | Retire AI task claims/locks entirely; duplicate triggers run the bounded direct evaluator and deterministic cycle/result keys permit at most one final publication | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-011 | Task graph creation can leave partial graph | Create no target graph: direct code either publishes one complete canonical result/source set or publishes no result; interruption restarts the whole bounded sequence | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EV-012 | AI result/source replacement can be partial | Staged canonical result and complete source set, activated by an acknowledged manifest pointer; archive outbox cannot authorize result | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EV-013 | `OpenAILog` request/response/error audit | ZenDB redacted metadata and hash-addressed payload collections; Motoko access control; stable user/task/custom indexes | DESIGNED / BLOCKED_G2 |
+| EV-013 | `OpenAILog` request/response/error audit | ZenDB redacted metadata and hash-addressed payload collections; Motoko access control; stable user/evaluation-operation/custom indexes, with legacy task references historical only | DESIGNED / BLOCKED_G2 |
 | EV-014 | Admin `GET /api/logs` filtering/pagination | Capability-protected cursor query with bounded indexed filters | DESIGNED / BLOCKED_G2 |
 | EV-015 | Self `GET /api/logs/my` | Exact caller owner index, sanitized content | DESIGNED / BLOCKED_G2 |
 | EV-016 | `GET /api/logs/user/:userId` allows self/admin | Caller equality or explicit capability; exact owner index | DESIGNED / BLOCKED_G2 |
 | EV-017 | Admin `GET /api/logs/stats` | Bounded pre-aggregated/streamed statistics with no sensitive payload leakage | DESIGNED / BLOCKED_G2 |
-| EV-018 | Public `GET /api/logs/types` | Certified allowlist of safe task/log types | DESIGNED / BLOCKED_G2 |
+| EV-018 | Public `GET /api/logs/types` | Certified allowlist of safe evaluation-operation/log types | DESIGNED / BLOCKED_G2 |
 | EV-019 | Ownership inferred from serialized JSON substring; user 1 can match user 10 | Parse during migration and store typed exact owner; unresolved rows restricted | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EV-020 | 2026-07 AI compaction chose one response and nulled successful legacy payloads | Import canonical results and unmanaged exception table; report lost/conflicting evidence, never invent it | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EV-021 | OpenAI request/delete/retry/error paths | Preserve intended retry/cancellation with durable state and provider reconciliation | DESIGNED / BLOCKED_G2 |
+| EV-021 | OpenAI request/delete/retry/error paths | Direct bounded call errors publish no partial result; an authorized trigger reruns the whole sequence, with no persisted request/task delete, retry, or provider-reconciliation state | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 
 ## Ban voting, holds, and compensation eligibility
 
@@ -148,13 +148,13 @@ Parity means preserving intended user/business capability, authorization, histor
 | JO-009 | Monthly cleanup cron | Bounded tombstone/retention job; never deletes immutable finance/history | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | JO-010 | Monthly/world GDP refresh cron | Stable scheduled HTTPS outcall with source/freshness/hash | DESIGNED / BLOCKED_G2 |
 | JO-011 | Admin cron status | Sanitized schedule/cursor/last-success/last-error health view | DESIGNED / BLOCKED_G2 |
-| JO-012 | External cron endpoint responds 202 before completion | Return durable job ID; status reflects actual terminal completion/failure | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| JO-013 | Process-local cron locks | Stable lease/epoch and idempotency key; upgrades/timer duplicates tested | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| JO-012 | External cron endpoint responds 202 before completion | Return a schedule/cycle correlation key and truthful terminal completion/failure status; direct AI evaluation creates no per-run job/task record | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| JO-013 | Process-local cron locks | Stable due cursor plus deterministic completion key; upgrades/timer duplicates tested; direct AI evaluations use no task lease/epoch | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | JO-014 | Admin cleanup stats/dry-run/execute | Capability-protected retention plan, hash/count dry run, bounded execution receipts | DESIGNED / BLOCKED_G2 |
-| JO-015 | Cleanup covers tasks, auth tokens/sessions/challenges, logs | Per-collection retention policy; historical credentials inactive; finance/audit preservation | DESIGNED / BLOCKED_G2 |
+| JO-015 | Cleanup covers tasks, auth tokens/sessions/challenges, logs | Retention applies to imported legacy-task history, credentials, and logs; no live AI task collection exists; finance/audit preservation remains mandatory | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | JO-016 | Admin status/toggle distribution | Certified status; pause fails closed; resume/policy change requires governance | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | JO-017 | Admin trigger distribution | Creates an idempotent reviewed cycle/obligations; does not bypass unified-treasury controls | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| JO-018 | Admin trigger re-worth assessment | Capability/governance durable task with cycle key and result receipt | DESIGNED / BLOCKED_G2 |
+| JO-018 | Admin trigger re-worth assessment | Capability/governance-authorized direct evaluation with deterministic cycle key and final result receipt; no durable task record | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 
 ## Treasury, payments, reserves, and wallet/network parity
 
@@ -210,7 +210,7 @@ Parity means preserving intended user/business capability, authorization, histor
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
-| EX-001 | OpenAI API immediate/batch/web-search | HTTPS outcall adapter, scoped key/spend limits, idempotent jobs, redacted audit, deterministic result validation | DESIGNED / BLOCKED_G2 |
+| EX-001 | OpenAI API immediate/batch/web-search | `llm` direct calls (including supported web-search use), scoped key/spend limits, hard payload/operation bounds, redacted audit, deterministic result validation; provider batch mode is retired | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EX-002 | Didit KYC/liveliness | Pinned `join-proxy`/`join-proxy-client.mo` evaluation with configurable allowlisted HTTPS endpoint, reusable-proof consent/freshness/subject binding/cost accounting, signed callback/event dedup/ordering, and tested direct-provider fallback | DESIGNED / BLOCKED_G2 |
 | EX-003 | GitHub OAuth | Immutable provider subject, caller-bound state, token minimization/rotation | DESIGNED / BLOCKED_G2 |
 | EX-004 | ORCID OAuth | Same identity-evidence contract with provider-specific protocol tests | DESIGNED / BLOCKED_G2 |
@@ -267,7 +267,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-009 | DB financial tests delete all distribution/pending rows and accept inherited `DATABASE_URL` | Add hard non-production database guard before ever running; never point at shared/production DB | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | OP-010 | No complete backup/restore/reconciliation runbook | Tested PG restore, slot-exported snapshot/contiguous-delta capture with WAL/slot recovery, canister upgrade/forward-repair, canonical replay, financial and rollback rehearsal | DESIGNED / BLOCKED_G2/G4 |
 | OP-011 | Process logs/provider logs | Structured redacted append-only audit, correlation/operation IDs, bounded retention/export | DESIGNED / BLOCKED_G2 |
-| OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/queue/index/archive/provider/ledger health and alerts | DESIGNED / BLOCKED_G2 |
+| OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/schedule/index/archive/provider/ledger health and alerts; no AI-task queue metric | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |
 | OP-014 | Controllers and deploy credentials | Recorded human SNS launch/ownership decision; local/PocketIC SNS controller proof; least controllers, emergency pause-only role, module transparency; G4-only isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort evidence before the separately reviewed production handoff | DESIGNED / BLOCKED_G1/G3/G4 |
 | OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, ZenDB RBAC preservation/audit and drained-intent collection-vN switch, no authoritative reinstall | DESIGNED / BLOCKED_G2 |

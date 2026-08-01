@@ -159,7 +159,7 @@ Acceptance:
 
 Rollback: undeploy local/testnet canisters or reinstall test-only state; production remains on Node/PostgreSQL.
 
-### M3 — Durable workflow, timers, and external integrations
+### M3 — Direct evaluations, durable timers, and external integrations
 
 Status: BLOCKED by M2.
 
@@ -168,26 +168,28 @@ Dependencies: M2.
 Invariants:
 
 - Jobs are at-least-once and idempotent; no in-memory lock is authoritative.
-- Every task claim uses one acknowledged compare-and-set lease/epoch/attempt operation proven against the pinned store, and every external effect has an idempotency key.
 - Timers are recoverable from stable schedules after upgrades or cycle outages.
-- ZenDB stores task/result documents and large provider payloads according to the M1 authoritative-collection proof; task authorization, leases, and idempotency remain enforced by Motoko code and durable mutation journals.
+- Evaluation workflows do not create or persist live task, dependency, claim/lease, provider-batch, provider-item, or intermediate-operation records. A versioned Motoko function executes each fixed, bounded sequence of `llm` calls directly and keeps intermediate values local to that invocation.
+- A direct evaluation reads the already-authoritative user/cycle/eligibility inputs and writes no execution state before its first `llm` call. Its only new durable business output is the canonical final result/source set; stable recurring schedules may retain aggregate due cursors and final completion receipts, but never per-evaluation task or intermediate state.
+- Every direct evaluation has hard bounds on operation count, request/response size, cycles, and provider spend. Interruption or failure publishes no partial canonical result; an authorized caller or due scheduler may restart the whole bounded sequence, and deterministic cycle/result keys prevent duplicate final publication.
+- ZenDB stores canonical results, sources, redacted audit metadata, and approved archive payloads according to the M1 authoritative-collection proof; it does not store new AI tasks. Legacy task/batch/dependency rows remain read-only migration history.
 
 Small changes/commits:
 
-1. Task DAG and claim/lease state machine using a pinned ZenDB-side compare-and-set or the approved durable saga protocol.
-2. Timer scheduler with stable deadlines/cursors, bounded batches, and upgrade recovery.
+1. Timer scheduler with stable deadlines/cursors, bounded user batches, completion receipts, and upgrade recovery; it invokes evaluations directly and creates no evaluation-task records.
+2. Versioned first, repeat, and quarterly Motoko evaluators that execute the intended 14/6/5 bounded operations directly with the `llm` Motoko package, passing dependency outputs through local typed values rather than a stored DAG.
 3. HTTPS integration adapter with bounded deterministic transforms, rate/cost budgets, circuit breakers, and redacted audit.
-4. OpenAI immediate/batch parity and canonical result/source replacement.
-4a. Use `llm` Motoko package.
+4. Canonical result/source publication with deterministic cycle/result keys. Do not implement OpenAI batch submission, polling, provider-item mappings, a task queue, or resumable intermediate task state; retain those legacy rows only in historical migration collections.
 5. World GDP, token-price, email HTTPS-provider, the M2 caller-bound OAuth factor protocol, and Didit integration parity.
-6. ZenDB workflow/archive collection routing with cursor pagination, canonical export, reindex, collection-vN migration, and fault-injected authoritative mutation recovery.
+6. ZenDB result/audit/archive collection routing with cursor pagination, canonical export, reindex, collection-vN migration, and fault-injected authoritative mutation recovery.
 
 Acceptance:
 
-- Crash/restart/timeout/duplicate/out-of-order/concurrent-claim and timer-upgrade tests pass.
-- First, repeat, and quarterly evaluation DAGs reproduce the intended 14/6/5-task workflows and verified outcomes.
+- Crash/restart/timeout/duplicate-trigger and timer-upgrade tests pass. An interrupted direct evaluation exposes no partial canonical result; rerunning it can publish at most one final result set for the deterministic cycle key.
+- First, repeat, and quarterly code paths reproduce the intended 14/6/5-operation workflows and verified outcomes without writing live task, dependency, lease, batch, provider-item, or intermediate-operation records to stable memory or ZenDB.
+- Tests enforce the configured operation/request/response/cycle/spend bounds and prove that later operations receive exactly the required earlier outputs through local typed values.
 - External API keys are scoped/rotatable/spend-capped and excluded from logs/snapshots; compromise response is rehearsed.
-- A ZenDB outage or partial remote mutation cannot authorize or duplicate a core result/payment; the durable saga/reconciliation protocol makes the record either safely held or exactly recoverable.
+- A ZenDB outage or partial final-result mutation cannot authorize or duplicate a canonical result/payment; the result publication saga makes the final record either unpublished or exactly recoverable without persisting execution tasks.
 
 Rollback: route test traffic back to legacy services; discard test canisters. No production cutover.
 
@@ -394,10 +396,10 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | SNS handoff/testflight is treated as a generic testnet controller or occurs before the permitted mainnet boundary | High governance/ordering | G3 records the human SNS launch/ownership decision and proves the interface locally/PocketIC; G4 alone authorizes an isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort procedure before production deployment |
 | Direct treasury donation memo is mistaken for authenticated donor, entitlement, or scope authority | High accounting/authorization | Scope comes only from the published account/address and an observation credits once by ledger/chain identity; memos are bounded untrusted metadata unless a separate authenticated proof is accepted |
 | OAuth callback/code is treated as a Candid login or bearer authority | High authentication | M2 pins `indentify` and binds each one-use OAuth state/PKCE/provider-subject exchange to a non-anonymous Candid caller; only the resulting caller-principal binding authorizes methods, with replay/swap/redirect/provider-response/issuer-where-present/subject-conflict tests and no token/code logging |
-| Serialized task user IDs leak/cross-match users | High | Typed exact owner index and authorization tests |
+| Serialized legacy task user IDs leak/cross-match users | High | Parse imported history into a typed exact owner index, restrict unresolved rows, and never use legacy task data for live execution |
 | Mutable OAuth handles are account keys | High | Reverify and bind immutable provider subject IDs |
 | KYC callbacks lack durable event order/idempotency | High | Provider event journal, exact session/freshness, monotonic AML-first state |
-| Task/cron locks are process-local and jobs are not durable | High | Stable leases/epochs, at-least-once timers, idempotent completion |
+| Task/cron locks are process-local and jobs are not durable | High | Replace cron locks with stable due cursors and idempotent completion receipts; direct bounded AI evaluations create no persisted task/lease queue and restart whole on interruption |
 | AI compact migration tie-breaking was nondeterministic and successful raw data was nulled | High history risk | Export unmanaged exception table; build conflict report; preserve available source evidence and explicit missing markers |
 | Tests can hard-delete configured DB financial rows | High operational | Add test-DB hard guard before database suites |
 | Frontend lint is inoperative after ESLint 10 because no flat config exists | Medium operational | Add/verify `eslint.config.*` in the first approved tooling milestone; lint must pass before target implementation is accepted |

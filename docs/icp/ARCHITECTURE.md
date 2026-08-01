@@ -6,17 +6,19 @@ Status: G1 approval candidate, 2026-08-01. This is a design document; no applica
 
 The proposed target is a set of Motoko application canisters, the retained React/Vite/TypeScript frontend built into certified ICP frontend-canister assets, ZenDB as the proposed persistent store for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
 
+AI evaluation is deliberately not a durable workflow queue: because the Motoko `llm` package has no OpenAI batch facility, versioned Motoko code issues each fixed, bounded sequence of calls directly, retains dependencies only in local values, and persists only completed canonical results/sources plus redacted audit evidence. Legacy task, dependency, and provider-batch records are migrated as restricted read-only history, never as executable target state.
+
 ZenDB is capable of storing Candid-encoded identity, balance, payment-operation, replay-journal, and migration-receipt documents. Whether each such collection can be authoritative is an M1 proof obligation, not an assumption: authorization and financial constraints stay in Motoko application code, and remote ZenDB calls require durable idempotent sagas around every `await`. A collection that cannot meet that proof must have a G2-approved, narrowly scoped native-Motoko exception.
 
-The architecture intentionally does **not** reproduce unsafe legacy behavior. Existing ambiguous payments, mutable-handle identities, exact-timestamp “daily” uniqueness, destructive KYC backlog handling, process-local locks, and textual user-ID searches become migration exceptions or explicitly corrected behavior.
+The architecture intentionally does **not** reproduce unsafe legacy behavior. Existing ambiguous payments, mutable-handle identities, exact-timestamp “daily” uniqueness, destructive KYC backlog handling, process-local locks, persisted AI task graphs, OpenAI batch bookkeeping, and textual user-ID searches become migration exceptions or explicitly corrected behavior.
 
 ## Repository facts driving the design
 
 - The physical database has 21 Prisma models plus unmanaged `ai_result_migration_exceptions`; there are 17 explicit Prisma transaction sites.
-- Core mutations span identity/email/KYC, ban holds, task graphs, AI results, and multi-stage financial history. Cross-canister calls cannot replace SQL transactions transparently.
+- Legacy mutations span identity/email/KYC, ban holds, task graphs, AI results, and multi-stage financial history. Cross-canister calls cannot replace SQL transactions transparently.
 - Current wallet authority is server-custodial: private keys/mnemonics/PEM are process or plaintext database secrets. ICP transfers use a local Ed25519 identity, not a canister account.
 - Current payment retries are not safely idempotent, and external sends have a send-before-commit ambiguity window.
-- Current jobs rely on a process-local lock and external cron triggers. Task ownership is not a durable atomic lease.
+- Current jobs rely on a process-local lock and external cron triggers. The target retains stable timer schedules/cursors where recurrence requires them, but evaluates AI workflows through direct bounded code rather than replacing the legacy lock with a persistent AI task queue.
 - The application depends on OpenAI, Didit, GitHub/ORCID/Bitbucket/GitLab OAuth, email delivery, World Bank GDP, CoinGecko, blockchain RPCs, and Reown browser wallets. “Fully on-chain” means application state machines, authorization, scheduling, custody policy, audit, and frontend hosting live on ICP; it does not make those external providers decentralized.
 - Live row counts and sizes are unknown. A read-only production inventory is mandatory before G2.
 
@@ -39,8 +41,8 @@ The architecture intentionally does **not** reproduce unsafe legacy behavior. Ex
           |                    v         v
           |            +-------+---+  +--+----------------+
           |            | workflow  |  | treasury_canister |
-          |            | task DAG, |  | accounting, jobs, |
-          |            | timers    |  | reconciliation    |
+          |            | direct AI |  | accounting, jobs, |
+          |            | + timers  |  | reconciliation    |
           |            +---+---+---+  +---------+----------+
           |                |   |                |
           |        HTTPS outcalls |        journaled operation
@@ -83,19 +85,18 @@ The core method body authenticates the caller and authorizes the exact resource/
 
 ### `workflow_canister` — Motoko enforcement with ZenDB collections
 
-- Typed task DAG replacing serialized runner-class/runner-data discovery.
-- Claim state: `queued -> leased(epoch, owner, expires) -> running -> terminal`, with a single acknowledged compare-and-set method proven against the pinned ZenDB store, operation IDs, and bounded retry policy.
-- Canonical AI result/status/source metadata and exact user/task indexes.
-- Stable job schedules, cursors, attempts, completion reports, and outbox/inbox receipts.
+- Versioned first, repeat, and quarterly evaluator functions execute the fixed 14/6/5-operation workflows through direct `llm` calls. Dependencies pass as typed local values within the invocation; no live task, DAG edge, claim/lease, provider-batch/item, or intermediate-operation record is written to stable memory or ZenDB.
+- Canonical AI result/status/source metadata and exact user/evaluation-operation indexes. Only a complete validated result/source set is published under its deterministic cycle/result key; an interrupted or failed invocation publishes no partial result and may restart whole.
+- Stable non-AI job schedules, aggregate quarterly due cursors, final completion reports, and outbox/inbox receipts. A direct evaluation writes no execution record before its first `llm` call, and these durable records must not encode resumable AI task state or intermediate evaluation outputs.
 - ICP timers replace cron-job.org and in-process intervals. Timer IDs are transient; deadlines and cursors are stable and re-registered after upgrades. ICP timers are best-effort and may interleave after `await`, so jobs are designed at-least-once; see [timers](https://docs.internetcomputer.org/guides/backends/timers/) and [upgrade guidance](https://docs.internetcomputer.org/guides/security/canister-upgrades/).
-- External calls use bounded HTTPS outcalls with explicit response limits, cycles budgets, deterministic transforms when replicated consensus is needed, redaction, circuit breakers, and durable idempotency keys. See [HTTPS outcalls](https://docs.internetcomputer.org/guides/backends/https-outcalls/).
+- External calls use bounded HTTPS outcalls with explicit operation/request/response/cycle/spend limits, deterministic transforms when replicated consensus is needed, redaction, and circuit breakers. The deterministic evaluation cycle/result key makes final publication idempotent without persisting provider attempts or a task queue. See [HTTPS outcalls](https://docs.internetcomputer.org/guides/backends/https-outcalls/).
 
 The webhook HTTP interface may be implemented here or as a small same-controller ingress canister. Conventional webhooks use `http_request` followed by `http_request_update`; the update method re-verifies method/path/body limit, HMAC/signature, freshness, provider event ID, session binding, and monotonic state before forwarding an idempotent event. OAuth does not use an unauthenticated HTTP update callback to establish login: the provider redirect goes to the allowlisted certified frontend and only the bound Candid caller can complete the M2 exchange. If a provider requires a server callback, it may only stage data against the pre-existing caller-bound attempt; it cannot bind or recover an account until that caller completes the exchange. The protocol supports this update upgrade path; see the [HTTP gateway specification](https://docs.internetcomputer.org/references/http-gateway-protocol-spec/).
 
 ### `archive_router` and ZenDB collections
 
 - Routes versioned core, workflow, treasury, `ai_artifact_vN`, audit-view, and migration-evidence collections to pinned ZenDB canisters. Collection data may be authoritative only after the M1 proof for its mutation/recovery protocol succeeds.
-- A ZenDB failure cannot authorize, complete, delete, or duplicate a core task/payment. The native saga record holds the expected hash, idempotency key, and pending/available/reconciled state.
+- A ZenDB failure cannot authorize, complete, delete, or duplicate a canonical evaluation result or payment. The native final-publication saga record holds the expected hash, idempotency key, and pending/available/reconciled state; it is not execution-task storage.
 - Every document has an application logical ID/idempotency key, schema version, content hash, created epoch, typed ownership references, and size cap. That logical ID is a unique indexed document field unless the exact pinned ZenDB API proves caller-supplied document IDs; ZenDB's generated internal document ID is otherwise non-authoritative storage metadata. Every query uses a suitable index and stable cursor.
 - Shards are replaceable: canonical export is the portability boundary. Schema changes create a new `collection_vN`, migrate in bounded batches, compare hashes/counts, switch the router, and retain the old collection read-only through rollback.
 
@@ -131,7 +132,7 @@ The webhook HTTP interface may be implemented here or as a small same-controller
 
 | Legacy integration | Target path | Trust/security treatment |
 | --- | --- | --- |
-| OpenAI immediate/batch/web search | `llm` Motoko package | Provider remains centralized; scoped spend-limited key, bounded/redacted payload, stable request ID, result schema validation, no payment authority |
+| OpenAI immediate/batch/web search | Direct calls through the `llm` Motoko package; legacy provider batch mode retired | The package does not provide batch submission/polling, so fixed bounded operations execute directly in code with no persisted task/provider-item state; provider remains centralized; scoped spend-limited key, bounded/redacted payload, deterministic cycle/result key, result schema validation, no payment authority |
 | GitHub/ORCID/Bitbucket/GitLab | `indentify` caller-bound OAuth start/certified-frontend callback/complete flow plus canister token/profile outcalls | One-use caller-bound state/nonce and PKCE; configured client/redirect plus provider-specific response and immutable-subject verification, with issuer/audience validation where present; no callback/bearer authority. A provider without a proven secure flow is blocked or explicitly G2-approved as retired, never silently weakened |
 | Didit | Canister creates session through an evaluated `join-proxy` deployment or the direct provider; HTTP-update webhook ingress | At M2, pin and review `join-proxy` and `join-proxy-client.mo`; use only an allowlisted configurable HTTPS URL. Bind reusable proof to subject/consent/freshness, deduplicate provider and proxy events, retain AML rejection precedence, account for cost, and test the direct fallback. No proxy response alone is KYC authority. |
 | Nodemailer/SMTP | HTTPS email API | Canisters do not open SMTP sockets; durable delivery intent/idempotency, no sensitive data in subject/log, bounce/retry state |
@@ -164,7 +165,7 @@ License direction: G1 evidence must first inventory every license/notice, packag
 | Data class | Chosen structure | Reason |
 | --- | --- | --- |
 | Users, principal/identity bindings, roles, emails, KYC state, payout destinations, bans/holds | Versioned ZenDB collections with Motoko mutation-saga records and explicit unique/sorted indexes | ZenDB can store Candid/Blob/Text records; Motoko enforces caller authorization and relation/uniqueness policy across remote writes |
-| Task DAG, leases, canonical results, outbox/inbox | Versioned ZenDB collections with Motoko lease/idempotency saga | Queryable target representation; no unbounded scan/query-plan dependence |
+| Canonical AI results/sources, redacted audit, stable schedules, completion receipts, outbox/inbox | Versioned ZenDB collections with Motoko final-publication/idempotency saga | Direct evaluators keep dependencies local and create no task/DAG/lease/provider-batch records; durable records remain queryable without unbounded scans |
 | Liabilities, reserves, journal, operation/attempt receipts, finality/reorg state | ZenDB journal/receipt collections with Motoko operation protocol and bounded lookup indexes | Money/replay authority only after M1 proves failure-safe intent/write/acknowledgement recovery, exact base units, and an independently auditable state machine |
 | Large AI/provider request/response payloads and derived audit documents | Versioned ZenDB collections | Document-shaped, append-heavy, varied nested payloads, multiple metadata filters, high growth; replaceable and hash-addressed |
 | KYC raw evidence | Encrypted, access-logged ZenDB collection with Motoko access/hash indexes | PII/retention/access policy outweighs flexible queries; minimize indexed sensitive fields |
@@ -180,7 +181,7 @@ These are design targets to make limits testable; they are not production-count 
 | --- | --- | --- | --- |
 | Core user/profile | 10 million users, 50 million identity/email/destination records | Introduce hash-prefix router before 60% measured memory/instruction limit | Point lookup; ordered `(created,id)` and leaderboard cursor; no full user scan |
 | Voting/holds | 100 million events per epoch shard | Seal old epoch and create next shard | `(target,epoch,id)` and `(voter,epoch,id)` cursors |
-| Workflow active | 10 million nonterminal/retained metadata records per shard | Archive terminal payload/metadata; route by task ID/epoch | Queue index plus exact owner/status cursor |
+| Workflow results/audit | 10 million retained result/audit metadata records per shard | Archive payload/metadata by retention policy; route by result ID/epoch | Exact owner/kind/time cursor; no AI task queue index |
 | ZenDB collection shard | 25 million documents or 50 GiB, whichever first | Create a new collection/shard; never approach theoretical 500 GiB | Fully covered composite/text index; cursor only; max 256 KiB document, max 1 MiB batch |
 | Financial journal | 100 million immutable entries per treasury | Add a read-only archive/index collection while authoritative balances/receipts remain in the pinned ZenDB authority collection | operation ID point lookup; account/asset/sequence cursor |
 | Migration import | max 500 ordinary records and <1 MiB encoded payload per call; large record fragments bounded separately | Split before encoding; reject over-limit | `(migration,table,chunk)` receipt point lookup |

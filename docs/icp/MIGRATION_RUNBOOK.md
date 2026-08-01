@@ -134,7 +134,7 @@ The default dependency order is:
 1. schema/config metadata and redacted secret disposition;
 2. `User`, then `UserEmail` and historical credential/auth records;
 3. `Global` and typed policy/config state;
-4. tasks, provider groups, mappings, task dependencies, results, sources, and logs;
+4. tasks, provider groups, mappings, and task dependencies into restricted read-only legacy history, followed by results, sources, and logs; imported workflow rows never seed a live task queue, DAG, claim/lease, or provider-batch execution state;
 5. votes, holds, KYC/liveliness evidence, and notification state;
 6. financial history (`GasTokenDistribution`, `GasTokenReserve`, `PendingTransaction`) into a quarantined historical namespace;
 7. unmanaged AI migration exceptions and restricted archive payloads;

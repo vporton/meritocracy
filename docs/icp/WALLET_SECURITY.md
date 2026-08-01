@@ -83,6 +83,8 @@ The first accepted operation ID stores the canonical operation hash. An identica
 
 The SNS is the only production controller. Its proposals require the reviewed delay, reproducible Wasm and stable/Candid compatibility evidence, test results, security diff, controller/module-hash verification, and an exercised recovery plan. Independent safety principals can pause only; they cannot resume, upgrade, change policy/caps, change controllers, or send funds. Because the treasury remains upgradeable, a controller compromise can request signatures through malicious code; G3 therefore validates the governance, pause, cap, monitoring, and recovery controls rather than claiming immutable-code containment.
 
+An SNS is per application, not a generic testnet controller. Before G3, the authorized human decision must name whether this application will launch its own SNS or use an already governed application path, and record the ownership/tokenomics, applicable `sns_init` or existing-SNS configuration, voting/quorum/delay, cycle-management, root-handoff, and recovery model. That decision is intentionally not inferred from the architectural direction to use an SNS. Local SNS tooling or PocketIC may prove the controller interface before G3. The isolated, non-custodial mainnet SNS testflight explicitly authorized at G4 proves handoff/recovery mechanics with a testflight SNS under a bounded approved cycle budget; the separately reviewed production SNS handoff follows it. Neither is a pre-G4 deployment or an excuse to test with production data, derivation paths, payment authority, or custodial assets.
+
 ### Scope isolation
 
 Global, country, and EU/region treasuries get independent cryptographic authority:
@@ -194,7 +196,7 @@ Before each `await`, the state transition and attempt ID are committed. After re
 ## Donations and deposits
 
 - Browser wallets remain user controlled; the UI verifies the expected chain/cluster, asset contract/ledger, amount, destination, and helper/minter before requesting a transaction.
-- ICP/ICRC donations go directly to the published unified-treasury account for the selected asset/scope; no per-donor deposit subaccount is required. The ledger-index scanner credits each observed block exactly once by ledger/block identity. A donor may attach an optional bounded memo for attribution, but a missing/unknown memo never blocks acceptance or creates a second credit.
+- ICP/ICRC donations go directly to the published unified-treasury account for the selected asset/scope; no per-donor deposit subaccount is required. The ledger-index scanner credits each observed block exactly once by ledger/block identity. The selected scope is determined by the published receiving account/subaccount, never by a memo. A donor may attach an optional bounded memo as untrusted display metadata, but a missing, duplicate, forged, or unknown memo never blocks acceptance, creates a second credit, assigns a donor identity, or grants an entitlement. Any donor-recognition claim requires a separate caller-bound ownership proof and remains separate from the ledger credit.
 - ckBTC/ckETH/ckERC20 deposits follow official minter flows. Creating/sending to a deposit address is not complete until the minter update/mint step and ICRC credit are confirmed.
 - Direct external deposits use published treasury-derived scope addresses and a durable scanner cursor/finality rule. Observed deposits credit the accounting journal exactly once by chain transaction/outpoint/log identity.
 - Public treasury views show observed height/time/finality and certified application-journal roots; they never add a logical reserve to an already inclusive wallet balance.
@@ -214,12 +216,14 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 - One reviewed governance canister is the sole controller before SNS handoff. Human principals are signers of that governance, not independent controllers.
 - Named roles, least privilege, out-of-band recovery, and a reviewed proposal log are required.
+- Local SNS tooling or PocketIC SNS/NNS subnets must exercise proposal, delay, pause/recovery, upgrade, controller, and cycle-management behavior against the pinned production controller interface. This is evidence for G3, not evidence that a production SNS already exists.
 
 ### Production direction
 
 - SNS is the sole controller of `frontend_assets`, `core`, `workflow`, `archive_router/shards`, and the unified `treasury`. No production canister is blackholed or has an empty controller list.
 - Upgrade proposal contains source commit, reproducible Wasm/assets hashes, dependency lock, Candid/stable compatibility, state migration plan, tests, security diff, cycles/freezing impact, and rollback module hash.
 - Proposal delay allows public/security review. Deployed module hashes and controller lists are verified after execution.
+- G4 first authorizes an isolated mainnet SNS testflight, not a custodial deployment: its canister IDs, bounded approved cycle budget, test-only environment/derivation domain, controller recovery/abort procedure, and evidence retention are fixed in the signed runbook. It may use only valueless external test assets and must prove that no production data, production derivation path, payment authority, or custodial asset is present before it tests testflight-SNS-root-only control and recovery. Failure returns to the pre-production controller and blocks the separately reviewed production SNS handoff/deployment.
 
 ICP's controller model gives controllers power to install/upgrade/delete canisters and redirect held assets. The official guidance recommends governance or immutability for valuable canisters; see [canister control](https://docs.internetcomputer.org/guides/security/canister-control/) and [canister settings](https://docs.internetcomputer.org/guides/canister-management/settings/).
 
@@ -273,9 +277,10 @@ No missing secret is generated automatically. Missing authority is a hard stop.
 - Exact supported asset/network/scope registry and custody choice.
 - Unified treasury decision, caps, rolling windows, pause/resume, SNS controller state, upgrade/recovery policy, and residual governance-risk analysis.
 - Named SNS governance/safety roles, quorum/delay, reproducible upgrade process, controller verification, and compromise drill.
+- A recorded human decision identifies the application SNS launch/ownership model, applicable `sns_init`/tokenomics or existing-SNS configuration, voting/quorum/delay, cycle-management, root handoff, and recovery policy. Local SNS/PocketIC tests prove that exact controller interface; the G4 runbook separately defines the isolated non-custodial mainnet testflight with its bounded approved cycle budget and abort/recovery proof before the separately reviewed production handoff.
 - State-machine/property tests prove conservation and one-operation/one-transfer under concurrency, duplicate calls, callback traps, timeouts, upgrades, cycle shortage, ambiguous sends, fee changes, finality, and reorgs.
 - ICRC `Duplicate/TooOld`, EVM nonce/replacement, BTC/BCH UTXO, Solana nonce/blockhash, Cosmos/Stellar/Polkadot sequence/finality test evidence.
 - Destination proof/change-delay and KYC/hold/compensation policy.
 - Legacy key/balance/pending-payment reconciliation report with no unresolved automated send.
 - Independent custody/authorization security review.
-- Testnet-only deployment with valueless assets; no real funds. Verify direct-to-treasury donation, no per-donor deposit-address requirement, and one-credit-per-ledger/chain-observation behavior.
+- Test-network deployment with valueless assets; no real funds. Verify direct-to-treasury donation, no per-donor deposit-address requirement, and one-credit-per-ledger/chain-observation behavior, including duplicate delivery/reorg and duplicate or forged memos. A G4-authorized mainnet SNS testflight is a separate isolated, non-custodial procedure with only its approved cycle budget, not a testnet deployment.

@@ -35,6 +35,7 @@ Before any production freeze, independently verify:
 - capture publication/slot and output-plugin identities; exported snapshot and consistent point; contiguous commit-transaction root through each recorded barrier; replica-identity map; redaction-projection/function/trigger hashes; retained-WAL budget/status; and the named DBA/retention window for safe cleanup;
 - exact legacy application image/commit, configuration schema, dependency lock, and infrastructure definition with secrets available from the approved secret store;
 - every canister ID, subnet, controller/governance principal, module hash, Candid interface, stable signature, certified-asset root, and sufficient cycle balance;
+- the recorded SNS launch/ownership decision, local/PocketIC controller evidence, and the G4 testflight's isolated canister IDs, test-only derivation/environment, cycle budget, root-controller transition, and recovery/abort proof; testflight artifacts are distinct from production artifacts;
 - the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, bootstrap/deployer/import grant revocation evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
 - current and previous stable-compatible Wasm artifacts and tested upgrade/downgrade/forward-repair procedures;
 - DNS/CDN/custom-domain configuration, TTLs, asset routing, monitoring, and reversible traffic-switch commands;
@@ -54,6 +55,21 @@ Trigger: failed design/test, toolchain regression, security finding, or unapprov
 Action: revert the reviewable documentation/scaffolding commit or remove disposable local canisters. No source data, production service, or custody changed. The disposable ZenDB deployment can be replaced because no production authority exists at R0. A completed public AGPL-3.0 grant is not treated as revoked by this rollback; any license correction follows the approved legal/notice disposition and preserves the audit record.
 
 Exit: legacy build/tests pass; `PLANS.md` and parity status record the failure and revised design.
+
+### R0a — G4-authorized non-custodial mainnet SNS testflight
+
+Authority: isolated testflight canisters only; legacy application/PostgreSQL remains authoritative and no production canister, data, derivation path, payment authority, or custodial asset is in scope.
+
+Trigger: failed SNS-root-only control, proposal delay, pause/recovery, upgrade, cycle-management, monitoring, controller recovery, isolation check, or operator abort.
+
+Action:
+
+1. Pause the isolated testflight treasury and prove it has no obligation, payment operation, production derivation path, or custodial balance.
+2. Execute the pre-approved SNS testflight recovery/abort procedure; verify the recovered controller list and module hash before any deletion or reuse.
+3. Retain proposals, controller/module/cycle evidence, and the failure report; discard only the isolated testflight canisters after the recovery evidence is independently verified.
+4. Do not transfer, deploy, alter, or roll back any production canister, legacy writer, production data, or custody component. Return to the pre-production controller design and correct the testflight package before requesting another G4 approval.
+
+Exit: the testflight is recovered/retired with evidence, the legacy system remains sole authority, and production deployment remains blocked.
 
 ### R1 — Testnet and shadow import
 

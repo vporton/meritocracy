@@ -39,8 +39,8 @@ These are the only planned approval stops.
 | --- | --- | --- | --- |
 | G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, frontend replacement, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
 | G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; an exact pinned ZenDB commit/API/Candid/Wasm with authoritative-mutation, logical-ID, RBAC, upgrade, and recovery proofs; PostgreSQL logical-decoding/exported-snapshot, replica-identity, commit-order, WAL-retention, and sensitive-column redaction proofs; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
-| G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; SNS-controller and governance-recovery drills; independent wallet review; revised `WALLET_SECURITY.md` |
-| G4 — Testnet-to-production migration | BLOCKED by G3 | Mainnet deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module plus exact ZenDB pin/RBAC/intent checks; testnet parity; independent security sign-off |
+| G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; local/PocketIC SNS-controller and governance-recovery drills; recorded human decision naming the production SNS launch/ownership model, applicable `sns_init`/tokenomics or existing-SNS configuration, and root-handoff/recovery policy; independent wallet review; revised `WALLET_SECURITY.md` |
+| G4 — Testnet-to-production migration | BLOCKED by G3 | A non-custodial mainnet SNS testflight with an approved cycle budget, then mainnet production deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module plus exact ZenDB pin/RBAC/intent checks; testnet parity; reviewed G4 testflight/recovery runbook with isolated canister IDs, bounded approved cycles, test-only derivation/environment, no custodial assets, and an abort proof; independent security sign-off |
 
 Approval of G4 authorizes only the reviewed runbook steps. Each real-asset transfer remains a deliberate manual runbook action with recorded transaction details; automated tests never move real assets.
 
@@ -262,7 +262,7 @@ Dependencies: approved schemas/roles; test keys only.
 Invariants:
 
 - No real funds or legacy production keys.
-- A test controller compromise is contained by the SNS-governed unified treasury's reviewed proposal delay, pause role, policy caps, reconciliation procedures, and tested recovery; no canister is blackholed.
+- A test controller compromise is contained by the reviewed test-governance/SNS harness's proposal delay, pause role, policy caps, reconciliation procedures, and tested recovery; no canister is blackholed. This proves the controller contract, not that a production SNS already controls a canister.
 - Every chain has an explicit operation-ID, nonce/sequence/UTXO, finality, reorg, and ambiguous-result design.
 
 Small changes/commits:
@@ -271,13 +271,13 @@ Small changes/commits:
 2. BTC testnet/regtest Chain Fusion prototype.
 3. EVM Sepolia EVM-RPC/t-ECDSA prototype.
 4. SOL devnet and other network feasibility spikes; classify unsupported/maturity risks rather than faking parity.
-5. SNS/controller, unified-treasury, pause/recovery, and adversarial threat-model prototype; verify that every production canister remains upgradeable only through the approved SNS path and none has an empty controller list.
+5. Use pinned local SNS testing or PocketIC SNS/NNS subnets to prototype the SNS-root controller contract, unified treasury, pause/recovery, and adversarial threat model. Verify that the test canister accepts governance action only through that configured root, that the production handoff artifacts are complete, and that no test canister has an empty controller list. Do not claim that a production canister is SNS-controlled or deploy a mainnet canister at M6.
 
 Acceptance:
 
 - Duplicate, reentrant, timed-out, upgrade-interrupted, `TooOld`, nonce conflict, UTXO conflict, provider inconsistency, finality, and reorg tests pass.
 - Exact cycle/fee/storage budgets and funding alarms are measured.
-- An independent reviewer signs off on the design evidence.
+- An independent reviewer signs off on the design evidence, including the recorded human SNS launch/ownership decision and an executable G4-only mainnet-testflight/recovery runbook.
 
 Rollback: delete only valueless test accounts/canisters; retain reports.
 
@@ -285,7 +285,7 @@ Rollback: delete only valueless test accounts/canisters; retain reports.
 
 Status: BLOCKED by M6.
 
-### M7 — Production wallet implementation on testnets
+### M7 — Wallet implementation on test networks
 
 Status: BLOCKED by G3.
 
@@ -295,12 +295,12 @@ Invariants:
 
 - The unified treasury journal enforces operation idempotency before every ledger or Chain Fusion action.
 - ICRC accounts/subaccounts and direct Chain Fusion addresses are selected per reviewed asset/network adapter; ck assets remain distinct from native external assets.
-- Payout pause, policy caps, and operation idempotency cannot be bypassed by application shortcuts; their modification requires the approved SNS governance path and delay.
+- Payout pause, policy caps, and operation idempotency cannot be bypassed by application shortcuts; their modification requires the approved governance controller and delay. The test controller must exercise the same authorization interface as the selected SNS root, but cannot stand in for a production SNS handoff.
 
 Small changes/commits:
 
 1. Append-only accounting/liability/payment-operation journal.
-2. One SNS-controlled Chain Fusion treasury canister that owns the journal, payment operations, ICRC accounts/subaccounts, and direct-chain derivation/signing state. It is not blackholed and has no separate vault canister.
+2. One test-governed Chain Fusion treasury canister that owns the journal, payment operations, ICRC accounts/subaccounts, and direct-chain derivation/signing state. It is not blackholed and has no separate vault canister. Pin and test the production SNS-root authorization interface locally/PocketIC; reserve the mainnet SNS-testflight root handoff, then the separately reviewed production SNS handoff, for G4.
 3. ICRC/ICP and ck-token adapters.
 4. Direct BTC/EVM adapters, followed by independently reviewed network adapters.
 5. Payout destination proof/change-delay, direct-to-treasury donation/deposit, scoped treasury, confirmation/reconciliation, SNS recovery, and incident tooling.
@@ -309,7 +309,7 @@ Acceptance:
 
 - Supply conservation and double-entry/property tests pass across all states.
 - Legacy known duplicate/ambiguous cases are fixtures and cannot trigger automated sends.
-- Testnets demonstrate direct donation to a published treasury address/account, funding, mint/update-balance, payout, retry, confirmation, reorg recovery, pause, SNS governance upgrade/recovery, cycle top-up, and controller-compromise response with valueless assets.
+- Test networks demonstrate direct donation to a published treasury address/account, funding, mint/update-balance, payout, retry, confirmation, reorg recovery, pause, governance-controller upgrade/recovery, cycle top-up, and controller-compromise response with valueless assets. They include duplicate scanner delivery, two unrelated donations with the same memo, and a forged/unbound memo; each source observation credits exactly once and no memo grants identity, entitlement, or a different scope.
 
 Rollback: pause the test treasury, reconcile, and discard test state. Production remains legacy.
 
@@ -317,22 +317,24 @@ Rollback: pause the test treasury, reconcile, and discard test state. Production
 
 Status: BLOCKED by M4, M5, and M7.
 
-Dependencies: all parity items implemented.
+Dependencies: every parity item whose implementation is pre-G4 is implemented; each G4-only parity item has an executable signed testflight, deployment, or cutover package.
 
 Invariants:
 
 - PostgreSQL remains authoritative during rehearsal.
 - No production/private secret is used in testnet.
 - Rehearsal follows the exact production scripts with only environment/IDs changed.
+- The rehearsal exercises only local/PocketIC SNS or the reviewed pre-production governance controller. It does not assert a mainnet SNS handoff or an NNS-controlled Chain Fusion integration, which remain G4-runbook steps.
 
 Acceptance:
 
 - Full snapshot plus delta import, read-only shadow, final freeze/drain, reconciliation, frontend switch, rollback, and forward-recovery are rehearsed and timed.
 - The rehearsal reproduces the exact ZenDB source/dependency/Candid/Wasm pin, exercises lost-result logical-ID/version/hash reconciliation, drains every native intent, and proves bootstrap/importer/staging grants are absent and live collection grants exactly match the approved matrix before target writes are enabled.
 - The rehearsal creates its capture publication/slot before the exported base snapshot, proves the continuous slot-consistent-point-to-barrier-LSN chain under decoder restart and WAL pressure, and proves direct CDC, redacted outbox, artifacts, and logs contain no secret/bearer/raw-token value.
-- All parity entries are verified or explicitly approved as changed/not-applicable.
+- All parity entries reachable before G4 are verified or explicitly approved as changed/not-applicable. Each G4-only entry has a complete, independently reviewed runbook and is not reported as verified before its authorized testflight/deployment evidence exists.
 - Independent security and migration review is clean.
 - Module hashes, controller transitions, cycles/freezing thresholds, monitoring, backup/export, and incident contacts are in the machine-readable report.
+- The report includes the selected SNS launch/ownership decision, validated local/PocketIC SNS evidence, and the isolated G4 mainnet-testflight manifest/recovery procedure; it does not treat either as a completed mainnet handoff.
 
 Rollback: execute `docs/icp/ROLLBACK_PLAN.md` against testnet and prove legacy recovery.
 
@@ -351,6 +353,7 @@ Invariants:
 - Follow the signed runbook; no ad-hoc correction or transfer.
 - Legacy PostgreSQL stays intact/read-only through the rollback window.
 - Asset movement is separately reconciled and manually authorized.
+- Before any production canister, data, DNS, or custody action, execute the G4-approved non-custodial mainnet SNS testflight on isolated canister IDs with a test-only derivation/environment and only its approved cycle budget. Verify SNS-root-only control, proposal delay, pause/recovery, upgrade, monitoring, and the documented recovery/abort path. A testflight failure aborts before production deployment; its canisters never receive production data or custodial assets.
 
 Acceptance:
 
@@ -358,6 +361,7 @@ Acceptance:
 - Deployed modules/controllers/config/cycles and exact ZenDB source/dependency/Candid/Wasm/RBAC hashes match approved values; all intents are acknowledged or explicitly blocked before writes are enabled.
 - The production base snapshot is the approved slot-exported snapshot; its capture chain, replica identities, redaction hashes, transaction roots, and final barrier LSN match the signed report before ICP writes are enabled.
 - Production smoke, auth, certified frontend, timers, external integrations, and read-only financial tests pass.
+- The mainnet SNS testflight report proves its isolation, cycle accounting, controller/recovery result, and absence of production data, production derivation paths, custodial assets, and payment authority before the production deployment proceeds.
 - Observation window closes with no unresolved severity-1/2 issue; final export/backup and cutover report are archived.
 
 Rollback: execute the phase-specific branch in `ROLLBACK_PLAN.md`. After any ICP-side financial write, rollback means pause plus reconcile/forward-repair or a verified reverse delta; it never means blindly enabling the old sender.
@@ -387,6 +391,8 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | Non-EVM scoped addresses do not select the scoped signer | Critical | Per-scope Chain Fusion derivation/subaccount proof; reconcile displayed address to authority |
 | KYC failure code intentionally consumes backlog claims | Critical policy conflict | Preserve claims as held liabilities until explicit policy at G2/G3; no silent forfeiture |
 | Plaintext DB/process wallet secrets | Critical | Fingerprint only, rotate/retire, never import value; controlled legacy-to-unified-treasury transfer only after G4 |
+| SNS handoff/testflight is treated as a generic testnet controller or occurs before the permitted mainnet boundary | High governance/ordering | G3 records the human SNS launch/ownership decision and proves the interface locally/PocketIC; G4 alone authorizes an isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort procedure before production deployment |
+| Direct treasury donation memo is mistaken for authenticated donor, entitlement, or scope authority | High accounting/authorization | Scope comes only from the published account/address and an observation credits once by ledger/chain identity; memos are bounded untrusted metadata unless a separate authenticated proof is accepted |
 | Serialized task user IDs leak/cross-match users | High | Typed exact owner index and authorization tests |
 | Mutable OAuth handles are account keys | High | Reverify and bind immutable provider subject IDs |
 | KYC callbacks lack durable event order/idempotency | High | Provider event journal, exact session/freshness, monotonic AML-first state |

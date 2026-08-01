@@ -1,6 +1,6 @@
 # Target ICP architecture
 
-Status: G1 approved, 2026-08-01. This remains a design document; no application code has been changed.
+Status: G1 approved, 2026-08-01. This remains a design document; no target behavior has been enabled.
 
 ## Decision summary
 

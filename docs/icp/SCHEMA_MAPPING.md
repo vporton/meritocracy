@@ -1,6 +1,6 @@
 # PostgreSQL/Prisma to ICP schema mapping
 
-Status: complete source inventory and G1-level proposed disposition; concrete Motoko/ZenDB collection schemas, mutation-recovery protocols, indexes, and measured limits require G2 approval.
+Status: complete source inventory and M1 design disposition. The concrete candidate Motoko records, ZenDB collection/index catalogue, limits, grant shape, mutation-recovery protocol, and collection-vN migration are in `M1_STORAGE_SCHEMA_AND_SAGAS.md`; their required fault/RBAC/benchmark proof and all approval decisions remain blocked at G2.
 
 ## Completeness boundary
 

@@ -13,9 +13,9 @@ readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff
 readonly pocket_ic_version="14.0.0"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-proof_test="$repo_root/test/zendb/M1AuthoritativeProof.Test.mo"
+proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 
-for command in git mops dfx sha256sum install tar moc-wrapper; do
+for command in git mops dfx sha256sum install stat tar moc-wrapper; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
@@ -82,6 +82,27 @@ install -m 0644 "$proof_test" "$test_target"
 printf '\npocket-ic = "%s"\n' "$pocket_ic_version" >> "$source_dir/mops.toml"
 
 cd "$source_dir"
+# `pic-js-mops` installs a test Wasm in one ingress message. PocketIC enforces
+# a 2 MiB ingress limit, while the remote-CanisterDB test actor statically
+# links the candidate database implementation. Detect that transport boundary
+# before invoking Mops: without this check its client retries the oversized
+# installation indefinitely and never reaches `runTests`.
+mops install
+readonly pocket_ic_max_ingress_bytes=2097152
+proof_wasm="$workdir/M1AuthoritativeProof.Test.wasm"
+moc-wrapper \
+  -o="$proof_wasm" \
+  --hide-warnings \
+  --error-detail=2 \
+  $(mops sources) \
+  "$test_target"
+proof_wasm_bytes="$(stat -c%s "$proof_wasm")"
+if (( proof_wasm_bytes > pocket_ic_max_ingress_bytes )); then
+  echo "M1 authoritative proof is blocked before PocketIC execution: compiled test Wasm is ${proof_wasm_bytes} bytes, above the pic-js-mops single-ingress limit of ${pocket_ic_max_ingress_bytes} bytes." >&2
+  echo "Reduce or split the harness, or pin and prove a chunked-install runner; do not report this compilation as a successful PocketIC proof." >&2
+  exit 1
+fi
+
 # Explicit PocketIC selection makes the test local-only. The filter selects
 # only the copied synthetic proof, not an unbounded upstream suite.
 mops test --mode replica --replica pocket-ic M1AuthoritativeProof.Test -r verbose

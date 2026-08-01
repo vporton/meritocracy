@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "STAGED: exact-pinned-source compilation passed; a successful PocketIC execution is still required before this is evidence.",
+  "status": "BLOCKED: exact-pinned-source compilation passes, but the Mops 2.19.2/pic-js-mops runner installs the 3,281,858-byte synthetic test Wasm as one ingress message; PocketIC rejects messages above 2,097,152 bytes. The runner fails before runTests and must not be treated as PocketIC execution evidence.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -15,6 +15,13 @@
     "replica": "pocket-ic",
     "pocketIc": "14.0.0",
     "test": "M1AuthoritativeProof.Test"
+  },
+  "executionBlocker": {
+    "component": "pic-js-mops setupCanister used by Mops 2.19.2",
+    "compiledTestWasmBytes": 3281858,
+    "singleIngressLimitBytes": 2097152,
+    "observedFailure": "PocketIC BadIngressMessage: request is larger than the maximum allowed message size",
+    "requiredResolution": "reduce or split the test harness, or pin and independently prove a chunked-install runner before recording a PocketIC pass"
   },
   "plannedCoverage": [
     "a unique logical-ID index rejects identical and conflicting second inserts",

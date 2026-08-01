@@ -56,9 +56,14 @@ with its planned coverage recorded in
 [`third_party/zendb/v2.0.1.authoritative-proof.json`](../../third_party/zendb/v2.0.1.authoritative-proof.json).
 It validates the pin before copying a synthetic test into an ephemeral source
 checkout, adds the reviewed PocketIC `14.0.0` runner pin only to that checkout,
-and runs it only in PocketIC. Its exact-pinned-source Motoko compilation has
-passed; a successful PocketIC execution is still required before it is M1
-evidence. The test creates a unique
+and runs it only in PocketIC. The test now registers an explicit async replica
+test, so compilation alone cannot be confused with an execution pass. Exact
+pinned-source compilation produces a 3,281,858-byte test Wasm, but the Mops
+2.19.2 `pic-js-mops` runner installs it as one ingress message and PocketIC
+rejects messages above 2,097,152 bytes. The runner preflights this boundary and
+fails closed instead of retrying indefinitely; it is **not** PocketIC evidence.
+Reduce or split the harness, or pin and independently prove a chunked-install
+runner before recording an execution pass. Once executable, the test creates a unique
 `logicalId` index, demonstrates that identical and conflicting retries are
 rejected, recovers the first content hash through a one-result logical-ID
 lookup, and checks fixed-size cursor-token progression. Once executed, it is
@@ -73,7 +78,7 @@ read-only and avoids an accidental network fetch from a partial/promisor clone;
 the extracted archive must still match the pinned SHA-256 before the test is
 copied in. The runner explicitly sets the Mops `DFX_MOC_PATH=moc-wrapper`
 setting so non-interactive/CI invocations do not depend on reloading a shell
-profile. Neither behavior changes the unexecuted proof status.
+profile. Neither behavior changes the blocked, unexecuted proof status.
 
 Run it from the repository root:
 

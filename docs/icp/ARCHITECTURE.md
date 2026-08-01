@@ -164,7 +164,7 @@ As of this document date, current ZenDB main describes:
 
 Primary project evidence: [ZenDB repository/readme](https://github.com/NatLabs/ZenDB), [current documentation](https://github.com/NatLabs/ZenDB/blob/main/zendb-doc.md), and the maintainer's [architecture/31-million-transaction report](https://forum.dfinity.org/t/introducing-zendb-embedded-database-with-mongodb-style-queries-for-motoko/61569).
 
-License direction: G1 evidence must first inventory every license/notice, package/distribution artifact, third-party obligation, and contributor/licensor-rights record, and resolve every authority exception. This plan makes no legal conclusion: missing authority blocks G1 rather than permitting a silent relicensing. Once G1 records sufficient authority and approves the disposition, relicensing the repository to AGPL-3.0 is the first M1 implementation change. That one reviewable commit updates the applicable license/notice/metadata and distribution artifacts together while preserving required third-party notices; no toolchain, canister, or application change precedes it.
+License direction: the repository is already AGPL-3.0-only, with the applicable license and package metadata changes recorded in `9122ff0`. No additional relicensing task or M1 gate is required; subsequent migration work must preserve the existing license and required third-party notices.
 
 ### Structure choice
 
@@ -237,7 +237,7 @@ ICP Chain Fusion supports threshold ECDSA/Schnorr addresses, native Bitcoin inte
 
 ## G1 decision
 
-Approved on 2026-08-01 without amendments. The approval record and AGPL-3.0-only relicensing inventory are in `AGPL_RELICENSING_INVENTORY.md`.
+Approved on 2026-08-01 without amendments. The approval record and completed AGPL-3.0-only licensing change are recorded in `9122ff0`.
 
 The approved architecture choices are:
 

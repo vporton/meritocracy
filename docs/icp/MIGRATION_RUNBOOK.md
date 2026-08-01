@@ -153,7 +153,7 @@ Import mode is disabled by default. Governance enables exactly one import sessio
 - `dryRun` versus `stageOnly` mode;
 - explicit denial of ledger, signing, asset activation, and normal user-write capabilities.
 
-Canister caller authentication and governance approval bind the session. A copied chunk submitted by another principal or to another module/migration is rejected. The unified treasury exposes no migration import method.
+Canister caller authentication and governance approval bind the session. The approved importer calls only the application import API and receives no direct ZenDB role. The import capability in that application is time/session-bounded. Its ZenDB role remains limited to the approved owning-application collection matrix; if separate staging deployments/collections require an additional temporary writer grant, governance records its expiry and revokes or downgrades it at abort/finalization. Browsers, users, unrelated canisters, and the importer principal cannot call ZenDB directly. A copied chunk submitted by another principal or to another module/migration is rejected. The unified treasury exposes no migration import method.
 
 ### State machine
 
@@ -169,18 +169,19 @@ PENDING -> IMPORTING -> SEALED -> VALIDATED -> FINALIZED
 - Identical duplicate: return the original receipt and make no writes.
 - Same ordinal/key range with another hash: reject and pause the table.
 - Out-of-order chunk: reject unless its dependency-safe parallel lane was declared in the manifest.
-- A bounded message validates, writes staging records/indexes, updates the receipt journal, and commits atomically without an inter-canister `await`.
-- Every authoritative or archive ZenDB write uses a durable outbox/saga receipt; application code never claims an object is present until the content hash is acknowledged. Retries use the same object ID and reconciliation resolves interrupted remote writes.
+- A bounded application message validates the chunk and persists a native durable intent before calling ZenDB. The intent records migration/table/chunk logical key, payload/content hashes, target collection/schema, operation/attempt ID, and phase. It does not claim that application state, remote staging records, indexes, and a receipt commit atomically across an inter-canister `await`.
+- Staged records and the authoritative ZenDB chunk receipt use unique indexed application logical keys, including `(migration,table,chunk)` for the receipt. Unless the exact G2-pinned ZenDB API proves caller-supplied document IDs, generated ZenDB document IDs are non-authoritative metadata. After the remote call, application code reloads the intent and acknowledges success only when lookup by logical key returns the expected content hash. An absent key may be retried with the identical key and bytes; a different hash pauses the table as a conflict. No retry creates a new key or blind duplicate.
+- If a chunk requires staging records and its receipt to be atomically committed inside ZenDB, the pinned deployment must expose one bounded ZenDB-side method that performs and tests that operation without an intervening `await`. Otherwise the importer stages each record as pending, acknowledges all hashes, writes and acknowledges the receipt, and only then advances a separately acknowledged manifest/visibility pointer; partial work remains invisible and resumable.
 - `SEALED`: expected last chunk/count/roots match; no more chunks accepted.
 - `VALIDATED`: uniqueness, references, type rules, source/target hashes, derived indexes, and exception counts pass.
-- `FINALIZED`: historical import is immutable and import methods are disabled. Controller governance can technically upgrade mutable application canisters, which is why module/controller verification remains part of G4.
+- `FINALIZED`: historical import is immutable and import methods are disabled. Any separate staging-only application writer grant is revoked or downgraded; a normal owning-application role remains only where required by the approved live collection matrix, and the approved read-only audit path remains. Controller governance can technically upgrade mutable application canisters, which is why module/controller/RBAC verification remains part of G4.
 
-Every receipt includes caller, time, migration/table/chunk IDs, previous/new state, row/byte counts, hashes, and module hash. `status(migrationId, table)` and paginated receipt queries allow safe resume without trusting the operator's local state.
+Every confirmed receipt includes caller, time, migration/table/chunk logical IDs, any observed ZenDB document IDs as non-authoritative metadata, previous/new state, row/byte counts, hashes, application and ZenDB module/API hashes, and operation/attempt ID. `status(migrationId, table)` reconciles native intents with bounded ZenDB logical-key/hash lookups, and paginated receipt queries allow safe resume without trusting the operator's local state.
 
 ### Partial batches and duplicates
 
-- Staged row fragments and indexes are invisible to application reads until the whole record commits.
-- A trap leaves neither the row nor receipt committed; the sender queries status and retries the exact bytes.
+- Staged row fragments, pending records, and their indexes are excluded by application visibility/version predicates until the whole chunk is acknowledged and its manifest pointer is active.
+- A trap may leave only the local intent, some remote pending records, or a remote write whose reply was lost. The sender queries application status; the application reconciles each logical key and hash before resuming or retrying the exact bytes. It never infers absence from a missing callback.
 - A source primary-key duplicate is preserved with a duplicate exception if the table lacks enforceable uniqueness. A target unique-key collision never chooses a winner implicitly.
 - Referential indexes are built/checked deterministically. A table cannot reach `VALIDATED` while an unresolved blocking orphan remains.
 - Derived/rebuildable indexes carry their own count/hash and can be dropped and rebuilt without changing authoritative records.
@@ -197,7 +198,7 @@ Cutover sequence after G4:
 2. Announce maintenance; stop legacy write/API workers and every cron/payment sender. Preserve read-only service where safe.
 3. Record process identities and prove no legacy writer/payment worker is running.
 4. Capture final LSN, drain deltas through it, and lock the migration epoch.
-5. Re-run structural and financial reconciliation and obtain independent signatures.
+5. Re-run structural and financial reconciliation; reproduce the exact ZenDB pin; reconcile all native intents and prove no pending record is visible; audit controllers and ZenDB grants, including absence of bootstrap/importer/staging-only writers; then obtain independent signatures.
 6. Enable ICP application writes, but keep asset execution paused until the distinct financial/custody checklist is satisfied.
 7. Switch certified frontend/DNS/API routing in reversible stages; monitor.
 8. Real-asset/key disposition is a separate manual G4 action. Data cutover does not imply asset transfer.
@@ -258,7 +259,7 @@ A dry run:
 1. uses a sanitized immutable snapshot or generated fixture;
 2. rebuilds export twice and requires byte-identical roots;
 3. imports into a fresh local/testnet canister with wallet/signing methods absent or hard-disabled;
-4. injects interruption before/after each chunk commit, duplicate chunks, conflicting hashes, missing fragments, reordered deltas, upgrades, low cycles, and archive unavailability;
+4. injects interruption before, during, and after local-intent persistence, each remote record/receipt write, acknowledgement, and manifest activation; duplicate chunks; conflicting logical-ID hashes; lost replies; missing fragments; reordered deltas; ZenDB/application upgrades; low cycles; and archive unavailability;
 5. compares source counts/hashes with destination target-projection counts/hashes and every relation/index;
 6. produces the same report schema as production with `environment = dry-run` and `assetTransfers = 0`;
 7. destroys only disposable state after evidence is retained.
@@ -283,7 +284,17 @@ At least one full sanitized dress rehearsal and rollback rehearsal are required 
   },
   "target": {
     "network": "local|testnet|mainnet",
-    "canisters": [{"id": "...", "moduleHash": "sha256:..."}]
+    "canisters": [{"id": "...", "moduleHash": "sha256:..."}],
+    "zendb": [{
+      "id": "...",
+      "sourceCommit": "...",
+      "dependencyLockHash": "sha256:...",
+      "candidHash": "sha256:...",
+      "wasmHash": "sha256:...",
+      "rbacPolicyHash": "sha256:...",
+      "grantAuditHash": "sha256:..."
+    }],
+    "intentReceiptRoot": "sha256:..."
   },
   "tables": [{
     "name": "User",
@@ -292,6 +303,9 @@ At least one full sanitized dress rehearsal and rollback rehearsal are required 
     "sourceRoot": "sha256:...",
     "expectedTargetRoot": "sha256:...",
     "actualTargetRoot": "sha256:...",
+    "logicalIdRoot": "sha256:...",
+    "receiptRoot": "sha256:...",
+    "pendingIntentCount": "0",
     "duplicateChunks": "0",
     "exceptions": {"blocking": "0", "historical": "0"},
     "status": "matched"
@@ -319,6 +333,7 @@ Immediately pause and preserve evidence if any of the following occurs:
 
 - source identity/schema/tool/module/manifest hash differs;
 - a supposedly read-only export attempts a write;
+- the exact ZenDB source/dependency/Candid/Wasm pin or approved RBAC grant matrix differs, a revoked bootstrap/deployer/importer role reappears, or a direct unauthorized ZenDB call succeeds;
 - unexpected writer, cron, or payment sender is active during freeze;
 - count, row/table/Merkle hash, relation, unique key, sequence, index, or financial equation differs;
 - chunk conflict, unknown caller, expired authorization, target upgrade, canister/controller change, low-cycle threshold, or unbounded instruction failure;
@@ -333,10 +348,11 @@ An abort never deletes source data, marks an uncertain payment settled, retries 
 
 Migration is complete only when:
 
-- all 22 tables, sequences, approved deltas, relations, constraints, indexes, exceptions, and stable IDs reconcile;
+- all 22 tables, sequences, approved deltas, relations, constraints, indexes, exceptions, source IDs, application logical IDs, and receipt/content hashes reconcile; observed ZenDB document IDs are retained only as audit metadata;
 - destination projection roots independently match;
 - financial equations have zero unexplained difference and every ambiguous operation remains held/resolved with evidence;
-- importer, application, unified treasury, assets, and governance canister IDs/module hashes/controllers match the approved record;
-- import mode and legacy writers/payment workers are disabled as planned;
+- importer, application, unified treasury, assets, governance, and ZenDB canister IDs/module/API hashes/controllers match the approved record; the ZenDB source/dependency/Candid/Wasm pin is reproduced;
+- every native intent is acknowledged or explicitly blocked, no pending record is visible, and the approved ZenDB collection grant matrix passes direct-ingress and post-upgrade negative tests;
+- import mode and legacy writers/payment workers are disabled; bootstrap/deployer/importer roles and any staging-only application writer grant are revoked or downgraded as planned; normal owning-application roles exactly match the approved live collection matrix;
 - the signed machine report and rollback decision are archived;
 - parity and observation criteria in `PARITY_CHECKLIST.md` and `ROLLBACK_PLAN.md` pass.

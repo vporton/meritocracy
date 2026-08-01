@@ -52,7 +52,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | AU-002 | `POST /api/auth/login/ethereum`, EOA and EIP-1271 verification | Preserve EOA/contract-wallet proof as identity evidence; principal remains session authority | DESIGNED / BLOCKED_G2 |
 | AU-003 | Disabled direct `/login/{github,orcid,bitbucket,gitlab}` returns 410 | Preserve as retired endpoint/clear UI migration; OAuth start/callback is the only social path | RETIRED (proposed) / BLOCKED_G2 |
 | AU-004 | `POST /api/auth/register/email` | Email evidence initiation with rate/cost limits and no account authority before proof | DESIGNED / BLOCKED_G2 |
-| AU-005 | `POST /api/auth/verify/email` | Atomic single-use verification bound to caller and intended identity | DESIGNED / BLOCKED_G2 |
+| AU-005 | `POST /api/auth/verify/email` | Acknowledged single-use compare-and-set/saga bound to caller and intended identity; no cross-canister atomicity assumption | DESIGNED / BLOCKED_G2 |
 | AU-006 | `POST /api/auth/resend-verification` | Bounded resend, same invalidation/rate rules, provider idempotency and audit | DESIGNED / BLOCKED_G2 |
 | AU-007 | Opaque SHA-256 bearer sessions, seven-day expiry | Internet Identity/caller principal; imported sessions permanently invalid | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | AU-008 | `POST /api/auth/logout` | Clear frontend delegation/session state and revoke app-side binding where applicable | DESIGNED / BLOCKED_G2 |
@@ -105,9 +105,9 @@ Parity means preserving intended user/business capability, authorization, histor
 | EV-007 | Web-search/result source records | Ordered unique source references with URL validation and evidence hash | DESIGNED / BLOCKED_G2 |
 | EV-008 | Prompt-injection screening and evaluation blocks | Versioned policy/result, false-positive review, adversarial tests, immutable reason history | DESIGNED / BLOCKED_G2 |
 | EV-009 | Task dependencies and terminal cleanup | ZenDB acyclic adjacency indexes plus Motoko bounded traversal/enforcement; tombstones retain history | DESIGNED / BLOCKED_G2 |
-| EV-010 | Task claim uses non-atomic read/update and process lock | Atomic epoch/owner/lease claim with expiry and duplicate worker tests | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EV-011 | Task graph creation can leave partial graph | Single-message atomic creation or manifest-bound resumable saga | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EV-012 | AI result/source replacement can be partial | Atomic canonical result plus complete source-set swap; archive outbox cannot authorize result | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-010 | Task claim uses non-atomic read/update and process lock | One acknowledged pinned-store compare-and-set for epoch/owner/lease, with expiry and duplicate-worker tests | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-011 | Task graph creation can leave partial graph | One proven ZenDB-side bounded creation method or manifest-bound resumable saga | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| EV-012 | AI result/source replacement can be partial | Staged canonical result and complete source set, activated by an acknowledged manifest pointer; archive outbox cannot authorize result | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EV-013 | `OpenAILog` request/response/error audit | ZenDB redacted metadata and hash-addressed payload collections; Motoko access control; stable user/task/custom indexes | DESIGNED / BLOCKED_G2 |
 | EV-014 | Admin `GET /api/logs` filtering/pagination | Capability-protected cursor query with bounded indexed filters | DESIGNED / BLOCKED_G2 |
 | EV-015 | Self `GET /api/logs/my` | Exact caller owner index, sanitized content | DESIGNED / BLOCKED_G2 |
@@ -173,7 +173,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | FI-012 | `GasTokenReserve` mutable snapshots | Historical import only; authoritative reserve is derived from double-entry journal/external balances | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-013 | `PendingTransaction` create/execute/recover/retry | Deterministic operation, attempt and chain state machines; imported rows quarantined | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-014 | Legacy hash injects current time, omits stored timestamp, and lowercases case-sensitive addresses | Canonical binary/type-aware operation IDs; stable intent data stored and hashed | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| FI-015 | Pending row can be created outside accounting transaction | Obligation/journal/operation authorization is atomic before any await/send | INTENTIONALLY_CHANGED / BLOCKED_G3 |
+| FI-015 | Pending row can be created outside accounting transaction | Obligation/journal/operation set is staged and logical-ID/hash-acknowledged before any external-chain await/send; unknown database results reconcile before signing | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-016 | External send occurs before durable DB completion | Durable intent before send, immutable signed bytes/hash, result reconciliation after await | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-017 | `EXECUTING` resets after 15 minutes without chain check | Never retry on elapsed time alone; chain/ledger-specific reconciliation required | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-018 | Failed pending/distribution state divergence permits repeat payout | One obligation settles once through compare-and-set operation ID; failures retain liability | INTENTIONALLY_CHANGED / BLOCKED_G3 |
@@ -231,18 +231,18 @@ Parity means preserving intended user/business capability, authorization, histor
 | DM-001 | 21 Prisma models | Every model/field maps in `SCHEMA_MAPPING.md`; count/hash/type golden tests | DESIGNED / BLOCKED_G2 |
 | DM-002 | Unmanaged `ai_result_migration_exceptions` physical table | Explicit 22nd table export/import/count/hash and restricted payload handling | DESIGNED / BLOCKED_G2 |
 | DM-003 | 18 SQL migrations and Prisma migration history | Hash/record migration SQL, physical schema, sequence state, data-rewrite exceptions | DESIGNED / BLOCKED_G2 |
-| DM-004 | All PKs, uniques, indexes, relations, delete rules | Explicit ZenDB representation, Motoko enforcement, collection-vN rebuild, and mutation-recovery tests | DESIGNED / BLOCKED_G2 |
-| DM-005 | 17 explicit Prisma transaction call sites | Motoko-authorized durable idempotent saga mapping over ZenDB collections and failure injection | DESIGNED / BLOCKED_G2 |
+| DM-004 | All PKs, uniques, indexes, relations, delete rules | Explicit ZenDB representation, unique application logical IDs/content hashes, Motoko enforcement, least-privilege collection RBAC, collection-vN rebuild, and mutation-recovery tests | DESIGNED / BLOCKED_G2 |
+| DM-005 | 17 explicit Prisma transaction call sites | Motoko-authorized durable intent/write/acknowledgement saga mapping over ZenDB collections; no cross-canister atomicity claim; failure injection at every phase | DESIGNED / BLOCKED_G2 |
 | DM-006 | Non-transactional financial/task/KYC/AI sequences | Correct target semantics, preserve resulting legacy history/exceptions | INTENTIONALLY_CHANGED / BLOCKED_G2/G3 |
-| DM-007 | PostgreSQL `SERIAL` IDs | Exact stable `legacyId`, no reuse, new disjoint allocation | DESIGNED / BLOCKED_G2 |
+| DM-007 | PostgreSQL `SERIAL` IDs | Exact stable `legacyId` maps to a unique application logical ID with no reuse and disjoint new allocation; generated ZenDB document ID is non-authoritative metadata unless caller-supplied IDs are proven against the pin | DESIGNED / BLOCKED_G2 |
 | DM-008 | `TIMESTAMP(3)` without timezone | Recorded timezone assumption/source form; ambiguity report blocks activation | DESIGNED / BLOCKED_G2 |
 | DM-009 | `Decimal(65,30)` and double precision | Tagged exact source; base-unit/fixed-point target projection, no silent rounding | DESIGNED / BLOCKED_G2 |
 | DM-010 | Nullable unique semantics permit multiple nulls | Target unique index omits null and property tests match PostgreSQL | DESIGNED / BLOCKED_G2 |
 | DM-011 | JSON/JSONB and serialized ownership | Lossless canonical numeric/string encoding; typed parsed target plus original hash | DESIGNED / BLOCKED_G2 |
 | DM-012 | Deterministic source export | One read-only snapshot, explicit columns/order, canonical JSONL, repeatable roots | DESIGNED / BLOCKED_G2 |
 | DM-013 | Bounded chunks | ≤ approved row/byte limit, large-row fragments, hash chain/Merkle roots | DESIGNED / BLOCKED_G2 |
-| DM-014 | Authenticated/idempotent/resumable import | Manifest/principal/module bound session, atomic receipts, duplicate no-op/conflict rejection | DESIGNED / BLOCKED_G2 |
-| DM-015 | Partial batch/duplicate detection | Invisible fragments, exact key/hash receipt, no implicit winner | DESIGNED / BLOCKED_G2 |
+| DM-014 | Authenticated/idempotent/resumable import | Manifest/principal/module-bound application session; durable local intent plus logical-key/hash-confirmed ZenDB receipt; no direct importer DB role; duplicate no-op/conflict rejection | DESIGNED / BLOCKED_G2 |
+| DM-015 | Partial batch/duplicate detection | Invisible pending fragments, exact logical-key/hash reconciliation after unknown results, acknowledged manifest activation, no blind duplicate or implicit winner | DESIGNED / BLOCKED_G2 |
 | DM-016 | Live writes after base snapshot | Approved logical decoding or transaction outbox, ordered deltas through final LSN | DESIGNED / BLOCKED_G2/G4 |
 | DM-017 | Source/destination verification | Source and target-projection row/table/Merkle hashes, counts, relations, indexes | DESIGNED / BLOCKED_G2 |
 | DM-018 | Separate financial history reconciliation | Chain evidence, exact asset equations, ambiguous hold, signed exceptions | DESIGNED / BLOCKED_G3/G4 |
@@ -269,8 +269,8 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/queue/index/archive/provider/ledger health and alerts | DESIGNED / BLOCKED_G2 |
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |
 | OP-014 | Controllers and deploy credentials | Reviewed governance/SNS direction, least controllers, emergency pause-only role, module transparency | DESIGNED / BLOCKED_G1/G3 |
-| OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
-| OP-016 | ZenDB dependency | Proposed authoritative and archive data store; pin version/commit and AGPL-3.0 relicensing evidence; export/reindex/collection-vN/mutation-recovery tests and collection-specific fallback approval | DESIGNED / BLOCKED_G1/G2 |
+| OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, ZenDB RBAC preservation/audit and drained-intent collection-vN switch, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
+| OP-016 | ZenDB dependency | Proposed authoritative and archive store; pin exact source/dependency/Candid/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, least-privilege collection RBAC and bootstrap revocation; run export/reindex/collection-vN/mutation-recovery tests; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_G1/G2 |
 | OP-016a | Repository licensing | G1 evidence inventories contributor/licensor authority, existing licenses/notices, package metadata, distributed artifacts, and third-party notices; any unresolved authority blocks G1. The first M1 implementation commit then relicenses the repository to AGPL-3.0 together with all required notice/metadata/distribution changes, preserves third-party notices, and records the reviewed artifact list | DESIGNED / BLOCKED_G1 |
 | OP-016b | Target Node.js/TypeScript removal | Certified target assets and canisters build without Node.js/TypeScript; legacy Node.js/TypeScript remains only as a runnable rollback system until M10, then is retired with its deploy/build dependencies | DESIGNED / BLOCKED_G1/M10 |
 | OP-017 | Custom domain/TLS/assets | ICP boundary/custom-domain setup, certificate/certification/deep-link/cache/CSP verification | DESIGNED / BLOCKED_G4 |

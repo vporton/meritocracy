@@ -38,9 +38,9 @@ These are the only planned approval stops.
 | Gate | Status | Decision being approved | Evidence required to request approval |
 | --- | --- | --- | --- |
 | G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, frontend replacement, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
-| G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; authoritative-ZenDB atomicity/recovery benchmarks; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
+| G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; an exact pinned ZenDB commit/API/Candid/Wasm with authoritative-mutation, logical-ID, RBAC, upgrade, and recovery proofs; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
 | G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; SNS-controller and governance-recovery drills; independent wallet review; revised `WALLET_SECURITY.md` |
-| G4 — Testnet-to-production migration | BLOCKED by G3 | Mainnet deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module hash checks; testnet parity; independent security sign-off |
+| G4 — Testnet-to-production migration | BLOCKED by G3 | Mainnet deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module plus exact ZenDB pin/RBAC/intent checks; testnet parity; independent security sign-off |
 
 Approval of G4 authorizes only the reviewed runbook steps. Each real-asset transfer remains a deliberate manual runbook action with recorded transaction details; automated tests never move real assets.
 
@@ -97,22 +97,25 @@ Invariants:
 - The G1-approved AGPL-3.0 relicensing is the first M1 implementation change. No application/toolchain/scaffolding change may precede it; the relicensing task preserves third-party notices and stops as `BLOCKED` if the recorded G1 authority evidence is absent or incomplete.
 - ZenDB is the proposed persistent store for imported PostgreSQL/Prisma records and target document collections, including identity, balances, payment operations, replay journals, and migration receipts where M1 proves the required atomicity, boundedness, recovery, and upgrade behavior. Motoko application code remains the enforcement point for authorization, canonical encodings, and financial constraints; ZenDB constraints/indexes are defense in depth, not a substitute.
 - M1 is blocked until an authoritative-ZenDB design is proven with a mutation/recovery protocol for every multi-record and cross-canister invariant. A remote ZenDB call may introduce an `await`; the resulting durable saga must journal before the call, be idempotent on redelivery, and leave no partially activated authority. If that proof fails for a collection, G2 must record a narrowly scoped native-Motoko exception and its rationale rather than silently falling back for all authority.
+- Application and ZenDB authorization are separate enforcement layers. The pinned remote ZenDB must grant each application canister only collection-scoped read/write capabilities, reserve administration for the approved governance/SNS principal, deny browser/user/direct-importer ingress, and revoke bootstrap/deployer grants before authoritative use. “Collection-scoped” must be implemented by a pinned, tested native grant or by a separate ZenDB deployment for that grant boundary; the plan does not assume unsupported per-collection RBAC. M1 must inventory and justify any library-required self-grant and prove exact grants survive upgrades without privilege expansion.
+- An application logical ID/idempotency key is distinct from ZenDB's internal document ID. G2 is blocked until the pinned API proves either deterministic caller-supplied document IDs or a unique indexed application logical-ID field with conflict lookup and content-hash reconciliation. For an unknown remote result, the desired hash means success; an absent insert or an unchanged expected prior version/hash permits the identical insert/CAS retry; any other hash/version is a conflict. No retry invents a new key or blindly inserts a second document.
 
 Small changes/commits:
 
 1. Execute the G1-approved AGPL-3.0 relicensing as one reviewable commit: update the applicable repository license, notices, package metadata, and distributed-source/artifact obligations together; retain all required third-party notices. Validate the completed inventory against tracked license/notice files and package/distribution metadata, record every changed artifact, and stop as `BLOCKED` if G1 authority evidence is missing.
 2. Add pinned ICP/Motoko/Mops toolchain manifests and empty canister interfaces.
 3. Add a read-only PostgreSQL inventory command with a hard read-only transaction and safe output.
-4. Add ZenDB authoritative-collection and remote/archive benchmarks using generated data distributions, including documented indexes, unique-key conflicts, bounded cursor queries, crashes between journal and remote writes, duplicate delivery, upgrade, low-cycle, and repair/resume cases.
-5. Define versioned Motoko records and ZenDB collection schemas, explicit secondary indexes, collection/shard limits, authoritative mutation-saga journals, and upgrade/collection-vN migrations.
-6. Define canonical export/import schemas and golden vectors, including a canonical source-ID-to-ZenDB-document-ID mapping and immutable receipt keys.
+4. Pin one exact ZenDB source commit plus dependency, Candid, and reproducible Wasm hashes; then add authoritative-collection and remote/archive benchmarks using generated data distributions, including RBAC negative tests, bootstrap-role revocation, documented indexes, logical-ID conflicts, bounded cursor queries, crashes between local intent and remote acknowledgement, duplicate delivery, upgrade, low-cycle, and repair/resume cases. An unmerged or future pull request is not evidence.
+5. Define versioned Motoko records and ZenDB collection schemas, explicit secondary indexes, collection/shard limits, collection-scoped ZenDB role grants, authoritative mutation-saga journals, and upgrade/collection-vN migrations. Each saga records the collection, logical ID, desired content hash, expected prior version/hash for a CAS update, operation/attempt ID, and phase before its remote call; it marks data active only after hash-confirmed acknowledgement and reconciles unknown results by key, version, and hash.
+6. Define canonical export/import schemas and golden vectors, including canonical source-ID-to-application-logical-ID mapping, observed ZenDB document IDs as non-authoritative audit metadata, and immutable logical receipt keys.
 
 Acceptance:
 
 - Counts, sizes, max field lengths, status histograms, null/unique collisions, orphan checks, exact decimal ranges, sequence values, and unmanaged-table contents are recorded for all 22 physical tables.
 - Benchmarks cover expected, 2×, and failure-limit sizes; every production query has an index/cursor plan below the instruction budget.
-- The authoritative-ZenDB proof demonstrates that identity/role updates, financial journals/operations, replay receipts, and migration receipts preserve their stated invariant across duplicate requests, traps, upgrades, and remote-call interruption; any native exception is approved, collection-specific, and documented in `SCHEMA_MAPPING.md`.
-- The G1-approved repository AGPL-3.0 relicensing is completed before every other M1 implementation change; its inventory, authority evidence, updated license/notice/package/distribution artifacts, and preserved third-party notices are reviewed and recorded. ZenDB's exact version/commit and AGPL-3.0 disposition are pinned; upgrade and schema-version migration tests pass; all authoritative and archive data remains canonically exportable independent of ZenDB.
+- The authoritative-ZenDB proof demonstrates that identity/role updates, financial journals/operations, replay receipts, and migration receipts preserve their stated invariant across duplicate requests, traps, upgrades, and remote-call interruption. It proves pending data cannot become authoritative before acknowledgement, unknown inserts and CAS updates reconcile by logical ID/version/hash without overwriting a concurrent result, and any required multi-document ZenDB-side atomic operation exists in the pinned API and is tested; any native exception is approved, collection-specific, and documented in `SCHEMA_MAPPING.md`.
+- ZenDB direct-ingress and inter-canister negative tests prove that browsers, users, import operators, unrelated canisters, and revoked bootstrap/deployer principals cannot read sensitive collections or mutate any collection. Post-deploy and post-upgrade audits match the approved collection-scoped application grants and governance-only administration exactly.
+- The G1-approved repository AGPL-3.0 relicensing is completed before every other M1 implementation change; its inventory, authority evidence, updated license/notice/package/distribution artifacts, and preserved third-party notices are reviewed and recorded. ZenDB's exact source/dependency/Candid/Wasm hashes and AGPL-3.0 disposition are pinned; caller-supplied document IDs or the unique logical-ID alternative is proven against that pin; upgrade and schema-version migration tests pass; all authoritative and archive data remains canonically exportable independent of ZenDB.
 - Candid and stable signature baselines are committed; application types represent money exactly.
 - Migration dry-run vectors produce byte-identical canonical chunks and hashes across repeated runs.
 
@@ -132,7 +135,7 @@ Invariants:
 
 - Caller principal is the authentication root; no bearer session or request user ID grants authority.
 - Login identities, public handles, KYC evidence, and payout destinations are separate records.
-- Multi-record core changes are single-message atomic or durable idempotent sagas.
+- Multi-record core changes use either one bounded ZenDB-side method proven atomic against the G2 pin or a durable idempotent intent/write/acknowledgement saga; no application-to-ZenDB call is treated as a single atomic message.
 - User deletion cannot delete financial/evaluation/audit history.
 
 Small changes/commits:
@@ -163,13 +166,13 @@ Dependencies: M2.
 Invariants:
 
 - Jobs are at-least-once and idempotent; no in-memory lock is authoritative.
-- Every task claim has an atomic lease/epoch/attempt and every external effect has an idempotency key.
+- Every task claim uses one acknowledged compare-and-set lease/epoch/attempt operation proven against the pinned store, and every external effect has an idempotency key.
 - Timers are recoverable from stable schedules after upgrades or cycle outages.
 - ZenDB stores task/result documents and large provider payloads according to the M1 authoritative-collection proof; task authorization, leases, and idempotency remain enforced by Motoko code and durable mutation journals.
 
 Small changes/commits:
 
-1. Task DAG and atomic claim/lease state machine.
+1. Task DAG and claim/lease state machine using a pinned ZenDB-side compare-and-set or the approved durable saga protocol.
 2. Timer scheduler with stable deadlines/cursors, bounded batches, and upgrade recovery.
 3. HTTPS integration adapter with bounded deterministic transforms, rate/cost budgets, circuit breakers, and redacted audit.
 4. OpenAI immediate/batch parity and canonical result/source replacement.
@@ -190,10 +193,7 @@ Rollback: route test traffic back to legacy services; discard test canisters. No
 
 Status: BLOCKED by M3.
 
-Dependencies: M3 and G2 design.
-
-Note: Use a future version of ZenDB with this pull request counted
-as accepted: https://github.com/NatLabs/ZenDB/pull/53
+Dependencies: M3 and the G2-approved design, including the tested exact ZenDB pin, logical-ID strategy, RBAC grant matrix, remote-mutation saga, and collection-vN upgrade protocol. If a required capability exists only in an unmerged or unpinned pull request, M4 remains blocked until an exact accepted commit is pinned and its behavior is proven, or G2 approves a documented design alternative.
 
 Invariants:
 
@@ -206,7 +206,7 @@ Small changes/commits:
 
 1. Read-only exporter, canonical codec, manifest/signature, chunker, and report schema.
 2. Dry-run transformer and referential/unique/status validators.
-3. Motoko/ZenDB staging-import protocol with authoritative ZenDB chunk-receipt collection, durable saga state for every remote write, and destination hash queries.
+3. Motoko/ZenDB staging-import protocol in which only the application importer is callable by the approved import principal. It records a durable local intent before every remote write; derives each staged record's application logical ID from the manifest/source key; uses unique `(migration,table,chunk)` plus payload hash for the authoritative ZenDB receipt; reconciles an unknown result by key/hash; and exposes a confirmed receipt only after the staged data and receipt hashes are acknowledged. If staging plus receipt must commit atomically inside ZenDB, use one bounded ZenDB-side method proven against the G2 pin rather than claiming cross-canister atomicity.
 4. Full snapshot shadow import and repeated resume/fault injection.
 5. Read-only delta capture prototype (logical decoding preferred; trigger outbox only if approved as the documented fallback).
 6. Independent financial/history reconciler and ambiguous-payment exception workflow.
@@ -214,7 +214,8 @@ Small changes/commits:
 Acceptance:
 
 - Repeated exports from one snapshot are byte-identical.
-- Interrupted imports resume from ZenDB receipts; duplicate identical chunks are no-ops; changed hashes are rejected; partial record fragments cannot become visible, including after interruption between an application journal write and a remote ZenDB mutation.
+- Interrupted imports resume by reconciling local intents with ZenDB receipts by logical key and hash; duplicate identical chunks are no-ops; changed hashes are rejected; no blind duplicate insert is possible; partial record fragments and unacknowledged batches cannot become visible, including after interruption before, during, or after a remote ZenDB mutation.
+- The importer has no direct ZenDB role. The application import capability expires after signed finalization; any separate staging-only application writer grant is revoked or downgraded, while a normal owning-application grant remains only where the approved live collection matrix requires it. Post-finalization negative tests and a grant audit prove import cannot resume or exceed that matrix.
 - Counts/hashes/relations/uniques/source IDs match for all 22 physical tables.
 - Secret values never appear in canonical data or reports.
 - No method reachable in migration mode can transfer assets.
@@ -324,6 +325,7 @@ Invariants:
 Acceptance:
 
 - Full snapshot plus delta import, read-only shadow, final freeze/drain, reconciliation, frontend switch, rollback, and forward-recovery are rehearsed and timed.
+- The rehearsal reproduces the exact ZenDB source/dependency/Candid/Wasm pin, exercises lost-result logical-ID/version/hash reconciliation, drains every native intent, and proves bootstrap/importer/staging grants are absent and live collection grants exactly match the approved matrix before target writes are enabled.
 - All parity entries are verified or explicitly approved as changed/not-applicable.
 - Independent security and migration review is clean.
 - Module hashes, controller transitions, cycles/freezing thresholds, monitoring, backup/export, and incident contacts are in the machine-readable report.
@@ -349,7 +351,7 @@ Invariants:
 Acceptance:
 
 - Source/destination counts/hashes, constraints, histories, and exact finances reconcile.
-- Deployed modules/controllers/config/cycles match approved hashes and values.
+- Deployed modules/controllers/config/cycles and exact ZenDB source/dependency/Candid/Wasm/RBAC hashes match approved values; all intents are acknowledged or explicitly blocked before writes are enabled.
 - Production smoke, auth, certified frontend, timers, external integrations, and read-only financial tests pass.
 - Observation window closes with no unresolved severity-1/2 issue; final export/backup and cutover report are archived.
 
@@ -387,5 +389,5 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | AI compact migration tie-breaking was nondeterministic and successful raw data was nulled | High history risk | Export unmanaged exception table; build conflict report; preserve available source evidence and explicit missing markers |
 | Tests can hard-delete configured DB financial rows | High operational | Add test-DB hard guard before database suites |
 | Frontend lint is inoperative after ESLint 10 because no flat config exists | Medium operational | Add/verify `eslint.config.*` in the first approved tooling milestone; lint must pass before target implementation is accepted |
-| ZenDB AGPL-3.0, young project, no in-place schema migration | High dependency | Complete and record the AGPL-3.0 relicensing inventory as G1 evidence; perform the approved relicensing as M1's first change; pin/audit the authoritative and archive deployment, use collection-vN migrations and durable mutation recovery, and retain independent canonical export |
+| ZenDB AGPL-3.0, young project, independent RBAC, generated document IDs in the currently reviewed API, and no in-place schema migration | High dependency | Complete and record the AGPL-3.0 relicensing inventory as G1 evidence; perform the approved relicensing as M1's first change; pin exact source/dependency/Candid/Wasm hashes; prove a logical-ID/hash reconciliation strategy and least-privilege collection grants; revoke bootstrap roles; use collection-vN migrations and durable mutation recovery; and retain independent canonical export. No future or unmerged PR is treated as available. |
 | Live cardinalities and row sizes unknown | High sizing | Read-only inventory before G2; no storage approval without evidence |

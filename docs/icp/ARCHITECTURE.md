@@ -84,7 +84,7 @@ The core method body authenticates the caller and authorizes the exact resource/
 ### `workflow_canister` — Motoko enforcement with ZenDB collections
 
 - Typed task DAG replacing serialized runner-class/runner-data discovery.
-- Atomic claim state: `queued -> leased(epoch, owner, expires) -> running -> terminal`, with compare-and-set operation IDs and bounded retry policy.
+- Claim state: `queued -> leased(epoch, owner, expires) -> running -> terminal`, with a single acknowledged compare-and-set method proven against the pinned ZenDB store, operation IDs, and bounded retry policy.
 - Canonical AI result/status/source metadata and exact user/task indexes.
 - Stable job schedules, cursors, attempts, completion reports, and outbox/inbox receipts.
 - ICP timers replace cron-job.org and in-process intervals. Timer IDs are transient; deadlines and cursors are stable and re-registered after upgrades. ICP timers are best-effort and may interleave after `await`, so jobs are designed at-least-once; see [timers](https://docs.internetcomputer.org/guides/backends/timers/) and [upgrade guidance](https://docs.internetcomputer.org/guides/security/canister-upgrades/).
@@ -96,16 +96,16 @@ The webhook/OAuth HTTP interface may be implemented here or as a small same-cont
 
 - Routes versioned core, workflow, treasury, `ai_artifact_vN`, audit-view, and migration-evidence collections to pinned ZenDB canisters. Collection data may be authoritative only after the M1 proof for its mutation/recovery protocol succeeds.
 - A ZenDB failure cannot authorize, complete, delete, or duplicate a core task/payment. The native saga record holds the expected hash, idempotency key, and pending/available/reconciled state.
-- Every document has an application-assigned stable ID, schema version, content hash, created epoch, typed ownership references, and size cap. Every query uses a suitable index and stable cursor.
+- Every document has an application logical ID/idempotency key, schema version, content hash, created epoch, typed ownership references, and size cap. That logical ID is a unique indexed document field unless the exact pinned ZenDB API proves caller-supplied document IDs; ZenDB's generated internal document ID is otherwise non-authoritative storage metadata. Every query uses a suitable index and stable cursor.
 - Shards are replaceable: canonical export is the portability boundary. Schema changes create a new `collection_vN`, migrate in bounded batches, compare hashes/counts, switch the router, and retain the old collection read-only through rollback.
 
 ### `treasury_canister` — unified Chain Fusion treasury
 
-- Owns the double-entry liability/reserve/accounting journal, payment cycles, immutable payment intents, destination snapshots, attempts, confirmation/reorg state, and reconciliation reports.
+- Is the sole application authority for the double-entry liability/reserve/accounting journal, payment cycles, immutable payment intents, destination snapshots, attempts, confirmation/reorg state, and reconciliation reports. Its pinned ZenDB canister is a storage dependency with treasury-only application roles and governance-only administration, not a second business authority or vault.
 - Receives idempotent obligations from an allowlisted `core_canister`, validates policy version/eligibility snapshot, and creates exactly one stable `operationId` per user/scope/asset/obligation epoch.
 - Uses integer base units. USD/GDP presentation values never drive token conservation through floating point.
 - Before any cross-canister/chain call, records a prepared attempt. After `await`, it reloads and validates current state/epoch rather than assuming pre-call state still holds. ICP explicitly warns that inter-canister calls are non-atomic and recommends journaling; see [inter-canister call security](https://docs.internetcomputer.org/guides/security/inter-canister-calls/).
-- Owns ICRC accounts/subaccounts, Chain Fusion key-derivation paths, immutable operation receipts, and chain nonce/sequence/UTXO reservations in the same canister as the accounting journal. It persists an operation receipt before signing/sending, rejects a conflicting replay, and enforces allowlisted assets/networks, caps, fee bounds, destination encoding validation, and pause state in its own method body.
+- Owns ICRC accounts/subaccounts and Chain Fusion key-derivation paths in the treasury canister, and controls immutable operation receipts plus chain nonce/sequence/UTXO reservations in treasury-only ZenDB collections. Before signing/sending it persists a native intent, obtains logical-ID/content-hash acknowledgement for the remote receipt, rejects a conflicting replay, and enforces allowlisted assets/networks, caps, fee bounds, destination encoding validation, and pause state in its own method body.
 - Has no endpoint to expose a seed/private key because Chain Fusion threshold private keys never exist in the canister. It is never blackholed: SNS is the production controller, so security relies on reviewed governance, delay, reproducible upgrade evidence, a pause-only role, caps, monitoring, and recovery drills.
 
 ### Governance and operations
@@ -113,6 +113,7 @@ The webhook/OAuth HTTP interface may be implemented here or as a small same-cont
 - Development: named developer principals with no funds.
 - Pre-production: one reviewed governance canister is the sole controller. Listing multiple human controllers is not multisig; any controller can upgrade. An `icp-cli` account may operate the approved governance workflow but is not a controller of an application canister.
 - Production: SNS is the sole controller of every canister, including `treasury_canister`, with proposal quorum, delay, reproducible Wasm hash, stable/Candid compatibility evidence, and post-deploy controller/module verification. No production canister has an empty controller list.
+- ZenDB controller authority and ZenDB application roles are audited separately. For every collection, only its owning application canister receives the minimum read/write capability; sensitive evidence and financial collections have no public reader. Where the pinned API cannot express a per-collection role, separate ZenDB deployments enforce each distinct grant boundary. ZenDB administration belongs only to the approved governance/SNS principal. Bootstrap owners/deployers and temporary migration roles are revoked before authority or finalization, and post-deploy/post-upgrade grant audits must exactly match the approved matrix. Any built-in ZenDB self-grant is inventoried, justified as an internal implementation requirement, and tested to expose no unauthorized ingress path.
 - Incident role: named principals can only pause integrations/payments and request evidence; they cannot resume, send, change caps, install code, or change controllers.
 - Cycles: per-canister alarms, public health, automated top-up with capped allowance, at least 90-day production freezing threshold, and a tested low-cycle mode that stops optional archive/outcalls before core/treasury work.
 - ICP warns that controllers can replace code and steal canister-held assets; governance or immutability must be verified, not merely documented. See [canister control](https://docs.internetcomputer.org/guides/security/canister-control/) and [trust in canisters](https://docs.internetcomputer.org/guides/canister-management/trust-in-canisters/).
@@ -150,7 +151,8 @@ As of this document date, current ZenDB main describes:
 - batch index creation/population for large collections;
 - AGPL-3.0 licensing for the Motoko project;
 - no automatic indexes; an unindexed scan can hit the instruction limit around ten thousand records;
-- no indexes within arrays, weak complex-OR planning, inefficient large skip/offset, 64-bit bounds for indexed `Nat`/`Int`, a 64 KiB indexed-field limit, one text index per collection, no aggregation, and no supported in-place schema update/migration. A schema change requires a new collection and application-managed migration (see also https://github.com/NatLabs/ZenDB/pull/53 for accomplishing large migrations; work for a future version of ZenDB where this PR has been accepted).
+- remote deployments have their own role checks and grants, independent of the calling application's authorization; and
+- no indexes within arrays, weak complex-OR planning, inefficient large skip/offset, 64-bit bounds for indexed `Nat`/`Int`, a 64 KiB indexed-field limit, one text index per collection, no aggregation, and no supported in-place schema update/migration. A schema change therefore requires a new collection and application-managed migration. Pull request 53 proposes long-running upgrade support but is not an accepted dependency unless its exact merged commit is selected, pinned, and tested at G2; the baseline design does not assume it is available.
 
 Primary project evidence: [ZenDB repository/readme](https://github.com/NatLabs/ZenDB), [current documentation](https://github.com/NatLabs/ZenDB/blob/main/zendb-doc.md), and the maintainer's [architecture/31-million-transaction report](https://forum.dfinity.org/t/introducing-zendb-embedded-database-with-mongodb-style-queries-for-motoko/61569).
 
@@ -162,12 +164,12 @@ License direction: G1 evidence must first inventory every license/notice, packag
 | --- | --- | --- |
 | Users, principal/identity bindings, roles, emails, KYC state, payout destinations, bans/holds | Versioned ZenDB collections with Motoko mutation-saga records and explicit unique/sorted indexes | ZenDB can store Candid/Blob/Text records; Motoko enforces caller authorization and relation/uniqueness policy across remote writes |
 | Task DAG, leases, canonical results, outbox/inbox | Versioned ZenDB collections with Motoko lease/idempotency saga | Queryable target representation; no unbounded scan/query-plan dependence |
-| Liabilities, reserves, journal, operation/attempt receipts, finality/reorg state | ZenDB journal/receipt collections with Motoko operation protocol and bounded lookup indexes | Money/replay authority only after M1 proves atomic recovery, exact base units, and independently auditable state machine |
+| Liabilities, reserves, journal, operation/attempt receipts, finality/reorg state | ZenDB journal/receipt collections with Motoko operation protocol and bounded lookup indexes | Money/replay authority only after M1 proves failure-safe intent/write/acknowledgement recovery, exact base units, and an independently auditable state machine |
 | Large AI/provider request/response payloads and derived audit documents | Versioned ZenDB collections | Document-shaped, append-heavy, varied nested payloads, multiple metadata filters, high growth; replaceable and hash-addressed |
 | KYC raw evidence | Encrypted, access-logged ZenDB collection with Motoko access/hash indexes | PII/retention/access policy outweighs flexible queries; minimize indexed sensitive fields |
 | Frontend assets | ICP asset canister | Certified static hosting, compression, SPA routing, security headers |
 
-ZenDB storage still requires explicit indexes and bounded pagination. Motoko enhanced orthogonal persistence retains only the bounded saga/configuration state needed to enforce and recover authoritative ZenDB mutations, rejects incompatible stable changes, and avoids large `preupgrade` serialization. See [Motoko persistence and upgrade compatibility](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/data-persistence/) and [enhanced orthogonal persistence](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/orthogonal-persistence/enhanced/).
+ZenDB storage still requires explicit indexes and bounded pagination. Before each remote mutation, Motoko enhanced orthogonal persistence records a bounded durable intent containing collection, application logical ID, desired content hash, expected prior version/hash for a CAS update, operation/attempt ID, and phase. After `await`, it reloads the intent and looks up that logical key: the desired version/hash is acknowledged success; an absent insert or unchanged expected prior version/hash permits an identical insert/CAS retry; any other result is a conflict that fails closed. Pending records do not become application-visible until acknowledgement. A multi-document invariant is either staged and activated through a separately acknowledged manifest/version pointer or performed by one bounded ZenDB-side method whose atomic behavior is proven against the exact pin; it is never described as atomic across the inter-canister call. Completed intent detail may be compacted only into the immutable remote receipt plus a native hash checkpoint without deleting required audit history. This bounded saga/configuration state rejects incompatible stable changes and avoids large `preupgrade` serialization. See [Motoko persistence and upgrade compatibility](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/data-persistence/) and [enhanced orthogonal persistence](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/orthogonal-persistence/enhanced/).
 
 ### Capacity and cost envelopes
 
@@ -191,7 +193,7 @@ ICP currently charges storage for heap and stable memory alike; on a 13-node sub
 - Optional unique values reproduce PostgreSQL null semantics: `null` is not inserted into a unique-value index. Non-null normalized values map to exactly one record.
 - Addresses are stored as `{chainId, network, canonicalBytes/text, displayText}`. Normalization is chain-specific; Base58 identifiers are never lowercased.
 - Relations are validated before insert/update. Deletes are tombstones; historical child references remain. Cross-canister relations use source ID plus operation receipt and are repaired through an inbox/outbox saga.
-- No secondary index is authoritative: each index entry points to a primary record/version; writes update primary and indexes in one no-`await` message, and consistency scanners compare them in bounded batches.
+- No secondary index is authoritative: each index entry points to a primary record/version. Primary-plus-index atomicity may be claimed only inside one proven ZenDB-side update method with no intervening `await`; application-to-ZenDB work still follows the durable intent/acknowledgement protocol. Consistency scanners compare records and indexes in bounded batches.
 
 ## Upgrade compatibility
 
@@ -199,7 +201,7 @@ ICP currently charges storage for heap and stable memory alike; on a 13-node sub
 - Require Candid subtype and stable-compatibility checks in CI for every canister.
 - Use additive versioned records and explicit bounded migrations. Never use production `reinstall`.
 - Re-register timers and resume durable jobs after upgrade; run old->new->rollback upgrade tests with near-limit data.
-- For ZenDB, pin exact source/Wasm; test the old stable store with the proposed version; schema changes use collection-vN copy/hash/switch and retain the old collection until rollback closes.
+- For ZenDB, pin exact source/dependency/Candid/Wasm hashes and approved RBAC matrix; test the old stable store with the proposed version. Schema changes use a shared migration epoch, bounded collection-vN copy with logical-ID/hash reconciliation, read-only old collections, and a router switch only after pending intents are drained, counts/hashes match, and grants on the new collection pass audit. Retain the old collection and its prior grant record until rollback closes.
 - Exportable canonical state is the disaster-recovery and dependency-exit boundary; a canister snapshot alone is not the only backup.
 
 ## Chain Fusion placement
@@ -219,7 +221,7 @@ ICP Chain Fusion supports threshold ECDSA/Schnorr addresses, native Bitcoin inte
 - PocketIC/local replica: Candid calls, caller auth, timers, awaits/reentrancy, upgrades, cycle depletion, archive failures, migration interruption.
 - Differential fixtures: run legacy and ICP transformations over the same sanitized records and explain every intended difference.
 - Chain simulators/testnets: local ICRC ledgers, Bitcoin regtest/testnet, EVM Sepolia, Solana devnet, and equivalent valueless networks. Mainnet paths are configuration-disabled in test builds.
-- Migration: deterministic byte/hash golden tests, fault injection after every chunk/state transition, independent record/relation/financial reconciliation. Assume https://github.com/NatLabs/ZenDB/pull/53 is merged.
+- Migration: deterministic byte/hash golden tests; fault injection before, during, and after every local-intent/remote-write/acknowledgement transition; logical-ID conflict and unknown-result reconciliation; direct-ZenDB authorization negatives and post-upgrade grant audits; and independent record/relation/financial reconciliation. No unmerged or future ZenDB change is assumed.
 - Security: authorization matrix, malicious SNS/governance, frontend supply chain, `join-proxy` reuse/fallback/privacy, webhook replay/order, ambiguous sends, reorg/finality, treasury caps/pause/recovery path.
 - Reproducibility: rebuild Wasm/assets in clean CI and compare hashes before governance proposal.
 

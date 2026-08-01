@@ -34,6 +34,7 @@ Before any production freeze, independently verify:
 - immutable canonical base export, delta stream through the declared LSN, source/destination roots, and signed migration report;
 - exact legacy application image/commit, configuration schema, dependency lock, and infrastructure definition with secrets available from the approved secret store;
 - every canister ID, subnet, controller/governance principal, module hash, Candid interface, stable signature, certified-asset root, and sufficient cycle balance;
+- the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, bootstrap/deployer/import grant revocation evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
 - current and previous stable-compatible Wasm artifacts and tested upgrade/downgrade/forward-repair procedures;
 - DNS/CDN/custom-domain configuration, TTLs, asset routing, monitoring, and reversible traffic-switch commands;
 - chain/ledger evidence for every payment operation active near cutover and a hard proof that legacy cron/payment workers are stopped;
@@ -61,9 +62,9 @@ Trigger: importer fault, hash/count mismatch, relation/index error, upgrade fail
 
 Action:
 
-1. Disable the approved import session and preserve receipt/module/controller evidence.
+1. Disable the approved application import session. Revoke or downgrade any separate staging-only application writer grant while retaining the approved owning-application/read-only verifier paths needed for reconciliation, and preserve native intent, logical-ID/hash receipt, ZenDB pin/module, controller, and RBAC evidence.
 2. Stop delta consumption without deleting the source slot/outbox.
-3. Reconcile the last acknowledged chunk/LSN; do not trust an operator cursor.
+3. Reconcile every nonterminal native intent against ZenDB by application logical key and content hash, then determine the last acknowledged chunk/LSN; do not trust an operator cursor or a missing callback.
 4. Repair forward in a new schema/canister version or discard only the disposable shadow canister.
 5. Replay immutable base/deltas and repeat all verification.
 
@@ -73,7 +74,7 @@ No user traffic, production data, or assets are affected. Removal of a productio
 
 Authority: PostgreSQL, temporarily frozen. ICP has no acknowledged production writes and asset execution is paused.
 
-Trigger: freeze timeout, final-delta mismatch, target hash/module/controller/cycle mismatch, failed health check, or operator abort.
+Trigger: freeze timeout, final-delta mismatch, target hash/module/controller/cycle or exact ZenDB pin/RBAC mismatch, nonterminal intent or visible pending data, failed health check, or operator abort.
 
 Action:
 
@@ -94,7 +95,7 @@ Trigger: application/auth/workflow defect, material parity failure, unacceptable
 
 Action:
 
-1. Pause target writes and capture a certified/deterministic target delta from the cutover epoch.
+1. Pause target writes and capture a certified/deterministic target delta from the cutover epoch, including native intents, logical-ID/version/hash state, ZenDB receipts, and collection routing/grants.
 2. Keep legacy writes disabled while independently reconciling target-only writes.
 3. Apply the reviewed inverse transformation into a restored/staging PostgreSQL database; validate exact counts, relations, and semantic hashes. Never edit the old production database ad hoc.
 4. Promote the reconciled database, then restore legacy routing/writes.
@@ -133,21 +134,21 @@ Legacy secrets/keys, PostgreSQL, replication artifacts, and deployments are reti
 
 Before each upgrade:
 
-1. record current/proposed module hashes, Candid interface, stable signature, migration function/version, controllers, cycles, and certified roots;
+1. record current/proposed module hashes, Candid interface, stable signature, migration function/version, controllers, cycles, certified roots, exact ZenDB source/dependency/Candid/Wasm pin, and approved collection RBAC matrix;
 2. test upgrade from a production-shaped snapshot at expected and 2× capacity, including interruption and timer restoration;
 3. export authoritative state/hash checkpoints and verify backups/rebuildable indexes;
 4. pause high-risk writes and payment construction if the canister participates in finance;
 5. upgrade one shadow/test canister, then staged production canisters where topology permits;
-6. verify state/count/hash/index/certification/timers before resuming.
+6. verify state/count/hash/index/certification/timers, reconcile all native intents by logical ID/hash, and audit exact ZenDB grants before resuming.
 
-If a stable-compatible previous Wasm can read the evolved state, governance may downgrade after rehearsal. Otherwise deploy a forward repair. Never use reinstall on an authoritative production canister. ZenDB schema changes use a new `collection_vN`, copy/verify, atomically switch the router, and retain the old collection through the rollback window.
+If a stable-compatible previous Wasm can read the evolved state, governance may downgrade after rehearsal. Otherwise deploy a forward repair. Never use reinstall on an authoritative production canister. ZenDB schema changes use a shared migration epoch and new `collection_vN`; copy pending records in bounded batches with logical-ID/hash reconciliation, drain intents, verify counts/hashes and the new collection's RBAC, then switch the router through one acknowledged visibility update. Retain the old collection read-only, with its prior grant record, through the rollback window; a router switch is not described as atomic with the preceding cross-canister copies.
 
 ## Controller or credential compromise
 
 Assume a malicious controller of a mutable canister can install arbitrary code and read/use secrets available to that canister.
 
 - Safety responders pause through a capability that cannot upgrade, resume, change destinations, or raise caps.
-- Governance removes compromised mutable controllers/keys, verifies module hashes, rotates API/OAuth/webhook/email credentials, invalidates importer sessions, and deploys clean canisters from reproducible artifacts.
+- Governance removes compromised mutable controllers/keys and unauthorized ZenDB roles, verifies module hashes and the exact collection grant matrix, rotates API/OAuth/webhook/email credentials, invalidates importer sessions and temporary DB grants, and deploys clean canisters from reproducible artifacts. Bootstrap/deployer roles must not be restored as a side effect.
 - The unified treasury has no exportable signing secret. An SNS-controlled upgrade can request signatures, so proposal delay, safety pause, caps, reproducible artifacts, controller/module verification, and reconciliation bound and detect damage; the controller cannot be treated as a multisig merely because several principals are listed.
 - Chain-key master material is not exportable as a legacy backup. Recovery relies on the approved canister/subnet/governance architecture and any predesigned successor mechanism.
 - Internet Identity or user-principal compromise is handled as an account recovery/hold event; it does not authorize governance or arbitrary payout changes.

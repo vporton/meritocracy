@@ -60,13 +60,13 @@ ICP's current Chain Fusion model provides threshold ECDSA/Schnorr signatures, na
 
 ## Unified Chain Fusion treasury
 
-One SNS-controlled `treasury_canister` owns both accounting and custody. It is not blackholed and there is no separate vault canister. The canister owns:
+One SNS-controlled `treasury_canister` is the sole application authority for both accounting and custody. It is not blackholed and there is no separate vault canister. Its proposed pinned ZenDB canister is a treasury-role-restricted storage dependency, not an independently callable accounting authority. The treasury canister owns:
 
 - double-entry accounting journal, obligations and holds, payment-cycle/rounding/remainder policy, immutable payment intents/destination snapshots, reconciliation reports, and stable scheduler/cursors;
 - ICP/ICRC accounts/subaccounts, Chain Fusion key-derivation paths and signing requests, immutable operation receipts, and chain nonce/sequence/UTXO reservations;
 - asset/network allowlists, transaction and rolling-window caps, fee caps, destination encoding validation, and immediate pause state.
 
-Every payment method authenticates its caller, authorizes the exact action, and persists the operation receipt before signing/sending. The method binds:
+Every payment method authenticates its caller and authorizes the exact action in the treasury canister before signing/sending. Because its ZenDB receipt collection is remote, “persists the operation receipt” means the treasury first commits a native durable intent, writes the receipt under the immutable application `operationId` logical key, and confirms the stored content hash before any signing call. The treasury canister alone has collection-scoped write/read capability; users, browsers, other application canisters, operators, and pause-only principals have no direct receipt-collection access, while ZenDB administration remains governance-only. The method binds:
 
 ```text
 operationId
@@ -79,7 +79,7 @@ maximum fee and expiry
 business obligation hash
 ```
 
-The first accepted operation ID stores the canonical operation hash. An identical replay returns the stored state/result. A different request under that ID is rejected and audited. No receipt/history cleanup is allowed. Timeout/unknown stays ambiguous until authoritative reconciliation.
+The first accepted operation ID stores the canonical operation hash. An identical replay returns the stored state/result. A different request under that ID is rejected and audited. A timeout or lost ZenDB reply is reconciled by the same logical key and hash before signing or retrying; an absent key may be rewritten with identical bytes, while a conflicting hash pauses payment. A ZenDB-generated document ID is never the replay key. No receipt/history cleanup is allowed. Timeout/unknown external-chain results stay ambiguous until authoritative reconciliation.
 
 The SNS is the only production controller. Its proposals require the reviewed delay, reproducible Wasm and stable/Candid compatibility evidence, test results, security diff, controller/module-hash verification, and an exercised recovery plan. Independent safety principals can pause only; they cannot resume, upgrade, change policy/caps, change controllers, or send funds. Because the treasury remains upgradeable, a controller compromise can request signatures through malicious code; G3 therefore validates the governance, pause, cap, monitoring, and recovery controls rather than claiming immutable-code containment.
 
@@ -140,7 +140,7 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 - `operationId = SHA-256(domain || obligationId || userId || scopeId || assetId || cycleId || destinationVersion || policyVersion)` over canonical length-delimited bytes, not JSON or current time.
 - Payment intent creation is unique by obligation and asset. Attempt IDs are monotonic children of one operation.
-- The unified treasury stores `operationId -> operationHash/state/result` forever in its receipt collection and reconciliation journal.
+- The unified treasury stores `operationId -> operationHash/state/result` forever in its receipt collection and reconciliation journal. It signs only after its native intent and remote logical-key/content-hash receipt are acknowledged; collection RBAC and post-upgrade grant audits ensure no other principal can create or alter that receipt.
 - The canonical hash preserves address case/bytes according to the chain. It never lowercases a Base58/case-sensitive address.
 - Manual recovery can only advance the existing operation with evidence; it cannot mint a replacement obligation.
 
@@ -154,7 +154,7 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 ### EVM chains
 
-- Derive a separate address per chain/network/scope. Reserve one nonce atomically in treasury state.
+- Derive a separate address per chain/network/scope. Reserve one nonce through a single acknowledged compare-and-set/lease method proven against the pinned treasury store before signing.
 - Build one canonical EIP-1559/legacy transaction binding chain ID, nonce, destination, value/data, gas limit, max fees, and operation data/memo where possible.
 - Store unsigned hash, signature, signed bytes, and expected tx hash before broadcast. Rebroadcast only identical signed bytes; it has the same nonce/hash.
 - If the nonce is consumed, query multiple EVM RPC providers for tx/receipt/address nonce and reconcile. Never allocate a new nonce for the same obligation because the old result is unknown.
@@ -164,7 +164,7 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 ### Bitcoin and Bitcoin Cash
 
-- Lease exact UTXO outpoints atomically before signing. No other operation may select leased/spent inputs.
+- Lease exact UTXO outpoints through a single acknowledged compare-and-set/lease method proven against the pinned treasury store before signing. No other operation may select leased/spent inputs.
 - Deterministically select inputs, fee rate/size, recipient, change, locktime, and sighash under a bounded policy. Persist unsigned/signed bytes and txid before broadcast.
 - Retry only the identical transaction. Query UTXOs and txid first; if inputs are spent by an unknown transaction, enter manual review.
 - Confirm to the approved depth, then monitor through the reorg window. Reorg appends state and rechecks UTXOs/tx presence.

@@ -35,7 +35,9 @@ Canonical encoding details are in `MIGRATION_RUNBOOK.md`.
 - `archive/ZenDB`: versioned, replaceable document collections for large AI/audit/raw legacy payloads.
 - `historical-only`: imported for audit/reconciliation but never accepted as a live credential or secret.
 
-ZenDB is the proposed PostgreSQL/Prisma destination, including the collections above. M1 must prove each collection's atomicity/recovery behavior under remote-call interruption, duplicate delivery, upgrades, and low cycles. Application code—not ZenDB constraints, indexes, or UI behavior—authenticates callers and enforces authorization, referential integrity, uniqueness, money, and replay rules. A failed proof requires a G2-approved, collection-specific native-Motoko exception.
+ZenDB is the proposed PostgreSQL/Prisma destination, including the collections above. M1 must prove each collection's mutation/recovery behavior under remote-call interruption, duplicate delivery, upgrades, and low cycles. Application code—not ZenDB constraints, indexes, or UI behavior—authenticates callers and enforces authorization, referential integrity, uniqueness, money, and replay rules. Independently, each ZenDB collection grants minimum read/write capability only to its owning application canister, grants administration only to approved governance/SNS, denies browsers/users/import operators/unrelated canisters, and has bootstrap/deployer roles revoked before authority. If the pinned API has only instance-wide roles, separate ZenDB deployments enforce distinct collection grant boundaries. A failed mutation or RBAC proof requires a G2-approved, collection-specific native-Motoko exception.
+
+Each document carries a unique indexed application logical ID, version, and content hash. That key, not a ZenDB-generated internal document ID, is the stable source/migration/idempotency identity unless the exact G2-pinned API proves caller-supplied IDs. The canonical audit map records `source ID -> application logical ID` and may record an observed ZenDB document ID only as non-authoritative storage metadata. An unknown insert/update is looked up by logical ID: the desired version/hash means acknowledged success; an absent insert or unchanged expected prior version/hash permits retry of the identical insert/CAS; any other version/hash is a blocking conflict.
 
 ## Per-model field mapping
 
@@ -66,8 +68,8 @@ ZenDB is the proposed PostgreSQL/Prisma destination, including the collections a
 | `UserEmail` | `id`, `userId`, normalized-and-source `email`, `verified`, `createdAt`, `updatedAt` → `core.EmailEvidence` | Exact source ID; unique non-null normalized email; relation to existing user; future verification creates immutable event and invalidates sibling credentials |
 | `Session` | `id`, `userId`, token digest, expiry/timestamps → restricted historical auth-event collection | Historical only. All sessions are rejected; Internet Identity delegation/caller replaces bearer sessions |
 | `EthereumAuthChallenge` | `id`, address, exact message, expiry, `usedAt`, creation → historical challenge record | Historical only/expired at cutover. New proof challenges are caller-bound, random, single-use, domain/chain/action scoped |
-| `EmailVerificationToken` | all fields preserved as token-digest metadata; relation to user | Historical only and invalid on ICP. New challenge state is a ZenDB document guarded by a Motoko hashed, expiring, atomic single-use saga |
-| `KycToken` | all fields preserved as token-digest metadata; relation to user | Historical only and invalid on ICP. New invitation is a ZenDB document guarded by a Motoko scoped, expiring, atomic single-use saga |
+| `EmailVerificationToken` | all fields preserved as token-digest metadata; relation to user | Historical only and invalid on ICP. New challenge state is a ZenDB document guarded by a Motoko hashed, expiring, acknowledged single-use compare-and-set/saga |
+| `KycToken` | all fields preserved as token-digest metadata; relation to user | Historical only and invalid on ICP. New invitation is a ZenDB document guarded by a Motoko scoped, expiring, acknowledged single-use compare-and-set/saga |
 
 ### Voting model
 
@@ -159,13 +161,13 @@ ZenDB indexes are never relied on to enforce a cross-collection FK or financial 
 
 | # | Legacy transaction | Target execution boundary |
 | --- | --- | --- |
-| 1 | Profile email/address update, UserEmail create, User update, primary sync | One no-`await` `core` update; identity and destination are separate versioned records |
-| 2 | User soft delete, email/session removal, anonymization | One no-`await` core tombstone/redaction event; historical refs retained |
-| 3 | Add email to authenticated user, update name, primary sync | One caller-authorized core update |
-| 4 | Create email user/UserEmail and primary sync | II principal creates user atomically; email proof is a later idempotent event |
-| 5 | Disconnect KYC/email/provider and possibly delete account | One core policy transition; anti-evasion/financial retention invariant cannot be erased by disconnect |
-| 6 | Consume email token, verify email, sync mirror | One atomic compare-and-set core update; all related active challenges invalidated |
-| 7 | Direct payment: blocked outcome replaces backlog/history | No direct-send path. Treasury creates/updates immutable held obligation in one message |
+| 1 | Profile email/address update, UserEmail create, User update, primary sync | Caller-authorized core saga stages the versioned identity/destination records and activates one manifest/version only after all logical-ID/hash acknowledgements |
+| 2 | User soft delete, email/session removal, anonymization | Core saga stages a tombstone/redaction event and activates it after acknowledgement; historical references remain |
+| 3 | Add email to authenticated user, update name, primary sync | Caller-authorized core saga validates uniqueness, stages both records, and acknowledges one active version |
+| 4 | Create email user/UserEmail and primary sync | II principal starts an idempotent core creation saga; the user becomes active only after the user/email records are hash-confirmed, and email proof remains a later idempotent event |
+| 5 | Disconnect KYC/email/provider and possibly delete account | Core policy-transition saga activates only after its tombstones/versioned records are acknowledged; anti-evasion/financial retention invariant cannot be erased by disconnect |
+| 6 | Consume email token, verify email, sync mirror | Core saga uses a version/epoch compare-and-set, stages consumption plus verification, and activates only after acknowledgement; all related active challenges are invalidated idempotently |
+| 7 | Direct payment: blocked outcome replaces backlog/history | No direct-send path. Treasury stages an immutable held-obligation transition and exposes it only after logical-ID/hash acknowledgement |
 | 8 | Direct payment: missing KYC processes backlog and creates failure | `INTENTIONALLY_CHANGED`: obligation remains held, never silently forfeited; policy decision recorded |
 | 9 | Direct payment: estimation defer replaces backlog/history | Immutable obligation plus defer event; no destructive replacement |
 | 10 | Direct payment: send success accounting | Removed. Unified treasury prepares journal/receipt first, signs or submits, reconciles, then appends confirmation; history never overwritten |
@@ -173,23 +175,23 @@ ZenDB indexes are never relied on to enforce a cross-collection FK or financial 
 | 12 | Two-stage blocked outcome | Same held-obligation transition as #7 |
 | 13 | Two-stage missing KYC | Same changed behavior as #8 |
 | 14 | Two-stage estimation defer | Same as #9 |
-| 15 | Two-stage prepared pending + distribution row | One unified-treasury mutation saga creates obligation snapshot, operation, and prepared journal entry; no signing call occurs yet |
+| 15 | Two-stage prepared pending + distribution row | One unified-treasury mutation saga stages the obligation snapshot, operation, and prepared journal entry, then activates the set after all acknowledgements; no signing call occurs yet |
 | 16 | Two-stage preparation failure | Append failure, no executable orphan operation |
 | 17 | Compensation marks failed/deferred processed and creates pending | One per-user/per-asset compensation operation. Due flag clears only after confirmed/reconciled terminal result; unrelated assets cannot match |
 
-Cross-canister stages use durable outbox/inbox IDs. A target “transaction” never assumes atomicity across `await`; pre-call state commits, callback reloads state, and duplicate callbacks are idempotent.
+Every ZenDB-backed row above uses the same boundary: the application first persists a durable intent with collection, logical ID, desired hash, expected prior version/hash for CAS, operation/attempt ID, and phase; the remote write uses that immutable key; the callback reloads state and confirms the key/version/hash before activation. Unknown results are reconciled before retry without overwriting a concurrent result. Multi-record transitions use pending versions plus a manifest/visibility pointer, or one bounded ZenDB-side atomic method proven against the exact G2 pin. Cross-canister stages use durable outbox/inbox IDs and never assume atomicity across `await`; duplicate callbacks are idempotent and conflicting hashes fail closed.
 
 ## Non-transactional legacy sequences requiring explicit correction
 
 - Payment creation, external send, pending completion, and distribution completion can disagree; ambiguous attempts must be chain-reconciled before classification.
 - Reserve read/modify/write is not CAS and runtime display can double-count it; source reserve rows do not seed target balances without financial reconciliation.
 - Evaluation graph creation can leave a partial DAG; target creates a graph manifest and bounded idempotent nodes/edges before activation.
-- TaskManager can claim the same task concurrently; target uses atomic lease epoch/owner.
-- AI result upsert, source replacement, and legacy raw cleanup can be partial; target stages a result version then atomically switches it active.
-- Ban vote, hold, tally, user ban/unban, task cancellation, and notification are separate; target records vote/hold atomically and drives idempotent derived actions.
+- TaskManager can claim the same task concurrently; target uses one acknowledged, pinned ZenDB-side compare-and-set for lease epoch/owner.
+- AI result upsert, source replacement, and legacy raw cleanup can be partial; target stages a result version, confirms every logical-ID/hash write, then switches one manifest/visibility pointer active through a separately acknowledged write.
+- Ban vote, hold, tally, user ban/unban, task cancellation, and notification are separate; target activates the vote/hold only after its logical-ID/hash acknowledgement and drives idempotent derived actions.
 - KYC token consumption can precede provider session creation; target reserves a credential, creates provider session, and finalizes/returns safely via a saga.
 - KYC webhooks lack durable event IDs/order; target stores provider event receipt before state application.
-- Bulk disconnected cleanup can delete emails before user update; target tombstones a bounded user atomically.
+- Bulk disconnected cleanup can delete emails before user update; target stages bounded user tombstones and activates their manifest only after acknowledgement.
 
 ## Query and pagination mapping
 

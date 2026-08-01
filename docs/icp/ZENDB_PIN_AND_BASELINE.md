@@ -89,6 +89,30 @@ Run it from the repository root:
 scripts/icp/test-zendb-authoritative.sh
 ```
 
+The next local-only harness is `scripts/icp/test-zendb-benchmark.sh`. It copies
+`fixtures/zendb/M1BoundedBenchmark.mo` into the same immutable source boundary,
+then runs 16-document expected and 32-document 2x synthetic distributions on a
+fresh DFX replica. It exercises its owning-side rejection checks for an
+over-envelope document or batch before any remote call, creates the documented
+logical-ID and repair indexes, and reports
+candidate-provided query/replace/delete instruction counts plus document/index
+byte figures. It also deletes and recreates the repair index to record rebuild
+entries. Its exact planned coverage and API gaps are recorded in
+[`third_party/zendb/v2.0.1.benchmark-proof.json`](../../third_party/zendb/v2.0.1.benchmark-proof.json).
+
+This harness is not yet executed evidence. ZenDB v2.0.1 does not return insert
+or index-create instruction counts, and this harness intentionally does not
+invent them. It also does not establish archive cross-canister byte costs,
+low-cycle behavior, or any durable-intent/RBAC/upgrade proof. Those omissions
+remain G2 blockers.
+
+Run it from the repository root, optionally with an immutable local source
+checkout through `M1_ZENDB_SOURCE_DIR`:
+
+```sh
+scripts/icp/test-zendb-benchmark.sh
+```
+
 Before task 3 can be marked implemented and before G2 can be requested, add and pass the remaining target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. It must measure insert/query/update/delete/reindex instructions, bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove documented indexes; and cover the owning application's durable intent across actual duplicate delivery/lost reply, bootstrap revocation, post-upgrade grant audit and self-grant ingress boundary, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
 
 Rollback: delete only the undeployed pin manifest, verifier, and this evidence file. The legacy Node/PostgreSQL service, production data, signing authority, and assets are unchanged.

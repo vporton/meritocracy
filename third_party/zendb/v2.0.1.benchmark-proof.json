@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "component": "ZenDB v2.0.1 M1 bounded synthetic benchmark",
+  "status": "IMPLEMENTED, NOT YET EXECUTED: the harness is local-only evidence scaffolding and cannot be reported as a benchmark result until the pinned DFX command succeeds and its output is captured.",
+  "source": {
+    "repository": "https://github.com/NatLabs/ZenDB.git",
+    "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
+    "gitArchiveSha256": "332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844"
+  },
+  "runner": {
+    "script": "scripts/icp/test-zendb-benchmark.sh",
+    "network": "fresh local DFX replica",
+    "syntheticDocuments": { "expected": 16, "twoX": 32 },
+    "applicationEnvelopeLimits": { "maxDocumentBytes": 262144, "maxBatchBytes": 1048576 }
+  },
+  "measuresWhenExecuted": [
+    "ZenDB-reported query, replace-by-ID, and delete-by-ID instruction counts",
+    "ZenDB-reported document and logical-ID-index bytes and entries",
+    "bounded caller-to-ZenDB write bytes and one-document recovery-read bytes",
+    "index delete/create rebuild result entries"
+  ],
+  "doesNotProve": [
+    "insert or index-create instruction counts, because the pinned API does not report them",
+    "archive cross-canister bytes, low-cycle behavior, crash/upgrade recovery, lost replies, duplicate delivery, RBAC bootstrap revocation, or post-upgrade grant audit",
+    "a production capacity or instruction budget"
+  ]
+}

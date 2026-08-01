@@ -66,10 +66,10 @@ Each document carries a unique indexed application logical ID, version, and cont
 | Source model | Fields and target | Live behavior |
 | --- | --- | --- |
 | `UserEmail` | `id`, `userId`, normalized-and-source `email`, `verified`, `createdAt`, `updatedAt` → `core.EmailEvidence` | Exact source ID; unique non-null normalized email; relation to existing user; future verification creates immutable event and invalidates sibling credentials |
-| `Session` | `id`, `userId`, token digest, expiry/timestamps → restricted historical auth-event collection | Historical only. All sessions are rejected; Internet Identity delegation/caller replaces bearer sessions |
+| `Session` | `id`, `userId`, source-side one-way token evidence digest, expiry/timestamps → restricted historical auth-event collection | Historical only. The source bearer value is never exported or CDC-published; all sessions are rejected and Internet Identity delegation/caller replaces bearer sessions |
 | `EthereumAuthChallenge` | `id`, address, exact message, expiry, `usedAt`, creation → historical challenge record | Historical only/expired at cutover. New proof challenges are caller-bound, random, single-use, domain/chain/action scoped |
-| `EmailVerificationToken` | all fields preserved as token-digest metadata; relation to user | Historical only and invalid on ICP. New challenge state is a ZenDB document guarded by a Motoko hashed, expiring, acknowledged single-use compare-and-set/saga |
-| `KycToken` | all fields preserved as token-digest metadata; relation to user | Historical only and invalid on ICP. New invitation is a ZenDB document guarded by a Motoko scoped, expiring, acknowledged single-use compare-and-set/saga |
+| `EmailVerificationToken` | approved non-secret fields plus source-side one-way token evidence digest; relation to user | Historical only and invalid on ICP. The raw verification value is never exported or CDC-published. New challenge state is a ZenDB document guarded by a Motoko hashed, expiring, acknowledged single-use compare-and-set/saga |
+| `KycToken` | approved non-secret fields plus source-side one-way token evidence digest; relation to user | Historical only and invalid on ICP. The raw verification value is never exported or CDC-published. New invitation is a ZenDB document guarded by a Motoko scoped, expiring, acknowledged single-use compare-and-set/saga |
 
 ### Voting model
 
@@ -211,7 +211,7 @@ Every ZenDB-backed row above uses the same boundary: the application first persi
 
 Current counts are unknown. Repository-derived growth is unbounded for credentials, votes (`O(users² × weeks)` worst case), task/AI history, distributions, and pending rows. Initial task construction produces 14 tasks for first onboarding, 6 for subsequent onboarding, and 5 for quarterly reevaluation. The tested envelopes/shard thresholds are in `ARCHITECTURE.md` and must be replaced/validated using the read-only inventory before G2.
 
-Required inventory per physical table: row and index bytes/counts; min/max IDs/timestamps; max/percentile text/JSON sizes; null/distinct counts; normalized identity/address duplicates; FK orphans; status histograms; sequence state; exact decimal scale/range/sums; extra Global rows; AI-source conflicts; and financial cross-table reconciliation. Secret values are reported only by name/fingerprint.
+Required inventory per physical table: row and index bytes/counts; min/max IDs/timestamps; max/percentile text/JSON sizes; null/distinct counts; normalized identity/address duplicates; FK orphans; status histograms; sequence state; exact decimal scale/range/sums; extra Global rows; AI-source conflicts; financial cross-table reconciliation; primary/replica identity and update/delete key; direct-CDC versus redacted-projection membership; and publication/output-plugin compatibility. Secret, bearer, and raw-token values are reported only by approved source identifier/fingerprint/digest.
 
 ## Migration acceptance for the schema
 
@@ -222,3 +222,4 @@ Required inventory per physical table: row and index bytes/counts; min/max IDs/t
 - Token decimal conversion is exact; source decimals and float bits remain available for historical proof.
 - Historical cascades are not reproduced as deletion; tombstones preserve required links.
 - No session/token becomes active, no system-secret value is imported, and no legacy pending row can trigger a transfer.
+- The base export uses the logical slot's exported snapshot; deltas are complete, contiguous source transactions from that slot's consistent point through the final barrier LSN. A direct CDC stream or redacted outbox never contains a secret, bearer, or raw verification value.

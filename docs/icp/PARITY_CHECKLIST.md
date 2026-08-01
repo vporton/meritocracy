@@ -239,16 +239,16 @@ Parity means preserving intended user/business capability, authorization, histor
 | DM-009 | `Decimal(65,30)` and double precision | Tagged exact source; base-unit/fixed-point target projection, no silent rounding | DESIGNED / BLOCKED_G2 |
 | DM-010 | Nullable unique semantics permit multiple nulls | Target unique index omits null and property tests match PostgreSQL | DESIGNED / BLOCKED_G2 |
 | DM-011 | JSON/JSONB and serialized ownership | Lossless canonical numeric/string encoding; typed parsed target plus original hash | DESIGNED / BLOCKED_G2 |
-| DM-012 | Deterministic source export | One read-only snapshot, explicit columns/order, canonical JSONL, repeatable roots | DESIGNED / BLOCKED_G2 |
+| DM-012 | Deterministic source export | One approved logical-slot exported snapshot, explicit approved/redacted projections and ordering, canonical JSONL, repeatable roots | DESIGNED / BLOCKED_G2 |
 | DM-013 | Bounded chunks | ≤ approved row/byte limit, large-row fragments, hash chain/Merkle roots | DESIGNED / BLOCKED_G2 |
 | DM-014 | Authenticated/idempotent/resumable import | Manifest/principal/module-bound application session; durable local intent plus logical-key/hash-confirmed ZenDB receipt; no direct importer DB role; duplicate no-op/conflict rejection | DESIGNED / BLOCKED_G2 |
 | DM-015 | Partial batch/duplicate detection | Invisible pending fragments, exact logical-key/hash reconciliation after unknown results, acknowledged manifest activation, no blind duplicate or implicit winner | DESIGNED / BLOCKED_G2 |
-| DM-016 | Live writes after base snapshot | Approved logical decoding or transaction outbox, ordered deltas through final LSN | DESIGNED / BLOCKED_G2/G4 |
+| DM-016 | Live writes after base snapshot | G2-proven logical slot/publication created before the exported base snapshot; complete replica-identified source transactions from its consistent point through final barrier LSN, durable target acknowledgement before source watermark advance; direct CDC excludes sensitive tables and any redacted outbox flows inside that same stream. No generic/polling trigger fallback without equivalent commit-order proof | DESIGNED / BLOCKED_G2/G4 |
 | DM-017 | Source/destination verification | Source and target-projection row/table/Merkle hashes, counts, relations, indexes | DESIGNED / BLOCKED_G2 |
 | DM-018 | Separate financial history reconciliation | Chain evidence, exact asset equations, ambiguous hold, signed exceptions | DESIGNED / BLOCKED_G3/G4 |
-| DM-019 | Dry run and fault injection | Local/testnet only, repeat export, interruption/duplicate/upgrade/low-cycle tests, zero assets | DESIGNED / BLOCKED_G2 |
+| DM-019 | Dry run and fault injection | Local/testnet only; repeat slot-exported snapshot; interruption at capture/snapshot/transaction/target-ack boundaries; replica-identity, WAL-pressure, redaction-leak, duplicate/upgrade/low-cycle tests; zero assets | DESIGNED / BLOCKED_G2 |
 | DM-020 | Machine-readable report | Canonical JSON Schema report with counts/hashes/exceptions/approvals/zero unexplained difference | DESIGNED / BLOCKED_G2 |
-| DM-021 | Secret/private-key migration | General export excludes values; separate fingerprinted disposition | DESIGNED / BLOCKED_G2/G3 |
+| DM-021 | Secret/private-key migration | Base/delta/direct-CDC/redacted-outbox/report/log scans exclude `SystemSecret.value`, bearer, and raw verification values; source-side one-way metadata projection plus separate fingerprinted disposition only | DESIGNED / BLOCKED_G2/G3 |
 | DM-022 | PostgreSQL deletion/retention history | Source backup/export retained; no production mutation until G4; no history lost in tombstone conversion | DESIGNED / BLOCKED_G4 |
 
 ## Deployment, testing, monitoring, and governance
@@ -264,7 +264,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-007 | CI build/test steps partly commented/limited | Format, lint, typecheck, build, unit/property/integration/PocketIC/upgrade/security/parity jobs required | DESIGNED / BLOCKED_G2 |
 | OP-008 | Unit/integration suites | Preserve safe legacy tests; add target and differential tests; destructive DB suites require disposable-DB proof | DESIGNED / BLOCKED_G2 |
 | OP-009 | DB financial tests delete all distribution/pending rows and accept inherited `DATABASE_URL` | Add hard non-production database guard before ever running; never point at shared/production DB | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| OP-010 | No complete backup/restore/reconciliation runbook | Tested PG restore, canister upgrade/forward-repair, canonical replay, financial and rollback rehearsal | DESIGNED / BLOCKED_G2/G4 |
+| OP-010 | No complete backup/restore/reconciliation runbook | Tested PG restore, slot-exported snapshot/contiguous-delta capture with WAL/slot recovery, canister upgrade/forward-repair, canonical replay, financial and rollback rehearsal | DESIGNED / BLOCKED_G2/G4 |
 | OP-011 | Process logs/provider logs | Structured redacted append-only audit, correlation/operation IDs, bounded retention/export | DESIGNED / BLOCKED_G2 |
 | OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/queue/index/archive/provider/ledger health and alerts | DESIGNED / BLOCKED_G2 |
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |

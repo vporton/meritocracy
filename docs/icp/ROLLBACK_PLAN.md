@@ -32,6 +32,7 @@ Before any production freeze, independently verify:
 
 - encrypted PostgreSQL base backup plus point-in-time/WAL recovery and a successful restore test;
 - immutable canonical base export, delta stream through the declared LSN, source/destination roots, and signed migration report;
+- capture publication/slot and output-plugin identities; exported snapshot and consistent point; contiguous commit-transaction root through each recorded barrier; replica-identity map; redaction-projection/function/trigger hashes; retained-WAL budget/status; and the named DBA/retention window for safe cleanup;
 - exact legacy application image/commit, configuration schema, dependency lock, and infrastructure definition with secrets available from the approved secret store;
 - every canister ID, subnet, controller/governance principal, module hash, Candid interface, stable signature, certified-asset root, and sufficient cycle balance;
 - the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, bootstrap/deployer/import grant revocation evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
@@ -58,15 +59,16 @@ Exit: legacy build/tests pass; `PLANS.md` and parity status record the failure a
 
 Authority: legacy application/PostgreSQL; target is read-only shadow.
 
-Trigger: importer fault, hash/count mismatch, relation/index error, upgrade failure, archive cost/limit problem, or inability to resume.
+Trigger: importer fault, hash/count mismatch, relation/index error, capture gap/duplicate/replica-identity failure, lost/invalid slot or WAL-retention threshold, redaction leak, upgrade failure, archive cost/limit problem, or inability to resume.
 
 Action:
 
 1. Disable the approved application import session. Revoke or downgrade any separate staging-only application writer grant while retaining the approved owning-application/read-only verifier paths needed for reconciliation, and preserve native intent, logical-ID/hash receipt, ZenDB pin/module, controller, and RBAC evidence.
 2. Stop delta consumption without deleting the source slot/outbox.
-3. Reconcile every nonterminal native intent against ZenDB by application logical key and content hash, then determine the last acknowledged chunk/LSN; do not trust an operator cursor or a missing callback.
-4. Repair forward in a new schema/canister version or discard only the disposable shadow canister.
-5. Replay immutable base/deltas and repeat all verification.
+3. Preserve the slot/publication/redaction artifact and its retention/WAL evidence; do not advance, recreate, or drop it while determining whether capture remains contiguous.
+4. Reconcile every nonterminal native intent against ZenDB by application logical key and content hash, then determine the last target-acknowledged complete source transaction/LSN from the signed capture root; do not trust an operator cursor, a missing callback, or a partial transaction.
+5. If capture continuity, replica identity, or redaction evidence is missing, discard only the disposable shadow and restart from a new approved slot-exported base snapshot; never splice a new slot onto the old base.
+6. Otherwise repair forward in a new schema/canister version or discard only the disposable shadow canister, replay immutable base/deltas, and repeat all verification.
 
 No user traffic, production data, or assets are affected. Removal of a production replication slot/trigger is a separately reviewed DBA action after its retention/WAL consequences are checked.
 
@@ -74,16 +76,16 @@ No user traffic, production data, or assets are affected. Removal of a productio
 
 Authority: PostgreSQL, temporarily frozen. ICP has no acknowledged production writes and asset execution is paused.
 
-Trigger: freeze timeout, final-delta mismatch, target hash/module/controller/cycle or exact ZenDB pin/RBAC mismatch, nonterminal intent or visible pending data, failed health check, or operator abort.
+Trigger: freeze timeout, final-delta/capture-root/barrier mismatch, target hash/module/controller/cycle or exact ZenDB pin/RBAC mismatch, nonterminal intent or visible pending data, lost slot/retention or redaction failure, failed health check, or operator abort.
 
 Action:
 
 1. Keep all payment senders paused and reconcile any operation active before the freeze.
-2. Prove ICP application writes never became enabled and record its final receipt root.
-3. Verify PostgreSQL final LSN and no target-only acknowledged writes.
+2. Prove ICP application writes never became enabled and record its final receipt and capture-transaction roots.
+3. Verify PostgreSQL final barrier LSN, contiguous slot-consistent-point coverage, no target-only acknowledged writes, and no sensitive value in retained artifacts.
 4. Restart the legacy application writers using the exact prior image/config.
 5. Restart non-financial jobs first. Restart financial jobs only after custody approvers prove the legacy signer is still sole authority and no ICP send can execute.
-6. Retain shadow/delta artifacts for analysis; restore normal routing and announce recovery.
+6. Retain shadow/delta/capture artifacts for analysis; only the named DBA may drop the production slot/publication/redaction trigger after legacy authority is restored and WAL/retention consequences are checked; restore normal routing and announce recovery.
 
 This is the cleanest rollback point and must be rehearsed before G4.
 

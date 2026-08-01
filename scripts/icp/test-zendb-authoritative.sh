@@ -15,12 +15,17 @@ readonly pocket_ic_version="14.0.0"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/test/zendb/M1AuthoritativeProof.Test.mo"
 
-for command in git mops dfx sha256sum install; do
+for command in git mops dfx sha256sum install tar moc-wrapper; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
   }
 done
+
+# `mops toolchain init` installs this setting in interactive shell profiles.
+# Set it explicitly because CI and non-interactive shell invocations do not
+# necessarily reload those profiles before Mops starts DFX/PocketIC.
+export DFX_MOC_PATH="moc-wrapper"
 
 [[ "$(mops --version | head -n 1)" == "CLI 2.19.2" ]] || {
   echo "Expected Mops CLI 2.19.2; found: $(mops --version | head -n 1)" >&2
@@ -45,17 +50,25 @@ if [[ -n "${M1_ZENDB_SOURCE_DIR:-}" ]]; then
     exit 1
   }
   # Never inject the synthetic test or runner pin into an operator-provided
-  # checkout. A fresh local clone keeps the source input read-only.
-  git clone --no-local --no-checkout "$provided_source_dir" "$source_dir"
-  git -C "$source_dir" checkout --detach "$source_commit"
+  # checkout. Exporting the exact commit keeps that checkout read-only and,
+  # unlike a --no-local clone, cannot make a partial/promisor checkout fetch
+  # from its remote while this local-only proof is running.
+  git -C "$provided_source_dir" rev-parse --verify "$source_commit^{commit}" >/dev/null
+  provided_archive="$workdir/zendb-source.tar"
+  git -C "$provided_source_dir" archive --format=tar "$source_commit" > "$provided_archive"
+  [[ "$(sha256sum "$provided_archive" | awk '{print $1}')" == "$source_archive_sha256" ]]
+  mkdir "$source_dir"
+  tar -xf "$provided_archive" -C "$source_dir"
 else
   git clone --filter=blob:none --no-checkout "$source_url" "$source_dir"
   git -C "$source_dir" checkout --detach "$source_commit"
 fi
 
-[[ "$(git -C "$source_dir" rev-parse HEAD)" == "$source_commit" ]]
-git -C "$source_dir" diff --quiet
-[[ "$(git -C "$source_dir" archive --format=tar HEAD | sha256sum | awk '{print $1}')" == "$source_archive_sha256" ]]
+if [[ -z "${M1_ZENDB_SOURCE_DIR:-}" ]]; then
+  [[ "$(git -C "$source_dir" rev-parse HEAD)" == "$source_commit" ]]
+  git -C "$source_dir" diff --quiet
+  [[ "$(git -C "$source_dir" archive --format=tar HEAD | sha256sum | awk '{print $1}')" == "$source_archive_sha256" ]]
+fi
 [[ "$(sha256sum "$source_dir/mops.toml" | awk '{print $1}')" == "$source_mops_toml_sha256" ]]
 [[ "$(sha256sum "$source_dir/mops.lock" | awk '{print $1}')" == "$source_mops_lock_sha256" ]]
 

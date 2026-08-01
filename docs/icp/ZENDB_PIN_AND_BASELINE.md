@@ -66,6 +66,15 @@ evidence for the application's required intent/lookup protocol, not evidence
 that ZenDB supplies idempotent insert, caller-selected document IDs, CAS, or a
 multi-document transaction.
 
+When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
+runner verifies and exports the exact pinned commit into its ephemeral working
+directory instead of cloning from that checkout. This keeps the supplied source
+read-only and avoids an accidental network fetch from a partial/promisor clone;
+the extracted archive must still match the pinned SHA-256 before the test is
+copied in. The runner explicitly sets the Mops `DFX_MOC_PATH=moc-wrapper`
+setting so non-interactive/CI invocations do not depend on reloading a shell
+profile. Neither behavior changes the unexecuted proof status.
+
 Run it from the repository root:
 
 ```sh

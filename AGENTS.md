@@ -71,7 +71,7 @@ The following are release-blocking invariants:
 4. Payment eligibility, KYC/liveliness holds, ban holds, compensation, destination snapshots, and policy versions are recorded with the payment intent and remain auditable.
 5. Payout destinations are separate from login identities. Address changes require ownership proof where supported, step-up authorization, a delay for risky changes, and immutable history.
 6. Use Internet Identity/caller principals as one of authentication mechanisms on par with OAuth.
-6a. Use Motoko `indentify` package for OAuth.
+6a. Use Motoko `identify` package for OAuth.
 7. Migration imports are authenticated, canonical, bounded, hash-verified, idempotent, resumable, and disabled after signed finalization. Re-importing the same chunk is a no-op; a different hash for the same chunk is rejected.
 8. Source IDs and all historical rows, including unmanaged physical tables, are preserved or represented by an explicit, reviewed tombstone/exception. Secrets are the sole exception: values are rotated/retired, never broadly imported.
 9. Authorization, financial, and migration constraints are enforced by application code and tested; they are not delegated to UI behavior or a best-effort document index.

@@ -52,5 +52,8 @@
     "serve": "^14.2.6",
     "typescript": "^5.9.3"
   },
-  "packageManager": "npm@11.10.1"
+  "packageManager": "npm@11.10.1",
+  "devDependencies": {
+    "ic-mops": "2.19.2"
+  }
 }

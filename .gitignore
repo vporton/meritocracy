@@ -63,6 +63,7 @@ jspm_packages/
 # Nuxt.js build / generate output
 .nuxt
 dist
+.mops/
 
 # Storybook build outputs
 .out

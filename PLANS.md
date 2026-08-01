@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-01
 
-Status: `G1_TARGET_ARCHITECTURE` — awaiting approval. Planning documents only; no application code has been changed.
+Status: `M1_EMPIRICAL_SCHEMA_AND_STORAGE_DESIGN` — G1 approved on 2026-08-01; the approved AGPL-3.0-only relicensing is complete. No application code has been changed.
 
 ## Status vocabulary
 
@@ -43,7 +43,7 @@ These are the only planned approval stops.
 
 | Gate | Status | Decision being approved | Evidence required to request approval |
 | --- | --- | --- | --- |
-| G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, retained React frontend in a certified canister, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
+| G1 — Target architecture | **APPROVED 2026-08-01** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, retained React frontend in a certified canister, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | Approval and relicensing evidence: `docs/icp/AGPL_RELICENSING_INVENTORY.md`; the exact AGPL-3.0-only text is in `LICENSE.txt`. |
 | G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, importer protocol, OAuth-to-caller binding protocol, reconciliation queries, cutover delta mechanism, public-identifier disclosure boundary, and PII lifecycle policy | Read-only production inventory; exact ZenDB source/dependency/Candid/Wasm pins and Motoko `indentify` package version/source/package/API hashes; authoritative-mutation, logical-ID, RBAC, OAuth state/PKCE/caller-binding, upgrade, recovery, outbound-call, and quota proofs; recorded data-controller/legal-basis, retention, cryptographic-erasure, backup, access-audit, anti-evasion/accounting exception, and public-identifier/consent decisions; PostgreSQL logical-decoding/exported-snapshot, replica-identity, commit-order, WAL-retention, and sensitive-column redaction proofs; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
 | G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; local/PocketIC SNS-controller and governance-recovery drills; recorded human decision naming the production SNS launch/ownership model, applicable `sns_init`/tokenomics or existing-SNS configuration, and root-handoff/recovery policy; independent wallet review; revised `WALLET_SECURITY.md` |
 | G4 — Testnet-to-production migration | BLOCKED by G3 | A non-custodial mainnet SNS testflight with an approved cycle budget, then mainnet production deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module plus exact ZenDB pin/RBAC/intent checks; testnet parity; reviewed G4 testflight/recovery runbook with isolated canister IDs, bounded approved cycles, test-only derivation/environment, no custodial assets, and an abort proof; independent security sign-off |
@@ -86,15 +86,15 @@ Suggested commits:
 
 ### G1 — Target architecture approval
 
-Status: **WAITING**.
+Status: **APPROVED 2026-08-01**.
 
-Requested decision is summarized at the end of `docs/icp/ARCHITECTURE.md`. The recorded G1 evidence must include the completed AGPL-3.0 relicensing inventory and resolve every contributor/licensor-authority exception. No M1 work starts until G1 is recorded here with date and approved amendments.
+Approved without amendments: the six architecture choices summarized at the end of `docs/icp/ARCHITECTURE.md`, including the AGPL-3.0-only relicensing. The completed authority, notice, metadata, and artifact inventory is `docs/icp/AGPL_RELICENSING_INVENTORY.md`. The approval does not authorize work beyond M1, production mutation, a wallet policy, an SNS launch, or any asset transfer.
 
 ### M1 — Empirical schema and storage design
 
-Status: BLOCKED by G1.
+Status: IN_PROGRESS.
 
-Dependencies: recorded G1 approval, including completed AGPL-3.0 relicensing authority/inventory evidence; read-only access to a production snapshot or a DBA-produced inventory report.
+Dependencies: recorded G1 approval and completed AGPL-3.0-only relicensing authority/inventory evidence; read-only access to a production snapshot or a DBA-produced inventory report.
 
 Invariants:
 

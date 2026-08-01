@@ -1,6 +1,6 @@
 # Target ICP architecture
 
-Status: G1 approval candidate, 2026-08-01. This is a design document; no application code has been changed.
+Status: G1 approved, 2026-08-01. This remains a design document; no application code has been changed.
 
 ## Decision summary
 
@@ -235,9 +235,11 @@ ICP Chain Fusion supports threshold ECDSA/Schnorr addresses, native Bitcoin inte
 - Privacy: test the default-deny public field allowlist, PII retention/cryptographic-erasure and backup-restore behavior, access-audit queries, and every approved social/wallet disclosure.
 - Reproducibility: rebuild Wasm/assets in clean CI and compare hashes before governance proposal.
 
-## G1 decision requested
+## G1 decision
 
-Approve or amend these six architecture choices:
+Approved on 2026-08-01 without amendments. The approval record and AGPL-3.0-only relicensing inventory are in `AGPL_RELICENSING_INVENTORY.md`.
+
+The approved architecture choices are:
 
 1. Retain the React/Vite/TypeScript frontend and deploy its pinned reproducible static bundle to the certified frontend canister. Remove the legacy Node backend/REST bearer-token deployment only at M10 after the rollback window closes; Node.js remains a build-time dependency, never a canister runtime.
 2. Use ZenDB collections as the proposed PostgreSQL/Prisma destination, including candidate authoritative core/workflow/financial/replay/migration collections, subject to the M1 atomicity/recovery proof and collection-specific G2 exceptions.

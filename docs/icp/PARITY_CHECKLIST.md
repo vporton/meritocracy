@@ -1,18 +1,18 @@
 # Legacy-to-ICP feature parity checklist
 
-Last updated: 2026-07-31. This is the exhaustive G1 audit baseline. It records legacy behavior and proposed target disposition; it is not implementation evidence.
+Last updated: 2026-08-01. G1 was approved on 2026-08-01; its AGPL-3.0-only relicensing evidence is recorded in `AGPL_RELICENSING_INVENTORY.md`. This remains the exhaustive legacy audit baseline and does not claim target-feature implementation evidence.
 
 ## Status vocabulary
 
 - `AUDITED`: the legacy implementation and callers were inspected.
 - `DESIGNED`: a target behavior is proposed in the G1 documents but no target code exists.
-- `BLOCKED_G1`, `BLOCKED_G2`, `BLOCKED_G3`, `BLOCKED_G4`: work is intentionally waiting at that approval gate.
+- `BLOCKED_M1`, `BLOCKED_G2`, `BLOCKED_G3`, `BLOCKED_G4`: work is intentionally waiting at that milestone or approval gate.
 - `IMPLEMENTED`: target code exists but full acceptance has not passed.
 - `VERIFIED`: acceptance evidence is linked and reconciliation passed.
 - `INTENTIONALLY_CHANGED`: unsafe/incorrect legacy semantics will not be reproduced; the approved replacement must still preserve legitimate state, money, and history.
 - `RETIRED`: the approved architecture makes the feature unnecessary and its removal has acceptance evidence.
 
-Unless a row says otherwise, source status is `AUDITED`, target design is `DESIGNED`, and implementation is `BLOCKED_G1`. No row is currently implemented or verified on ICP.
+Unless a row says otherwise, source status is `AUDITED` and target design is `DESIGNED`. M1-blocked rows remain design-only until their individual implementation milestones start. No row is currently implemented or verified on ICP.
 
 ## Global parity rule
 
@@ -22,8 +22,8 @@ Parity means preserving intended user/business capability, authorization, histor
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
-| FE-001 | React/Vite SPA, `BrowserRouter`, root `Home` | Retained React/Vite/TypeScript bundle in a certified frontend canister, SPA fallback, generated Candid actors; deep-link/certification/CSP/reproducible pinned-Node build tests, with no Node runtime in the canister | DESIGNED / BLOCKED_G1 |
-| FE-002 | `/connect` wallet/email/social connection form; `/login` redirects there | Internet Identity and `indentify` OAuth sign-in through a non-anonymous Candid caller: caller-bound one-use state/nonce/PKCE start, allowlisted React callback, authenticated complete/recovery, and URL/history redaction; external proofs and payout destinations are separately linked | DESIGNED / BLOCKED_G1/G2 |
+| FE-001 | React/Vite SPA, `BrowserRouter`, root `Home` | Retained React/Vite/TypeScript bundle in a certified frontend canister, SPA fallback, generated Candid actors; deep-link/certification/CSP/reproducible pinned-Node build tests, with no Node runtime in the canister | DESIGNED / BLOCKED_M1 |
+| FE-002 | `/connect` wallet/email/social connection form; `/login` redirects there | Internet Identity and `indentify` OAuth sign-in through a non-anonymous Candid caller: caller-bound one-use state/nonce/PKCE start, allowlisted React callback, authenticated complete/recovery, and URL/history redaction; external proofs and payout destinations are separately linked | DESIGNED / BLOCKED_M1/G2 |
 | FE-003 | `/verify-email` token flow | Caller-bound, expiring, single-use email proof without accepting imported credentials | DESIGNED / BLOCKED_G2 |
 | FE-004 | `/logs` global/admin log viewer | Capability-protected, redacted, cursor-paginated audit view | DESIGNED / BLOCKED_G2 |
 | FE-005 | `/logs/:userId` user audit log | Exact ZenDB owner index plus Motoko self/admin authorization; no JSON substring search | DESIGNED / BLOCKED_G2 |
@@ -32,13 +32,13 @@ Parity means preserving intended user/business capability, authorization, histor
 | FE-008 | `/ban-voting/timing-plan` | Preserve explanatory schedule derived from the same deterministic epoch rules | DESIGNED / BLOCKED_G2 |
 | FE-009 | `/treasury` reserve/distribution/funding interface | Certified public accounting projection plus wallet-driven deposits to a published asset/scope account; never expose signing secrets or treat a memo as donor authentication/entitlement | DESIGNED / BLOCKED_G3 |
 | FE-010 | Navigation/auth state/responsive layout | Preserve accessible routes, pending/error states, mobile layout, and caller identity semantics | DESIGNED / BLOCKED_G2 |
-| FE-011 | Social-share controls and external community links | Preserve as ordinary external links; no third-party executable JS in the certified app | DESIGNED / BLOCKED_G1 |
+| FE-011 | Social-share controls and external community links | Preserve as ordinary external links; no third-party executable JS in the certified app | DESIGNED / BLOCKED_M1 |
 | FE-012 | Browser EVM native-token funding | User wallet sends to approved treasury address; network/amount/receipt validation | DESIGNED / BLOCKED_G3 |
 | FE-013 | Browser ERC-20 approve + helper funding | Explicit allowance/amount/contract/network UI, receipt tracking, revoke guidance | DESIGNED / BLOCKED_G3 |
 | FE-014 | Browser ckETH funding helper | Prefer direct ICRC/ck-token transfer where possible; exact ledger/decimals/dedup | DESIGNED / BLOCKED_G3 |
 | FE-015 | BTC deposit to ckBTC minter and manual `update_balance` | Preserve supported ckBTC mint flow with account derivation, confirmations, retry-safe update, and clear fees | DESIGNED / BLOCKED_G3 |
 | FE-016 | Public treasury address/details | Chain/network/asset scoped, certified config; never imply one global address serves derived scopes | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| FE-017 | Google analytics/configurable third-party browser services | Privacy/security review; omit or use consented non-executable endpoint if approved | DESIGNED / BLOCKED_G1 |
+| FE-017 | Google analytics/configurable third-party browser services | Privacy/security review; omit or use consented non-executable endpoint if approved | DESIGNED / BLOCKED_M1 |
 | FE-018 | Frontend API client contains posts calls but no backend/model | Confirm unused/dead contract; remove only after route/bundle tests prove no feature loss | DESIGNED / BLOCKED_G2 |
 | FE-019 | UI calls country/region-account admin endpoints without admin header | Replace with authorized governance/admin UX or remove caller; do not preserve broken unauthenticated call | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FE-020 | Backend supports UNBAN vote but UI does not expose it | Add approved UI or explicitly retire with product decision; API/UI parity test required | DESIGNED / BLOCKED_G2 |
@@ -257,7 +257,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
 | OP-001 | Backend/frontend Node builds and root workspace dependencies | Keep root install/build/test commands green throughout migration; no subfolder installs | AUDITED / ongoing invariant |
-| OP-002 | Express serves Vite assets and API; BrowserRouter fallback | Certified asset canister plus direct canister actors/HTTP callback where required | DESIGNED / BLOCKED_G1 |
+| OP-002 | Express serves Vite assets and API; BrowserRouter fallback | Certified asset canister plus direct canister actors/HTTP callback where required | DESIGNED / BLOCKED_M1 |
 | OP-003 | Docker/Fly staging/production deployment | Preserve legacy rollback deployment; add reproducible `dfx`/Wasm/module-hash pipeline | DESIGNED / BLOCKED_G2 |
 | OP-004 | Stable-branch workflow can deploy production automatically | Require reviewed immutable artifacts, environment protection, governance approval, module/controller verification | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | OP-005 | Mutable npm install/base image behavior | Locked dependencies and reproducible/SBOM/scanned builds for legacy and Motoko toolchains | DESIGNED / BLOCKED_G2 |
@@ -269,12 +269,12 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-011 | Process logs/provider logs | Structured redacted append-only audit, correlation/operation IDs, bounded retention/export | DESIGNED / BLOCKED_G2 |
 | OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/schedule/index/archive/provider/ledger health and alerts; no AI-task queue metric | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |
-| OP-014 | Controllers and deploy credentials | Recorded human SNS launch/ownership decision; local/PocketIC SNS controller proof; least controllers, emergency pause-only role, module transparency; G4-only isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort evidence before the separately reviewed production handoff | DESIGNED / BLOCKED_G1/G3/G4 |
+| OP-014 | Controllers and deploy credentials | Recorded human SNS launch/ownership decision; local/PocketIC SNS controller proof; least controllers, emergency pause-only role, module transparency; G4-only isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort evidence before the separately reviewed production handoff | DESIGNED / BLOCKED_M1/G3/G4 |
 | OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, ZenDB RBAC preservation/audit and drained-intent collection-vN switch, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
-| OP-016 | ZenDB dependency | Proposed authoritative and archive store; pin exact source/dependency/Candid/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, least-privilege collection RBAC and bootstrap revocation; run export/reindex/collection-vN/mutation-recovery tests; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_G1/G2 |
-| OP-016a | Repository licensing | G1 evidence inventories contributor/licensor authority, existing licenses/notices, package metadata, distributed artifacts, and third-party notices; any unresolved authority blocks G1. The first M1 implementation commit then relicenses the repository to AGPL-3.0 together with all required notice/metadata/distribution changes, preserves third-party notices, and records the reviewed artifact list | DESIGNED / BLOCKED_G1 |
-| OP-016b | Retained React frontend build chain and legacy Node retirement | React/Vite/TypeScript is retained as a pinned reproducible build that deploys only certified static frontend-canister assets; no Node runtime is in a canister. The legacy Node backend/REST deployment remains runnable through the rollback window, then is retired at M10 without removing the target frontend build chain | DESIGNED / BLOCKED_G1/M10 |
-| OP-016c | Production dependency advisories | Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters; run a production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | DESIGNED / BLOCKED_G1/G2 |
+| OP-016 | ZenDB dependency | Proposed authoritative and archive store; pin exact source/dependency/Candid/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, least-privilege collection RBAC and bootstrap revocation; run export/reindex/collection-vN/mutation-recovery tests; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_M1/G2 |
+| OP-016a | Repository licensing | G1 evidence inventories contributor/licensor authority, existing licenses/notices, package metadata, distributed artifacts, and third-party notices; any unresolved authority blocks G1. The first M1 implementation commit then relicenses the repository to AGPL-3.0 together with all required notice/metadata/distribution changes, preserves third-party notices, and records the reviewed artifact list | DESIGNED / BLOCKED_M1 |
+| OP-016b | Retained React frontend build chain and legacy Node retirement | React/Vite/TypeScript is retained as a pinned reproducible build that deploys only certified static frontend-canister assets; no Node runtime is in a canister. The legacy Node backend/REST deployment remains runnable through the rollback window, then is retired at M10 without removing the target frontend build chain | DESIGNED / BLOCKED_M1/M10 |
+| OP-016c | Production dependency advisories | Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters; run a production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | DESIGNED / BLOCKED_M1/G2 |
 | OP-016d | PII lifecycle and public identifier disclosure | Before sensitive collection/import or public projection, record purpose/data controller/legal basis, minimization, encryption/key access, retention/cryptographic erasure, backup/restore, access audit, accounting/anti-evasion exceptions, and per-field public disclosure/consent; default deny raw social/wallet correlation | DESIGNED / BLOCKED_G2 |
 | OP-017 | Custom domain/TLS/assets | ICP boundary/custom-domain setup, certificate/certification/deep-link/cache/CSP verification | DESIGNED / BLOCKED_G4 |
 | OP-018 | Mainnet production migration | Full sanitized rehearsal, signed reconciliation, rollback rehearsal, G4 approval, separate manual asset actions | BLOCKED_G4 |

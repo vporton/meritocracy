@@ -52,24 +52,27 @@ scripts/icp/test-zendb-rbac.sh
 ```
 
 The first target-data proof harness is `scripts/icp/test-zendb-authoritative.sh`,
-with its planned coverage recorded in
+with its executed coverage recorded in
 [`third_party/zendb/v2.0.1.authoritative-proof.json`](../../third_party/zendb/v2.0.1.authoritative-proof.json).
 It validates the pin before copying a synthetic test into an ephemeral source
-checkout, adds the reviewed PocketIC `14.0.0` runner pin only to that checkout,
-and runs it only in PocketIC. The test now registers an explicit async replica
-test, so compilation alone cannot be confused with an execution pass. Exact
-pinned-source compilation produces a 3,281,858-byte test Wasm, but the Mops
-2.19.2 `pic-js-mops` runner installs it as one ingress message and PocketIC
-rejects messages above 2,097,152 bytes. The runner preflights this boundary and
-fails closed instead of retrying indefinitely; it is **not** PocketIC evidence.
-Reduce or split the harness, or pin and independently prove a chunked-install
-runner before recording an execution pass. Once executable, the test creates a unique
-`logicalId` index, demonstrates that identical and conflicting retries are
-rejected, recovers the first content hash through a one-result logical-ID
-lookup, and checks fixed-size cursor-token progression. Once executed, it is
-evidence for the application's required intent/lookup protocol, not evidence
-that ZenDB supplies idempotent insert, caller-selected document IDs, CAS, or a
-multi-document transaction.
+checkout and runs it only against a fresh DFX `0.32.0` local replica. The
+`2026-08-01` run passed: it creates the remote database before its collection,
+creates a unique `logicalId` index, rejects identical and conflicting retries,
+recovers the first content hash through a one-result logical-ID lookup, and
+advances a one-document opaque cursor page without using an offset. The cursor
+is in ZenDB-generated document-ID order, not application logical-ID order, so
+it is appropriate only for bounded repair traversal; application
+logical-ID/hash reconciliation remains mandatory.
+
+The previous Mops `pic-js-mops` route remains unsuitable: its single ingress
+message is limited to 2,097,152 bytes while the test actor statically linked to
+the candidate measured 3,281,858 bytes. The harness therefore uses the exact
+pinned DFX local installer, and records a pass only after that installer
+succeeds and `runTests` returns normally. This is local DFX execution evidence,
+not a claim about the Mops installer, an ICP deployment, or a production-sized
+load test. It is evidence for the application's required intent/lookup protocol,
+not evidence that ZenDB supplies idempotent insert, caller-selected document
+IDs, CAS, or a multi-document transaction.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

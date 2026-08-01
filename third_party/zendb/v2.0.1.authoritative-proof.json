@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "BLOCKED: exact-pinned-source compilation passes, but the Mops 2.19.2/pic-js-mops runner installs the 3,281,858-byte synthetic test Wasm as one ingress message; PocketIC rejects messages above 2,097,152 bytes. The runner fails before runTests and must not be treated as PocketIC execution evidence.",
+  "status": "EXECUTED LOCALLY 2026-08-01: the exact pinned source and synthetic fixture passed through the pinned DFX local-replica installer. The Mops pic-js-mops single-ingress runner remains unsuitable for this actor; this result proves only the documented local DFX transport and listed API behavior.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -12,21 +12,24 @@
   "runner": {
     "mops": "2.19.2",
     "dfx": "0.32.0",
-    "replica": "pocket-ic",
-    "pocketIc": "14.0.0",
-    "test": "M1AuthoritativeProof.Test"
+    "network": "local",
+    "installer": "dfx deploy --mode reinstall --yes",
+    "initialSyntheticCycles": 20000000000000,
+    "testCanister": "m1-authoritative-proof",
+    "entrypoint": "runTests"
   },
-  "executionBlocker": {
+  "replacedRunnerBoundary": {
     "component": "pic-js-mops setupCanister used by Mops 2.19.2",
     "compiledTestWasmBytes": 3281858,
     "singleIngressLimitBytes": 2097152,
     "observedFailure": "PocketIC BadIngressMessage: request is larger than the maximum allowed message size",
-    "requiredResolution": "reduce or split the test harness, or pin and independently prove a chunked-install runner before recording a PocketIC pass"
+    "resolution": "the runner now uses the exact pinned DFX 0.32.0 local installer; the proof passes only after that installer succeeds and runTests returns normally"
   },
-  "plannedCoverage": [
+  "executedCoverage": [
     "a unique logical-ID index rejects identical and conflicting second inserts",
     "a bounded logical-ID query recovers the first durable content hash after a rejected retry",
-    "a fixed-size cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative"
+    "a fixed-size opaque document-ID cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative",
+    "remote database creation precedes collection creation"
   ],
   "doesNotProve": [
     "application durable-intent behavior across an actual lost reply or duplicate delivery",

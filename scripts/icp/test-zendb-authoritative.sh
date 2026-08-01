@@ -10,12 +10,13 @@ readonly source_commit="481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd"
 readonly source_archive_sha256="332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844"
 readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66af780f505b07336d18"
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
-readonly pocket_ic_version="14.0.0"
+readonly test_canister="m1-authoritative-proof"
+readonly test_canister_cycles="20000000000000"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 
-for command in git mops dfx sha256sum install stat tar moc-wrapper; do
+for command in git mops dfx sha256sum install tar node; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
@@ -42,6 +43,14 @@ export DFX_MOC_PATH="moc-wrapper"
 
 workdir="${M1_ZENDB_AUTHORITATIVE_WORKDIR:-$(mktemp -d /tmp/meritocracy-zendb-authoritative.XXXXXXXX)}"
 source_dir="$workdir/zendb"
+local_replica_started=false
+
+stop_local_replica() {
+  if [[ "$local_replica_started" == true ]]; then
+    (cd "$source_dir" && dfx stop >/dev/null 2>&1) || true
+  fi
+}
+trap stop_local_replica EXIT
 
 if [[ -n "${M1_ZENDB_SOURCE_DIR:-}" ]]; then
   provided_source_dir="$M1_ZENDB_SOURCE_DIR"
@@ -75,36 +84,35 @@ fi
 test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
 install -m 0644 "$proof_test" "$test_target"
 
-# ZenDB v2.0.1 does not pin a PocketIC runner in its source manifest. Add the
-# reviewed runner pin only after verifying the pristine source/lock hashes, and
-# only in this ephemeral checkout. This avoids relying on Mops' deprecated DFX
-# version detection while leaving the pinned ZenDB dependency closure intact.
-printf '\npocket-ic = "%s"\n' "$pocket_ic_version" >> "$source_dir/mops.toml"
-
 cd "$source_dir"
-# `pic-js-mops` installs a test Wasm in one ingress message. PocketIC enforces
-# a 2 MiB ingress limit, while the remote-CanisterDB test actor statically
-# links the candidate database implementation. Detect that transport boundary
-# before invoking Mops: without this check its client retries the oversized
-# installation indefinitely and never reaches `runTests`.
+# `pic-js-mops` installs a test Wasm in one ingress message. The synthetic
+# actor statically links the candidate database implementation and exceeds that
+# 2 MiB request boundary, so run the same locally compiled actor through the
+# pinned DFX local-replica installer instead. Its successful local install is
+# required evidence that this runner's compressed install transport can handle
+# the exact generated artifact; compilation alone is never a pass.
 mops install
-readonly pocket_ic_max_ingress_bytes=2097152
-proof_wasm="$workdir/M1AuthoritativeProof.Test.wasm"
-moc-wrapper \
-  -o="$proof_wasm" \
-  --hide-warnings \
-  --error-detail=2 \
-  $(mops sources) \
-  "$test_target"
-proof_wasm_bytes="$(stat -c%s "$proof_wasm")"
-if (( proof_wasm_bytes > pocket_ic_max_ingress_bytes )); then
-  echo "M1 authoritative proof is blocked before PocketIC execution: compiled test Wasm is ${proof_wasm_bytes} bytes, above the pic-js-mops single-ingress limit of ${pocket_ic_max_ingress_bytes} bytes." >&2
-  echo "Reduce or split the harness, or pin and prove a chunked-install runner; do not report this compilation as a successful PocketIC proof." >&2
-  exit 1
-fi
+node -e '
+  const fs = require("node:fs");
+  const path = process.argv[1];
+  const config = JSON.parse(fs.readFileSync(path, "utf8"));
+  config.canisters["m1-authoritative-proof"] = {
+    type: "motoko",
+    main: "tests/cluster-tests/M1AuthoritativeProof.Test.mo",
+    optimize: "O3",
+    shrink: true,
+    metadata: [{ name: "candid:service" }]
+  };
+  fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
+' dfx.json
 
-# Explicit PocketIC selection makes the test local-only. The filter selects
-# only the copied synthetic proof, not an unbounded upstream suite.
-mops test --mode replica --replica pocket-ic M1AuthoritativeProof.Test -r verbose
+dfx start --clean --background
+local_replica_started=true
+dfx canister create "$test_canister" --with-cycles "$test_canister_cycles"
+dfx build "$test_canister"
+dfx deploy "$test_canister" --mode reinstall --yes
+dfx canister call "$test_canister" runTests
+dfx stop
+local_replica_started=false
 
-echo "ZenDB v2.0.1 M1 synthetic authoritative-data proof passed. Source checkout: $source_dir"
+echo "ZenDB v2.0.1 M1 synthetic authoritative-data proof passed on the pinned local DFX replica. Source checkout: $source_dir"

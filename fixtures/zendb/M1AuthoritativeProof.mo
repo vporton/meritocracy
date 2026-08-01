@@ -66,6 +66,10 @@ persistent actor {
       "unique logical IDs recover the first acknowledged content",
       func() : async () {
         let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
+        // Remote CanisterDB keeps database creation separate from collection
+        // creation. The test owns this synthetic database through the actor
+        // class's caller binding before it exercises any collection invariant.
+        let #ok(_) = await db.zendb_v1_create_database(database) else return assert false;
         let #ok(_) = await db.zendb_v1_create_collection(database, collection, intentSchema, null) else return assert false;
 
         // The application logical ID is distinct from ZenDB's generated document
@@ -128,13 +132,17 @@ persistent actor {
 
         // The recovery/repair scan uses opaque remote pagination tokens and a
         // fixed page size; it never uses an offset or returns an unbounded page.
-        let firstPageQuery = ZenDB.QueryBuilder().SortBy("logicalId", #Ascending).Limit(1).build();
+        // The remote cursor is opaque: it advances in ZenDB document-ID order,
+        // not application logical-ID order. The owning canister therefore keeps
+        // its own logical-ID/hash reconciliation and uses this only as a bounded
+        // repair traversal cursor.
+        let firstPageQuery = ZenDB.QueryBuilder().Limit(1).build();
         let #ok(firstPage) = await db.zendb_v1_collection_search(database, collection, firstPageQuery) else return assert false;
         assert (firstPage.documents.size() == 1);
         assert (firstPage.has_more);
         assert (firstPage.instructions > 0);
 
-        let secondPageQuery = ZenDB.QueryBuilder().SortBy("logicalId", #Ascending).PaginationToken(firstPage.pagination_token).Limit(1).build();
+        let secondPageQuery = ZenDB.QueryBuilder().PaginationToken(firstPage.pagination_token).Limit(1).build();
         let #ok(secondPage) = await db.zendb_v1_collection_search(database, collection, secondPageQuery) else return assert false;
         assert (secondPage.documents.size() == 1);
         assert (secondPage.pagination_token != firstPage.pagination_token);

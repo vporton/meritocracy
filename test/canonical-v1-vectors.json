@@ -1,0 +1,22 @@
+{
+  "format": "meritocracy-migration-canonical-v1",
+  "values": [
+    {
+      "name": "key-order-and-unicode",
+      "value": {"z":"last","a":"first","😀":"emoji","𐀀":"linear-b"},
+      "canonicalJson": "{\"a\":\"first\",\"z\":\"last\",\"𐀀\":\"linear-b\",\"😀\":\"emoji\"}",
+      "hash": "sha256:13e92af41dcd9b455680d0dd9d8e7ac5f85dd439086b5a7c97598b1ff7398645"
+    },
+    {
+      "name": "tagged-scalars",
+      "value": {"integer":{"$int":"-42"},"decimal":{"$decimal":{"coefficient":"1200","scale":"3"}},"float":{"$f64":"3ff0000000000000"},"timestamp":{"$timestamp":{"assumedZone":"UTC","precision":"3","value":"2026-07-31T12:34:56.789Z"}},"bytes":{"$bytes":"AAE_-w"},"nil":null,"ok":true},
+      "canonicalJson": "{\"bytes\":{\"$bytes\":\"AAE_-w\"},\"decimal\":{\"$decimal\":{\"coefficient\":\"1200\",\"scale\":\"3\"}},\"float\":{\"$f64\":\"3ff0000000000000\"},\"integer\":{\"$int\":\"-42\"},\"nil\":null,\"ok\":true,\"timestamp\":{\"$timestamp\":{\"assumedZone\":\"UTC\",\"precision\":\"3\",\"value\":\"2026-07-31T12:34:56.789Z\"}}}",
+      "hash": "sha256:ef7458631e6690f66cca99af10c66dc07cc853356c9d7c8d69aeb9a3df85fb52"
+    }
+  ],
+  "sourceRecord": {
+    "canonicalJson": "{\"pk\":{\"$int\":\"42\"},\"row\":{\"name\":\"Ada\",\"onboarded\":true},\"sourceRowHash\":\"sha256:cc80dc1ae44e048a05f1e70cf89ba4625363aa09b51df6f6ad3c77b6a4e9065b\",\"table\":\"users\"}",
+    "sourceRowHash": "sha256:cc80dc1ae44e048a05f1e70cf89ba4625363aa09b51df6f6ad3c77b6a4e9065b",
+    "logicalId": "meritocracy-legacy-logical-id-v1:users:sha256:8318a3655f4a039cdd2d392ff333c9f68c0851d0b5e5c82d1895af6873639f13"
+  }
+}

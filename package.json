@@ -23,6 +23,7 @@
     "db:seed": "true",
     "dev:stop": "pkill -f 'npm run dev' || true && pkill -f nodemon || true && pkill -f vite || true && pkill -f 'node src/index.js' || true",
     "deploy:staging": "./deploy/deploy-staging.sh",
+    "inventory:dependencies": "node scripts/icp/verify-dependency-inventory.mjs",
     "prereqs": "docker build -t vporton/fly -f deploy/Dockerfile.fly . && docker image push vporton/fly",
     "test": "cd backend && npm run test"
   },
@@ -43,14 +44,14 @@
     }
   },
   "dependencies": {
-    "@reown/appkit-adapter-bitcoin": "^1.8.20",
-    "@reown/appkit-adapter-solana": "^1.8.20",
-    "@types/node": "^25.3.0",
-    "concurrently": "^10.0.3",
-    "eslint": "^10.0.1",
-    "prisma": "^7.9.0",
-    "serve": "^14.2.6",
-    "typescript": "^5.9.3"
+    "@reown/appkit-adapter-bitcoin": "1.8.23",
+    "@reown/appkit-adapter-solana": "1.8.23",
+    "@types/node": "25.3.0",
+    "concurrently": "10.0.4",
+    "eslint": "10.0.1",
+    "prisma": "7.9.1",
+    "serve": "14.2.6",
+    "typescript": "5.9.3"
   },
   "packageManager": "npm@11.10.1",
   "devDependencies": {

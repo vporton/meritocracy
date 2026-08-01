@@ -18,7 +18,7 @@ ENV VITE_WALLETCONNECT_PROJECT_ID=$VITE_WALLETCONNECT_PROJECT_ID
 ENV VITE_ORCID_DOMAIN=$VITE_ORCID_DOMAIN
 
 COPY . ./
-RUN npm install
+RUN npm ci
 RUN cd backend && npx prisma generate
 RUN npm run build
 

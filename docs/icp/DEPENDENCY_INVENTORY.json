@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-08-01",
+  "lockfile": {
+    "path": "package-lock.json",
+    "sha256": "c9541830c8401bf523aa979229a70eff1e40dd36cc975ed7a20ed22cf9002c85",
+    "lockfileVersion": 3,
+    "packageEntries": 1759
+  },
+  "bundles": [
+    {
+      "name": "legacy-rollback",
+      "closure": "root npm workspace package-lock.json: root, backend, and frontend production dependencies",
+      "installer": "Dockerfile: npm ci",
+      "owner": "repository maintainers"
+    },
+    {
+      "name": "target-frontend-toolchain",
+      "closure": "root npm workspace package-lock.json: retained frontend and its pinned build dependencies",
+      "installer": "npm ci before certified-asset build",
+      "owner": "repository maintainers"
+    }
+  ],
+  "highOrCritical": {
+    "scanCommand": "npm audit --omit=dev --workspaces --include-workspace-root --json",
+    "productionDependencies": 920,
+    "high": 13,
+    "critical": 0,
+    "status": "BLOCKED_SHIPMENT",
+    "advisories": [
+      {
+        "package": "@reown/appkit-adapter-bitcoin",
+        "severity": "high",
+        "reachability": "Active Bitcoin connector",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Reviewed compatible upgrade or approved retirement required"
+      },
+      {
+        "package": "@reown/appkit-adapter-solana",
+        "severity": "high",
+        "reachability": "Present in root rollback closure; frontend import disabled",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Approved removal or compatibility-tested upgrade required"
+      },
+      {
+        "package": "@sats-connect/core",
+        "severity": "high",
+        "reachability": "Transitive active Bitcoin connector dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Upgrade or approved retirement required"
+      },
+      {
+        "package": "@solana/buffer-layout-utils",
+        "severity": "high",
+        "reachability": "Transitive disabled Solana adapter dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Approved removal or compatibility-tested upgrade required"
+      },
+      {
+        "package": "@solana/spl-token",
+        "severity": "high",
+        "reachability": "Transitive disabled Solana adapter dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Approved removal or compatibility-tested upgrade required"
+      },
+      {
+        "package": "axios",
+        "severity": "high",
+        "reachability": "Transitive active Bitcoin connector dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Upgrade or approved retirement required"
+      },
+      {
+        "package": "bigint-buffer",
+        "severity": "high",
+        "reachability": "Transitive disabled Solana adapter dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Approved removal or compatibility-tested upgrade required"
+      },
+      {
+        "package": "react-router",
+        "severity": "high",
+        "reachability": "Active React application router dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Compatibility-tested fixed supported release required"
+      },
+      {
+        "package": "react-router-dom",
+        "severity": "high",
+        "reachability": "Active React application router dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Compatibility-tested fixed supported release required"
+      },
+      {
+        "package": "sats-connect",
+        "severity": "high",
+        "reachability": "Transitive active Bitcoin connector dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Upgrade or approved retirement required"
+      },
+      {
+        "package": "valibot",
+        "severity": "high",
+        "reachability": "Transitive active Bitcoin connector dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Upgrade or approved retirement required"
+      },
+      {
+        "package": "viem",
+        "severity": "high",
+        "reachability": "Active browser wallet configuration and funding components",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Compatibility-tested fixed supported release required"
+      },
+      {
+        "package": "ws",
+        "severity": "high",
+        "reachability": "Transitive active browser wallet dependency",
+        "owner": "repository maintainers",
+        "containment": "Affected bundle blocked",
+        "decision": "Upgrade parent dependency required"
+      }
+    ]
+  }
+}

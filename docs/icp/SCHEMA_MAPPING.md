@@ -51,15 +51,15 @@ Each document carries a unique indexed application logical ID, version, and cont
 | `name`, `onboarded`, `createdAt`, `updatedAt` | Bounded profile fields and timestamps |
 | `ethereumAddress` | Split into historical `IdentityEvidence(#Ethereum, legacy)` and `PayoutDestination`; neither is treated as verified after import without proof. EVM canonical uniqueness checked case-insensitively/by bytes |
 | `solanaAddress`, `bitcoinAddress`, `bitcoinCashAddress`, `polkadotAddress`, `cosmosAddress`, `stellarAddress`, `icpAddress` | One versioned `PayoutDestination` per chain/network, source text preserved, chain parser result and proof state explicit. Duplicate destinations are reported, not silently merged |
-| `orcidId`, `githubHandle`, `bitbucketHandle`, `gitlabHandle` | Historical identity-evidence records. Handles are display values; re-verification must add immutable provider subject ID before granting identity assurance |
+| `orcidId`, `githubHandle`, `bitbucketHandle`, `gitlabHandle` | Historical identity-evidence records. Handles are display values; re-verification must add immutable provider subject ID before granting identity assurance. They are non-public by default: a G2-approved field/purpose/consent decision is required before a certified public projection exposes a social identifier together with another identity or wallet field. |
 | `bannedTill`, `evaluationBlockedTill`, `evaluationBlockReason`, `paymentHoldStartedAt`, `compensationDueAt` | Typed `Hold`/`CompensationEligibility` records with cause, epoch, timestamps, source ID, and immutable audit event |
 | `lastPaymentAmount` | Preserve legacy decimal exactly as non-authoritative historical field; no asset identity exists, so it cannot seed a balance |
 | `shareInGDP` | Preserve source IEEE bits and a separately validated deterministic fixed-point share used by the new calculation |
 | `isDeleted`, `deletedAt` | Tombstone/redaction state. Historical financial/evaluation/ban references remain |
-| `kycStatus`, `kycVerifiedAt`, `kycRejectedAt`, `kycRejectionReason`, `kycData` | Typed KYC state plus encrypted evidence blob/hash. Unknown string states preserved as legacy exceptions. AML/sanctions rejection has precedence in future transitions |
+| `kycStatus`, `kycVerifiedAt`, `kycRejectedAt`, `kycRejectionReason`, `kycData` | Typed KYC state plus encrypted evidence blob/hash. Unknown string states preserved as legacy exceptions. AML/sanctions rejection has precedence in future transitions. Evidence carries a G2-approved purpose/legal-basis, retention/cryptographic-erasure deadline, backup disposition, access-audit policy, and financial/anti-evasion retention exception. |
 | `livelinessStatus`, `livelinessVerifiedAt`, `livelinessDueAt`, `livelinessRequestedAt` | Versioned liveliness attestation/state |
-| `kycVotingStatus`, `kycVotingVerifiedAt`, `kycVotingRejectedAt`, `kycVotingRejectionReason`, `kycVotingData` | Separate Level-1/voting attestation and encrypted evidence |
-| `issuingState`, `personalNumber`, `residenceCountry` | Encrypted identity attributes; uniqueness uses a keyed/canonical fingerprint only when both source fields are non-null; public queries never expose them |
+| `kycVotingStatus`, `kycVotingVerifiedAt`, `kycVotingRejectedAt`, `kycVotingRejectionReason`, `kycVotingData` | Separate Level-1/voting attestation and encrypted evidence with the same lifecycle and access controls; its purpose does not implicitly authorize payout KYC. |
+| `issuingState`, `personalNumber`, `residenceCountry` | Encrypted identity attributes; uniqueness uses a keyed/canonical fingerprint only when both source fields are non-null; public queries never expose them. Retention/erasure and backup disposition follow the G2 evidence policy. |
 
 ### Identity/authentication models
 
@@ -132,7 +132,7 @@ Every source index is preserved as an access requirement, corrected when the sou
 
 | Model | Source unique/primary constraints | Source non-unique indexes | Proposed target index/constraint |
 | --- | --- | --- | --- |
-| User | PK `id`; nullable unique email, Ethereum, ORCID, GitHub, Bitbucket, GitLab; unique `(issuingState,personalNumber)` | onboarded; `(onboarded,share desc)`; share; evaluation block; payment hold; compensation due; KYC status; liveliness due; Cosmos address; ICP address | Primary by ID; separate unique identity/evidence indexes omitting null; encrypted KYC fingerprint; typed payout index; leaderboard `(eligible,share,id)`; each due/hold/status cursor. Legacy uniqueness collisions under canonical normalization block activation |
+| User | PK `id`; nullable unique email, Ethereum, ORCID, GitHub, Bitbucket, GitLab; unique `(issuingState,personalNumber)` | onboarded; `(onboarded,share desc)`; share; evaluation block; payment hold; compensation due; KYC status; liveliness due; Cosmos address; ICP address | Primary by ID; separate unique identity/evidence indexes omitting null; encrypted KYC fingerprint; typed payout index; leaderboard `(eligible,share,id)`; each due/hold/status cursor. Public indexes/projections use a separately approved field allowlist and never become a social/wallet correlation index. Legacy uniqueness collisions under canonical normalization block activation |
 | UserEmail | PK; unique email | user; `(user,verified)` | Same, using normalized email plus source-text preservation and null semantics |
 | BanVote | PK; unique `(voter,target,week)` | `(target,week)` | Same imported key plus reverse `(voter,epoch,id)`; vote type does not permit second vote in same epoch unless policy explicitly versions key |
 | Session | PK; unique token | user; expiry | Historical primary/token fingerprint/user/expiry indexes; no live authentication |
@@ -165,7 +165,7 @@ ZenDB indexes are never relied on to enforce a cross-collection FK or financial 
 | 2 | User soft delete, email/session removal, anonymization | Core saga stages a tombstone/redaction event and activates it after acknowledgement; historical references remain |
 | 3 | Add email to authenticated user, update name, primary sync | Caller-authorized core saga validates uniqueness, stages both records, and acknowledges one active version |
 | 4 | Create email user/UserEmail and primary sync | II principal starts an idempotent core creation saga; the user becomes active only after the user/email records are hash-confirmed, and email proof remains a later idempotent event |
-| 5 | Disconnect KYC/email/provider and possibly delete account | Core policy-transition saga activates only after its tombstones/versioned records are acknowledged; anti-evasion/financial retention invariant cannot be erased by disconnect |
+| 5 | Disconnect KYC/email/provider and possibly delete account | Core policy-transition saga activates only after its tombstones/versioned records are acknowledged; anti-evasion/financial retention invariant cannot be erased by disconnect. PII erasure follows the approved evidence lifecycle and preserves only the minimum permitted audit/fingerprint/tombstone evidence. |
 | 6 | Consume email token, verify email, sync mirror | Core saga uses a version/epoch compare-and-set, stages consumption plus verification, and activates only after acknowledgement; all related active challenges are invalidated idempotently |
 | 7 | Direct payment: blocked outcome replaces backlog/history | No direct-send path. Treasury stages an immutable held-obligation transition and exposes it only after logical-ID/hash acknowledgement |
 | 8 | Direct payment: missing KYC processes backlog and creates failure | `INTENTIONALLY_CHANGED`: obligation remains held, never silently forfeited; policy decision recorded |
@@ -212,6 +212,8 @@ Every ZenDB-backed row above uses the same boundary: the application first persi
 Current counts are unknown. Repository-derived growth is unbounded for credentials, votes (`O(users² × weeks)` worst case), imported task/AI history, new AI result/audit history, distributions, and pending rows. The legacy app constructs 14/6/5 tasks for first/subsequent/quarterly evaluation; the target executes the same bounded operation counts directly in code and creates no new task rows. The tested envelopes/shard thresholds are in `ARCHITECTURE.md` and must be replaced/validated using the read-only inventory before G2.
 
 Required inventory per physical table: row and index bytes/counts; min/max IDs/timestamps; max/percentile text/JSON sizes; null/distinct counts; normalized identity/address duplicates; FK orphans; status histograms; sequence state; exact decimal scale/range/sums; extra Global rows; AI-source conflicts; financial cross-table reconciliation; primary/replica identity and update/delete key; direct-CDC versus redacted-projection membership; and publication/output-plugin compatibility. Secret, bearer, and raw-token values are reported only by approved source identifier/fingerprint/digest.
+
+Before a sensitive table is imported, the G2 record additionally names the purpose/data controller/legal basis, field minimization, encryption/key-access boundary, retention/cryptographic-erasure schedule, backup/restore behavior, access-audit role, financial or anti-evasion exception, and whether any derived public field is allowed. Missing policy is a blocking exception, not a reason to import unrestricted evidence.
 
 ## Migration acceptance for the schema
 

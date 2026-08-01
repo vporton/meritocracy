@@ -29,6 +29,8 @@ The legacy system is a server-custodial hot wallet:
 
 These facts mean no production legacy payment state may be converted directly into an executable target operation. Every pending/failed/ambiguous row is reconciled first.
 
+This migration plan does not authorize continued real-value legacy custody through these paths. Until a separately approved, narrowly scoped interim hardening proves otherwise, automatic legacy senders remain paused; a missing wallet secret is not generated; and a timeout, lost response, or stale execution lease is an ambiguous manual-reconciliation hold, not a reset/retry. Any temporary exception names asset/scope, accountable operator, compensating controls, expiry, and rollback action.
+
 ## Custody options considered
 
 | Option | Benefit | Risk/cost | Decision |
@@ -210,6 +212,8 @@ Before each `await`, the state transition and attempt ID are committed. After re
 - A payment intent snapshots a destination version. Later changes cannot redirect an already prepared operation.
 - Canonical destination duplicates across users are surfaced under an explicit policy; non-unique legacy destinations are not silently merged.
 
+Legacy addresses are neither current login authority nor automatically approved payout destinations after import. They remain historical evidence until the independently versioned destination passes the target proof/step-up/change-delay policy.
+
 ## Controller and upgrade authority
 
 ### Pre-production
@@ -282,5 +286,6 @@ No missing secret is generated automatically. Missing authority is a hard stop.
 - ICRC `Duplicate/TooOld`, EVM nonce/replacement, BTC/BCH UTXO, Solana nonce/blockhash, Cosmos/Stellar/Polkadot sequence/finality test evidence.
 - Destination proof/change-delay and KYC/hold/compensation policy.
 - Legacy key/balance/pending-payment reconciliation report with no unresolved automated send.
+- Interim legacy-sender inventory proving every real-value sender is paused or covered by a separately approved, expiring exception; evidence that no migration/startup path generates a missing production wallet secret; and a drill that an ambiguous send stays held for reconciliation.
 - Independent custody/authorization security review.
 - Test-network deployment with valueless assets; no real funds. Verify direct-to-treasury donation, no per-donor deposit-address requirement, and one-credit-per-ledger/chain-observation behavior, including duplicate delivery/reorg and duplicate or forged memos. A G4-authorized mainnet SNS testflight is a separate isolated, non-custodial procedure with only its approved cycle budget, not a testnet deployment.

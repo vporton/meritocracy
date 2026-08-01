@@ -28,7 +28,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | FE-004 | `/logs` global/admin log viewer | Capability-protected, redacted, cursor-paginated audit view | DESIGNED / BLOCKED_G2 |
 | FE-005 | `/logs/:userId` user audit log | Exact ZenDB owner index plus Motoko self/admin authorization; no JSON substring search | DESIGNED / BLOCKED_G2 |
 | FE-006 | `/admin` controls/status | Governance proposals or named capabilities; safety role can pause only | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| FE-007 | `/ban-voting` list/vote experience | Principal-authorized vote, deterministic epoch, Level-1 eligibility, ban/unban parity | DESIGNED / BLOCKED_G2 |
+| FE-007 | `/ban-voting` list/vote experience | Principal-authorized vote, deterministic epoch, Level-1 eligibility, ban/unban parity, and a default-deny public field allowlist. Raw social identifiers and wallet addresses are excluded unless the G2 product/privacy/consent decision permits each field/purpose | DESIGNED / BLOCKED_G2 |
 | FE-008 | `/ban-voting/timing-plan` | Preserve explanatory schedule derived from the same deterministic epoch rules | DESIGNED / BLOCKED_G2 |
 | FE-009 | `/treasury` reserve/distribution/funding interface | Certified public accounting projection plus wallet-driven deposits to a published asset/scope account; never expose signing secrets or treat a memo as donor authentication/entitlement | DESIGNED / BLOCKED_G3 |
 | FE-010 | Navigation/auth state/responsive layout | Preserve accessible routes, pending/error states, mobile layout, and caller identity semantics | DESIGNED / BLOCKED_G2 |
@@ -70,11 +70,11 @@ Parity means preserving intended user/business capability, authorization, histor
 | AU-019 | Level-1/voting KYC and separate fields | Preserve as purpose-scoped attestation; it cannot implicitly satisfy payout KYC | DESIGNED / BLOCKED_G2 |
 | AU-020 | Static admin bearer secret | Named principal capability/governance quorum; no static all-powerful admin token | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | AU-021 | Static cron bearer secret | Retire external cron authorization; stable timers plus restricted manual trigger capability | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| AU-022 | Process-local rate limits and locks | Stable, principal/IP/provider-aware bounded quotas and durable leases where justified | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| AU-022 | Process-local rate limits and locks | Stable caller-principal/provider/action/cost-aware bounded quotas and durable leases where justified. A canister does not trust or receive an end-user IP; any IP-based abuse control is a separately configured/tested edge boundary and never authorization input | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | AU-023 | Login identity and payout address are coupled; ordinary bearer may alter payout fields | Separate identity evidence and payout destination; chain ownership proof, step-up, delay, notification, hold | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | AU-024 | User IDs supplied in routes/body | Caller principal is authority; explicit admin capability required for another user | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | AU-025 | User deletion cascades sessions/votes/financial rows | Tombstone/redact PII while retaining immutable financial/evaluation/voting history | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| AU-026 | API/webhook/provider secrets in process/DB | Per-integration scoped, rotatable credentials with spend/rate caps and no logs/exports; malicious-controller risk acknowledged | DESIGNED / BLOCKED_G2 |
+| AU-026 | API/webhook/provider secrets in process/DB | Per-integration scoped, rotatable credentials with spend/rate caps and no logs/exports; malicious-controller risk acknowledged. Credential-bearing calls use the shared allowlisted HTTPS/deadline/response-bound/circuit/correlation policy; loopback HTTP is development-only by explicit configuration | DESIGNED / BLOCKED_G2 |
 
 ## Users, profiles, public statistics
 
@@ -90,7 +90,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | US-008 | Self `DELETE /api/users/:id` | PII erasure/tombstone workflow that retains obligations/audit; recovery/appeal policy | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | US-009 | Multi-email and primary-email behavior | Explicit verified email evidence, uniqueness, primary selection, notification eligibility | DESIGNED / BLOCKED_G2 |
 | US-010 | Onboarding flag and connected-provider requirements | Typed onboarding state; identity assurance policy separated from display fields | DESIGNED / BLOCKED_G2 |
-| US-011 | Country/personal-number/residence fields | Encrypted/restricted evidence; uniqueness fingerprint; never public/certified | DESIGNED / BLOCKED_G2 |
+| US-011 | Country/personal-number/residence fields | Encrypted/restricted evidence; uniqueness fingerprint; never public/certified. G2 records purpose/data controller/legal basis, minimization, retention/cryptographic erasure, backup/restore, access audit, and permitted anti-evasion/accounting exceptions | DESIGNED / BLOCKED_G2 |
 | US-012 | GDP share and last-payment public/profile values | Preserve source bits/history; new exact deterministic share and asset-qualified payment history | INTENTIONALLY_CHANGED / BLOCKED_G2/G3 |
 
 ## Evaluation, legacy task graph, AI results, and logs
@@ -123,7 +123,7 @@ Parity means preserving intended user/business capability, authorization, histor
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
-| BV-001 | Public `GET /api/ban-voting` | Cursor-paginated sanitized current epoch/eligibility/aggregate | DESIGNED / BLOCKED_G2 |
+| BV-001 | Public `GET /api/ban-voting` | Cursor-paginated sanitized current epoch/eligibility/aggregate; no raw social/wallet correlation absent the G2 public-disclosure/consent decision | DESIGNED / BLOCKED_G2 |
 | BV-002 | Authenticated `POST /api/ban-voting/vote` for BAN/UNBAN | Principal/caller vote, deterministic UTC week, unique voter/target/type/epoch, self-vote policy | DESIGNED / BLOCKED_G2 |
 | BV-003 | Public `GET /api/ban-voting/:userId/assessments` | Sanitized historical assessments with exact stable target ID | DESIGNED / BLOCKED_G2 |
 | BV-004 | Threshold application creates bans/evaluation/payment holds | Deterministic audited state transition; no broad update or destructive history | DESIGNED / BLOCKED_G2 |
@@ -211,7 +211,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
 | EX-001 | OpenAI API immediate/batch/web-search | `llm` direct calls (including supported web-search use), scoped key/spend limits, hard payload/operation bounds, redacted audit, deterministic result validation; provider batch mode is retired | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EX-002 | Didit KYC/liveliness | Pinned `join-proxy`/`join-proxy-client.mo` evaluation with configurable allowlisted HTTPS endpoint, reusable-proof consent/freshness/subject binding/cost accounting, signed callback/event dedup/ordering, and tested direct-provider fallback | DESIGNED / BLOCKED_G2 |
+| EX-002 | Didit KYC/liveliness | Pinned `join-proxy`/`join-proxy-client.mo` evaluation with configurable allowlisted HTTPS endpoint, reusable-proof consent/freshness/subject binding/cost accounting, signed callback/event dedup/ordering, G2 evidence lifecycle, shared outbound-call bounds, and tested direct-provider fallback | DESIGNED / BLOCKED_G2 |
 | EX-003 | GitHub OAuth | Immutable provider subject, caller-bound state, token minimization/rotation | DESIGNED / BLOCKED_G2 |
 | EX-004 | ORCID OAuth | Same identity-evidence contract with provider-specific protocol tests | DESIGNED / BLOCKED_G2 |
 | EX-005 | Bitbucket OAuth | Same identity-evidence contract with immutable account UUID | DESIGNED / BLOCKED_G2 |
@@ -223,7 +223,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | EX-011 | EVM RPC providers | EVM RPC canister/approved providers, quorum/disagreement/finality/cost policy | DESIGNED / BLOCKED_G3 |
 | EX-012 | Solana/Cosmos/Polkadot/Stellar/BCH RPCs | Chain-specific allowlists, deterministic transform/quorum/finality, cycle/rate budgets | DESIGNED / BLOCKED_G3 |
 | EX-013 | ICP/ICRC ledgers and chain-key minters | Pinned canister IDs/standards/fees, archive queries, dedup/reconciliation tests | DESIGNED / BLOCKED_G3 |
-| EX-014 | Provider outages/rate errors | Durable retry with backoff/budget/circuit breaker; no repeated financial effect | DESIGNED / BLOCKED_G2/G3 |
+| EX-014 | Provider outages/rate errors | Shared allowlisted outbound-call policy with deadline, request/response bytes/schema, redirect, HTTPS credential transport, correlation ID, durable retry/backoff/budget/circuit breaker; no repeated financial effect | DESIGNED / BLOCKED_G2/G3 |
 
 ## Data, constraints, and migration parity
 
@@ -274,6 +274,8 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-016 | ZenDB dependency | Proposed authoritative and archive store; pin exact source/dependency/Candid/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, least-privilege collection RBAC and bootstrap revocation; run export/reindex/collection-vN/mutation-recovery tests; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_G1/G2 |
 | OP-016a | Repository licensing | G1 evidence inventories contributor/licensor authority, existing licenses/notices, package metadata, distributed artifacts, and third-party notices; any unresolved authority blocks G1. The first M1 implementation commit then relicenses the repository to AGPL-3.0 together with all required notice/metadata/distribution changes, preserves third-party notices, and records the reviewed artifact list | DESIGNED / BLOCKED_G1 |
 | OP-016b | Retained React frontend build chain and legacy Node retirement | React/Vite/TypeScript is retained as a pinned reproducible build that deploys only certified static frontend-canister assets; no Node runtime is in a canister. The legacy Node backend/REST deployment remains runnable through the rollback window, then is retired at M10 without removing the target frontend build chain | DESIGNED / BLOCKED_G1/M10 |
+| OP-016c | Production dependency advisories | Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters; run a production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | DESIGNED / BLOCKED_G1/G2 |
+| OP-016d | PII lifecycle and public identifier disclosure | Before sensitive collection/import or public projection, record purpose/data controller/legal basis, minimization, encryption/key access, retention/cryptographic erasure, backup/restore, access audit, accounting/anti-evasion exceptions, and per-field public disclosure/consent; default deny raw social/wallet correlation | DESIGNED / BLOCKED_G2 |
 | OP-017 | Custom domain/TLS/assets | ICP boundary/custom-domain setup, certificate/certification/deep-link/cache/CSP verification | DESIGNED / BLOCKED_G4 |
 | OP-018 | Mainnet production migration | Full sanitized rehearsal, signed reconciliation, rollback rehearsal, G4 approval, separate manual asset actions | BLOCKED_G4 |
 | OP-019 | Legacy retirement | Only after observation, parity, data/money reconciliation, key disposition, audit/retention approval | BLOCKED_G4/M10 |

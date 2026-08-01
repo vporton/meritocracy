@@ -34,6 +34,8 @@ Before any production freeze, independently verify:
 - immutable canonical base export, delta stream through the declared LSN, source/destination roots, and signed migration report;
 - capture publication/slot and output-plugin identities; exported snapshot and consistent point; contiguous commit-transaction root through each recorded barrier; replica-identity map; redaction-projection/function/trigger hashes; retained-WAL budget/status; and the named DBA/retention window for safe cleanup;
 - exact legacy application image/commit, configuration schema, dependency lock, and infrastructure definition with secrets available from the approved secret store;
+- legacy-sender inventory showing each real-value sender is paused or covered by a separately approved, expiring exception; named operator, asset/scope, compensating controls, expiry, and rollback action for every exception; and proof that no migration/startup path generated a missing wallet secret;
+- G2-approved sensitive-data lifecycle/disclosure record: purpose/data controller/legal basis, retention/cryptographic-erasure, backup/restore, access audit, accounting/anti-evasion exceptions, and public field allowlist/consent decisions;
 - every canister ID, subnet, controller/governance principal, module hash, Candid interface, stable signature, certified-asset root, and sufficient cycle balance;
 - the recorded SNS launch/ownership decision, local/PocketIC controller evidence, and the G4 testflight's isolated canister IDs, test-only derivation/environment, cycle budget, root-controller transition, and recovery/abort proof; testflight artifacts are distinct from production artifacts;
 - the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, bootstrap/deployer/import grant revocation evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
@@ -101,7 +103,7 @@ Action:
 3. Verify PostgreSQL final barrier LSN, contiguous slot-consistent-point coverage, no target-only acknowledged writes, and no sensitive value in retained artifacts.
 4. Restart the legacy application writers using the exact prior image/config.
 5. Restart non-financial jobs first. Restart financial jobs only after custody approvers prove the legacy signer is still sole authority and no ICP send can execute.
-6. Retain shadow/delta/capture artifacts for analysis; only the named DBA may drop the production slot/publication/redaction trigger after legacy authority is restored and WAL/retention consequences are checked; restore normal routing and announce recovery.
+6. Retain shadow/delta/capture artifacts for analysis; only the named DBA may drop the production slot/publication/redaction trigger after legacy authority is restored and WAL/retention consequences are checked; restore normal routing and announce recovery. Restoring routing does not resume a legacy real-value sender: it remains paused unless its pre-recorded safety exception still applies and the ambiguous-operation reconciliation report is clean.
 
 This is the cleanest rollback point and must be rehearsed before G4.
 
@@ -147,7 +149,7 @@ Trigger: late historical discrepancy or target incident.
 
 Action: prefer forward correction with an auditable compensating entry/migration. Restoring the legacy payment architecture is not a valid routine rollback after keys are retired and source delta capture is gone. Database restore remains useful for evidence, not automatic authority.
 
-Legacy secrets/keys, PostgreSQL, replication artifacts, and deployments are retired only after retention, legal/audit, parity, financial reconciliation, and recovery criteria are approved. Destruction requires its own explicit inventory and evidence.
+Legacy secrets/keys, PostgreSQL, replication artifacts, and deployments are retired only after retention, legal/audit, parity, financial reconciliation, recovery, and approved PII-erasure/backup evidence are complete. Destruction requires its own explicit inventory and evidence.
 
 ## Canister upgrade recovery
 

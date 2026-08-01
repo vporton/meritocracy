@@ -1,6 +1,6 @@
 # Legacy-to-ICP feature parity checklist
 
-Last updated: 2026-08-01. The repository's AGPL-3.0-only license and related package metadata changes are complete and recorded in `9122ff0`; no additional relicensing gate remains. This remains the exhaustive legacy audit baseline and does not claim target-feature implementation evidence.
+Last updated: 2026-08-01. The repository's AGPL-3.0-only license and related package metadata changes are complete and recorded in `9122ff0`; no additional relicensing gate remains. M1 now includes an unrun, aggregate-only PostgreSQL inventory command (`docs/icp/POSTGRES_INVENTORY.md`); it records no target-feature or production-inventory completion evidence. This remains the exhaustive legacy audit baseline.
 
 ## Status vocabulary
 

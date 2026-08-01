@@ -49,7 +49,7 @@ Authority: legacy application/PostgreSQL.
 
 Trigger: failed design/test, toolchain regression, security finding, or unapproved dependency/license.
 
-Action: revert the reviewable documentation/scaffolding commit or remove disposable local canisters. No source data, production service, or custody changed. The disposable ZenDB deployment can be replaced because no production authority exists at R0.
+Action: revert the reviewable documentation/scaffolding commit or remove disposable local canisters. No source data, production service, or custody changed. The disposable ZenDB deployment can be replaced because no production authority exists at R0. A completed public AGPL-3.0 grant is not treated as revoked by this rollback; any license correction follows the approved legal/notice disposition and preserves the audit record.
 
 Exit: legacy build/tests pass; `PLANS.md` and parity status record the failure and revised design.
 

@@ -37,7 +37,7 @@ These are the only planned approval stops.
 
 | Gate | Status | Decision being approved | Evidence required to request approval |
 | --- | --- | --- | --- |
-| G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, frontend replacement, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence |
+| G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, frontend replacement, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
 | G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; authoritative-ZenDB atomicity/recovery benchmarks; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
 | G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; SNS-controller and governance-recovery drills; independent wallet review; revised `WALLET_SECURITY.md` |
 | G4 — Testnet-to-production migration | BLOCKED by G3 | Mainnet deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module hash checks; testnet parity; independent security sign-off |
@@ -82,40 +82,41 @@ Suggested commits:
 
 Status: **WAITING**.
 
-Requested decision is summarized at the end of `docs/icp/ARCHITECTURE.md`. No M1 work starts until G1 is recorded here with date and approved amendments.
+Requested decision is summarized at the end of `docs/icp/ARCHITECTURE.md`. The recorded G1 evidence must include the completed AGPL-3.0 relicensing inventory and resolve every contributor/licensor-authority exception. No M1 work starts until G1 is recorded here with date and approved amendments.
 
 ### M1 — Empirical schema and storage design
 
 Status: BLOCKED by G1.
 
-Dependencies: G1; read-only access to a production snapshot or a DBA-produced inventory report.
+Dependencies: recorded G1 approval, including completed AGPL-3.0 relicensing authority/inventory evidence; read-only access to a production snapshot or a DBA-produced inventory report.
 
 Invariants:
 
 - Inventory queries are read-only and redact secret values.
 - No production table, slot, trigger, row, or index is changed during sizing.
+- The G1-approved AGPL-3.0 relicensing is the first M1 implementation change. No application/toolchain/scaffolding change may precede it; the relicensing task preserves third-party notices and stops as `BLOCKED` if the recorded G1 authority evidence is absent or incomplete.
 - ZenDB is the proposed persistent store for imported PostgreSQL/Prisma records and target document collections, including identity, balances, payment operations, replay journals, and migration receipts where M1 proves the required atomicity, boundedness, recovery, and upgrade behavior. Motoko application code remains the enforcement point for authorization, canonical encodings, and financial constraints; ZenDB constraints/indexes are defense in depth, not a substitute.
 - M1 is blocked until an authoritative-ZenDB design is proven with a mutation/recovery protocol for every multi-record and cross-canister invariant. A remote ZenDB call may introduce an `await`; the resulting durable saga must journal before the call, be idempotent on redelivery, and leave no partially activated authority. If that proof fails for a collection, G2 must record a narrowly scoped native-Motoko exception and its rationale rather than silently falling back for all authority.
 
 Small changes/commits:
 
-1. Add pinned ICP/Motoko/Mops toolchain manifests and empty canister interfaces.
-2. Add a read-only PostgreSQL inventory command with a hard read-only transaction and safe output.
-3. Add ZenDB authoritative-collection and remote/archive benchmarks using generated data distributions, including documented indexes, unique-key conflicts, bounded cursor queries, crashes between journal and remote writes, duplicate delivery, upgrade, low-cycle, and repair/resume cases.
-4. Define versioned Motoko records and ZenDB collection schemas, explicit secondary indexes, collection/shard limits, authoritative mutation-saga journals, and upgrade/collection-vN migrations.
-5. Define canonical export/import schemas and golden vectors, including a canonical source-ID-to-ZenDB-document-ID mapping and immutable receipt keys.
-6. Prepare the AGPL-3.0 relicensing inventory: existing license/notice files, package metadata, third-party notices, contributor-rights evidence, and all distributed source/artifact obligations. Do not change the license or source code before G1 approval.
+1. Execute the G1-approved AGPL-3.0 relicensing as one reviewable commit: update the applicable repository license, notices, package metadata, and distributed-source/artifact obligations together; retain all required third-party notices. Validate the completed inventory against tracked license/notice files and package/distribution metadata, record every changed artifact, and stop as `BLOCKED` if G1 authority evidence is missing.
+2. Add pinned ICP/Motoko/Mops toolchain manifests and empty canister interfaces.
+3. Add a read-only PostgreSQL inventory command with a hard read-only transaction and safe output.
+4. Add ZenDB authoritative-collection and remote/archive benchmarks using generated data distributions, including documented indexes, unique-key conflicts, bounded cursor queries, crashes between journal and remote writes, duplicate delivery, upgrade, low-cycle, and repair/resume cases.
+5. Define versioned Motoko records and ZenDB collection schemas, explicit secondary indexes, collection/shard limits, authoritative mutation-saga journals, and upgrade/collection-vN migrations.
+6. Define canonical export/import schemas and golden vectors, including a canonical source-ID-to-ZenDB-document-ID mapping and immutable receipt keys.
 
 Acceptance:
 
 - Counts, sizes, max field lengths, status histograms, null/unique collisions, orphan checks, exact decimal ranges, sequence values, and unmanaged-table contents are recorded for all 22 physical tables.
 - Benchmarks cover expected, 2×, and failure-limit sizes; every production query has an index/cursor plan below the instruction budget.
 - The authoritative-ZenDB proof demonstrates that identity/role updates, financial journals/operations, replay receipts, and migration receipts preserve their stated invariant across duplicate requests, traps, upgrades, and remote-call interruption; any native exception is approved, collection-specific, and documented in `SCHEMA_MAPPING.md`.
-- ZenDB's AGPL-3.0 license disposition and the repository AGPL-3.0 relicensing plan are recorded; an exact version/commit is pinned; upgrade and schema-version migration tests pass; all authoritative and archive data remains canonically exportable independent of ZenDB.
+- The G1-approved repository AGPL-3.0 relicensing is completed before every other M1 implementation change; its inventory, authority evidence, updated license/notice/package/distribution artifacts, and preserved third-party notices are reviewed and recorded. ZenDB's exact version/commit and AGPL-3.0 disposition are pinned; upgrade and schema-version migration tests pass; all authoritative and archive data remains canonically exportable independent of ZenDB.
 - Candid and stable signature baselines are committed; application types represent money exactly.
 - Migration dry-run vectors produce byte-identical canonical chunks and hashes across repeated runs.
 
-Rollback: remove un-deployed scaffolding/benchmarks; no legacy behavior or data has changed.
+Rollback: remove un-deployed scaffolding/benchmarks; no legacy behavior or data has changed. A completed public AGPL-3.0 grant is not treated as revoked by rolling back later code; any license correction follows a documented, approved legal/notice disposition.
 
 ### G2 — Database schema and migration design approval
 
@@ -386,5 +387,5 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | AI compact migration tie-breaking was nondeterministic and successful raw data was nulled | High history risk | Export unmanaged exception table; build conflict report; preserve available source evidence and explicit missing markers |
 | Tests can hard-delete configured DB financial rows | High operational | Add test-DB hard guard before database suites |
 | Frontend lint is inoperative after ESLint 10 because no flat config exists | Medium operational | Add/verify `eslint.config.*` in the first approved tooling milestone; lint must pass before target implementation is accepted |
-| ZenDB AGPL-3.0, young project, no in-place schema migration | High dependency | Pin/audit the authoritative and archive deployment, complete the AGPL-3.0 relicensing inventory, use collection-vN migrations and durable mutation recovery, and retain independent canonical export |
+| ZenDB AGPL-3.0, young project, no in-place schema migration | High dependency | Complete and record the AGPL-3.0 relicensing inventory as G1 evidence; perform the approved relicensing as M1's first change; pin/audit the authoritative and archive deployment, use collection-vN migrations and durable mutation recovery, and retain independent canonical export |
 | Live cardinalities and row sizes unknown | High sizing | Read-only inventory before G2; no storage approval without evidence |

@@ -154,7 +154,7 @@ As of this document date, current ZenDB main describes:
 
 Primary project evidence: [ZenDB repository/readme](https://github.com/NatLabs/ZenDB), [current documentation](https://github.com/NatLabs/ZenDB/blob/main/zendb-doc.md), and the maintainer's [architecture/31-million-transaction report](https://forum.dfinity.org/t/introducing-zendb-embedded-database-with-mongodb-style-queries-for-motoko/61569).
 
-License direction: the repository will be relicensed to AGPL-3.0 as the first approved M1 implementation change. Before doing so, the implementation prompt must inventory every license/notice, package/distribution artifact, third-party obligation, and contributor-rights record; it must update the applicable license/notice/metadata files together and preserve required third-party notices. This plan makes no legal conclusion, and the inventory must identify any missing authority as a G1 blocker rather than silently relicensing.
+License direction: G1 evidence must first inventory every license/notice, package/distribution artifact, third-party obligation, and contributor/licensor-rights record, and resolve every authority exception. This plan makes no legal conclusion: missing authority blocks G1 rather than permitting a silent relicensing. Once G1 records sufficient authority and approves the disposition, relicensing the repository to AGPL-3.0 is the first M1 implementation change. That one reviewable commit updates the applicable license/notice/metadata and distribution artifacts together while preserving required third-party notices; no toolchain, canister, or application change precedes it.
 
 ### Structure choice
 

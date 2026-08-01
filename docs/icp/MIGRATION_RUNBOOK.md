@@ -7,7 +7,7 @@ Status: G1 design draft. This document specifies the protocol; it does not autho
 - PostgreSQL remains authoritative until the recorded G4 cutover step. The legacy application stays runnable and is not retired by an export.
 - Discovery and base export use a dedicated read-only database role. The session asserts `default_transaction_read_only = on`, opens `REPEATABLE READ, READ ONLY, DEFERRABLE`, and aborts if the database is not the expected instance.
 - General migration data never contains `SystemSecret.value`, plaintext credentials, private keys, wallet mnemonics, WIF, ICP PEM material, OAuth secrets, SMTP credentials, or provider API keys. A separate redacted disposition report contains only secret name, fingerprint, owner, and rotate/retire/manual-transfer decision.
-- An import method cannot call a ledger, sign a transaction, enqueue a payment, activate an imported pending payment, or change vault policy. Imported financial rows remain historical/quarantined until separately reconciled and activated under the approved wallet design.
+- An import method cannot call a ledger, sign a transaction, enqueue a payment, activate an imported pending payment, or change unified-treasury policy. Imported financial rows remain historical/quarantined until separately reconciled and activated under the approved wallet design.
 - Dry runs use a local replica, PocketIC, or a disposable testnet canister and test data. Automated tests never use real funds.
 - Every operator action writes an append-only machine-readable receipt. An unexplained count, hash, relation, uniqueness, or financial discrepancy stops the run.
 
@@ -59,7 +59,7 @@ Compressed files are transported for efficiency, but every hash is over the unco
 
 ## Deterministic canonical representation
 
-The codec is versioned as `meritocracy-migration-canonical-v1` and has golden vectors in TypeScript and Motoko before G2.
+The codec is versioned as `meritocracy-migration-canonical-v1` and has golden vectors in the legacy exporter plus Motoko before G2; the target implementation introduces no Node.js/TypeScript dependency.
 
 1. Each JSONL line is UTF-8 with LF only and no byte-order mark.
 2. Object keys are lexicographically ordered by Unicode code point. Arrays retain source order only when the source type has an order; otherwise their schema specifies a deterministic sort key.
@@ -153,7 +153,7 @@ Import mode is disabled by default. Governance enables exactly one import sessio
 - `dryRun` versus `stageOnly` mode;
 - explicit denial of ledger, signing, asset activation, and normal user-write capabilities.
 
-Canister caller authentication and governance approval bind the session. A copied chunk submitted by another principal or to another module/migration is rejected. The vault exposes no migration import method.
+Canister caller authentication and governance approval bind the session. A copied chunk submitted by another principal or to another module/migration is rejected. The unified treasury exposes no migration import method.
 
 ### State machine
 
@@ -170,7 +170,7 @@ PENDING -> IMPORTING -> SEALED -> VALIDATED -> FINALIZED
 - Same ordinal/key range with another hash: reject and pause the table.
 - Out-of-order chunk: reject unless its dependency-safe parallel lane was declared in the manifest.
 - A bounded message validates, writes staging records/indexes, updates the receipt journal, and commits atomically without an inter-canister `await`.
-- Archive writes use a durable outbox; native authority never claims an archive object is present until the content hash is acknowledged. Retries use the same object ID.
+- Every authoritative or archive ZenDB write uses a durable outbox/saga receipt; application code never claims an object is present until the content hash is acknowledged. Retries use the same object ID and reconciliation resolves interrupted remote writes.
 - `SEALED`: expected last chunk/count/roots match; no more chunks accepted.
 - `VALIDATED`: uniqueness, references, type rules, source/target hashes, derived indexes, and exception counts pass.
 - `FINALIZED`: historical import is immutable and import methods are disabled. Controller governance can technically upgrade mutable application canisters, which is why module/controller verification remains part of G4.
@@ -336,7 +336,7 @@ Migration is complete only when:
 - all 22 tables, sequences, approved deltas, relations, constraints, indexes, exceptions, and stable IDs reconcile;
 - destination projection roots independently match;
 - financial equations have zero unexplained difference and every ambiguous operation remains held/resolved with evidence;
-- importer, application, treasury, vault, assets, and governance canister IDs/module hashes/controllers match the approved record;
+- importer, application, unified treasury, assets, and governance canister IDs/module hashes/controllers match the approved record;
 - import mode and legacy writers/payment workers are disabled as planned;
 - the signed machine report and rollback decision are archived;
 - parity and observation criteria in `PARITY_CHECKLIST.md` and `ROLLBACK_PLAN.md` pass.

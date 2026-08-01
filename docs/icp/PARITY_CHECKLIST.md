@@ -22,11 +22,11 @@ Parity means preserving intended user/business capability, authorization, histor
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
-| FE-001 | React/Vite SPA, `BrowserRouter`, root `Home` | Certified asset canister, SPA fallback, generated Candid actors; deep-link/certification/CSP tests | DESIGNED / BLOCKED_G1 |
-| FE-002 | `/connect` wallet/email/social connection form; `/login` redirects there | Internet Identity primary sign-in; external proofs and payout destinations are separately linked | DESIGNED / BLOCKED_G1 |
+| FE-001 | React/Vite SPA, `BrowserRouter`, root `Home` | Standards-based certified asset canister replacing the Node.js/TypeScript target, SPA fallback, generated Candid actors; deep-link/certification/CSP/no-Node build tests | DESIGNED / BLOCKED_G1 |
+| FE-002 | `/connect` wallet/email/social connection form; `/login` redirects there | Peer Internet Identity and OAuth (`indentify`) sign-in; external proofs and payout destinations are separately linked | DESIGNED / BLOCKED_G1 |
 | FE-003 | `/verify-email` token flow | Caller-bound, expiring, single-use email proof without accepting imported credentials | DESIGNED / BLOCKED_G2 |
 | FE-004 | `/logs` global/admin log viewer | Capability-protected, redacted, cursor-paginated audit view | DESIGNED / BLOCKED_G2 |
-| FE-005 | `/logs/:userId` user audit log | Exact native owner index; self/admin authorization; no JSON substring search | DESIGNED / BLOCKED_G2 |
+| FE-005 | `/logs/:userId` user audit log | Exact ZenDB owner index plus Motoko self/admin authorization; no JSON substring search | DESIGNED / BLOCKED_G2 |
 | FE-006 | `/admin` controls/status | Governance proposals or named capabilities; safety role can pause only | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | FE-007 | `/ban-voting` list/vote experience | Principal-authorized vote, deterministic epoch, Level-1 eligibility, ban/unban parity | DESIGNED / BLOCKED_G2 |
 | FE-008 | `/ban-voting/timing-plan` | Preserve explanatory schedule derived from the same deterministic epoch rules | DESIGNED / BLOCKED_G2 |
@@ -104,11 +104,11 @@ Parity means preserving intended user/business capability, authorization, histor
 | EV-006 | OpenAI batch and non-batch provider mappings | Typed provider request/item state, exact custom ID uniqueness, resume/poll/retry | DESIGNED / BLOCKED_G2 |
 | EV-007 | Web-search/result source records | Ordered unique source references with URL validation and evidence hash | DESIGNED / BLOCKED_G2 |
 | EV-008 | Prompt-injection screening and evaluation blocks | Versioned policy/result, false-positive review, adversarial tests, immutable reason history | DESIGNED / BLOCKED_G2 |
-| EV-009 | Task dependencies and terminal cleanup | Native acyclic adjacency indexes; bounded traversal; tombstones retain history | DESIGNED / BLOCKED_G2 |
+| EV-009 | Task dependencies and terminal cleanup | ZenDB acyclic adjacency indexes plus Motoko bounded traversal/enforcement; tombstones retain history | DESIGNED / BLOCKED_G2 |
 | EV-010 | Task claim uses non-atomic read/update and process lock | Atomic epoch/owner/lease claim with expiry and duplicate worker tests | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EV-011 | Task graph creation can leave partial graph | Single-message atomic creation or manifest-bound resumable saga | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | EV-012 | AI result/source replacement can be partial | Atomic canonical result plus complete source-set swap; archive outbox cannot authorize result | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| EV-013 | `OpenAILog` request/response/error audit | Native redacted metadata plus conditional hash-addressed archive; stable user/task/custom indexes | DESIGNED / BLOCKED_G2 |
+| EV-013 | `OpenAILog` request/response/error audit | ZenDB redacted metadata and hash-addressed payload collections; Motoko access control; stable user/task/custom indexes | DESIGNED / BLOCKED_G2 |
 | EV-014 | Admin `GET /api/logs` filtering/pagination | Capability-protected cursor query with bounded indexed filters | DESIGNED / BLOCKED_G2 |
 | EV-015 | Self `GET /api/logs/my` | Exact caller owner index, sanitized content | DESIGNED / BLOCKED_G2 |
 | EV-016 | `GET /api/logs/user/:userId` allows self/admin | Caller equality or explicit capability; exact owner index | DESIGNED / BLOCKED_G2 |
@@ -152,7 +152,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | JO-014 | Admin cleanup stats/dry-run/execute | Capability-protected retention plan, hash/count dry run, bounded execution receipts | DESIGNED / BLOCKED_G2 |
 | JO-015 | Cleanup covers tasks, auth tokens/sessions/challenges, logs | Per-collection retention policy; historical credentials inactive; finance/audit preservation | DESIGNED / BLOCKED_G2 |
 | JO-016 | Admin status/toggle distribution | Certified status; pause fails closed; resume/policy change requires governance | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| JO-017 | Admin trigger distribution | Creates an idempotent reviewed cycle/obligations; does not bypass treasury/vault controls | INTENTIONALLY_CHANGED / BLOCKED_G3 |
+| JO-017 | Admin trigger distribution | Creates an idempotent reviewed cycle/obligations; does not bypass unified-treasury controls | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | JO-018 | Admin trigger re-worth assessment | Capability/governance durable task with cycle key and result receipt | DESIGNED / BLOCKED_G2 |
 
 ## Treasury, payments, reserves, and wallet/network parity
@@ -181,11 +181,11 @@ Parity means preserving intended user/business capability, authorization, histor
 | FI-020 | Financial amounts calculated with JS `number`/Prisma decimal conversions | Exact integer base units and rational allocation; no float/number in money path | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-021 | Reserve update can double-count and lacks compare-and-set | Append-only balanced journal, unique posting key, derived projection | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-022 | Financial history cascades on hard user deletion | Immutable stable user reference and redacted/tombstoned profile | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| FI-023 | Distribution pause can fail open when DB read fails | Fail closed; independently visible pause epoch; vault caps remain effective | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| FI-024 | Some bypass/direct distribution paths do not share all checks | One treasury authorization path; vault refuses calls lacking approved operation receipt | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| FI-025 | EVM networks/tokens and server-held private keys | Chain Fusion threshold ECDSA for approved direct EVM assets; ck tokens preferred where suitable | INTENTIONALLY_CHANGED / BLOCKED_G3 |
+| FI-023 | Distribution pause can fail open when DB read fails | Fail closed; independently visible pause epoch; unified-treasury policy caps remain effective | INTENTIONALLY_CHANGED / BLOCKED_G3 |
+| FI-024 | Some bypass/direct distribution paths do not share all checks | One unified-treasury authorization path; its methods reject calls lacking an approved operation receipt | INTENTIONALLY_CHANGED / BLOCKED_G3 |
+| FI-025 | EVM networks/tokens and server-held private keys | Chain Fusion threshold ECDSA for approved direct EVM assets; ck tokens only where their ledger/minter path is selected | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-026 | Solana transfers from process-held key | Threshold Schnorr ed25519/RPC design only after test-key prototype, nonce/finality tests | INTENTIONALLY_CHANGED / BLOCKED_G3 |
-| FI-027 | Bitcoin transfers from process-held seed/WIF | ckBTC preferred; direct BTC uses ICP Bitcoin integration/threshold signing, UTXO leases/finality | INTENTIONALLY_CHANGED / BLOCKED_G3 |
+| FI-027 | Bitcoin transfers from process-held seed/WIF | Direct BTC uses ICP Bitcoin integration/threshold signing and UTXO leases/finality; ckBTC remains an approved alternative asset path | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-028 | Bitcoin Cash adapter | Direct Chain Fusion feasibility, address/sighash/RPC/finality prototype required or asset held/retired by explicit policy | DESIGNED / BLOCKED_G3 |
 | FI-029 | Cosmos transfers from process-held mnemonic | Threshold signing only after chain-specific sequence/fee/broadcast/finality prototype | INTENTIONALLY_CHANGED / BLOCKED_G3 |
 | FI-030 | Polkadot transfers from process-held mnemonic | Threshold signing only after nonce/era/runtime-version/finality prototype | INTENTIONALLY_CHANGED / BLOCKED_G3 |
@@ -200,17 +200,17 @@ Parity means preserving intended user/business capability, authorization, histor
 | FI-039 | User payout-address changes | Chain ownership proof, step-up, notification, delay/hold, operation binds destination version | DESIGNED / BLOCKED_G3 |
 | FI-040 | Legacy private keys/mnemonics/WIF/PEM/SystemSecret wallet entries | Values excluded from import; fingerprint, rotate/retire/manual asset-transfer inventory and destruction evidence | INTENTIONALLY_CHANGED / BLOCKED_G3/G4 |
 | FI-041 | Third-party custodial wallet option | No current custodian; reject as default, retain as explicit contingency with contractual/API/withdrawal/insolvency review | DESIGNED / BLOCKED_G3 |
-| FI-042 | Canister-controlled ICP/ICRC accounts | Default for ICP and supported chain-key tokens; treasury authorizes, minimal vault executes | DESIGNED / BLOCKED_G3 |
-| FI-043 | Direct external-chain addresses via Chain Fusion | Only where chain-key token is unsuitable and complete chain-specific state/finality prototype passes | DESIGNED / BLOCKED_G3 |
-| FI-044 | Upgrade/controller control over custody | Governance-controlled mutable treasury; minimal capped vault with proposed post-review blackhole/delayed successor policy | DESIGNED / BLOCKED_G3 |
-| FI-045 | Controller compromise response | Pause, immutable caps/delays, module verification, credential rotation, chain reconciliation; no blanket trust claim | DESIGNED / BLOCKED_G3 |
+| FI-042 | Canister-controlled ICP/ICRC accounts | Unified treasury owns and executes approved ICP/ICRC operations with ledger dedup/reconciliation | DESIGNED / BLOCKED_G3 |
+| FI-043 | Direct external-chain addresses via Chain Fusion | Approved target for native-chain custody after complete chain-specific state/finality prototype passes | DESIGNED / BLOCKED_G3 |
+| FI-044 | Upgrade/controller control over custody | One SNS-controlled treasury; no blackhole; governance delay, caps, pause-only role, reproducible upgrades, controller verification, and recovery drill | DESIGNED / BLOCKED_G3 |
+| FI-045 | Controller compromise response | Pause, SNS governance delay/recovery, caps, module verification, credential rotation, chain reconciliation; no blanket trust claim | DESIGNED / BLOCKED_G3 |
 
 ## External integrations
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
 | EX-001 | OpenAI API immediate/batch/web-search | HTTPS outcall adapter, scoped key/spend limits, idempotent jobs, redacted audit, deterministic result validation | DESIGNED / BLOCKED_G2 |
-| EX-002 | Didit KYC/liveliness | HTTPS initiation plus signed HTTP-gateway update callback/event dedup/ordering | DESIGNED / BLOCKED_G2 |
+| EX-002 | Didit KYC/liveliness | Pinned `join-proxy`/`join-proxy-client.mo` evaluation with configurable allowlisted HTTPS endpoint, reusable-proof consent/freshness/subject binding/cost accounting, signed callback/event dedup/ordering, and tested direct-provider fallback | DESIGNED / BLOCKED_G2 |
 | EX-003 | GitHub OAuth | Immutable provider subject, caller-bound state, token minimization/rotation | DESIGNED / BLOCKED_G2 |
 | EX-004 | ORCID OAuth | Same identity-evidence contract with provider-specific protocol tests | DESIGNED / BLOCKED_G2 |
 | EX-005 | Bitbucket OAuth | Same identity-evidence contract with immutable account UUID | DESIGNED / BLOCKED_G2 |
@@ -231,8 +231,8 @@ Parity means preserving intended user/business capability, authorization, histor
 | DM-001 | 21 Prisma models | Every model/field maps in `SCHEMA_MAPPING.md`; count/hash/type golden tests | DESIGNED / BLOCKED_G2 |
 | DM-002 | Unmanaged `ai_result_migration_exceptions` physical table | Explicit 22nd table export/import/count/hash and restricted payload handling | DESIGNED / BLOCKED_G2 |
 | DM-003 | 18 SQL migrations and Prisma migration history | Hash/record migration SQL, physical schema, sequence state, data-rewrite exceptions | DESIGNED / BLOCKED_G2 |
-| DM-004 | All PKs, uniques, indexes, relations, delete rules | Explicit native/ZenDB representation and enforcement/rebuild tests | DESIGNED / BLOCKED_G2 |
-| DM-005 | 17 explicit Prisma transaction call sites | Atomic native method or durable idempotent saga mapping and failure injection | DESIGNED / BLOCKED_G2 |
+| DM-004 | All PKs, uniques, indexes, relations, delete rules | Explicit ZenDB representation, Motoko enforcement, collection-vN rebuild, and mutation-recovery tests | DESIGNED / BLOCKED_G2 |
+| DM-005 | 17 explicit Prisma transaction call sites | Motoko-authorized durable idempotent saga mapping over ZenDB collections and failure injection | DESIGNED / BLOCKED_G2 |
 | DM-006 | Non-transactional financial/task/KYC/AI sequences | Correct target semantics, preserve resulting legacy history/exceptions | INTENTIONALLY_CHANGED / BLOCKED_G2/G3 |
 | DM-007 | PostgreSQL `SERIAL` IDs | Exact stable `legacyId`, no reuse, new disjoint allocation | DESIGNED / BLOCKED_G2 |
 | DM-008 | `TIMESTAMP(3)` without timezone | Recorded timezone assumption/source form; ambiguity report blocks activation | DESIGNED / BLOCKED_G2 |
@@ -270,7 +270,9 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |
 | OP-014 | Controllers and deploy credentials | Reviewed governance/SNS direction, least controllers, emergency pause-only role, module transparency | DESIGNED / BLOCKED_G1/G3 |
 | OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
-| OP-016 | ZenDB dependency | Conditional remote archive only; pin version/commit/license disposition; export/reindex/collection-vN migration/native fallback | DESIGNED / BLOCKED_G1/G2 |
+| OP-016 | ZenDB dependency | Proposed authoritative and archive data store; pin version/commit and AGPL-3.0 relicensing evidence; export/reindex/collection-vN/mutation-recovery tests and collection-specific fallback approval | DESIGNED / BLOCKED_G1/G2 |
+| OP-016a | Repository licensing | Before the first approved code change, inventory contributor rights, existing licenses/notices, package metadata, distributed artifacts, and third-party notices; relicense the repository to AGPL-3.0 together with required notice/metadata changes | DESIGNED / BLOCKED_G1 |
+| OP-016b | Target Node.js/TypeScript removal | Certified target assets and canisters build without Node.js/TypeScript; legacy Node.js/TypeScript remains only as a runnable rollback system until M10, then is retired with its deploy/build dependencies | DESIGNED / BLOCKED_G1/M10 |
 | OP-017 | Custom domain/TLS/assets | ICP boundary/custom-domain setup, certificate/certification/deep-link/cache/CSP verification | DESIGNED / BLOCKED_G4 |
 | OP-018 | Mainnet production migration | Full sanitized rehearsal, signed reconciliation, rollback rehearsal, G4 approval, separate manual asset actions | BLOCKED_G4 |
 | OP-019 | Legacy retirement | Only after observation, parity, data/money reconciliation, key disposition, audit/retention approval | BLOCKED_G4/M10 |

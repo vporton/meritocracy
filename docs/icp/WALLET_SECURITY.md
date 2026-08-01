@@ -11,7 +11,7 @@ Security objectives:
 - one logical obligation causes at most one value transfer;
 - balances/liabilities/reserves/fees reconcile exactly in base units;
 - no private key or seed is reconstructible by an application operator;
-- a compromised mutable controller cannot upgrade the proposed immutable vault or bypass its hard caps/timelocks;
+- production treasury upgrades occur only through the SNS governance path; proposal delay, policy caps, a pause-only role, reproducible artifacts, monitoring, and recovery drills limit controller compromise;
 - ambiguous sends are reconciled, never blindly repeated;
 - every authorization, destination version, policy version, attempt, ledger/chain identifier, confirmation, reorg, and manual action remains auditable;
 - development/test automation is unable to reach production signing authority or real funds.
@@ -45,10 +45,10 @@ ICP's current Chain Fusion model provides threshold ECDSA/Schnorr signatures, na
 
 | Legacy/product asset | Target custody | Production enablement |
 | --- | --- | --- |
-| ICP | Vault-owned ICRC account/subaccounts | First tier after ICRC replay/reconciliation tests |
-| ckBTC, ckETH, ckUSDT, ckUSDC, ckEURC and other approved ck assets | Vault-owned ICRC accounts; deposits/minting through official minter flow | First tier per exact ledger/minter canister allowlist and testnet/rehearsal |
-| Native BTC | Direct Chain Fusion vault address via Bitcoin API, or accept/mint ckBTC when native payout is unnecessary | Second tier; UTXO/fee/confirmation/reorg audit required |
-| Ethereum, Arbitrum, Optimism, Base, Polygon, Celo/Sepolia | Prefer ck asset if supported/acceptable; otherwise per-chain threshold-ECDSA address through NNS-controlled EVM RPC | Second tier per chain ID, provider consistency, nonce/fee/finality audit |
+| ICP | Unified-treasury ICRC account/subaccounts | First tier after ICRC replay/reconciliation tests |
+| ckBTC, ckETH, ckUSDT, ckUSDC, ckEURC and other approved ck assets | Unified-treasury ICRC accounts; deposits/minting through official minter flow | First tier per exact ledger/minter canister allowlist and testnet/rehearsal |
+| Native BTC | Direct Chain Fusion treasury address via Bitcoin API, or accept/mint ckBTC when native payout is unnecessary | Second tier; UTXO/fee/confirmation/reorg audit required |
+| Ethereum, Arbitrum, Optimism, Base, Polygon, Celo/Sepolia | Direct per-chain threshold-ECDSA treasury address through NNS-controlled EVM RPC; use ck assets only where their ledger/minter flow is the approved asset path | Second tier per chain ID, provider consistency, nonce/fee/finality audit |
 | Native/ERC-20 | Canonical contract+chain asset registry; direct EVM transaction only after bytecode/decimals/fee policy allowlist | Never infer asset by symbol |
 | Solana | Threshold-Schnorr Ed25519 plus SOL RPC/direct RPC; or ckSOL when approved and suitable | Later tier; durable nonce/blockhash/finality and Motoko transaction-library maturity required |
 | Bitcoin Cash | Threshold ECDSA with BCH-specific transaction/address rules and multi-provider HTTPS RPC | Later tier; no BTC-code reuse without BCH vectors/audit |
@@ -58,34 +58,15 @@ ICP's current Chain Fusion model provides threshold ECDSA/Schnorr signatures, na
 
 “Supported by a threshold signature scheme” is not the same as a production-ready adapter. No network is marked parity complete until transaction construction, canonical address, fee, replay, finality, reorg, cycle, and failure-injection tests pass.
 
-## Treasury and vault separation
+## Unified Chain Fusion treasury
 
-Human verdict: Don't separate treasury and vault, use one canister for both. Don't blackhole it (in the future it will be owned by an SNS).
+One SNS-controlled `treasury_canister` owns both accounting and custody. It is not blackholed and there is no separate vault canister. The canister owns:
 
-### Treasury orchestrator
+- double-entry accounting journal, obligations and holds, payment-cycle/rounding/remainder policy, immutable payment intents/destination snapshots, reconciliation reports, and stable scheduler/cursors;
+- ICP/ICRC accounts/subaccounts, Chain Fusion key-derivation paths and signing requests, immutable operation receipts, and chain nonce/sequence/UTXO reservations;
+- asset/network allowlists, transaction and rolling-window caps, fee caps, destination encoding validation, and immediate pause state.
 
-Mutable and governance-controlled. It owns:
-
-- double-entry accounting journal;
-- obligations and holds;
-- payment cycle/rounding/remainder policy;
-- immutable payment intents and destination snapshots;
-- per-chain attempt and finality state;
-- reconciliation and operator reports;
-- stable scheduler/cursors.
-
-It cannot sign. It submits an exact operation to the vault and treats timeout/unknown as ambiguous until authoritative reconciliation.
-
-### Minimal vault
-
-Proposed blackholed production canister after G3 validation. It owns:
-
-- ICP/ICRC accounts and subaccounts;
-- Chain Fusion key derivation namespace and signing requests;
-- immutable operation receipts and chain nonce/sequence/UTXO reservations;
-- hard asset/network allowlist, transaction limits, rolling-window caps, fee caps, pause state, and delayed successor migration.
-
-It does not know users, GDP, KYC, AI results, or business policy. It accepts only the allowlisted treasury principal and a stable operation schema. The operation binds:
+Every payment method authenticates its caller, authorizes the exact action, and persists the operation receipt before signing/sending. The method binds:
 
 ```text
 operationId
@@ -98,16 +79,18 @@ maximum fee and expiry
 business obligation hash
 ```
 
-The first accepted operation ID stores the canonical operation hash. An identical replay returns the stored state/result. A different request under that ID is rejected and audited. No receipt/history cleanup is allowed.
+The first accepted operation ID stores the canonical operation hash. An identical replay returns the stored state/result. A different request under that ID is rejected and audited. No receipt/history cleanup is allowed. Timeout/unknown stays ambiguous until authoritative reconciliation.
+
+The SNS is the only production controller. Its proposals require the reviewed delay, reproducible Wasm and stable/Candid compatibility evidence, test results, security diff, controller/module-hash verification, and an exercised recovery plan. Independent safety principals can pause only; they cannot resume, upgrade, change policy/caps, change controllers, or send funds. Because the treasury remains upgradeable, a controller compromise can request signatures through malicious code; G3 therefore validates the governance, pause, cap, monitoring, and recovery controls rather than claiming immutable-code containment.
 
 ### Scope isolation
 
 Global, country, and EU/region treasuries get independent cryptographic authority:
 
-- ICRC: deterministic subaccount `H("meritocracy-v1" || scopeType || scopeId || assetId)` owned by the vault.
+- ICRC: deterministic subaccount `H("meritocracy-v1" || scopeType || scopeId || assetId)` owned by the unified treasury.
 - Direct chains: threshold-key derivation path includes version, chain/network, and canonical scope. EVM chains use separate derivation paths/addresses to avoid shared-key cross-chain coupling.
 - A scope balance is allocated only within that scope. Global funds cannot be counted again for every country/region.
-- Displayed deposit address is derived by the same vault method that will later sign, and tests prove the address/public key/derivation path relationship.
+- Displayed deposit address is derived by the same treasury method that will later sign, and tests prove the address/public key/derivation path relationship.
 
 ## Accounting model
 
@@ -138,7 +121,7 @@ GDP share allocation must define:
 ```text
 ObligationHeld
   -> IntentPrepared
-  -> VaultAccepted
+  -> TreasuryAccepted
   -> Signed/Broadcast (or LedgerSubmitted)
   -> SubmittedAmbiguous | SubmittedKnown
   -> ConfirmedProvisional
@@ -153,11 +136,11 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 ## Replay and duplicate prevention
 
-### Application and vault layers
+### Unified treasury layer
 
 - `operationId = SHA-256(domain || obligationId || userId || scopeId || assetId || cycleId || destinationVersion || policyVersion)` over canonical length-delimited bytes, not JSON or current time.
 - Payment intent creation is unique by obligation and asset. Attempt IDs are monotonic children of one operation.
-- Treasury and vault each independently store `operationId -> operationHash/state/result` forever.
+- The unified treasury stores `operationId -> operationHash/state/result` forever in its receipt collection and reconciliation journal.
 - The canonical hash preserves address case/bytes according to the chain. It never lowercases a Base58/case-sensitive address.
 - Manual recovery can only advance the existing operation with evidence; it cannot mint a replacement obligation.
 
@@ -166,12 +149,12 @@ Before each `await`, the state transition and attempt ID are committed. After re
 - Always set one stable `created_at_time` and an operation-derived `memo` for every retry. ICRC ledgers reject identical transfers inside their deduplication window and return the original block index. The current standard documents a 24-hour duplicate window; see [digital asset standards](https://docs.internetcomputer.org/references/digital-asset-standards/) and [ledger deduplication](https://docs.internetcomputer.org/guides/digital-assets/ledgers/).
 - `#Duplicate { duplicate_of }` is success evidence, not a failure.
 - `#TemporarilyUnavailable`/unknown results retry only with identical arguments while safe. `#TooOld` never causes a new timestamp/send until ICRC-3/index/archive scan proves absence.
-- For high-value transfers, use an operation-specific vault subaccount two-step pattern where supported: fund the unique subaccount, then drain it to the recipient. An ambiguous second step is reconciled by the operation subaccount balance and ledger blocks before retry. Fee/complexity tradeoff is finalized at G3.
+- For high-value transfers, use an operation-specific treasury subaccount two-step pattern where supported: fund the unique subaccount, then drain it to the recipient. An ambiguous second step is reconciled by the operation subaccount balance and ledger blocks before retry. Fee/complexity tradeoff is finalized at G3.
 - Store ledger ID, block index, memo, created time, from/to subaccounts, amount, fee, and a verified block hash/transaction record.
 
 ### EVM chains
 
-- Derive a separate address per chain/network/scope. Reserve one nonce atomically in vault state.
+- Derive a separate address per chain/network/scope. Reserve one nonce atomically in treasury state.
 - Build one canonical EIP-1559/legacy transaction binding chain ID, nonce, destination, value/data, gas limit, max fees, and operation data/memo where possible.
 - Store unsigned hash, signature, signed bytes, and expected tx hash before broadcast. Rebroadcast only identical signed bytes; it has the same nonce/hash.
 - If the nonce is consumed, query multiple EVM RPC providers for tx/receipt/address nonce and reconcile. Never allocate a new nonce for the same obligation because the old result is unknown.
@@ -189,7 +172,7 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 ### Solana
 
-- Prefer a reviewed durable nonce account per scope so a retry does not depend only on an expiring recent blockhash. Reserve nonce state in vault before signing.
+- Prefer a reviewed durable nonce account per scope so a retry does not depend only on an expiring recent blockhash. Reserve nonce state in treasury before signing.
 - Store exact message/signature/transaction ID. Re-submit identical bytes while valid; after expiry, query transaction/finality and durable nonce state before constructing a replacement attempt under the same operation.
 - Bind program IDs, accounts, amount, fee payer, memo/operation ID, cluster genesis/network, and compute budget. Finalize only at the approved commitment level.
 
@@ -211,9 +194,9 @@ Before each `await`, the state transition and attempt ID are committed. After re
 ## Donations and deposits
 
 - Browser wallets remain user controlled; the UI verifies the expected chain/cluster, asset contract/ledger, amount, destination, and helper/minter before requesting a transaction.
-- ICP/ICRC donations use per-donor/per-scope subaccounts and ledger-index reconciliation. (Human note: Why? It complicates the process of donation. I prefer to donate directly to the treasury.)
+- ICP/ICRC donations go directly to the published unified-treasury account for the selected asset/scope; no per-donor deposit subaccount is required. The ledger-index scanner credits each observed block exactly once by ledger/block identity. A donor may attach an optional bounded memo for attribution, but a missing/unknown memo never blocks acceptance or creates a second credit.
 - ckBTC/ckETH/ckERC20 deposits follow official minter flows. Creating/sending to a deposit address is not complete until the minter update/mint step and ICRC credit are confirmed.
-- Direct external deposits use vault-derived scope addresses and a durable scanner cursor/finality rule. Observed deposits credit the accounting journal exactly once by chain transaction/outpoint/log identity.
+- Direct external deposits use published treasury-derived scope addresses and a durable scanner cursor/finality rule. Observed deposits credit the accounting journal exactly once by chain transaction/outpoint/log identity.
 - Public treasury views show observed height/time/finality and certified application-journal roots; they never add a logical reserve to an already inclusive wallet balance.
 
 ## Payout destination authorization
@@ -229,12 +212,12 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 ### Pre-production
 
-- One reviewed multisig/governance canister is the sole controller of mutable canisters. Human principals are signers of that governance, not independent controllers.
+- One reviewed governance canister is the sole controller before SNS handoff. Human principals are signers of that governance, not independent controllers.
 - Named roles, least privilege, out-of-band recovery, and a reviewed proposal log are required.
 
 ### Production direction
 
-- SNS/equivalent on-chain governance is the sole controller of `frontend_assets`, `core`, `workflow`, `archive_router/shards`, and `treasury`.
+- SNS is the sole controller of `frontend_assets`, `core`, `workflow`, `archive_router/shards`, and the unified `treasury`. No production canister is blackholed or has an empty controller list.
 - Upgrade proposal contains source commit, reproducible Wasm/assets hashes, dependency lock, Candid/stable compatibility, state migration plan, tests, security diff, cycles/freezing impact, and rollback module hash.
 - Proposal delay allows public/security review. Deployed module hashes and controller lists are verified after execution.
 
@@ -246,12 +229,12 @@ ICP's controller model gives controllers power to install/upgrade/delete caniste
 
 Assumed effects:
 
-- attacker can upgrade mutable frontend/core/workflow/treasury/archive canisters, expose their data/API credentials, falsify non-certified application views, stop service, and submit malicious-looking operations;
-- attacker cannot extract a Chain Fusion private key because none exists, but upgraded code can request signatures if it controls the signing canister.
+- attacker can upgrade frontend/core/workflow/treasury/archive canisters, expose their data/API credentials, falsify non-certified application views, stop service, and request malicious-looking operations;
+- attacker cannot extract a Chain Fusion private key because none exists, but upgraded treasury code can request signatures; the SNS proposal delay, safety pause, policy caps, monitoring, and recovery process are therefore release-blocking controls.
 
 Response:
 
-1. Independent safety principals call vault/treasury pause-only methods; pause is immediate and idempotent.
+1. Independent safety principals call the treasury pause-only method; pause is immediate and idempotent.
 2. Freeze frontend update permissions/custom domain if possible; publish verified safe canister IDs/module hashes out of band.
 3. Rotate OAuth/OpenAI/Didit/email/RPC credentials and revoke allowances; they may have been exposed.
 4. Reconcile every operation since last trusted module hash against ledgers/chains and journal roots.
@@ -260,7 +243,7 @@ Response:
 
 ### Frontend-only compromise
 
-- A malicious frontend can phish user approvals/delegations and propose bad destination changes, but cannot call vault payment methods directly.
+- A malicious frontend can phish user approvals/delegations and propose bad destination changes, but cannot call treasury payment methods directly.
 - Strict CSP/certified assets, short II delegations, canister method authorization, human-readable transaction consent, destination delay/notifications, and module-hash monitoring reduce impact.
 - Replace frontend through governance and revoke affected user delegations/allowances; inspect pending destination changes.
 
@@ -270,7 +253,7 @@ The role can pause only. It can cause denial of service but cannot resume, upgra
 
 ### Protocol/subnet or SNS-governance capture
 
-This exceeds application-only recovery. Threshold keys and canister execution share ICP trust assumptions. Hardcoded vault limits constrain application-controller capture, not a protocol failure capable of violating canister execution. Disclose this residual trust clearly.
+This exceeds application-only recovery. Threshold keys and canister execution share ICP trust assumptions. Treasury policy caps constrain ordinary application paths and SNS governance process, not a protocol failure capable of violating canister execution. Disclose this residual trust clearly.
 
 ## Legacy key disposition
 
@@ -279,7 +262,7 @@ For each `SystemSecret` and environment wallet credential:
 1. Record name, source ID, supported networks/scopes, public address, one-way fingerprint, last known use, and observed balance. Never put plaintext in general export/report/canister.
 2. Classify `retire-empty`, `rotate-api`, `transfer-asset`, `retain-offline-for-rollback`, or `unknown/manual-review`.
 3. Reconcile address balance and transaction history before any transfer.
-4. After G4, execute separately authorized transfers to vault deposit addresses using a human-reviewed manifest, small canary first, finality wait, and exact balance/fee reconciliation.
+4. After G4, execute separately authorized transfers to published unified-treasury deposit addresses using a human-reviewed manifest, small canary first, finality wait, and exact balance/fee reconciliation.
 5. Keep the old sender disabled after transfer; do not let Node and ICP spend the same pool.
 6. At rollback-window closure, revoke/delete legacy secrets under dual control and retain only proof/fingerprint/disposition.
 
@@ -288,11 +271,11 @@ No missing secret is generated automatically. Missing authority is a hard stop.
 ## G3 acceptance requirements
 
 - Exact supported asset/network/scope registry and custody choice.
-- Immutable vault decision, caps, rolling windows, pause/resume, delayed successor, controller state, and residual stuck-fund risk.
-- Named governance/safety roles, quorum/delay, reproducible upgrade process, and compromise drill.
+- Unified treasury decision, caps, rolling windows, pause/resume, SNS controller state, upgrade/recovery policy, and residual governance-risk analysis.
+- Named SNS governance/safety roles, quorum/delay, reproducible upgrade process, controller verification, and compromise drill.
 - State-machine/property tests prove conservation and one-operation/one-transfer under concurrency, duplicate calls, callback traps, timeouts, upgrades, cycle shortage, ambiguous sends, fee changes, finality, and reorgs.
 - ICRC `Duplicate/TooOld`, EVM nonce/replacement, BTC/BCH UTXO, Solana nonce/blockhash, Cosmos/Stellar/Polkadot sequence/finality test evidence.
 - Destination proof/change-delay and KYC/hold/compensation policy.
 - Legacy key/balance/pending-payment reconciliation report with no unresolved automated send.
 - Independent custody/authorization security review.
-- Testnet-only deployment with valueless assets; no real funds.
+- Testnet-only deployment with valueless assets; no real funds. Verify direct-to-treasury donation, no per-donor deposit-address requirement, and one-credit-per-ledger/chain-observation behavior.

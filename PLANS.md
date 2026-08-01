@@ -1,6 +1,6 @@
 # ICP migration execution plan
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 Status: `G1_TARGET_ARCHITECTURE` — awaiting approval. Planning documents only; no application code has been changed.
 
@@ -27,15 +27,19 @@ For every milestone:
 
 No production mutation, production logical replication, DNS cutover, mainnet canister deployment, legacy-key transfer, or real-asset transfer is allowed before its stated milestone and gate.
 
+## Implementation task-card requirements
+
+Every implementation prompt derived from a milestone must stand alone. It must state its objective; the applicable milestone, gate, invariants, and security constraints; the files/subsystems to inspect; exact required and prohibited changes; tests/validation and evidence commands; acceptance/completion criteria; and its rollback boundary. It must explicitly preserve the legacy application, production data, production signing authority, and unrelated user changes unless the approved milestone says otherwise. A task card that depends on a prior design decision must name that decision and stop as `BLOCKED` when its gate or evidence is absent.
+
 ## Approval gates
 
 These are the only planned approval stops.
 
 | Gate | Status | Decision being approved | Evidence required to request approval |
 | --- | --- | --- | --- |
-| G1 — Target architecture | **WAITING NOW** | Canister boundaries, native-vs-ZenDB policy, external-dependency boundary, frontend hosting, governance direction, and immutable-vault direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence |
-| G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; storage/index benchmarks; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
-| G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, controller/governance model, immutable vault policy/caps, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; independent wallet review; revised `WALLET_SECURITY.md` |
+| G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, frontend replacement, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence |
+| G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; authoritative-ZenDB atomicity/recovery benchmarks; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
+| G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; SNS-controller and governance-recovery drills; independent wallet review; revised `WALLET_SECURITY.md` |
 | G4 — Testnet-to-production migration | BLOCKED by G3 | Mainnet deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module hash checks; testnet parity; independent security sign-off |
 
 Approval of G4 authorizes only the reviewed runbook steps. Each real-asset transfer remains a deliberate manual runbook action with recorded transaction details; automated tests never move real assets.
@@ -90,22 +94,25 @@ Invariants:
 
 - Inventory queries are read-only and redact secret values.
 - No production table, slot, trigger, row, or index is changed during sizing.
-- Critical state remains native Motoko persistence; ZenDB cannot hold authority for identities, roles, balances, liabilities, payment operations, replay journals, or migration authorization. (Human note: It is unclear (and seems false), that ZenDB cannot hold identities (encoded as Blob or Text, balances, payment operations, (whatever it be) replay journals. So, M1 is blocked by solving this issue, because holding in ZenDB has its advantages.)
+- ZenDB is the proposed persistent store for imported PostgreSQL/Prisma records and target document collections, including identity, balances, payment operations, replay journals, and migration receipts where M1 proves the required atomicity, boundedness, recovery, and upgrade behavior. Motoko application code remains the enforcement point for authorization, canonical encodings, and financial constraints; ZenDB constraints/indexes are defense in depth, not a substitute.
+- M1 is blocked until an authoritative-ZenDB design is proven with a mutation/recovery protocol for every multi-record and cross-canister invariant. A remote ZenDB call may introduce an `await`; the resulting durable saga must journal before the call, be idempotent on redelivery, and leave no partially activated authority. If that proof fails for a collection, G2 must record a narrowly scoped native-Motoko exception and its rationale rather than silently falling back for all authority.
 
 Small changes/commits:
 
 1. Add pinned ICP/Motoko/Mops toolchain manifests and empty canister interfaces.
 2. Add a read-only PostgreSQL inventory command with a hard read-only transaction and safe output.
-3. Add native-map and ZenDB archive benchmarks using generated data distributions.
-4. Define versioned Motoko records, explicit secondary indexes, collection/shard limits, and upgrade migrations.
-5. Define canonical export/import schemas and golden vectors.
+3. Add ZenDB authoritative-collection and remote/archive benchmarks using generated data distributions, including documented indexes, unique-key conflicts, bounded cursor queries, crashes between journal and remote writes, duplicate delivery, upgrade, low-cycle, and repair/resume cases.
+4. Define versioned Motoko records and ZenDB collection schemas, explicit secondary indexes, collection/shard limits, authoritative mutation-saga journals, and upgrade/collection-vN migrations.
+5. Define canonical export/import schemas and golden vectors, including a canonical source-ID-to-ZenDB-document-ID mapping and immutable receipt keys.
+6. Prepare the AGPL-3.0 relicensing inventory: existing license/notice files, package metadata, third-party notices, contributor-rights evidence, and all distributed source/artifact obligations. Do not change the license or source code before G1 approval.
 
 Acceptance:
 
 - Counts, sizes, max field lengths, status histograms, null/unique collisions, orphan checks, exact decimal ranges, sequence values, and unmanaged-table contents are recorded for all 22 physical tables.
 - Benchmarks cover expected, 2×, and failure-limit sizes; every production query has an index/cursor plan below the instruction budget.
-- ZenDB license disposition is recorded; an exact version/commit is pinned; upgrade and schema-version migration tests pass; archive data remains exportable independent of ZenDB.
-- Candid and stable signature baselines are committed; native types represent money exactly.
+- The authoritative-ZenDB proof demonstrates that identity/role updates, financial journals/operations, replay receipts, and migration receipts preserve their stated invariant across duplicate requests, traps, upgrades, and remote-call interruption; any native exception is approved, collection-specific, and documented in `SCHEMA_MAPPING.md`.
+- ZenDB's AGPL-3.0 license disposition and the repository AGPL-3.0 relicensing plan are recorded; an exact version/commit is pinned; upgrade and schema-version migration tests pass; all authoritative and archive data remains canonically exportable independent of ZenDB.
+- Candid and stable signature baselines are committed; application types represent money exactly.
 - Migration dry-run vectors produce byte-identical canonical chunks and hashes across repeated runs.
 
 Rollback: remove un-deployed scaffolding/benchmarks; no legacy behavior or data has changed.
@@ -132,8 +139,7 @@ Small changes/commits:
 1. Core types, repositories, uniqueness/FK enforcement, cursor pagination, and upgrade tests.
 2. Internet Identity integration and principal binding/recovery.
 3. Email/social proof linking keyed by immutable provider subject; legacy identities require re-verification where source data lacks immutable IDs.
-4. KYC/liveliness webhook HTTP-update endpoint with signature, event deduplication, monotonic state, AML precedence, and encrypted evidence policy.
-4a. Human note: BLOCKER of M2: Consider use (future deployed at a configurable URL) https://github.com/vporton/join-proxy (https://github.com/vporton/join-proxy-client.mo as the client) for eliminating to pay for KYC several times, if needed.
+4. KYC/liveliness integration, including a required `join-proxy` design/prototype. Inspect the pinned `https://github.com/vporton/join-proxy` service and `https://github.com/vporton/join-proxy-client.mo` client; use the client only against an allowlisted, configurable HTTPS proxy URL. Define the reusable-attestation/session protocol, consent and data-minimization boundary, proof freshness and subject binding, provider terms/eligibility, failure/expiry behavior, cost-accounting, and a direct-provider fallback that cannot double-charge or weaken AML/KYC controls. The endpoint still requires signature verification, event deduplication, monotonic state, AML precedence, and encrypted evidence policy.
 5. Named role capabilities, pause-only incident role, audit events, and governance-call interfaces.
 6. Ban voting/holds/compensation eligibility and deterministic UTC epochs.
 7. Certified/sanitized public views.
@@ -141,6 +147,7 @@ Small changes/commits:
 Acceptance:
 
 - Authorization matrix, horizontal-access, identity-confusion, replay, deleted-user, KYC ordering, callback, and upgrade tests pass in PocketIC/local replica.
+- `join-proxy` is not optional implementation debt: before M2 can complete, a pinned compatible client/service contract, configurable endpoint, privacy/security review, reuse-versus-direct-provider decision, and tests for reused, expired, mismatched, duplicate, unavailable, and direct-fallback KYC flows are recorded. Reuse must never convert an unverified proxy response into verified KYC or cause two provider charges for one logical verification.
 - Exact indexed ownership replaces serialized-JSON substring matching.
 - The legacy app remains buildable and unchanged except explicitly approved compatibility hooks.
 
@@ -157,7 +164,7 @@ Invariants:
 - Jobs are at-least-once and idempotent; no in-memory lock is authoritative.
 - Every task claim has an atomic lease/epoch/attempt and every external effect has an idempotency key.
 - Timers are recoverable from stable schedules after upgrades or cycle outages.
-- Large AI/provider payloads may use ZenDB archive shards, but canonical task/result state remains native.
+- ZenDB stores task/result documents and large provider payloads according to the M1 authoritative-collection proof; task authorization, leases, and idempotency remain enforced by Motoko code and durable mutation journals.
 
 Small changes/commits:
 
@@ -167,14 +174,14 @@ Small changes/commits:
 4. OpenAI immediate/batch parity and canonical result/source replacement.
 4a. Use `llm` Motoko package.
 5. World GDP, token-price, email HTTPS-provider, OAuth evidence, and Didit integration parity.
-6. ZenDB archive router/shard with cursor pagination, export, reindex, and collection-vN migration.
+6. ZenDB workflow/archive collection routing with cursor pagination, canonical export, reindex, collection-vN migration, and fault-injected authoritative mutation recovery.
 
 Acceptance:
 
 - Crash/restart/timeout/duplicate/out-of-order/concurrent-claim and timer-upgrade tests pass.
 - First, repeat, and quarterly evaluation DAGs reproduce the intended 14/6/5-task workflows and verified outcomes.
 - External API keys are scoped/rotatable/spend-capped and excluded from logs/snapshots; compromise response is rehearsed.
-- Archive failure cannot authorize or duplicate a core result/payment.
+- A ZenDB outage or partial remote mutation cannot authorize or duplicate a core result/payment; the durable saga/reconciliation protocol makes the record either safely held or exactly recoverable.
 
 Rollback: route test traffic back to legacy services; discard test canisters. No production cutover.
 
@@ -198,7 +205,7 @@ Small changes/commits:
 
 1. Read-only exporter, canonical codec, manifest/signature, chunker, and report schema.
 2. Dry-run transformer and referential/unique/status validators.
-3. Motoko staging/import protocol with chunk receipt journal and destination hash queries.
+3. Motoko/ZenDB staging-import protocol with authoritative ZenDB chunk-receipt collection, durable saga state for every remote write, and destination hash queries.
 4. Full snapshot shadow import and repeated resume/fault injection.
 5. Read-only delta capture prototype (logical decoding preferred; trigger outbox only if approved as the documented fallback).
 6. Independent financial/history reconciler and ambiguous-payment exception workflow.
@@ -206,7 +213,7 @@ Small changes/commits:
 Acceptance:
 
 - Repeated exports from one snapshot are byte-identical.
-- Interrupted imports resume from receipts; duplicate identical chunks are no-ops; changed hashes are rejected; partial record fragments cannot become visible.
+- Interrupted imports resume from ZenDB receipts; duplicate identical chunks are no-ops; changed hashes are rejected; partial record fragments cannot become visible, including after interruption between an application journal write and a remote ZenDB mutation.
 - Counts/hashes/relations/uniques/source IDs match for all 22 physical tables.
 - Secret values never appear in canonical data or reports.
 - No method reachable in migration mode can transfer assets.
@@ -222,20 +229,20 @@ Dependencies: core/workflow/test migration.
 Invariants:
 
 - The frontend is a certified static ICP asset application with strict CSP and no third-party executable JavaScript.
-- Calls use generated Candid actors and Internet Identity.
+- Calls use generated Candid actors and peer Internet Identity/OAuth authentication; canisters authorize the authenticated caller rather than a bearer token or caller-supplied user ID.
 - Legacy frontend/backend stays deployable until production cutover.
 
 Small changes/commits:
 
-1. Candid API client alongside the legacy REST client behind an environment flag.
-2. Internet Identity UI and social/KYC evidence-link flows.
+1. Standards-based certified asset client using generated Candid actors alongside the legacy REST client behind an environment flag. The target contains no Node.js runtime or TypeScript source/toolchain dependency; the legacy Node.js/TypeScript application remains runnable only until M10.
+2. Peer Internet Identity and OAuth (`indentify`) UI flows plus social/KYC evidence-link flows, including the M2 `join-proxy` decision.
 3. User, evaluation, logs, voting, admin/governance, and treasury read parity.
 4. Certified asset canister, SPA aliasing, alternative-origin plan, CSP, and reproducible build.
 5. Differential fixture/E2E suite against legacy and ICP behavior.
 
 Acceptance:
 
-- Every UI route and user-visible state in `PARITY_CHECKLIST.md` passes browser E2E tests.
+- Every UI route and user-visible state in `PARITY_CHECKLIST.md` passes browser E2E tests; the new certified assets build without Node.js/TypeScript and do not restore the legacy REST bearer-token path.
 - Stale `/api/posts` helpers and documented-but-absent endpoints receive an explicit `NOT_APPLICABLE` or implementation decision; no silent omission.
 - Asset certification, module hash, controller, CSP, network-switch, and custom-domain tests pass.
 
@@ -250,16 +257,16 @@ Dependencies: approved schemas/roles; test keys only.
 Invariants:
 
 - No real funds or legacy production keys.
-- A test controller compromise cannot bypass the proposed immutable vault's hard controls.
+- A test controller compromise is contained by the SNS-governed unified treasury's reviewed proposal delay, pause role, policy caps, reconciliation procedures, and tested recovery; no canister is blackholed.
 - Every chain has an explicit operation-ID, nonce/sequence/UTXO, finality, reorg, and ambiguous-result design.
 
 Small changes/commits:
 
-1. ICRC/ICP and ck-token test-ledger vault prototype.
+1. ICRC/ICP and ck-token unified-treasury test-ledger prototype.
 2. BTC testnet/regtest Chain Fusion prototype.
 3. EVM Sepolia EVM-RPC/t-ECDSA prototype.
 4. SOL devnet and other network feasibility spikes; classify unsupported/maturity risks rather than faking parity.
-5. Governance/controller/immutable-vault prototype and adversarial threat model.
+5. SNS/controller, unified-treasury, pause/recovery, and adversarial threat-model prototype; verify that every production canister remains upgradeable only through the approved SNS path and none has an empty controller list.
 
 Acceptance:
 
@@ -281,25 +288,25 @@ Dependencies: G3.
 
 Invariants:
 
-- Treasury journal and vault both enforce operation idempotency.
-- Canister-controlled ICRC subaccounts are preferred; ck assets are distinguished from native external assets; direct Chain Fusion is enabled only per reviewed adapter.
-- Payout pause and immutable caps cannot be bypassed by governance/application shortcuts.
+- The unified treasury journal enforces operation idempotency before every ledger or Chain Fusion action.
+- ICRC accounts/subaccounts and direct Chain Fusion addresses are selected per reviewed asset/network adapter; ck assets remain distinct from native external assets.
+- Payout pause, policy caps, and operation idempotency cannot be bypassed by application shortcuts; their modification requires the approved SNS governance path and delay.
 
 Small changes/commits:
 
 1. Append-only accounting/liability/payment-operation journal.
-2. Blackholed minimal vault and replaceable treasury orchestrator.
+2. One SNS-controlled Chain Fusion treasury canister that owns the journal, payment operations, ICRC accounts/subaccounts, and direct-chain derivation/signing state. It is not blackholed and has no separate vault canister.
 3. ICRC/ICP and ck-token adapters.
 4. Direct BTC/EVM adapters, followed by independently reviewed network adapters.
-5. Payout destination proof/change-delay, donation/deposit, scoped treasury, confirmation/reconciliation, and incident tooling.
+5. Payout destination proof/change-delay, direct-to-treasury donation/deposit, scoped treasury, confirmation/reconciliation, SNS recovery, and incident tooling.
 
 Acceptance:
 
 - Supply conservation and double-entry/property tests pass across all states.
 - Legacy known duplicate/ambiguous cases are fixtures and cannot trigger automated sends.
-- Testnets demonstrate funding, mint/update-balance, payout, retry, confirmation, reorg recovery, pause, governance upgrade, cycle top-up, and controller-compromise response with valueless assets.
+- Testnets demonstrate direct donation to a published treasury address/account, funding, mint/update-balance, payout, retry, confirmation, reorg recovery, pause, SNS governance upgrade/recovery, cycle top-up, and controller-compromise response with valueless assets.
 
-Rollback: pause test vault, reconcile, and discard test state. Production remains legacy.
+Rollback: pause the test treasury, reconcile, and discard test state. Production remains legacy.
 
 ### M8 — Full testnet dress rehearsal and cutover package
 
@@ -355,7 +362,7 @@ Dependencies: production acceptance and rollback-window closure.
 
 Acceptance:
 
-- Legacy wallet keys are revoked/retired and their dispositions audited.
+- Legacy Node.js/TypeScript application and its build/deploy dependencies are retired only after the rollback window closes; the certified target remains buildable without Node.js/TypeScript. Legacy wallet keys are revoked/retired and their dispositions audited.
 - PostgreSQL/Fly data is retained or destroyed under the approved retention policy, with a verified immutable export.
 - Old DNS, OAuth callbacks, cron jobs, deploy tokens, API secrets, and funded addresses are disabled.
 - ICP TODO is removed only now, and final parity/completion evidence is recorded.
@@ -371,7 +378,7 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | Failed transaction and failed distribution can both remain payable | Critical | Independent obligation/attempt model and pre-cutover duplicate analysis |
 | Non-EVM scoped addresses do not select the scoped signer | Critical | Per-scope Chain Fusion derivation/subaccount proof; reconcile displayed address to authority |
 | KYC failure code intentionally consumes backlog claims | Critical policy conflict | Preserve claims as held liabilities until explicit policy at G2/G3; no silent forfeiture |
-| Plaintext DB/process wallet secrets | Critical | Fingerprint only, rotate/retire, never import value; controlled legacy-to-vault transfer only after G4 |
+| Plaintext DB/process wallet secrets | Critical | Fingerprint only, rotate/retire, never import value; controlled legacy-to-unified-treasury transfer only after G4 |
 | Serialized task user IDs leak/cross-match users | High | Typed exact owner index and authorization tests |
 | Mutable OAuth handles are account keys | High | Reverify and bind immutable provider subject IDs |
 | KYC callbacks lack durable event order/idempotency | High | Provider event journal, exact session/freshness, monotonic AML-first state |
@@ -379,5 +386,5 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | AI compact migration tie-breaking was nondeterministic and successful raw data was nulled | High history risk | Export unmanaged exception table; build conflict report; preserve available source evidence and explicit missing markers |
 | Tests can hard-delete configured DB financial rows | High operational | Add test-DB hard guard before database suites |
 | Frontend lint is inoperative after ESLint 10 because no flat config exists | Medium operational | Add/verify `eslint.config.*` in the first approved tooling milestone; lint must pass before target implementation is accepted |
-| ZenDB AGPL-3.0, young project, no in-place schema migration | High dependency | Remote replaceable archive only; pin/audit/license disposition; collection-vN migrations; independent canonical export |
+| ZenDB AGPL-3.0, young project, no in-place schema migration | High dependency | Pin/audit the authoritative and archive deployment, complete the AGPL-3.0 relicensing inventory, use collection-vN migrations and durable mutation recovery, and retain independent canonical export |
 | Live cardinalities and row sizes unknown | High sizing | Read-only inventory before G2; no storage approval without evidence |

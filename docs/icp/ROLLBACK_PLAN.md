@@ -8,7 +8,7 @@ Status: G1 design draft. Recovery objectives, named owners, canister IDs, module
 - There is exactly one application writer and one payment authority per epoch. Never make both the legacy service and ICP authoritative to shorten an outage.
 - An external send that may have happened is reconciled on-chain before retry. Restarting the legacy payment worker is prohibited while any ICP or ambiguous legacy operation can still execute.
 - Rollback never means reinstalling a production canister and losing stable memory. Use a stable-compatible prior Wasm or a forward repair after verifying snapshots and Candid/stable signatures.
-- Financial custody may not be reversible merely by switching DNS or databases. Once assets or signing authority move, application traffic can roll back while the approved vault remains the only custody component.
+- Financial custody may not be reversible merely by switching DNS or databases. Once assets or signing authority move, application traffic can roll back while the SNS-controlled unified treasury remains the only custody component.
 - Source exports, delta logs, reports, module hashes, controller records, and incident evidence are immutable. Do not delete replication artifacts until their approved retention point.
 
 ## Recovery targets
@@ -21,7 +21,7 @@ Provisional objectives, to be measured in dress rehearsal and approved at G4:
 | Shadow import | Pause/recreate shadow canister | None; replay immutable base/deltas |
 | Pre-authority cutover | Restore legacy writers inside maintenance window | None after final-LSN verification |
 | ICP application after authority | Pause ICP, export reverse delta/forward repair | Zero acknowledged writes; otherwise explicitly reconciled |
-| Treasury/vault | Immediate pause, chain reconciliation, governance response | No duplicate send; uncertain operations held |
+| Unified treasury | Immediate pause, chain reconciliation, SNS governance response | No duplicate send; uncertain operations held |
 | Controller/API-key compromise | Pause constrained capabilities, rotate/redeploy per governance | Bounded by immutable caps and already exposed authority |
 
 These are design targets, not measured guarantees. G4 evidence must replace them with observed rehearsal times and explicit acceptable RTO/RPO.
@@ -49,7 +49,7 @@ Authority: legacy application/PostgreSQL.
 
 Trigger: failed design/test, toolchain regression, security finding, or unapproved dependency/license.
 
-Action: revert the reviewable documentation/scaffolding commit or remove disposable local canisters. No source data, production service, or custody changed. ZenDB can be replaced because no core invariant depends on it.
+Action: revert the reviewable documentation/scaffolding commit or remove disposable local canisters. No source data, production service, or custody changed. The disposable ZenDB deployment can be replaced because no production authority exists at R0.
 
 Exit: legacy build/tests pass; `PLANS.md` and parity status record the failure and revised design.
 
@@ -98,13 +98,13 @@ Action:
 2. Keep legacy writes disabled while independently reconciling target-only writes.
 3. Apply the reviewed inverse transformation into a restored/staging PostgreSQL database; validate exact counts, relations, and semantic hashes. Never edit the old production database ad hoc.
 4. Promote the reconciled database, then restore legacy routing/writes.
-5. Restore financial jobs only after the single-authority check; target treasury/vault stays unable to execute.
+5. Restore financial jobs only after the single-authority check; target unified treasury stays unable to execute.
 
 If the inverse transformer is unavailable or loses target-only semantics, do not discard acknowledged writes. Repair the target forward or remain in read-only incident mode until an approved data-preserving path exists.
 
 ### R4 — Financial authority enabled or signing material/assets moved
 
-Authority: target treasury/vault for affected assets. Application/frontend routing is independently reversible; custody is not automatically reversible.
+Authority: target unified treasury for affected assets. Application/frontend routing is independently reversible; custody is not automatically reversible.
 
 Trigger: payment/accounting defect, duplicate/replay evidence, incorrect destination/allocation, chain reorg/provider disagreement, custody authorization failure, or controller compromise.
 
@@ -115,9 +115,9 @@ Action:
 3. Freeze each operation at its exact state; query approved independent chain/ledger sources using transaction bytes/hash, nonce/sequence, UTXOs, memo/created-at time, and finality evidence.
 4. Classify operations as definitely unsent, broadcast/pending, final, reverted, replaced, or ambiguous. Retry only definitely unsent idempotent operations through the approved state machine.
 5. Reconcile the double-entry journal, liabilities, controlled balances, and external fees. Place mismatches/ambiguous operations on hold.
-6. Application traffic may return to a read-only legacy UI/API against a reconciled projection, but the target vault remains custody authority. A later transfer to a replacement vault is a new governed transaction plan with limits and independent review.
+6. Application traffic may return to a read-only legacy UI/API against a reconciled projection, but the target treasury remains custody authority. A later transfer to a replacement treasury is a new SNS-governed transaction plan with limits and independent review.
 
-An immutable/blackholed vault cannot be patched. (Human note: Don't make any canister, including the vault, blackholed. In the future they all will be controlled by an SNS.) Its approved recovery surface must therefore be limited in advance: pause behavior, capped/delayed successor transfer if accepted at G3, and per-operation receipts. A flaw outside that surface can require forward deployment plus deliberate asset migration, not code rollback.
+No production canister is blackholed. The unified treasury's recovery surface is the SNS-governed upgrade/recovery process, immediate pause behavior, per-operation receipts, policy caps, and chain reconciliation. A flaw can require a forward repair or deliberate, separately governed asset migration; it never authorizes an ad-hoc code rollback, a new payment operation, or re-enabling the legacy sender.
 
 ### R5 — Post-observation and legacy retirement
 
@@ -148,7 +148,7 @@ Assume a malicious controller of a mutable canister can install arbitrary code a
 
 - Safety responders pause through a capability that cannot upgrade, resume, change destinations, or raise caps.
 - Governance removes compromised mutable controllers/keys, verifies module hashes, rotates API/OAuth/webhook/email credentials, invalidates importer sessions, and deploys clean canisters from reproducible artifacts.
-- The vault boundary minimizes exposed secrets/state. If blackholed after G3 approval, a controller cannot upgrade it, but any intentionally exposed call/cap remains usable; caps and delay bound damage.
+- The unified treasury has no exportable signing secret. An SNS-controlled upgrade can request signatures, so proposal delay, safety pause, caps, reproducible artifacts, controller/module verification, and reconciliation bound and detect damage; the controller cannot be treated as a multisig merely because several principals are listed.
 - Chain-key master material is not exportable as a legacy backup. Recovery relies on the approved canister/subnet/governance architecture and any predesigned successor mechanism.
 - Internet Identity or user-principal compromise is handled as an account recovery/hold event; it does not authorize governance or arbitrary payout changes.
 - Treat provider/API keys stored in a mutable canister as compromised after malicious upgrade, rotate them, and inspect provider spend/logs.
@@ -161,7 +161,7 @@ Assume a malicious controller of a mutable canister can install arbitrary code a
 | Frozen, no target writes | Yes after LSN proof | Only after sole-custody proof | R2 rollback |
 | Target-only app writes exist | Only after inverse reconciliation | No until authority proof | R3 reverse delta or forward repair |
 | Target may have sent assets | Read-only UI possible | **No** | R4 pause and chain reconciliation |
-| Assets/keys moved to target | App data may be projected back | **No** | Keep target vault; repair/replace deliberately |
+| Assets/keys moved to target | App data may be projected back | **No** | Keep target unified treasury; repair/replace deliberately through SNS |
 | Controller compromised | Not as an automatic response | **No** | Pause, rotate, verify/redeploy, reconcile |
 
 ## Rollback checklist and report

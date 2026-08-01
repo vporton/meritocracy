@@ -23,7 +23,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
 | FE-001 | React/Vite SPA, `BrowserRouter`, root `Home` | Retained React/Vite/TypeScript bundle in a certified frontend canister, SPA fallback, generated Candid actors; deep-link/certification/CSP/reproducible pinned-Node build tests, with no Node runtime in the canister | DESIGNED / BLOCKED_G1 |
-| FE-002 | `/connect` wallet/email/social connection form; `/login` redirects there | Peer Internet Identity and OAuth (`indentify`) sign-in; external proofs and payout destinations are separately linked | DESIGNED / BLOCKED_G1 |
+| FE-002 | `/connect` wallet/email/social connection form; `/login` redirects there | Internet Identity and `indentify` OAuth sign-in through a non-anonymous Candid caller: caller-bound one-use state/nonce/PKCE start, allowlisted React callback, authenticated complete/recovery, and URL/history redaction; external proofs and payout destinations are separately linked | DESIGNED / BLOCKED_G1/G2 |
 | FE-003 | `/verify-email` token flow | Caller-bound, expiring, single-use email proof without accepting imported credentials | DESIGNED / BLOCKED_G2 |
 | FE-004 | `/logs` global/admin log viewer | Capability-protected, redacted, cursor-paginated audit view | DESIGNED / BLOCKED_G2 |
 | FE-005 | `/logs/:userId` user audit log | Exact ZenDB owner index plus Motoko self/admin authorization; no JSON substring search | DESIGNED / BLOCKED_G2 |
@@ -54,13 +54,14 @@ Parity means preserving intended user/business capability, authorization, histor
 | AU-004 | `POST /api/auth/register/email` | Email evidence initiation with rate/cost limits and no account authority before proof | DESIGNED / BLOCKED_G2 |
 | AU-005 | `POST /api/auth/verify/email` | Acknowledged single-use compare-and-set/saga bound to caller and intended identity; no cross-canister atomicity assumption | DESIGNED / BLOCKED_G2 |
 | AU-006 | `POST /api/auth/resend-verification` | Bounded resend, same invalidation/rate rules, provider idempotency and audit | DESIGNED / BLOCKED_G2 |
-| AU-007 | Opaque SHA-256 bearer sessions, seven-day expiry | Internet Identity/caller principal; imported sessions permanently invalid | INTENTIONALLY_CHANGED / BLOCKED_G2 |
+| AU-007 | Opaque SHA-256 bearer sessions, seven-day expiry | Internet Identity or OAuth-recovered non-anonymous caller principal; imported sessions permanently invalid and no callback/code/token becomes method authority | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | AU-008 | `POST /api/auth/logout` | Clear frontend delegation/session state and revoke app-side binding where applicable | DESIGNED / BLOCKED_G2 |
 | AU-009 | `GET /api/auth/me` | Caller-derived private profile with certified/public fields separated | DESIGNED / BLOCKED_G2 |
 | AU-010 | Admin session cleanup endpoint and expiry worker | Stable expiry index/bounded timer cleanup; imported sessions historical only | DESIGNED / BLOCKED_G2 |
-| AU-011 | OAuth start/callback for GitHub, ORCID, Bitbucket, GitLab using state/nonce cookie | HTTPS gateway flow, caller-bound state/PKCE where supported, immutable provider subject IDs | DESIGNED / BLOCKED_G2 |
+| AU-011 | OAuth start/callback for GitHub, ORCID, Bitbucket, GitLab using state/nonce cookie | Exact pinned `indentify` provider flow: non-anonymous caller-bound one-use state/nonce/purpose/redirect/PKCE challenge; allowlisted certified-frontend callback clears URL/history and calls authenticated completion; verify caller equality, expiry, PKCE, configured client/redirect, provider-specific response, and immutable subject, plus issuer/audience where present, before binding/recovery. Callback/code/token alone is never authority; unsupported flow is blocked or explicitly retired | DESIGNED / BLOCKED_G2 |
 | AU-012 | OAuth identities stored mainly as mutable handles | Re-verification adds immutable provider subject; handle is display-only | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | AU-013 | `POST /api/auth/disconnect/:provider` | Prevent loss of last recovery/auth factor; disconnect evidence without silently deleting history | DESIGNED / BLOCKED_G2 |
+| AU-013a | OAuth callback/recovery binding | Duplicate exact completion is idempotent; copied state/code/verifier, anonymous/different caller, configured-client/redirect or provider-response mismatch, issuer/audience mismatch where present, expired attempt, subject conflict, and token/history/log leakage all fail closed; successful new-principal recovery records immutable audit/notification and applies the approved step-up/hold policy | DESIGNED / BLOCKED_G2 |
 | AU-014 | `GET /api/auth/kyc/status` | Caller-only typed attestation/status with evidence minimization | DESIGNED / BLOCKED_G2 |
 | AU-015 | `POST /api/auth/kyc/initiate` and expiring KYC tokens | Caller-bound provider session, expiry, purpose, attempt, and idempotency | DESIGNED / BLOCKED_G2 |
 | AU-016 | Didit signed `POST /api/auth/kyc/didit/callback` | HTTP gateway update endpoint; HMAC/provider signature, event ID dedup, monotonic transitions | DESIGNED / BLOCKED_G2 |

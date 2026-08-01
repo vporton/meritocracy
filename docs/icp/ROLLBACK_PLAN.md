@@ -109,15 +109,16 @@ This is the cleanest rollback point and must be rehearsed before G4.
 
 Authority: ICP for application writes; PostgreSQL is read-only. Custody remains legacy and all financial execution remains paused.
 
-Trigger: application/auth/workflow defect, material parity failure, unacceptable latency/cost, or target unavailability.
+Trigger: application/auth/workflow defect, including an OAuth caller-binding, provider-capability, redirect, credential, or recovery-policy failure; material parity failure, unacceptable latency/cost, or target unavailability.
 
 Action:
 
 1. Pause target writes and capture a certified/deterministic target delta from the cutover epoch, including native intents, logical-ID/version/hash state, ZenDB receipts, and collection routing/grants.
 2. Keep legacy writes disabled while independently reconciling target-only writes.
 3. Apply the reviewed inverse transformation into a restored/staging PostgreSQL database; validate exact counts, relations, and semantic hashes. Never edit the old production database ad hoc.
-4. Promote the reconciled database, then restore legacy routing/writes.
-5. Restore financial jobs only after the single-authority check; target unified treasury stays unable to execute.
+4. Promote the reconciled database, but do not restore legacy routing/writes yet.
+5. Before restoring legacy routing, expire all target OAuth attempts, disable the affected provider capability/redirect, and preserve immutable OAuth binding/recovery audit evidence. Do not resurrect an imported bearer session or silently erase a binding; use the approved recovery/hold process for any affected account.
+6. Restore financial jobs only after the single-authority check; target unified treasury stays unable to execute.
 
 If the inverse transformer is unavailable or loses target-only semantics, do not discard acknowledged writes. Repair the target forward or remain in read-only incident mode until an approved data-preserving path exists.
 

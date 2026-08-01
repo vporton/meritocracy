@@ -38,7 +38,7 @@ These are the only planned approval stops.
 | Gate | Status | Decision being approved | Evidence required to request approval |
 | --- | --- | --- | --- |
 | G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, retained React frontend in a certified canister, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
-| G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; an exact pinned ZenDB commit/API/Candid/Wasm with authoritative-mutation, logical-ID, RBAC, upgrade, and recovery proofs; PostgreSQL logical-decoding/exported-snapshot, replica-identity, commit-order, WAL-retention, and sensitive-column redaction proofs; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
+| G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, importer protocol, OAuth-to-caller binding protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; exact ZenDB source/dependency/Candid/Wasm pins and Motoko `indentify` package version/source/package/API hashes; authoritative-mutation, logical-ID, RBAC, OAuth state/PKCE/caller-binding, upgrade, and recovery proofs; PostgreSQL logical-decoding/exported-snapshot, replica-identity, commit-order, WAL-retention, and sensitive-column redaction proofs; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
 | G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; local/PocketIC SNS-controller and governance-recovery drills; recorded human decision naming the production SNS launch/ownership model, applicable `sns_init`/tokenomics or existing-SNS configuration, and root-handoff/recovery policy; independent wallet review; revised `WALLET_SECURITY.md` |
 | G4 — Testnet-to-production migration | BLOCKED by G3 | A non-custodial mainnet SNS testflight with an approved cycle budget, then mainnet production deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module plus exact ZenDB pin/RBAC/intent checks; testnet parity; reviewed G4 testflight/recovery runbook with isolated canister IDs, bounded approved cycles, test-only derivation/environment, no custodial assets, and an abort proof; independent security sign-off |
 
@@ -104,7 +104,7 @@ Invariants:
 Small changes/commits:
 
 1. Execute the G1-approved AGPL-3.0 relicensing as one reviewable commit: update the applicable repository license, notices, package metadata, and distributed-source/artifact obligations together; retain all required third-party notices. Validate the completed inventory against tracked license/notice files and package/distribution metadata, record every changed artifact, and stop as `BLOCKED` if G1 authority evidence is missing.
-2. Add pinned ICP/Motoko/Mops toolchain manifests and empty canister interfaces.
+2. Add pinned ICP/Motoko/Mops toolchain manifests and empty canister interfaces. Pin the exact Motoko `indentify` package version/source/package/API hashes and record a provider-capability matrix (PKCE/public-client or confidential-client flow, configured redirect/client binding, immutable-subject source, issuer/audience availability, required scopes, token-retention need, and retirement outcome). Compile only a no-live-provider caller-bound-attempt interface/vector fixture; it must contain no provider secret or credential.
 3. Add a read-only PostgreSQL inventory command with a hard read-only transaction and safe output, including logical-decoding/version/replica-identity/WAL-capacity capability checks and the redaction-projection inventory; it must not create a production publication, slot, trigger, or outbox.
 4. Pin one exact ZenDB source commit plus dependency, Candid, and reproducible Wasm hashes; then add authoritative-collection and remote/archive benchmarks using generated data distributions, including RBAC negative tests, bootstrap-role revocation, documented indexes, logical-ID conflicts, bounded cursor queries, crashes between local intent and remote acknowledgement, duplicate delivery, upgrade, low-cycle, and repair/resume cases. An unmerged or future pull request is not evidence.
 5. Define versioned Motoko records and ZenDB collection schemas, explicit secondary indexes, collection/shard limits, collection-scoped ZenDB role grants, authoritative mutation-saga journals, and upgrade/collection-vN migrations. Each saga records the collection, logical ID, desired content hash, expected prior version/hash for a CAS update, operation/attempt ID, and phase before its remote call; it marks data active only after hash-confirmed acknowledgement and reconciles unknown results by key, version, and hash.
@@ -118,7 +118,7 @@ Acceptance:
 - ZenDB direct-ingress and inter-canister negative tests prove that browsers, users, import operators, unrelated canisters, and revoked bootstrap/deployer principals cannot read sensitive collections or mutate any collection. Post-deploy and post-upgrade audits match the approved collection-scoped application grants and governance-only administration exactly.
 - A disposable-PostgreSQL rehearsal proves that the logical slot/publication is created before every base snapshot; every base worker imports that exported snapshot; decoded transactions are contiguous from the slot consistent point through a final barrier LSN; update/delete replica identities and prepared-transaction behavior are handled; and a consumer crash never acknowledges an unverified delta. It also proves that source-side redaction excludes secret/bearer/raw-token values from base exports, publications, outbox rows, reports, and logs. A generic trigger outbox is not an automatic production fallback unless G2 proves an equivalent durable commit-order feed.
 - The G1-approved repository AGPL-3.0 relicensing is completed before every other M1 implementation change; its inventory, authority evidence, updated license/notice/package/distribution artifacts, and preserved third-party notices are reviewed and recorded. ZenDB's exact source/dependency/Candid/Wasm hashes and AGPL-3.0 disposition are pinned; caller-supplied document IDs or the unique logical-ID alternative is proven against that pin; upgrade and schema-version migration tests pass; all authoritative and archive data remains canonically exportable independent of ZenDB.
-- Candid and stable signature baselines are committed; application types represent money exactly.
+- Candid and stable signature baselines are committed; application types represent money exactly. The exact `indentify` package/API hash and provider-capability matrix are recorded, and the caller-bound OAuth-attempt vectors reject an anonymous caller, state/caller swap, expiry, and unsupported provider before G2; this is design evidence, not a live provider deployment.
 - Migration dry-run vectors produce byte-identical canonical chunks and hashes across repeated runs.
 
 Rollback: remove un-deployed scaffolding/benchmarks; no legacy behavior or data has changed. A completed public AGPL-3.0 grant is not treated as revoked by rolling back later code; any license correction follows a documented, approved legal/notice disposition.
@@ -135,7 +135,7 @@ Dependencies: G2.
 
 Invariants:
 
-- Caller principal is the authentication root; no bearer session or request user ID grants authority.
+- A non-anonymous Candid caller principal is the authority root for every public method. Internet Identity and a verified OAuth subject are peer authentication factors for adding/recovering that caller binding; no bearer session, callback, request user ID, or caller-supplied principal grants authority by itself.
 - Login identities, public handles, KYC evidence, and payout destinations are separate records.
 - Multi-record core changes use either one bounded ZenDB-side method proven atomic against the G2 pin or a durable idempotent intent/write/acknowledgement saga; no application-to-ZenDB call is treated as a single atomic message.
 - User deletion cannot delete financial/evaluation/audit history.
@@ -144,7 +144,7 @@ Small changes/commits:
 
 1. Core types, repositories, uniqueness/FK enforcement, cursor pagination, and upgrade tests.
 2. Internet Identity integration and principal binding/recovery.
-3. Email/social proof linking keyed by immutable provider subject; legacy identities require re-verification where source data lacks immutable IDs.
+3. Use the exact M1-pinned Motoko `indentify` OAuth package and implement the caller-bound OAuth factor protocol: a non-anonymous Candid caller begins a short-lived one-use attempt with provider, purpose, caller binding, state/nonce, redirect allowlist, and PKCE challenge; the certified React callback returns the authorization code/state/verifier only to `completeOAuth` from that same caller. The canister verifies the attempt, expiry, state, PKCE, configured client/redirect, provider-specific authorization-code/token/profile response, and immutable subject before it creates or recovers a principal binding; issuer/audience claims are verified where the provider supplies them. The callback or code never authenticates a method by itself, and tokens/codes/verifiers never enter browser history after handling, logs, or public/archive data. The M1 provider capability record selects a proven PKCE/public-client or confidential-client flow; any client secret is a scoped, encrypted, rotatable canister credential, never a browser value. Provider tokens are discarded after subject verification unless an approved feature needs one, in which case they are encrypted, scope-minimized, access-audited, and rotatable. Legacy identities require re-verification where source data lacks immutable IDs; unsupported provider flows are blocked or explicitly G2-approved as retired, never downgraded to a bearer or mutable-handle login.
 4. KYC/liveliness integration, including a required `join-proxy` design/prototype. Inspect the pinned `https://github.com/vporton/join-proxy` service and `https://github.com/vporton/join-proxy-client.mo` client; use the client only against an allowlisted, configurable HTTPS proxy URL. Define the reusable-attestation/session protocol, consent and data-minimization boundary, proof freshness and subject binding, provider terms/eligibility, failure/expiry behavior, cost-accounting, and a direct-provider fallback that cannot double-charge or weaken AML/KYC controls. The endpoint still requires signature verification, event deduplication, monotonic state, AML precedence, and encrypted evidence policy.
 5. Named role capabilities, pause-only incident role, audit events, and governance-call interfaces.
 6. Ban voting/holds/compensation eligibility and deterministic UTC epochs.
@@ -152,7 +152,7 @@ Small changes/commits:
 
 Acceptance:
 
-- Authorization matrix, horizontal-access, identity-confusion, replay, deleted-user, KYC ordering, callback, and upgrade tests pass in PocketIC/local replica.
+- Authorization matrix, horizontal-access, identity-confusion, replay, deleted-user, OAuth caller-binding/state/PKCE/configured-client+redirect/provider-response/issuer-where-present/subject-conflict/expired-attempt tests, KYC ordering, callback, and upgrade tests pass in PocketIC/local replica. Tests prove a callback, copied code, copied state, bearer token, anonymous caller, or different caller cannot add/recover a binding; an exact duplicate completion is idempotent; and an OAuth-authenticated recovery preserves the no-cross-account-merge and step-up/notification rules.
 - `join-proxy` is not optional implementation debt: before M2 can complete, a pinned compatible client/service contract, configurable endpoint, privacy/security review, reuse-versus-direct-provider decision, and tests for reused, expired, mismatched, duplicate, unavailable, and direct-fallback KYC flows are recorded. Reuse must never convert an unverified proxy response into verified KYC or cause two provider charges for one logical verification.
 - Exact indexed ownership replaces serialized-JSON substring matching.
 - The legacy app remains buildable and unchanged except explicitly approved compatibility hooks.
@@ -179,7 +179,7 @@ Small changes/commits:
 3. HTTPS integration adapter with bounded deterministic transforms, rate/cost budgets, circuit breakers, and redacted audit.
 4. OpenAI immediate/batch parity and canonical result/source replacement.
 4a. Use `llm` Motoko package.
-5. World GDP, token-price, email HTTPS-provider, OAuth evidence, and Didit integration parity.
+5. World GDP, token-price, email HTTPS-provider, the M2 caller-bound OAuth factor protocol, and Didit integration parity.
 6. ZenDB workflow/archive collection routing with cursor pagination, canonical export, reindex, collection-vN migration, and fault-injected authoritative mutation recovery.
 
 Acceptance:
@@ -234,20 +234,20 @@ Dependencies: core/workflow/test migration.
 Invariants:
 
 - The frontend is a certified static ICP asset application with strict CSP and no third-party executable JavaScript.
-- Calls use generated Candid actors and peer Internet Identity/OAuth authentication; canisters authorize the authenticated caller rather than a bearer token or caller-supplied user ID.
+- Calls use generated Candid actors. Internet Identity and OAuth are peer authentication factors, but every state-changing method authorizes only its non-anonymous Candid caller after the M2 caller-bound OAuth exchange has added or recovered that principal binding; no bearer token, OAuth callback, or caller-supplied user ID is authority.
 - Legacy frontend/backend stays deployable through the rollback window; the target uses the retained React frontend only after the approved canister route is enabled.
 
 Small changes/commits:
 
 1. Retain the React/Vite/TypeScript client and build it with a pinned Node.js toolchain into a certified frontend-canister asset bundle. Replace its legacy REST bearer-token path with generated Candid actors alongside the legacy REST client behind an environment flag. Node.js is a reproducible build dependency only and never runs in the frontend canister; the legacy frontend/backend remains runnable until M10.
-2. Peer Internet Identity and OAuth (`indentify`) UI flows plus social/KYC evidence-link flows, including the M2 `join-proxy` decision.
+2. Internet Identity and the M2 caller-bound OAuth (`indentify`) UI flows: create a browser-held non-anonymous Candid identity before OAuth start; preserve state/nonce/PKCE verifier only for the bounded attempt; deliver the provider redirect to an allowlisted certified React route; immediately remove code/state from browser history; and complete only through the authenticated Candid actor. Include social/KYC evidence-link flows and the M2 `join-proxy` decision. Do not restore REST sessions, URL tokens, or a frontend-only OAuth identity binding.
 3. User, evaluation, logs, voting, admin/governance, and treasury read parity.
 4. Certified asset canister, SPA aliasing, alternative-origin plan, CSP, and reproducible build.
 5. Differential fixture/E2E suite against legacy and ICP behavior.
 
 Acceptance:
 
-- Every UI route and user-visible state in `PARITY_CHECKLIST.md` passes browser E2E tests; the retained React assets rebuild byte-for-byte from the pinned Node.js lockfile/toolchain, are served as certified frontend-canister assets, and do not restore the legacy REST bearer-token path.
+- Every UI route and user-visible state in `PARITY_CHECKLIST.md` passes browser E2E tests; the retained React assets rebuild byte-for-byte from the pinned Node.js lockfile/toolchain, are served as certified frontend-canister assets, and do not restore the legacy REST bearer-token path. OAuth E2E covers start/callback/complete, refresh/new-browser recovery, state/code/caller swaps, expiry/replay, provider-subject conflict, redirect tampering, and browser-history/log redaction.
 - Stale `/api/posts` helpers and documented-but-absent endpoints receive an explicit `NOT_APPLICABLE` or implementation decision; no silent omission.
 - Asset certification, module hash, controller, CSP, network-switch, and custom-domain tests pass.
 
@@ -376,7 +376,7 @@ Acceptance:
 
 - The legacy Node.js backend, REST bearer-token path, and their deploy dependencies are retired only after the rollback window closes. The retained React/Vite/TypeScript frontend remains a pinned, reproducibly built frontend-canister asset bundle; no Node.js runtime runs in the canister. Legacy wallet keys are revoked/retired and their dispositions audited.
 - PostgreSQL/Fly data is retained or destroyed under the approved retention policy, with a verified immutable export.
-- Old DNS, OAuth callbacks, cron jobs, deploy tokens, API secrets, and funded addresses are disabled.
+- Old DNS, legacy OAuth callback registrations, cron jobs, deploy tokens, API secrets, and funded addresses are disabled. The approved certified-frontend OAuth redirect registrations remain only while their pinned provider capability, caller-binding, and credential-rotation evidence is current.
 - ICP TODO is removed only now, and final parity/completion evidence is recorded.
 
 Rollback: none after approved destruction; therefore destruction is the final, explicitly enumerated G4-runbook phase.
@@ -393,6 +393,7 @@ Rollback: none after approved destruction; therefore destruction is the final, e
 | Plaintext DB/process wallet secrets | Critical | Fingerprint only, rotate/retire, never import value; controlled legacy-to-unified-treasury transfer only after G4 |
 | SNS handoff/testflight is treated as a generic testnet controller or occurs before the permitted mainnet boundary | High governance/ordering | G3 records the human SNS launch/ownership decision and proves the interface locally/PocketIC; G4 alone authorizes an isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort procedure before production deployment |
 | Direct treasury donation memo is mistaken for authenticated donor, entitlement, or scope authority | High accounting/authorization | Scope comes only from the published account/address and an observation credits once by ledger/chain identity; memos are bounded untrusted metadata unless a separate authenticated proof is accepted |
+| OAuth callback/code is treated as a Candid login or bearer authority | High authentication | M2 pins `indentify` and binds each one-use OAuth state/PKCE/provider-subject exchange to a non-anonymous Candid caller; only the resulting caller-principal binding authorizes methods, with replay/swap/redirect/provider-response/issuer-where-present/subject-conflict tests and no token/code logging |
 | Serialized task user IDs leak/cross-match users | High | Typed exact owner index and authorization tests |
 | Mutable OAuth handles are account keys | High | Reverify and bind immutable provider subject IDs |
 | KYC callbacks lack durable event order/idempotency | High | Provider event journal, exact session/freshness, monotonic AML-first state |

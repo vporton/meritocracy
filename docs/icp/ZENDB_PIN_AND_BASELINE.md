@@ -106,6 +106,15 @@ invent them. It also does not establish archive cross-canister byte costs,
 low-cycle behavior, or any durable-intent/RBAC/upgrade proof. Those omissions
 remain G2 blockers.
 
+The runner deliberately does not call `mops install`: Mops CLI `2.19.2`
+performs an unrelated compatibility request to the ICP API before that command
+resolves the already pinned lock. DFX instead invokes the source's pinned Mops
+packtool during the local build. Before it creates a canister, the runner pings
+the fresh `local` replica; every create, build, deploy, and call command names
+`--network local`, and creation uses `--no-wallet`. A missing or unhealthy
+local replica therefore fails the run before an operation can use a configured
+remote network. This is a runner safety property, not benchmark evidence.
+
 Run it from the repository root, optionally with an immutable local source
 checkout through `M1_ZENDB_SOURCE_DIR`:
 

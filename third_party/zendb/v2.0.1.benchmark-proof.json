@@ -10,6 +10,7 @@
   "runner": {
     "script": "scripts/icp/test-zendb-benchmark.sh",
     "network": "fresh local DFX replica",
+    "networkBoundary": "The runner does not invoke `mops install`, because that Mops CLI command performs an unrelated ICP API compatibility call before it resolves the pinned lock. It pings the local replica before any canister creation and every create/build/deploy/call command specifies `--network local`; creation also uses `--no-wallet`.",
     "syntheticDocuments": { "expected": 16, "twoX": 32 },
     "applicationEnvelopeLimits": { "maxDocumentBytes": 262144, "maxBatchBytes": 1048576 }
   },

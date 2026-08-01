@@ -58,7 +58,9 @@ fi
 install -m 0644 "$proof_test" "$source_dir/tests/cluster-tests/M1BoundedBenchmark.Test.mo"
 
 cd "$source_dir"
-mops install
+# Do not invoke `mops install` here. Mops 2.19.2 performs an unrelated
+# API-compatibility request before that command runs. DFX invokes the pinned
+# source's `mops sources` packtool when it builds the proof actor instead.
 node -e '
   const fs = require("node:fs");
   const path = process.argv[1];
@@ -75,10 +77,14 @@ node -e '
 
 dfx start --clean --background
 local_replica_started=true
-dfx canister create "$test_canister" --with-cycles "$test_canister_cycles"
-dfx build "$test_canister"
-dfx deploy "$test_canister" --mode reinstall --yes
-dfx canister call "$test_canister" runTests
+# Verify the exact endpoint before creating anything. Every subsequent DFX
+# command repeats `--network local`, so an unset/incorrect default cannot
+# fall through to a remotely configured network.
+dfx ping local
+dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
+dfx build "$test_canister" --network local
+dfx deploy "$test_canister" --network local --mode reinstall --yes
+dfx canister call "$test_canister" --network local runTests
 dfx stop
 local_replica_started=false
 

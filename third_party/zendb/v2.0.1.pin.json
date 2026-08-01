@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "component": "ZenDB remote CanisterDB candidate",
+  "source": {
+    "repository": "https://github.com/NatLabs/ZenDB.git",
+    "releaseTag": "v2.0.1",
+    "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
+    "gitTree": "b0cd3fed87a51eac02c00141ff610790b20ab0d7",
+    "gitArchiveSha256": "332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844",
+    "license": "AGPL-3.0-or-later"
+  },
+  "dependencyClosure": {
+    "package": "zendb",
+    "packageVersionDeclaredBySource": "2.0.0",
+    "mopsTomlSha256": "09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66af780f505b07336d18",
+    "mopsLockSha256": "79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267",
+    "lockfileFormat": 3
+  },
+  "canister": {
+    "name": "zendb-canister-eop",
+    "entrypoint": "src/RemoteInstance/CanisterDB/lib.mo",
+    "persistence": "enhanced-orthogonal-persistence",
+    "moc": "1.4.1",
+    "mops": "2.19.2",
+    "dfx": "0.32.0",
+    "buildArguments": [
+      "--enhanced-orthogonal-persistence",
+      "--max-stable-pages",
+      "6553600"
+    ],
+    "artifacts": {
+      "candidSha256": "6ded91f5fba2ffc85f93bd870e5cd1c4a4bea4f0d2c5b2991a4ff1b6ebb7e79d",
+      "wasmSha256": "513a401d21c2ada26c84ba6b0788c694aae0d230689535fb4b3870dcc2c90a5c"
+    }
+  }
+}

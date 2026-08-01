@@ -1,0 +1,23 @@
+type provider = variant { bitbucket; github; gitlab; orcid };
+type vector = record {
+  attemptCaller : principal;
+  caller : principal;
+  consumed : bool;
+  expectedState : text;
+  expiresAtNs : int;
+  nowNs : int;
+  presentedState : text;
+  provider : provider;
+};
+type result = variant {
+  accepted;
+  anonymousCaller;
+  callerMismatch;
+  expired;
+  replayed;
+  stateMismatch;
+  unsupportedProvider;
+};
+service : {
+  evaluateAttemptVector : (vector) -> (result) query;
+}

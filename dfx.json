@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dfinity/dfx/0.32.0/src/dfx.json-schema.json",
+  "version": 1,
+  "dfx": "0.32.0",
+  "defaults": {
+    "build": {
+      "packtool": "mops sources"
+    }
+  },
+  "canisters": {
+    "core_canister": {
+      "type": "motoko",
+      "main": "canisters/core/main.mo",
+      "candid": "canisters/core/core_canister.did"
+    },
+    "workflow_canister": {
+      "type": "motoko",
+      "main": "canisters/workflow/main.mo",
+      "candid": "canisters/workflow/workflow_canister.did"
+    },
+    "treasury_canister": {
+      "type": "motoko",
+      "main": "canisters/treasury/main.mo",
+      "candid": "canisters/treasury/treasury_canister.did"
+    },
+    "archive_router": {
+      "type": "motoko",
+      "main": "canisters/archive_router/main.mo",
+      "candid": "canisters/archive_router/archive_router.did"
+    },
+    "oauth_fixture": {
+      "type": "motoko",
+      "main": "canisters/oauth_fixture/main.mo",
+      "candid": "canisters/oauth_fixture/oauth_fixture.did"
+    }
+  }
+}

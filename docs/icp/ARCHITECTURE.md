@@ -4,7 +4,7 @@ Status: G1 approval candidate, 2026-08-01. This is a design document; no applica
 
 ## Decision summary
 
-The proposed target is a set of Motoko application canisters, standards-based certified ICP assets replacing the Node.js/TypeScript frontend, ZenDB as the proposed persistent store for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
+The proposed target is a set of Motoko application canisters, the retained React/Vite/TypeScript frontend built into certified ICP frontend-canister assets, ZenDB as the proposed persistent store for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
 
 ZenDB is capable of storing Candid-encoded identity, balance, payment-operation, replay-journal, and migration-receipt documents. Whether each such collection can be authoritative is an M1 proof obligation, not an assumption: authorization and financial constraints stay in Motoko application code, and remote ZenDB calls require durable idempotent sagas around every `await`. A collection that cannot meet that proof must have a G2-approved, narrowly scoped native-Motoko exception.
 
@@ -26,7 +26,7 @@ The architecture intentionally does **not** reproduce unsafe legacy behavior. Ex
                         Internet Identity / passkeys
                                    |
                                    v
-  certified standards-based assets ---> authenticated Candid calls
+  certified React frontend assets ---> authenticated Candid calls
           |                        |
           |                 +------v-------+
           |                 | core_canister |
@@ -63,7 +63,7 @@ The architecture intentionally does **not** reproduce unsafe legacy behavior. Ex
 
 ### `frontend_assets`
 
-- Hosts a standards-based static build with no Node.js runtime or TypeScript source/toolchain dependency, certified assets, SPA aliasing, strict CSP, immutable hashed assets, and raw access disabled.
+- Hosts the retained React/Vite/TypeScript static build as certified assets with SPA aliasing, strict CSP, immutable hashed assets, and raw access disabled. Node.js is pinned and used only to reproducibly build the bundle in CI; no Node.js runtime or server-side React execution runs in this canister.
 - Contains no admin password or bearer token. It uses generated Candid actors and supports Internet Identity and OAuth as peer authentication methods.
 - Loads no third-party executable JavaScript. Browser-wallet support must be bundled and pinned.
 - The ICP asset canister provides certified HTTP responses and configurable security policy/SPA aliasing; see the [official asset-canister guide](https://docs.internetcomputer.org/guides/frontends/asset-canister/).
@@ -230,7 +230,7 @@ ICP Chain Fusion supports threshold ECDSA/Schnorr addresses, native Bitcoin inte
 
 Approve or amend these six architecture choices:
 
-1. Replace the target React/TypeScript frontend with standards-based certified assets; remove the Node.js/TypeScript target toolchain only at M10 after the legacy rollback window closes.
+1. Retain the React/Vite/TypeScript frontend and deploy its pinned reproducible static bundle to the certified frontend canister. Remove the legacy Node backend/REST bearer-token deployment only at M10 after the rollback window closes; Node.js remains a build-time dependency, never a canister runtime.
 2. Use ZenDB collections as the proposed PostgreSQL/Prisma destination, including candidate authoritative core/workflow/financial/replay/migration collections, subject to the M1 atomicity/recovery proof and collection-specific G2 exceptions.
 3. Enforce authorization, relationship, uniqueness, money, and replay invariants in Motoko method bodies and durable sagas; ZenDB schemas, constraints, and indexes never replace those controls.
 4. Treat Internet Identity and OAuth through `indentify` as peer authentication methods, while binding every authorization decision to the authenticated Candid caller and separating payout destinations from login identities.

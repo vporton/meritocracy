@@ -37,7 +37,7 @@ These are the only planned approval stops.
 
 | Gate | Status | Decision being approved | Evidence required to request approval |
 | --- | --- | --- | --- |
-| G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, frontend replacement, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
+| G1 — Target architecture | **WAITING NOW** | Canister boundaries, ZenDB-authority feasibility policy, external-dependency boundary, retained React frontend in a certified canister, AGPL-3.0 relicensing plan, and SNS-governed unified treasury direction | This plan plus all `docs/icp/*` drafts; repository audit and cited primary-source due diligence; completed AGPL-3.0 relicensing inventory covering contributor/licensor authority, license and notice files, package metadata, distributed artifacts, and third-party notices. Any missing authority is a G1 blocker. |
 | G2 — Database schema and migration design | BLOCKED by G1 | Concrete Motoko/ZenDB types/indexes, exact legacy transformations, canonical export format, sizing results, importer protocol, reconciliation queries, and cutover delta mechanism | Read-only production inventory; an exact pinned ZenDB commit/API/Candid/Wasm with authoritative-mutation, logical-ID, RBAC, upgrade, and recovery proofs; PostgreSQL logical-decoding/exported-snapshot, replica-identity, commit-order, WAL-retention, and sensitive-column redaction proofs; schema/property tests; golden export/import dry run; revised `SCHEMA_MAPPING.md` and runbook |
 | G3 — Wallet custody and authorization | BLOCKED by G2 | Asset custody per network, unified Chain Fusion treasury and SNS controller model, payout authorization, finality/reorg policy, legacy-key retirement, incident response | Threat model; test-key prototypes; replay/ambiguous-send/finality tests; local/PocketIC SNS-controller and governance-recovery drills; recorded human decision naming the production SNS launch/ownership model, applicable `sns_init`/tokenomics or existing-SNS configuration, and root-handoff/recovery policy; independent wallet review; revised `WALLET_SECURITY.md` |
 | G4 — Testnet-to-production migration | BLOCKED by G3 | A non-custodial mainnet SNS testflight with an approved cycle budget, then mainnet production deployment, production data cutover, DNS/frontend cutover, and separately authorized real-asset movement | Full dress rehearsal from sanitized snapshot; source/destination and financial reconciliation; rollback rehearsal; controller/module plus exact ZenDB pin/RBAC/intent checks; testnet parity; reviewed G4 testflight/recovery runbook with isolated canister IDs, bounded approved cycles, test-only derivation/environment, no custodial assets, and an abort proof; independent security sign-off |
@@ -235,11 +235,11 @@ Invariants:
 
 - The frontend is a certified static ICP asset application with strict CSP and no third-party executable JavaScript.
 - Calls use generated Candid actors and peer Internet Identity/OAuth authentication; canisters authorize the authenticated caller rather than a bearer token or caller-supplied user ID.
-- Legacy frontend/backend stays deployable until production cutover.
+- Legacy frontend/backend stays deployable through the rollback window; the target uses the retained React frontend only after the approved canister route is enabled.
 
 Small changes/commits:
 
-1. Standards-based certified asset client using generated Candid actors alongside the legacy REST client behind an environment flag. The target contains no Node.js runtime or TypeScript source/toolchain dependency; the legacy Node.js/TypeScript application remains runnable only until M10.
+1. Retain the React/Vite/TypeScript client and build it with a pinned Node.js toolchain into a certified frontend-canister asset bundle. Replace its legacy REST bearer-token path with generated Candid actors alongside the legacy REST client behind an environment flag. Node.js is a reproducible build dependency only and never runs in the frontend canister; the legacy frontend/backend remains runnable until M10.
 2. Peer Internet Identity and OAuth (`indentify`) UI flows plus social/KYC evidence-link flows, including the M2 `join-proxy` decision.
 3. User, evaluation, logs, voting, admin/governance, and treasury read parity.
 4. Certified asset canister, SPA aliasing, alternative-origin plan, CSP, and reproducible build.
@@ -247,7 +247,7 @@ Small changes/commits:
 
 Acceptance:
 
-- Every UI route and user-visible state in `PARITY_CHECKLIST.md` passes browser E2E tests; the new certified assets build without Node.js/TypeScript and do not restore the legacy REST bearer-token path.
+- Every UI route and user-visible state in `PARITY_CHECKLIST.md` passes browser E2E tests; the retained React assets rebuild byte-for-byte from the pinned Node.js lockfile/toolchain, are served as certified frontend-canister assets, and do not restore the legacy REST bearer-token path.
 - Stale `/api/posts` helpers and documented-but-absent endpoints receive an explicit `NOT_APPLICABLE` or implementation decision; no silent omission.
 - Asset certification, module hash, controller, CSP, network-switch, and custom-domain tests pass.
 
@@ -374,7 +374,7 @@ Dependencies: production acceptance and rollback-window closure.
 
 Acceptance:
 
-- Legacy Node.js/TypeScript application and its build/deploy dependencies are retired only after the rollback window closes; the certified target remains buildable without Node.js/TypeScript. Legacy wallet keys are revoked/retired and their dispositions audited.
+- The legacy Node.js backend, REST bearer-token path, and their deploy dependencies are retired only after the rollback window closes. The retained React/Vite/TypeScript frontend remains a pinned, reproducibly built frontend-canister asset bundle; no Node.js runtime runs in the canister. Legacy wallet keys are revoked/retired and their dispositions audited.
 - PostgreSQL/Fly data is retained or destroyed under the approved retention policy, with a verified immutable export.
 - Old DNS, OAuth callbacks, cron jobs, deploy tokens, API secrets, and funded addresses are disabled.
 - ICP TODO is removed only now, and final parity/completion evidence is recorded.

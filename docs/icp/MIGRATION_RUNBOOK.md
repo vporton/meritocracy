@@ -59,7 +59,7 @@ Compressed files are transported for efficiency, but every hash is over the unco
 
 ## Deterministic canonical representation
 
-The codec is versioned as `meritocracy-migration-canonical-v1` and has golden vectors in the legacy exporter plus Motoko before G2; the target implementation introduces no Node.js/TypeScript dependency.
+The codec is versioned as `meritocracy-migration-canonical-v1` and has golden vectors in the legacy exporter plus Motoko before G2. The importer and canonical codec run in the Motoko migration path and introduce no Node.js runtime dependency; the separately retained React frontend is a build-time asset producer only.
 
 1. Each JSONL line is UTF-8 with LF only and no byte-order mark.
 2. Object keys are lexicographically ordered by Unicode code point. Arrays retain source order only when the source type has an order; otherwise their schema specifies a deterministic sort key.

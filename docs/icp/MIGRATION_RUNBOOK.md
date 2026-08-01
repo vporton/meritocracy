@@ -61,7 +61,7 @@ Compressed files are transported for efficiency, but every hash is over the unco
 
 ## Deterministic canonical representation
 
-The codec is versioned as `meritocracy-migration-canonical-v1` and has golden vectors in the legacy exporter plus Motoko before G2. The importer and canonical codec run in the Motoko migration path and introduce no Node.js runtime dependency; the separately retained React frontend is a build-time asset producer only.
+The codec is versioned as `meritocracy-migration-canonical-v1`; its committed schema/contract and invented byte/hash vectors are in `canonical-v1.schema.json`, `CANONICAL_EXPORT_IMPORT_CONTRACT.md`, and `test/canonical-v1-vectors.json`. Before G2, the legacy exporter and an independent Motoko implementation must reproduce those vectors. The importer and production canonical codec run in the Motoko migration path and introduce no Node.js runtime dependency; the separately retained React frontend is a build-time asset producer only.
 
 1. Each JSONL line is UTF-8 with LF only and no byte-order mark.
 2. Object keys are lexicographically ordered by Unicode code point. Arrays retain source order only when the source type has an order; otherwise their schema specifies a deterministic sort key.
@@ -72,7 +72,7 @@ The codec is versioned as `meritocracy-migration-canonical-v1` and has golden ve
 {"$int":"-42"}
 {"$decimal":{"coefficient":"1200","scale":3}}
 {"$f64":"3ff0000000000000"}
-{"$timestamp":{"assumedZone":"UTC","precision":3,"value":"2026-07-31T12:34:56.789Z"}}
+{"$timestamp":{"assumedZone":"UTC","precision":"3","value":"2026-07-31T12:34:56.789Z"}}
 {"$bytes":"base64url-without-padding"}
 ```
 

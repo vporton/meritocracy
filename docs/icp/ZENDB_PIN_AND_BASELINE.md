@@ -43,6 +43,14 @@ The API returns generated document IDs from insert operations. It does not, in t
 
 ## Remaining proof work
 
-The pin only satisfies the immutable-input/build baseline. Before task 3 can be marked implemented and before G2 can be requested, add and pass the target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. It must measure insert/query/update/delete/reindex instructions, bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove bounded cursor queries and documented indexes; and cover direct/inter-canister RBAC negatives, bootstrap revocation, duplicate delivery, lost reply between local intent and remote acknowledgement, logical-ID conflicts, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
+The first repeatable remote-RBAC baseline is now `scripts/icp/test-zendb-rbac.sh`. It validates the exact source archive and dependency lock before running the candidate's `CanisterDB.Test` against PocketIC with distinct synthetic proxy-canister principals. The companion [`third_party/zendb/v2.0.1.rbac-proof.json`](../../third_party/zendb/v2.0.1.rbac-proof.json) records its pinned runner, exact coverage, and deliberate limits. It proves collection scope isolation and that ungranted/writer callers cannot read, write, manage collections, or grant roles; it also demonstrates why database-level access is unacceptable for the target matrix. It does not make a grant, deployment, or collection authoritative.
+
+Run it from the repository root:
+
+```sh
+scripts/icp/test-zendb-rbac.sh
+```
+
+Before task 3 can be marked implemented and before G2 can be requested, add and pass the target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. It must measure insert/query/update/delete/reindex instructions, bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove bounded cursor queries and documented indexes; and cover bootstrap revocation, post-upgrade grant audit and self-grant ingress boundary, duplicate delivery, lost reply between local intent and remote acknowledgement, logical-ID conflicts, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
 
 Rollback: delete only the undeployed pin manifest, verifier, and this evidence file. The legacy Node/PostgreSQL service, production data, signing authority, and assets are unchanged.

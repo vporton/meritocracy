@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "component": "ZenDB v2.0.1 isolated remote-CanisterDB RBAC baseline",
+  "source": {
+    "repository": "https://github.com/NatLabs/ZenDB.git",
+    "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
+    "gitArchiveSha256": "332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844",
+    "mopsTomlSha256": "09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66af780f505b07336d18",
+    "mopsLockSha256": "79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
+  },
+  "runner": {
+    "mops": "2.19.2",
+    "dfx": "0.32.0",
+    "mode": "replica",
+    "replica": "pocket-ic",
+    "filter": "CanisterDB.Test"
+  },
+  "proves": [
+    "an ungranted remote caller cannot read, write, create collections, or grant access",
+    "a collection-scoped writer can read and write only its granted collection",
+    "a collection-scoped writer cannot create collections or grant roles",
+    "a database-scoped grant intentionally spans child collections and is therefore prohibited by the target grant matrix",
+    "a non-global administrator cannot escalate a collection or database grant into a global grant"
+  ],
+  "doesNotProve": [
+    "bootstrap/deployer revocation or governance handoff",
+    "post-upgrade grant preservation or the internal self-grant ingress boundary",
+    "logical-ID/hash reconciliation, mutation interruption, archive failure, low cycles, benchmarks, or collection-vN repair"
+  ]
+}

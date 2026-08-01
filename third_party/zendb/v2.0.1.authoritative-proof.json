@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
+  "status": "STAGED: exact-pinned-source compilation passed; a successful PocketIC execution is still required before this is evidence.",
+  "source": {
+    "repository": "https://github.com/NatLabs/ZenDB.git",
+    "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
+    "gitArchiveSha256": "332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844",
+    "mopsTomlSha256": "09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66af780f505b07336d18",
+    "mopsLockSha256": "79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
+  },
+  "runner": {
+    "mops": "2.19.2",
+    "dfx": "0.32.0",
+    "replica": "pocket-ic",
+    "pocketIc": "14.0.0",
+    "test": "M1AuthoritativeProof.Test"
+  },
+  "plannedCoverage": [
+    "a unique logical-ID index rejects identical and conflicting second inserts",
+    "a bounded logical-ID query recovers the first durable content hash after a rejected retry",
+    "a fixed-size cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative"
+  ],
+  "doesNotProve": [
+    "application durable-intent behavior across an actual lost reply or duplicate delivery",
+    "bootstrap/deployer revocation, post-upgrade grant preservation, self-grant audit, low-cycle behavior, archive failure, collection-vN repair, or production-sized instruction and byte benchmarks",
+    "an atomic multi-document operation or a ZenDB compare-and-set API"
+  ]
+}

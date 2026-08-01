@@ -51,6 +51,27 @@ Run it from the repository root:
 scripts/icp/test-zendb-rbac.sh
 ```
 
-Before task 3 can be marked implemented and before G2 can be requested, add and pass the target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. It must measure insert/query/update/delete/reindex instructions, bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove bounded cursor queries and documented indexes; and cover bootstrap revocation, post-upgrade grant audit and self-grant ingress boundary, duplicate delivery, lost reply between local intent and remote acknowledgement, logical-ID conflicts, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
+The first target-data proof harness is `scripts/icp/test-zendb-authoritative.sh`,
+with its planned coverage recorded in
+[`third_party/zendb/v2.0.1.authoritative-proof.json`](../../third_party/zendb/v2.0.1.authoritative-proof.json).
+It validates the pin before copying a synthetic test into an ephemeral source
+checkout, adds the reviewed PocketIC `14.0.0` runner pin only to that checkout,
+and runs it only in PocketIC. Its exact-pinned-source Motoko compilation has
+passed; a successful PocketIC execution is still required before it is M1
+evidence. The test creates a unique
+`logicalId` index, demonstrates that identical and conflicting retries are
+rejected, recovers the first content hash through a one-result logical-ID
+lookup, and checks fixed-size cursor-token progression. Once executed, it is
+evidence for the application's required intent/lookup protocol, not evidence
+that ZenDB supplies idempotent insert, caller-selected document IDs, CAS, or a
+multi-document transaction.
+
+Run it from the repository root:
+
+```sh
+scripts/icp/test-zendb-authoritative.sh
+```
+
+Before task 3 can be marked implemented and before G2 can be requested, add and pass the remaining target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. It must measure insert/query/update/delete/reindex instructions, bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove documented indexes; and cover the owning application's durable intent across actual duplicate delivery/lost reply, bootstrap revocation, post-upgrade grant audit and self-grant ingress boundary, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
 
 Rollback: delete only the undeployed pin manifest, verifier, and this evidence file. The legacy Node/PostgreSQL service, production data, signing authority, and assets are unchanged.

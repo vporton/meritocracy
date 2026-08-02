@@ -91,11 +91,21 @@ cd "$source_dir"
 # pinned DFX local-replica installer instead. Its successful local install is
 # required evidence that this runner's compressed install transport can handle
 # the exact generated artifact; compilation alone is never a pass.
-mops install
+# Do not invoke `mops install` here. Mops 2.19.2 performs an unrelated
+# API-compatibility request before that command resolves the pinned lock. DFX
+# invokes the source's pinned `mops sources` packtool while building this proof
+# actor, so this runner has no dependency-resolution network path after the
+# exact source archive has been verified.
 node -e '
   const fs = require("node:fs");
   const path = process.argv[1];
   const config = JSON.parse(fs.readFileSync(path, "utf8"));
+  // Avoid the shared 127.0.0.1:4943 developer replica. DFX writes the chosen
+  // ephemeral loopback endpoint into this checkout, and every operation below
+  // names `--network local` so it cannot fall through to another configured
+  // network.
+  config.networks ??= {};
+  config.networks.local = { bind: "127.0.0.1:0", type: "ephemeral" };
   config.canisters["m1-authoritative-proof"] = {
     type: "motoko",
     main: "tests/cluster-tests/M1AuthoritativeProof.Test.mo",
@@ -108,10 +118,12 @@ node -e '
 
 dfx start --clean --background
 local_replica_started=true
-dfx canister create "$test_canister" --with-cycles "$test_canister_cycles"
-dfx build "$test_canister"
-dfx deploy "$test_canister" --mode reinstall --yes
-dfx canister call "$test_canister" runTests
+# Fail before creation if this checkout did not start its own local network.
+dfx ping local
+dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
+dfx build "$test_canister" --network local
+dfx deploy "$test_canister" --network local --mode reinstall --yes
+dfx canister call "$test_canister" --network local runTests
 dfx stop
 local_replica_started=false
 

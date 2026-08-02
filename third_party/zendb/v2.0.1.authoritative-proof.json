@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "EXECUTED LOCALLY 2026-08-01: the exact pinned source and synthetic fixture passed through the pinned DFX local-replica installer. The Mops pic-js-mops single-ingress runner remains unsuitable for this actor; this result proves only the documented local DFX transport and listed API behavior.",
+  "status": "REVALIDATION_REQUIRED 2026-08-02: the 2026-08-01 observations were produced before the runner was corrected to use an ephemeral project-local loopback network, explicit --network local/--no-wallet commands, and no Mops install. They are retained as historical observations only and are not current execution evidence until the corrected runner reaches deploy and runTests successfully.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -12,7 +12,8 @@
   "runner": {
     "mops": "2.19.2",
     "dfx": "0.32.0",
-    "network": "local",
+    "network": "fresh project-local ephemeral loopback DFX local network",
+    "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, and creates with --no-wallet. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
     "installer": "dfx deploy --mode reinstall --yes",
     "initialSyntheticCycles": 20000000000000,
     "testCanister": "m1-authoritative-proof",
@@ -25,7 +26,7 @@
     "observedFailure": "PocketIC BadIngressMessage: request is larger than the maximum allowed message size",
     "resolution": "the runner now uses the exact pinned DFX 0.32.0 local installer; the proof passes only after that installer succeeds and runTests returns normally"
   },
-  "executedCoverage": [
+  "historicalCoveragePendingRevalidation": [
     "a unique logical-ID index rejects identical and conflicting second inserts",
     "a bounded logical-ID query recovers the first durable content hash after a rejected retry",
     "a fixed-size opaque document-ID cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative",

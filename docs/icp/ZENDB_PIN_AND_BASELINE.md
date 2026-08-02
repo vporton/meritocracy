@@ -55,22 +55,32 @@ The first target-data proof harness is `scripts/icp/test-zendb-authoritative.sh`
 with its executed coverage recorded in
 [`third_party/zendb/v2.0.1.authoritative-proof.json`](../../third_party/zendb/v2.0.1.authoritative-proof.json).
 It validates the pin before copying a synthetic test into an ephemeral source
-checkout and runs it only against a fresh DFX `0.32.0` local replica. The
-`2026-08-01` run passed: it creates the remote database before its collection,
-creates a unique `logicalId` index, rejects identical and conflicting retries,
-recovers the first content hash through a one-result logical-ID lookup, and
-advances a one-document opaque cursor page without using an offset. The cursor
-is in ZenDB-generated document-ID order, not application logical-ID order, so
-it is appropriate only for bounded repair traversal; application
-logical-ID/hash reconciliation remains mandatory.
+checkout and runs it only against a fresh, project-local ephemeral DFX `0.32.0`
+loopback replica. It never invokes `mops install` (which makes an unrelated
+compatibility request in Mops `2.19.2`); DFX builds using the source's pinned
+`mops sources` packtool after the source archive and lock have been verified.
+The runner pings its `local` network before creation, names `--network local`
+for every create/build/deploy/call operation, and uses `--no-wallet`, so it
+cannot share the ordinary developer port or fall through to another configured
+network. The `2026-08-01` observations created the remote database before its
+collection, created a unique `logicalId` index, rejected identical and
+conflicting retries, recovered the first content hash through a one-result
+logical-ID lookup, and advanced a one-document opaque cursor page without an
+offset. Because those observations predate the corrected network boundary, they
+are historical only and must be rerun successfully before they count as M1
+execution evidence; the machine-readable record is explicitly marked
+`REVALIDATION_REQUIRED`. The cursor is in ZenDB-generated document-ID order,
+not application logical-ID order, so it is appropriate only for bounded repair
+traversal; application logical-ID/hash reconciliation remains mandatory.
 
 The previous Mops `pic-js-mops` route remains unsuitable: its single ingress
 message is limited to 2,097,152 bytes while the test actor statically linked to
 the candidate measured 3,281,858 bytes. The harness therefore uses the exact
 pinned DFX local installer, and records a pass only after that installer
-succeeds and `runTests` returns normally. This is local DFX execution evidence,
-not a claim about the Mops installer, an ICP deployment, or a production-sized
-load test. It is evidence for the application's required intent/lookup protocol,
+succeeds and `runTests` returns normally. The corrected runner has not completed
+that revalidation yet. A future pass will be local DFX execution evidence, not
+a claim about the Mops installer, an ICP deployment, or a production-sized load
+test. It will be evidence for the application's required intent/lookup protocol,
 not evidence that ZenDB supplies idempotent insert, caller-selected document
 IDs, CAS, or a multi-document transaction.
 

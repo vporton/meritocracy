@@ -12,13 +12,30 @@ readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly test_canister="m1-authoritative-proof"
 readonly upgrade_canister="zendb-canister"
-readonly test_canister_cycles="20000000000000"
+readonly test_canister_cycles="30000000000000"
 readonly upgrade_canister_cycles="10000000000000"
 readonly dfx_operation_timeout_seconds="180"
+# The proof actor statically links three synthetic owner fixtures as well as
+# the candidate database implementation. O3 compilation of that disposable
+# test harness exceeded the existing per-operation bound before any local
+# canister was installed. O1 keeps the same Motoko semantics while allowing
+# the bounded local behavioral proof to run. The separately built upgrade
+# artifact below intentionally remains O3, matching the pinned candidate.
+readonly proof_actor_optimization="O1"
+
+export M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION="${M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION:-$proof_actor_optimization}"
+case "$M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION" in
+  O0|O1|O2|O3) ;;
+  *)
+    echo "M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION must be one of O0, O1, O2, or O3" >&2
+    exit 1
+    ;;
+esac
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
+proof_archive_owner="$repo_root/fixtures/zendb/M1ArchiveIntentOwner.mo"
 proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveSink.mo"
 
 for command in git mops dfx sha256sum install tar node timeout; do
@@ -47,6 +64,10 @@ export DFX_MOC_PATH="moc-wrapper"
 }
 [[ -f "$proof_owner" ]] || {
   echo "Missing proof owner actor: $proof_owner" >&2
+  exit 1
+}
+[[ -f "$proof_archive_owner" ]] || {
+  echo "Missing proof archive owner actor: $proof_archive_owner" >&2
   exit 1
 }
 [[ -f "$proof_archive_sink" ]] || {
@@ -107,9 +128,11 @@ fi
 
 test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
 owner_target="$source_dir/tests/cluster-tests/M1IntentOwner.mo"
+archive_owner_target="$source_dir/tests/cluster-tests/M1ArchiveIntentOwner.mo"
 archive_sink_target="$source_dir/tests/cluster-tests/M1ArchiveSink.mo"
 install -m 0644 "$proof_test" "$test_target"
 install -m 0644 "$proof_owner" "$owner_target"
+install -m 0644 "$proof_archive_owner" "$archive_owner_target"
 install -m 0644 "$proof_archive_sink" "$archive_sink_target"
 
 cd "$source_dir"
@@ -137,7 +160,7 @@ node -e '
   config.canisters["m1-authoritative-proof"] = {
     type: "motoko",
     main: "tests/cluster-tests/M1AuthoritativeProof.Test.mo",
-    optimize: "O3",
+    optimize: process.env.M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION ?? "O1",
     shrink: true,
     metadata: [{ name: "candid:service" }]
   };
@@ -162,9 +185,18 @@ local_replica_started=true
 run_dfx ping local
 run_dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
 run_dfx canister create "$upgrade_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles"
+echo "Building the disposable proof actor with $M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION; the upgrade artifact remains O3."
 run_dfx build "$test_canister" --network local
 run_dfx build "$upgrade_canister" --network local
-run_dfx deploy "$test_canister" --network local --mode reinstall --yes
+test_wasm="$(find "$source_dir/.dfx/local/canisters/$test_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
+[[ -s "$test_wasm" ]] || {
+  echo "Missing compiled proof artifact" >&2
+  exit 1
+}
+# `dfx deploy` recompiles the already-built proof actor. Install the exact
+# artifact just produced above so the bounded runner does not spend a second
+# full compiler pass before exercising its synthetic sagas.
+run_dfx canister install "$test_canister" --network local --mode reinstall --wasm "$test_wasm" --yes
 run_dfx canister call "$test_canister" --network local runTests
 
 # Upgrade the synthetic database created by the proof actor with the exact

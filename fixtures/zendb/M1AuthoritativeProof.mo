@@ -16,6 +16,7 @@ import Runtime "mo:core@2.4/Runtime";
 import { test } "mo:test/async";
 import IntentOwner "./M1IntentOwner";
 import ArchiveSink "./M1ArchiveSink";
+import ArchiveIntentOwner "./M1ArchiveIntentOwner";
 
 persistent actor this_test {
   transient let TRILLION = 1_000_000_000_000;
@@ -25,7 +26,7 @@ persistent actor this_test {
   // The first database principal is exposed only to the local runner so it
   // can install the exact same actor class in upgrade mode.  It is never a
   // production identifier or a persisted application grant.
-  var upgradeTarget : ?Principal = null;
+  var upgradeTargetPrincipal : ?Principal = null;
 
   type Intent = {
     logicalId : Text;
@@ -74,7 +75,7 @@ persistent actor this_test {
       "unique logical IDs recover the first acknowledged content",
       func() : async () {
         let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
-        upgradeTarget := ?Principal.fromActor(db);
+        upgradeTargetPrincipal := ?Principal.fromActor(db);
         // Remote CanisterDB keeps database creation separate from collection
         // creation. The test owns this synthetic database through the actor
         // class's caller binding before it exercises any collection invariant.
@@ -209,7 +210,10 @@ persistent actor this_test {
         // The synthetic owner is a distinct canister principal, so this is the
         // same collection-scoped writer boundary intended for an owning target
         // application canister. It receives no administration grant.
-        let owner = await (with cycles = TRILLION) IntentOwner.IntentOwner(Principal.fromActor(db), "m1_lost_reply", collection);
+        // This fixture statically links the ZenDB API and exceeds the replica's
+        // one-trillion-cycle install reservation. Keep an explicit local-only
+        // allocation rather than letting a capacity failure mask the saga.
+        let owner = await (with cycles = 2 * TRILLION) IntentOwner.IntentOwner(Principal.fromActor(db), "m1_lost_reply", collection);
         let ownerPrincipal = await owner.whoami();
         let #ok(_) = await db.grant_collection_access(ownerPrincipal, "writer", "m1_lost_reply", collection) else return assert false;
 
@@ -244,8 +248,11 @@ persistent actor this_test {
           ?{ is_unique = true },
         ) else return assert false;
 
-        let archive = await (with cycles = TRILLION) ArchiveSink.ArchiveSink();
-        let owner = await (with cycles = TRILLION) IntentOwner.ArchiveIntentOwner(
+        // Actor-class installation on this pinned local replica requires more
+        // than its nominal one-trillion-cycle reservation, even for the
+        // synthetic receiver. Keep the allocation explicit and local-only.
+        let archive = await (with cycles = 2 * TRILLION) ArchiveSink.ArchiveSink();
+        let owner = await (with cycles = 2 * TRILLION) ArchiveIntentOwner.ArchiveIntentOwner(
           Principal.fromActor(db),
           Principal.fromActor(archive),
           archiveDatabase,
@@ -296,11 +303,16 @@ persistent actor this_test {
     );
   };
 
+  // The runner reads this synthetic local principal only to install the exact
+  // pinned ZenDB artifact in upgrade mode after all bootstrap grants are
+  // revoked. It is not an application configuration or authority surface.
+  public query func upgradeTarget() : async ?Principal { upgradeTargetPrincipal };
+
   // Called after the runner upgrades the remote database canister.  The
   // method re-derives the actor reference from a stable principal and checks
   // both the revoked grant and the fail-closed write/escalation boundary.
   public func verifyPostUpgradeRevocation() : async Bool {
-    let ?target = upgradeTarget else return false;
+    let ?target = upgradeTargetPrincipal else return false;
     let db : CanisterDB.CanisterDB = actor (Principal.toText(target));
     let #ok(grants) = await db.get_my_access_details() else return false;
     if (grants.size() != 0) return false;

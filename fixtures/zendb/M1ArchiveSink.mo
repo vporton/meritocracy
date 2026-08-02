@@ -7,7 +7,7 @@ import Runtime "mo:core@2.4/Runtime";
 
 persistent actor class ArchiveSink() = this {
   var permitted = false;
-  var receipt : ?(Text, Blob) = null;
+  var storedReceipt : ?(Text, Blob) = null;
 
   // This is a separate message so the preceding rejected archive call cannot
   // accidentally commit permission as part of its failed transaction.
@@ -20,8 +20,8 @@ persistent actor class ArchiveSink() = this {
   // this synthetic sink accepts exactly one logical archive receipt.
   public func archive(logicalId : Text, contentHash : Blob) : async () {
     if (not permitted) Runtime.trap("synthetic archive is unavailable");
-    switch (receipt) {
-      case null { receipt := ?(logicalId, contentHash) };
+    switch (storedReceipt) {
+      case null { storedReceipt := ?(logicalId, contentHash) };
       case (?(storedLogicalId, storedHash)) {
         assert (storedLogicalId == logicalId);
         assert (storedHash == contentHash);
@@ -29,5 +29,5 @@ persistent actor class ArchiveSink() = this {
     };
   };
 
-  public query func receipt() : async ?(Text, Blob) { receipt };
+  public query func receipt() : async ?(Text, Blob) { storedReceipt };
 };

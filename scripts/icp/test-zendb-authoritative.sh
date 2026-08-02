@@ -11,11 +11,14 @@ readonly source_archive_sha256="332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b
 readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66af780f505b07336d18"
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly test_canister="m1-authoritative-proof"
+readonly upgrade_canister="zendb-canister"
 readonly test_canister_cycles="20000000000000"
+readonly upgrade_canister_cycles="10000000000000"
 readonly dfx_operation_timeout_seconds="180"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
+proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
 
 for command in git mops dfx sha256sum install tar node timeout; do
   command -v "$command" >/dev/null || {
@@ -39,6 +42,10 @@ export DFX_MOC_PATH="moc-wrapper"
 }
 [[ -f "$proof_test" ]] || {
   echo "Missing proof test: $proof_test" >&2
+  exit 1
+}
+[[ -f "$proof_owner" ]] || {
+  echo "Missing proof owner actor: $proof_owner" >&2
   exit 1
 }
 
@@ -94,7 +101,9 @@ fi
 [[ "$(sha256sum "$source_dir/mops.lock" | awk '{print $1}')" == "$source_mops_lock_sha256" ]]
 
 test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
+owner_target="$source_dir/tests/cluster-tests/M1IntentOwner.mo"
 install -m 0644 "$proof_test" "$test_target"
+install -m 0644 "$proof_owner" "$owner_target"
 
 cd "$source_dir"
 # `pic-js-mops` installs a test Wasm in one ingress message. The synthetic
@@ -125,6 +134,18 @@ node -e '
     shrink: true,
     metadata: [{ name: "candid:service" }]
   };
+  // Build the upstream actor-class source itself for the upgrade artifact.
+  // Its compiler flags intentionally match the proof actors default flags;
+  // changing persistence mode would invalidate stable-state compatibility.
+  config.canisters["zendb-canister"] = {
+    type: "motoko",
+    main: "src/RemoteInstance/CanisterDB/lib.mo",
+    declarations: { node_compatibility: true },
+    args: "",
+    optimize: "O3",
+    shrink: true,
+    metadata: [{ name: "candid:service" }]
+  };
   fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
 ' dfx.json
 
@@ -133,9 +154,31 @@ local_replica_started=true
 # Fail before creation if this checkout did not start its own local network.
 run_dfx ping local
 run_dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
+run_dfx canister create "$upgrade_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles"
 run_dfx build "$test_canister" --network local
+run_dfx build "$upgrade_canister" --network local
 run_dfx deploy "$test_canister" --network local --mode reinstall --yes
 run_dfx canister call "$test_canister" --network local runTests
+
+# Upgrade the synthetic database created by the proof actor with the exact
+# pinned CanisterDB class artifact.  This is the only supported way to test
+# post-upgrade grant preservation; upgrading the proof actor alone would not
+# exercise the remote RBAC stable state.
+upgrade_target_principal="$(run_dfx canister call "$test_canister" --network local upgradeTarget | sed -n 's/.*"\([a-z0-9-]*\)".*/\1/p')"
+[[ -n "$upgrade_target_principal" ]] || {
+  echo "Proof did not return a database canister principal" >&2
+  exit 1
+}
+upgrade_wasm="$(find "$source_dir/.dfx/local/canisters/$upgrade_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
+[[ -s "$upgrade_wasm" ]] || {
+  echo "Missing compiled upgrade artifact" >&2
+  exit 1
+}
+run_dfx canister install "$upgrade_target_principal" --network local --mode upgrade --wasm "$upgrade_wasm" --yes
+[[ "$(run_dfx canister call "$test_canister" --network local verifyPostUpgradeRevocation)" == *true* ]] || {
+  echo "Post-upgrade grant revocation audit failed" >&2
+  exit 1
+}
 run_dfx stop
 local_replica_started=false
 

@@ -11,13 +11,20 @@
 
 import ZenDB "../../src";
 import CanisterDB "../../src/RemoteInstance/CanisterDB";
+import Principal "mo:core@2.4/Principal";
 import Runtime "mo:core@2.4/Runtime";
 import { test } "mo:test/async";
+import IntentOwner "./M1IntentOwner";
 
-persistent actor {
+persistent actor this_test {
   transient let TRILLION = 1_000_000_000_000;
   transient let database = "m1";
   transient let collection = "intents";
+
+  // The first database principal is exposed only to the local runner so it
+  // can install the exact same actor class in upgrade mode.  It is never a
+  // production identifier or a persisted application grant.
+  var upgradeTarget : ?Principal = null;
 
   type Intent = {
     logicalId : Text;
@@ -66,6 +73,7 @@ persistent actor {
       "unique logical IDs recover the first acknowledged content",
       func() : async () {
         let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
+        upgradeTarget := ?Principal.fromActor(db);
         // Remote CanisterDB keeps database creation separate from collection
         // creation. The test owns this synthetic database through the actor
         // class's caller binding before it exercises any collection invariant.
@@ -151,7 +159,97 @@ persistent actor {
         // The generated ZenDB document ID remains non-authoritative metadata.
         let #ok(firstBlob) = await db.zendb_v1_collection_get_document(database, collection, firstDocumentId) else return assert false;
         assert (decode(firstBlob).logicalId == first.logicalId);
+
+        // The constructor creates exactly two global admins: the provisional
+        // owner and ZenDB's internal self-grant.  Audit that matrix before
+        // revocation; no browser/user/importer grant is accepted.
+        let owner = Principal.fromActor(this_test);
+        let dbPrincipal = Principal.fromActor(db);
+        let #ok(allGrants) = await db.get_all_users_access_details() else return assert false;
+        assert (allGrants.size() == 2);
+        var ownerAdmin = false;
+        var selfAdmin = false;
+        for ((principal, grants) in allGrants.vals()) {
+          assert (principal == owner or principal == dbPrincipal);
+          for ((scope, role, _) in grants.vals()) {
+            assert (scope.size() == 0);
+            assert (role == "admin");
+            if (principal == owner) ownerAdmin := true;
+            if (principal == dbPrincipal) selfAdmin := true;
+          };
+        };
+        assert (ownerAdmin and selfAdmin);
+
+        // The test actor is the provisional bootstrap owner.  It is removed
+        // before any upgrade so an upgrade cannot accidentally restore a
+        // deployer/admin path.
+        let #ok(_) = await db.revoke_global_access(owner, "admin") else return assert false;
+        let #ok(grants) = await db.get_my_access_details() else return assert false;
+        assert (grants.size() == 0);
+        let #err(_) = await db.zendb_v1_collection_insert_document(database, collection, encode(second)) else return assert false;
+        let #err(_) = await db.grant_global_access(owner, "admin") else return assert false;
       },
     );
+
+    await test(
+      "a persistent owner reconciles a real lost reply and duplicate delivery",
+      func() : async () {
+        let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
+        let #ok(_) = await db.zendb_v1_create_database("m1_lost_reply") else return assert false;
+        let #ok(_) = await db.zendb_v1_create_collection("m1_lost_reply", collection, intentSchema, null) else return assert false;
+        let #ok(_) = await db.zendb_v1_collection_create_index(
+          "m1_lost_reply",
+          collection,
+          "logical_id_unique",
+          [("logicalId", #Ascending)],
+          ?{ is_unique = true },
+        ) else return assert false;
+
+        // The synthetic owner is a distinct canister principal, so this is the
+        // same collection-scoped writer boundary intended for an owning target
+        // application canister. It receives no administration grant.
+        let owner = await (with cycles = TRILLION) IntentOwner.IntentOwner(Principal.fromActor(db), "m1_lost_reply", collection);
+        let ownerPrincipal = await owner.whoami();
+        let #ok(_) = await db.grant_collection_access(ownerPrincipal, "writer", "m1_lost_reply", collection) else return assert false;
+
+        var rejected = false;
+        try {
+          await owner.submitAndLoseReply();
+        } catch (_) {
+          rejected := true;
+        };
+        assert (rejected);
+        // The only durable local state after a post-await rejection is the
+        // pre-await journal transition, while ZenDB has the one remote write.
+        assert ((await owner.currentPhase()) == "remoteWriteStarted");
+
+        await owner.redeliverAndReconcile();
+        assert ((await owner.currentPhase()) == "acknowledged");
+      },
+    );
+  };
+
+  // Called after the runner upgrades the remote database canister.  The
+  // method re-derives the actor reference from a stable principal and checks
+  // both the revoked grant and the fail-closed write/escalation boundary.
+  public func verifyPostUpgradeRevocation() : async Bool {
+    let ?target = upgradeTarget else return false;
+    let db : CanisterDB.CanisterDB = actor (Principal.toText(target));
+    let #ok(grants) = await db.get_my_access_details() else return false;
+    if (grants.size() != 0) return false;
+    let probe : Intent = {
+      logicalId = "intent:post-upgrade-probe";
+      contentHash = "post-upgrade-probe";
+      state = "pending";
+      updatedAtNs = 99;
+    };
+    switch (await db.zendb_v1_collection_insert_document(database, collection, encode(probe))) {
+      case (#ok(_)) return false;
+      case (#err(_)) {};
+    };
+    switch (await db.grant_global_access(Principal.fromActor(this_test), "admin")) {
+      case (#ok(_)) false;
+      case (#err(_)) true;
+    };
   };
 };

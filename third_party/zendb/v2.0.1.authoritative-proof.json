@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "EXECUTED 2026-08-02: the corrected runner passed on a fresh ephemeral project-local DFX loopback replica. This is limited synthetic local evidence for the logical-ID recovery protocol; it does not make ZenDB or any collection authoritative.",
+  "status": "IMPLEMENTED 2026-08-02: the runner retains the prior logical-ID pass and now adds an application-owner lost-reply saga plus bootstrap/self-grant audit and a post-upgrade revocation check. The extended runner was not re-executed in this environment because GitHub DNS is unavailable; no new execution claim is made.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -17,7 +17,9 @@
     "installer": "dfx deploy --mode reinstall --yes",
     "initialSyntheticCycles": 20000000000000,
     "testCanister": "m1-authoritative-proof",
-    "entrypoint": "runTests"
+    "entrypoint": "runTests",
+    "upgradeArtifact": "the exact pinned src/RemoteInstance/CanisterDB/lib.mo compiled as zendb-canister with matching default persistence flags",
+    "upgradeEntryPoint": "verifyPostUpgradeRevocation"
   },
   "replacedRunnerBoundary": {
     "component": "pic-js-mops setupCanister used by Mops 2.19.2",
@@ -43,9 +45,14 @@
     "a fixed-size opaque document-ID cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative",
     "remote database creation precedes collection creation"
   ],
+  "implementedButNotExecutedCoverage": [
+    "a persistent owning canister records its phase before a remote write, observes a deliberately lost reply, rejects duplicate delivery, and reconciles by logical ID/content hash",
+    "the initial grant audit accepts only the provisional owner and ZenDB self-grant, then revokes the bootstrap owner before upgrade",
+    "after upgrading the remote CanisterDB artifact, the revoked owner remains unable to read grants, write, or escalate"
+  ],
   "doesNotProve": [
-    "application durable-intent behavior across an actual lost reply or duplicate delivery",
-    "bootstrap/deployer revocation, post-upgrade grant preservation, self-grant audit, low-cycle behavior, archive failure, collection-vN repair, or production-sized instruction and byte benchmarks",
+    "execution of the new lost-reply/bootstrap/post-upgrade assertions (the extended runner is implemented but awaiting a network-capable rerun)",
+    "low-cycle behavior, archive failure, collection-vN repair, or production-sized instruction and byte benchmarks",
     "an atomic multi-document operation or a ZenDB compare-and-set API"
   ]
 }

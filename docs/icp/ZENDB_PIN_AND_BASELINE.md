@@ -1,6 +1,6 @@
 # M1 ZenDB pin and baseline
 
-Status: M1 task 3 is **IN_PROGRESS** as of 2026-08-01. This records one immutable, locally reproducible candidate and the results that are safe to claim today. It neither approves ZenDB as an authoritative store nor authorizes a deployment, production database access, credentials, or asset movement.
+Status: M1 task 3 is **IN_PROGRESS** as of 2026-08-02. This records one immutable, locally reproducible candidate and the results that are safe to claim today. It neither approves ZenDB as an authoritative store nor authorizes a deployment, production database access, credentials, or asset movement.
 
 ## Pin
 
@@ -85,6 +85,16 @@ execution evidence, not a claim about the Mops installer, an ICP deployment, or
 a production-sized load test. It is evidence for the application's required
 intent/lookup protocol, not evidence that ZenDB supplies idempotent insert,
 caller-selected document IDs, CAS, or a multi-document transaction.
+
+The runner now also contains (and must be rerun on a network-capable machine)
+an owning-canister lost-reply/duplicate-delivery fixture. It journals the
+remote-write phase before an intentionally trapped reply, then reconciles the
+same logical ID and content hash without allocating a second key. Before
+revocation it audits the exact two global admins (the provisional owner and
+ZenDB's internal self-grant), revokes the owner, upgrades the remote
+`CanisterDB` artifact, and checks that the owner cannot regain grants or write
+after upgrade. This extension is implemented evidence only until that rerun
+is recorded; a failed or unavailable network is not treated as a pass.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

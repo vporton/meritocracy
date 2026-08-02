@@ -13,10 +13,12 @@ import ZenDB "../../src";
 import CanisterDB "../../src/RemoteInstance/CanisterDB";
 import Principal "mo:core@2.4/Principal";
 import Runtime "mo:core@2.4/Runtime";
+import Sha256 "mo:sha2@0.1/Sha256";
 import { test } "mo:test/async";
 import IntentOwner "./M1IntentOwner";
 import ArchiveSink "./M1ArchiveSink";
 import ArchiveIntentOwner "./M1ArchiveIntentOwner";
+import ExactUpgradeArtifact "./M1ExactUpgradeArtifact";
 
 persistent actor this_test {
   transient let TRILLION = 1_000_000_000_000;
@@ -24,8 +26,9 @@ persistent actor this_test {
   transient let collection = "intents";
 
   // The first database principal is exposed only to the local runner so it
-  // can install the exact same actor class in upgrade mode.  It is never a
-  // production identifier or a persisted application grant.
+  // can ask this owning canister to install the exact same actor class in
+  // upgrade mode. It is never a production identifier or a persisted
+  // application grant.
   var upgradeTargetPrincipal : ?Principal = null;
 
   type Intent = {
@@ -34,6 +37,29 @@ persistent actor this_test {
     state : Text;
     updatedAtNs : Int;
   };
+
+  type UpgradeOptions = {
+    skip_pre_upgrade : ?Bool;
+    wasm_memory_persistence : ?{ #keep; #replace };
+  };
+
+  type InstallCodeMode = {
+    #install;
+    #reinstall;
+    #upgrade : ?UpgradeOptions;
+  };
+
+  type ManagementCanister = actor {
+    install_code : shared {
+      arg : Blob;
+      wasm_module : Blob;
+      mode : InstallCodeMode;
+      canister_id : Principal;
+      sender_canister_version : ?Nat64;
+    } -> async ();
+  };
+
+  transient let management : ManagementCanister = actor ("aaaaa-aa");
 
   let intentSchema : ZenDB.Types.Schema = #Record([
     ("logicalId", #Text),
@@ -437,14 +463,43 @@ persistent actor this_test {
     );
   };
 
-  // The runner reads this synthetic local principal only to install the exact
-  // pinned ZenDB artifact in upgrade mode after all bootstrap grants are
-  // revoked. It is not an application configuration or authority surface.
+  // The runner reads this synthetic local principal only to ask this synthetic
+  // owner to install the exact pinned ZenDB artifact in upgrade mode after all
+  // bootstrap grants are revoked. It is not an application configuration or
+  // authority surface.
   public query func upgradeTarget() : async ?Principal { upgradeTargetPrincipal };
 
-  // Called after the runner upgrades the remote database canister.  The
-  // method re-derives the actor reference from a stable principal and checks
-  // both the revoked grant and the fail-closed write/escalation boundary.
+  // The child CanisterDB is controlled by this proof actor, not by the
+  // anonymous runner. The runner may supply only the one artifact whose
+  // byte-length and SHA-256 were generated from the just-built pinned source;
+  // any other payload is rejected before this owner invokes the management
+  // canister. This proves the controller path without turning the runner into
+  // an installer (directly or through an arbitrary-Wasm forwarding method).
+  public func upgradeOwnedExact(wasm : Blob) : async Bool {
+    let ?target = upgradeTargetPrincipal else return false;
+    if (wasm.size() != ExactUpgradeArtifact.byteLength) return false;
+    if (Sha256.fromBlob(#sha256, wasm) != ExactUpgradeArtifact.sha256) return false;
+    // DFX 0.32.0's local replica implements the current management
+    // interface: `upgrade` carries optional upgrade options rather than being
+    // a nullary variant tag. A typed actor reference makes Motoko encode the
+    // complete management record, including the optional sender version.
+    await management.install_code({
+      mode = #upgrade(?{
+        skip_pre_upgrade = null;
+        wasm_memory_persistence = ?#keep;
+      });
+      canister_id = target;
+      wasm_module = wasm;
+      arg = "";
+      sender_canister_version = null;
+    });
+    true;
+  };
+
+  // Called after the owning proof actor upgrades the remote database canister.
+  // The method re-derives the actor reference from a stable principal and
+  // checks both the revoked grant and the fail-closed write/escalation
+  // boundary.
   public func verifyPostUpgradeRevocation() : async Bool {
     let ?target = upgradeTargetPrincipal else return false;
     let db : CanisterDB.CanisterDB = actor (Principal.toText(target));

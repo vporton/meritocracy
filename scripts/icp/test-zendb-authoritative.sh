@@ -39,7 +39,7 @@ proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
 proof_archive_owner="$repo_root/fixtures/zendb/M1ArchiveIntentOwner.mo"
 proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveSink.mo"
 
-for command in git mops dfx sha256sum install tar node timeout openssl; do
+for command in git mops dfx didc sha256sum gzip install tar node timeout openssl; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
@@ -173,6 +173,7 @@ test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
 owner_target="$source_dir/tests/cluster-tests/M1IntentOwner.mo"
 archive_owner_target="$source_dir/tests/cluster-tests/M1ArchiveIntentOwner.mo"
 archive_sink_target="$source_dir/tests/cluster-tests/M1ArchiveSink.mo"
+exact_upgrade_artifact_target="$source_dir/tests/cluster-tests/M1ExactUpgradeArtifact.mo"
 install -m 0644 "$proof_test" "$test_target"
 install -m 0644 "$proof_owner" "$owner_target"
 install -m 0644 "$proof_archive_owner" "$archive_owner_target"
@@ -208,13 +209,15 @@ node -e '
     metadata: [{ name: "candid:service" }]
   };
   // Build the upstream actor-class source itself for the upgrade artifact.
-  // Its compiler flags intentionally match the proof actors default flags;
-  // changing persistence mode would invalidate stable-state compatibility.
+  // The child created from the persistent proof actor uses enhanced orthogonal
+  // persistence, so the standalone upgrade artifact must use the upstream
+  // EOP flags as well. A legacy-persistence artifact is not stable-compatible
+  // and the local management canister correctly rejects it.
   config.canisters["zendb-canister"] = {
     type: "motoko",
     main: "src/RemoteInstance/CanisterDB/lib.mo",
     declarations: { node_compatibility: true },
-    args: "",
+    args: "--enhanced-orthogonal-persistence --max-stable-pages 6553600",
     optimize: "O3",
     shrink: true,
     metadata: [{ name: "candid:service" }]
@@ -229,8 +232,34 @@ run_dfx ping local
 run_dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
 run_dfx canister create "$upgrade_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles"
 echo "Building the disposable proof actor with $M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION; the upgrade artifact remains O3."
-run_dfx build "$test_canister" --network local
 run_dfx build "$upgrade_canister" --network local
+upgrade_wasm="$(find "$source_dir/.dfx/local/canisters/$upgrade_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
+[[ -s "$upgrade_wasm" ]] || {
+  echo "Missing compiled upgrade artifact" >&2
+  exit 1
+}
+# `install_code` accepts a gzip-compressed Wasm module. Use deterministic gzip
+# so the owner binds a reproducible, exact transport artifact while keeping the
+# ingress below the local HTTP boundary (the raw EOP Wasm is 2.66 MiB).
+upgrade_wasm_transport="$workdir/zendb-canister.wasm.gz"
+gzip -n -c "$upgrade_wasm" > "$upgrade_wasm_transport"
+# Bind the proof-owner upgrade endpoint to this exact locally built artifact.
+# The module contains only the 32-byte digest and size, never the Wasm itself.
+# This makes the anonymous test caller able to request only this one pinned
+# upgrade, while `install_code` remains invoked by the child-controller.
+node -e '
+  const crypto = require("node:crypto");
+  const fs = require("node:fs");
+  const [wasmPath, targetPath] = process.argv.slice(1);
+  const wasm = fs.readFileSync(wasmPath);
+  const digest = crypto.createHash("sha256").update(wasm).digest();
+  const literal = [...digest].map((byte) => `\\${byte.toString(16).padStart(2, "0")}`).join("");
+  fs.writeFileSync(
+    targetPath,
+    `// Generated only in the disposable M1 proof checkout.\nmodule {\n  public let byteLength : Nat = ${wasm.length};\n  public let sha256 : Blob = "${literal}";\n};\n`,
+  );
+' "$upgrade_wasm_transport" "$exact_upgrade_artifact_target"
+run_dfx build "$test_canister" --network local
 test_wasm="$(find "$source_dir/.dfx/local/canisters/$test_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
 [[ -s "$test_wasm" ]] || {
   echo "Missing compiled proof artifact" >&2
@@ -251,12 +280,32 @@ upgrade_target_principal="$(run_dfx canister call "$test_canister" --network loc
   echo "Proof did not return a database canister principal" >&2
   exit 1
 }
-upgrade_wasm="$(find "$source_dir/.dfx/local/canisters/$upgrade_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
-[[ -s "$upgrade_wasm" ]] || {
-  echo "Missing compiled upgrade artifact" >&2
+# First prove an anonymous caller cannot make the owner forward arbitrary code.
+[[ "$(run_dfx canister call "$test_canister" --network local upgradeOwnedExact '(blob "\\00")')" == *false* ]] || {
+  echo "Owner accepted an artifact other than the exact pinned upgrade Wasm" >&2
   exit 1
 }
-run_dfx canister install "$upgrade_target_principal" --network local --mode upgrade --wasm "$upgrade_wasm" --yes
+# DFX accepts a Candid argument file, avoiding shell argument limits while
+# preserving the Wasm's exact bytes. The call is still anonymous; only the
+# child controller performs the management-canister install after digest/size
+# verification inside the owner.
+upgrade_argument_text="$workdir/exact-upgrade-argument.did"
+upgrade_argument_hex="$workdir/exact-upgrade-argument.hex"
+node -e '
+  const fs = require("node:fs");
+  const wasm = fs.readFileSync(process.argv[1]);
+  const literal = [...wasm].map((byte) => `\\${byte.toString(16).padStart(2, "0")}`).join("");
+  fs.writeFileSync(process.argv[2], `(blob "${literal}")\n`);
+' "$upgrade_wasm_transport" "$upgrade_argument_text"
+# `--argument-file` defaults to textual Candid, whose escaped 2.66 MiB Wasm
+# exceeds the replica HTTP boundary. Encode it locally, then hand DFX the
+# binary Candid argument so the ingress body is the bounded Wasm plus a small
+# Candid envelope rather than its three-byte-per-byte text representation.
+didc encode --format hex < "$upgrade_argument_text" | tr -d '\n' > "$upgrade_argument_hex"
+[[ "$(run_dfx canister call "$test_canister" --network local upgradeOwnedExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
+  echo "Owning proof canister did not install the exact pinned upgrade Wasm" >&2
+  exit 1
+}
 [[ "$(run_dfx canister call "$test_canister" --network local verifyPostUpgradeRevocation)" == *true* ]] || {
   echo "Post-upgrade grant revocation audit failed" >&2
   exit 1

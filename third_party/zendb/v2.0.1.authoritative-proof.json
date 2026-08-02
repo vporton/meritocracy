@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "REVALIDATION_REQUIRED 2026-08-02: the 2026-08-01 observations were produced before the runner was corrected to use an ephemeral project-local loopback network, explicit --network local/--no-wallet commands, and no Mops install. They are retained as historical observations only and are not current execution evidence until the corrected runner reaches deploy and runTests successfully.",
+  "status": "EXECUTED 2026-08-02: the corrected runner passed on a fresh ephemeral project-local DFX loopback replica. This is limited synthetic local evidence for the logical-ID recovery protocol; it does not make ZenDB or any collection authoritative.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -26,7 +26,18 @@
     "observedFailure": "PocketIC BadIngressMessage: request is larger than the maximum allowed message size",
     "resolution": "the runner now uses the exact pinned DFX 0.32.0 local installer; the proof passes only after that installer succeeds and runTests returns normally"
   },
-  "historicalCoveragePendingRevalidation": [
+  "execution": {
+    "date": "2026-08-02",
+    "toolchain": {
+      "dfx": "0.32.0",
+      "mopsCli": "2.19.2",
+      "moc": "1.4.1"
+    },
+    "network": "fresh DFX ephemeral project-local loopback replica",
+    "result": "passed: deploy completed, runTests returned normally, and the cleanup stopped the local replica",
+    "warning": "DFX reported that its Wasm optimization pass could not read the module. This existing release blocker was not waived."
+  },
+  "executedCoverage": [
     "a unique logical-ID index rejects identical and conflicting second inserts",
     "a bounded logical-ID query recovers the first durable content hash after a rejected retry",
     "a fixed-size opaque document-ID cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative",

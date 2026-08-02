@@ -66,27 +66,25 @@ network. Each DFX operation is bounded to 180 seconds and then force-terminated
 after a further 10 seconds; the cleanup trap attempts to stop the ephemeral
 replica on every failure path. Every DFX command uses DFX's built-in `anonymous`
 identity, so the harness neither reads a developer PEM/keyring nor selects a
-wallet/signing authority. The `2026-08-01` observations created the remote database before its
-collection, created a unique `logicalId` index, rejected identical and
-conflicting retries, recovered the first content hash through a one-result
-logical-ID lookup, and advanced a one-document opaque cursor page without an
-offset. Because those observations predate the corrected network boundary, they
-are historical only and must be rerun successfully before they count as M1
-execution evidence; the machine-readable record is explicitly marked
-`REVALIDATION_REQUIRED`. The cursor is in ZenDB-generated document-ID order,
-not application logical-ID order, so it is appropriate only for bounded repair
+wallet/signing authority. The corrected runner passed on `2026-08-02` against
+the exact pinned source, DFX `0.32.0`, Mops CLI `2.19.2`, and moc `1.4.1`. It
+created the remote database before its collection, created a unique `logicalId`
+index, rejected identical and conflicting retries, recovered the first content
+hash through a one-result logical-ID lookup, and advanced a one-document opaque
+cursor page without an offset. The local replica stopped after `runTests`
+returned normally. The cursor is in ZenDB-generated document-ID order, not
+application logical-ID order, so it is appropriate only for bounded repair
 traversal; application logical-ID/hash reconciliation remains mandatory.
 
 The previous Mops `pic-js-mops` route remains unsuitable: its single ingress
 message is limited to 2,097,152 bytes while the test actor statically linked to
 the candidate measured 3,281,858 bytes. The harness therefore uses the exact
 pinned DFX local installer, and records a pass only after that installer
-succeeds and `runTests` returns normally. The corrected runner has not completed
-that revalidation yet. A future pass will be local DFX execution evidence, not
-a claim about the Mops installer, an ICP deployment, or a production-sized load
-test. It will be evidence for the application's required intent/lookup protocol,
-not evidence that ZenDB supplies idempotent insert, caller-selected document
-IDs, CAS, or a multi-document transaction.
+succeeds and `runTests` returns normally. The recorded pass is local DFX
+execution evidence, not a claim about the Mops installer, an ICP deployment, or
+a production-sized load test. It is evidence for the application's required
+intent/lookup protocol, not evidence that ZenDB supplies idempotent insert,
+caller-selected document IDs, CAS, or a multi-document transaction.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working
@@ -95,7 +93,8 @@ read-only and avoids an accidental network fetch from a partial/promisor clone;
 the extracted archive must still match the pinned SHA-256 before the test is
 copied in. The runner explicitly sets the Mops `DFX_MOC_PATH=moc-wrapper`
 setting so non-interactive/CI invocations do not depend on reloading a shell
-profile. Neither behavior changes the blocked, unexecuted proof status.
+profile. Neither behavior expands this limited executed proof into an
+authoritative-storage approval.
 
 Run it from the repository root:
 

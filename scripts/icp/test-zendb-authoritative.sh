@@ -15,6 +15,7 @@ readonly upgrade_canister="zendb-canister"
 readonly test_canister_cycles="30000000000000"
 readonly upgrade_canister_cycles="10000000000000"
 readonly dfx_operation_timeout_seconds="180"
+readonly dfx_build_timeout_seconds="360"
 # The proof actor statically links three synthetic owner fixtures as well as
 # the candidate database implementation. O3 compilation of that disposable
 # test harness exceeded the existing per-operation bound before any local
@@ -38,7 +39,7 @@ proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
 proof_archive_owner="$repo_root/fixtures/zendb/M1ArchiveIntentOwner.mo"
 proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveSink.mo"
 
-for command in git mops dfx sha256sum install tar node timeout; do
+for command in git mops dfx sha256sum install tar node timeout openssl; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
@@ -78,22 +79,64 @@ export DFX_MOC_PATH="moc-wrapper"
 workdir="${M1_ZENDB_AUTHORITATIVE_WORKDIR:-$(mktemp -d /tmp/meritocracy-zendb-authoritative.XXXXXXXX)}"
 source_dir="$workdir/zendb"
 local_replica_started=false
+dfx_config_root="$(mktemp -d /tmp/meritocracy-zendb-authoritative-dfx.XXXXXXXX)"
+
+# DFX 0.32.0 hangs after starting a background replica when `start` is given
+# `--identity anonymous`.  Replica lifecycle commands do not sign ingress, so
+# keep them identity-free while isolating DFX's config root.  This prevents DFX
+# from discovering or importing a developer PEM/keyring during start or stop.
+# DFX may create a disposable default identity in that isolated directory; it
+# is never used for canister operations, its bootstrap output is suppressed,
+# and the directory is removed at exit. Every command that can create, install,
+# deploy, or call a canister still uses the built-in anonymous identity below.
+export DFX_CONFIG_ROOT="$dfx_config_root"
+dfx_default_identity_dir="$DFX_CONFIG_ROOT/.config/dfx/identity/default"
+mkdir -p "$dfx_default_identity_dir"
+# DFX initializes a default identity even when each ingress-capable command
+# names `--identity anonymous`. Seed that isolated, disposable config with an
+# unused local key so DFX cannot print a recovery phrase. This key is never
+# selected for any operation and is removed with the config root at exit.
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:secp256k1 \
+  -out "$dfx_default_identity_dir/identity.pem" >/dev/null 2>&1
+chmod 600 "$dfx_default_identity_dir/identity.pem"
 
 # A local replica that cannot finish an operation is not proof evidence. Bound
 # every DFX subprocess so CI and operator machines fail closed instead of
 # retaining a replica or waiting indefinitely after an interrupted install.
+# The exact O3 upgrade artifact needs a longer, but still finite, bound than
+# ingress operations on the pinned toolchain.
 run_dfx() {
   # The built-in anonymous identity has no PEM/keyring dependency and cannot
   # select a developer's wallet or signing authority. This synthetic runner
   # never needs a non-anonymous caller; `--no-wallet` remains explicit on the
   # provisional local canister creation command below.
-  timeout --foreground --kill-after=10s "$dfx_operation_timeout_seconds" dfx --identity anonymous "$@"
+  local timeout_seconds="$dfx_operation_timeout_seconds"
+  if [[ "$1" == "build" ]]; then
+    timeout_seconds="$dfx_build_timeout_seconds"
+  fi
+  timeout --foreground --kill-after=10s "$timeout_seconds" dfx --identity anonymous "$@"
+}
+
+run_dfx_replica() {
+  timeout --foreground --kill-after=10s "$dfx_operation_timeout_seconds" dfx "$@"
+}
+
+start_local_replica() {
+  # DFX prints a recovery phrase if it initializes its isolated disposable
+  # default identity. It is unrelated to this anonymous test and must never
+  # enter CI or operator logs. A later anonymous ping gives the fail-closed
+  # health signal; no detailed startup output is evidence.
+  if ! run_dfx_replica start --clean --background >/dev/null 2>&1; then
+    echo "Failed to start the disposable local DFX replica" >&2
+    return 1
+  fi
 }
 
 stop_local_replica() {
   if [[ "$local_replica_started" == true ]]; then
-    (cd "$source_dir" && run_dfx stop >/dev/null 2>&1) || true
+    (cd "$source_dir" && run_dfx_replica stop >/dev/null 2>&1) || true
   fi
+  rm -rf -- "$dfx_config_root"
 }
 trap stop_local_replica EXIT
 
@@ -179,7 +222,7 @@ node -e '
   fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
 ' dfx.json
 
-run_dfx start --clean --background
+start_local_replica
 local_replica_started=true
 # Fail before creation if this checkout did not start its own local network.
 run_dfx ping local

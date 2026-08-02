@@ -144,7 +144,7 @@ persistent actor this_test {
           collection,
           "state_updated",
           [("state", #Ascending), ("updatedAtNs", #Ascending), ("logicalId", #Ascending)],
-          { last_document_id = null },
+          null,
         ) else return assert false;
 
         let first : Intent = {
@@ -400,7 +400,7 @@ persistent actor this_test {
           migrationDatabase,
           sourceCollection,
           targetCollection,
-          null,
+          { last_document_id = null },
         );
         ignore await copyOneCollectionVersionPage(
           db,

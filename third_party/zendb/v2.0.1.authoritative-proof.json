@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "IMPLEMENTED 2026-08-02: the runner retains the prior logical-ID pass and now adds application-owner lost-reply and archive-failure sagas, bootstrap/self-grant audit, a post-upgrade revocation check, and a bounded collection-v1-to-v2 replay/resume fixture. The extended runner has no new execution evidence: its latest local-only no-login rerun reached the proof build with DFX's explicit anonymous identity but terminated before producing a Wasm, install, or test call.",
+  "status": "IMPLEMENTED 2026-08-02: the runner retains the prior logical-ID pass and now adds application-owner lost-reply and archive-failure sagas, bootstrap/self-grant audit, a post-upgrade revocation check, and a bounded collection-v1-to-v2 replay/resume fixture. Its corrected local-only run installed the proof actor and completed runTests; external anonymous installation of the child database's exact upgrade Wasm was rejected because the synthetic owner, not the external caller, is its controller. No post-upgrade assertion is claimed.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -13,7 +13,7 @@
     "mops": "2.19.2",
     "dfx": "0.32.0",
     "network": "fresh project-local ephemeral loopback DFX local network",
-    "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, creates with --no-wallet, and forces DFX's built-in anonymous identity so no developer PEM/keyring, wallet, or signing authority is selected. Every DFX operation is bounded to 180 seconds with a 10-second kill grace and a cleanup trap. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
+    "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, creates with --no-wallet, and uses an isolated disposable DFX config for replica lifecycle plus DFX's built-in anonymous identity for every ingress-capable command. It therefore selects no developer PEM/keyring, wallet, or signing authority. Ingress/lifecycle operations are bounded to 180 seconds and exact O3 builds to 360 seconds, each with a 10-second kill grace and cleanup trap. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
     "installer": "dfx deploy --mode reinstall --yes",
     "initialSyntheticCycles": 20000000000000,
     "testCanister": "m1-authoritative-proof",
@@ -43,17 +43,18 @@
     "a unique logical-ID index rejects identical and conflicting second inserts",
     "a bounded logical-ID query recovers the first durable content hash after a rejected retry",
     "a fixed-size opaque document-ID cursor page advances without an offset and keeps the ZenDB-generated document ID non-authoritative",
-    "remote database creation precedes collection creation"
+    "remote database creation precedes collection creation",
+    "a persistent owning canister journals a lost reply, rejects duplicate delivery, and reconciles the existing logical ID/content hash",
+    "an archive failure keeps a staged record non-authoritative until the identical archive receipt succeeds",
+    "the bootstrap owner and ZenDB self-grant are audited, then the bootstrap owner is revoked before an upgrade attempt",
+    "a bounded collection-v1-to-v2 copy replays an unacknowledged source page, reconciles matching duplicate writes, retains v1, and verifies v2 logical IDs/hashes"
   ],
   "implementedButNotExecutedCoverage": [
-    "a persistent owning canister records its phase before a remote write, observes a deliberately lost reply, rejects duplicate delivery, and reconciles by logical ID/content hash",
-    "a separate persistent owner leaves an archive-bound record pending after a real rejected archive call, then activates it only after the same logical-ID/hash archive receipt succeeds",
-    "the initial grant audit accepts only the provisional owner and ZenDB self-grant, then revokes the bootstrap owner before upgrade",
     "after upgrading the remote CanisterDB artifact, the revoked owner remains unable to read grants, write, or escalate",
-    "a bounded collection-v1-to-v2 copy replays an unacknowledged source page, reconciles duplicate writes by logical ID/content hash, retains v1, and verifies both v2 records before a visibility switch is eligible"
+    "an owner-controlled management-canister upgrade path for the exact artifact, without granting external installer authority"
   ],
   "doesNotProve": [
-    "execution of the new lost-reply/archive-failure/bootstrap/post-upgrade assertions (the extended runner is implemented but its latest bounded local build did not complete)",
+    "a post-upgrade grant-revocation assertion: external anonymous installation is correctly rejected because the synthetic owner controls its child database canister",
     "low-cycle behavior, production-sized instruction and byte benchmarks, actual collection-vN execution, or an application visibility-manifest upgrade",
     "an atomic multi-document operation or a ZenDB compare-and-set API"
   ]

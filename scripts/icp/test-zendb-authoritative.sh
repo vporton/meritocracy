@@ -19,6 +19,7 @@ readonly dfx_operation_timeout_seconds="180"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
+proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveSink.mo"
 
 for command in git mops dfx sha256sum install tar node timeout; do
   command -v "$command" >/dev/null || {
@@ -46,6 +47,10 @@ export DFX_MOC_PATH="moc-wrapper"
 }
 [[ -f "$proof_owner" ]] || {
   echo "Missing proof owner actor: $proof_owner" >&2
+  exit 1
+}
+[[ -f "$proof_archive_sink" ]] || {
+  echo "Missing proof archive receiver: $proof_archive_sink" >&2
   exit 1
 }
 
@@ -102,8 +107,10 @@ fi
 
 test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
 owner_target="$source_dir/tests/cluster-tests/M1IntentOwner.mo"
+archive_sink_target="$source_dir/tests/cluster-tests/M1ArchiveSink.mo"
 install -m 0644 "$proof_test" "$test_target"
 install -m 0644 "$proof_owner" "$owner_target"
+install -m 0644 "$proof_archive_sink" "$archive_sink_target"
 
 cd "$source_dir"
 # `pic-js-mops` installs a test Wasm in one ingress message. The synthetic

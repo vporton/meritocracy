@@ -15,6 +15,7 @@ import Principal "mo:core@2.4/Principal";
 import Runtime "mo:core@2.4/Runtime";
 import { test } "mo:test/async";
 import IntentOwner "./M1IntentOwner";
+import ArchiveSink "./M1ArchiveSink";
 
 persistent actor this_test {
   transient let TRILLION = 1_000_000_000_000;
@@ -225,6 +226,72 @@ persistent actor this_test {
 
         await owner.redeliverAndReconcile();
         assert ((await owner.currentPhase()) == "acknowledged");
+      },
+    );
+
+    await test(
+      "archive rejection leaves staged data non-authoritative until acknowledgement",
+      func() : async () {
+        let archiveDatabase = "m1_archive_failure";
+        let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
+        let #ok(_) = await db.zendb_v1_create_database(archiveDatabase) else return assert false;
+        let #ok(_) = await db.zendb_v1_create_collection(archiveDatabase, collection, intentSchema, null) else return assert false;
+        let #ok(_) = await db.zendb_v1_collection_create_index(
+          archiveDatabase,
+          collection,
+          "logical_id_unique",
+          [("logicalId", #Ascending)],
+          ?{ is_unique = true },
+        ) else return assert false;
+
+        let archive = await (with cycles = TRILLION) ArchiveSink.ArchiveSink();
+        let owner = await (with cycles = TRILLION) IntentOwner.ArchiveIntentOwner(
+          Principal.fromActor(db),
+          Principal.fromActor(archive),
+          archiveDatabase,
+          collection,
+        );
+        let ownerPrincipal = await owner.whoami();
+        let #ok(_) = await db.grant_collection_access(ownerPrincipal, "writer", archiveDatabase, collection) else return assert false;
+
+        await owner.stage();
+        assert ((await owner.currentPhase()) == "staged");
+        assert ((await owner.currentStoredState()) == "pendingArchive");
+
+        var rejected = false;
+        try {
+          await owner.archiveAndActivate();
+        } catch (_) {
+          rejected := true;
+        };
+        assert (rejected);
+        // A remote archive failure cannot advance the visibility manifest.
+        assert ((await owner.currentPhase()) == "archiveStarted");
+        assert ((await owner.currentStoredState()) == "pendingArchive");
+        assert ((await archive.receipt()) == null);
+
+        // Permission is a separate committed receiver message. The identical
+        // logical ID/hash retry then archives and activates exactly once.
+        await archive.permit();
+        await owner.archiveAndActivate();
+        assert ((await owner.currentPhase()) == "active");
+        assert ((await owner.currentStoredState()) == "active");
+        let ?(receiptLogicalId, receiptHash) = await archive.receipt() else return assert false;
+        assert (receiptLogicalId == "intent:archive-failure");
+        assert (receiptHash == "archive-content-hash");
+
+        // A duplicate post-activation delivery is rejected at the owner
+        // before it can trigger a second archive handoff or state change.
+        var duplicateRejected = false;
+        try {
+          await owner.archiveAndActivate();
+        } catch (_) {
+          duplicateRejected := true;
+        };
+        assert (duplicateRejected);
+        let ?(finalLogicalId, finalHash) = await archive.receipt() else return assert false;
+        assert (finalLogicalId == receiptLogicalId);
+        assert (finalHash == receiptHash);
       },
     );
   };

@@ -50,7 +50,11 @@ local_replica_started=false
 # every DFX subprocess so CI and operator machines fail closed instead of
 # retaining a replica or waiting indefinitely after an interrupted install.
 run_dfx() {
-  timeout --foreground --kill-after=10s "$dfx_operation_timeout_seconds" dfx "$@"
+  # The built-in anonymous identity has no PEM/keyring dependency and cannot
+  # select a developer's wallet or signing authority. This synthetic runner
+  # never needs a non-anonymous caller; `--no-wallet` remains explicit on the
+  # provisional local canister creation command below.
+  timeout --foreground --kill-after=10s "$dfx_operation_timeout_seconds" dfx --identity anonymous "$@"
 }
 
 stop_local_replica() {

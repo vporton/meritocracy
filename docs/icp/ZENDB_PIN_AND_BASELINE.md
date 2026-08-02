@@ -64,7 +64,9 @@ for every create/build/deploy/call operation, and uses `--no-wallet`, so it
 cannot share the ordinary developer port or fall through to another configured
 network. Each DFX operation is bounded to 180 seconds and then force-terminated
 after a further 10 seconds; the cleanup trap attempts to stop the ephemeral
-replica on every failure path. The `2026-08-01` observations created the remote database before its
+replica on every failure path. Every DFX command uses DFX's built-in `anonymous`
+identity, so the harness neither reads a developer PEM/keyring nor selects a
+wallet/signing authority. The `2026-08-01` observations created the remote database before its
 collection, created a unique `logicalId` index, rejected identical and
 conflicting retries, recovered the first content hash through a one-result
 logical-ID lookup, and advanced a one-document opaque cursor page without an

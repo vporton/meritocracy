@@ -13,7 +13,7 @@
     "mops": "2.19.2",
     "dfx": "0.32.0",
     "network": "fresh project-local ephemeral loopback DFX local network",
-    "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, and creates with --no-wallet. Every DFX operation is bounded to 180 seconds with a 10-second kill grace and a cleanup trap. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
+    "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, creates with --no-wallet, and forces DFX's built-in anonymous identity so no developer PEM/keyring, wallet, or signing authority is selected. Every DFX operation is bounded to 180 seconds with a 10-second kill grace and a cleanup trap. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
     "installer": "dfx deploy --mode reinstall --yes",
     "initialSyntheticCycles": 20000000000000,
     "testCanister": "m1-authoritative-proof",

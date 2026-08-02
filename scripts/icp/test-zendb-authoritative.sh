@@ -12,11 +12,12 @@ readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly test_canister="m1-authoritative-proof"
 readonly test_canister_cycles="20000000000000"
+readonly dfx_operation_timeout_seconds="180"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 
-for command in git mops dfx sha256sum install tar node; do
+for command in git mops dfx sha256sum install tar node timeout; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
@@ -45,9 +46,16 @@ workdir="${M1_ZENDB_AUTHORITATIVE_WORKDIR:-$(mktemp -d /tmp/meritocracy-zendb-au
 source_dir="$workdir/zendb"
 local_replica_started=false
 
+# A local replica that cannot finish an operation is not proof evidence. Bound
+# every DFX subprocess so CI and operator machines fail closed instead of
+# retaining a replica or waiting indefinitely after an interrupted install.
+run_dfx() {
+  timeout --foreground --kill-after=10s "$dfx_operation_timeout_seconds" dfx "$@"
+}
+
 stop_local_replica() {
   if [[ "$local_replica_started" == true ]]; then
-    (cd "$source_dir" && dfx stop >/dev/null 2>&1) || true
+    (cd "$source_dir" && run_dfx stop >/dev/null 2>&1) || true
   fi
 }
 trap stop_local_replica EXIT
@@ -116,15 +124,15 @@ node -e '
   fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
 ' dfx.json
 
-dfx start --clean --background
+run_dfx start --clean --background
 local_replica_started=true
 # Fail before creation if this checkout did not start its own local network.
-dfx ping local
-dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
-dfx build "$test_canister" --network local
-dfx deploy "$test_canister" --network local --mode reinstall --yes
-dfx canister call "$test_canister" --network local runTests
-dfx stop
+run_dfx ping local
+run_dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
+run_dfx build "$test_canister" --network local
+run_dfx deploy "$test_canister" --network local --mode reinstall --yes
+run_dfx canister call "$test_canister" --network local runTests
+run_dfx stop
 local_replica_started=false
 
 echo "ZenDB v2.0.1 M1 synthetic authoritative-data proof passed on the pinned local DFX replica. Source checkout: $source_dir"

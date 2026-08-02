@@ -62,7 +62,9 @@ compatibility request in Mops `2.19.2`); DFX builds using the source's pinned
 The runner pings its `local` network before creation, names `--network local`
 for every create/build/deploy/call operation, and uses `--no-wallet`, so it
 cannot share the ordinary developer port or fall through to another configured
-network. The `2026-08-01` observations created the remote database before its
+network. Each DFX operation is bounded to 180 seconds and then force-terminated
+after a further 10 seconds; the cleanup trap attempts to stop the ephemeral
+replica on every failure path. The `2026-08-01` observations created the remote database before its
 collection, created a unique `logicalId` index, rejected identical and
 conflicting retries, recovered the first content hash through a one-result
 logical-ID lookup, and advanced a one-document opaque cursor page without an

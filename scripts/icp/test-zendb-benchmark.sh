@@ -65,6 +65,12 @@ node -e '
   const fs = require("node:fs");
   const path = process.argv[1];
   const config = JSON.parse(fs.readFileSync(path, "utf8"));
+  // Use an ephemeral project-local bind address rather than the DFX shared
+  // 127.0.0.1:4943 default. This keeps the synthetic proof isolated from a
+  // developer local replica and lets DFX publish the selected local port
+  // to every later `--network local` command in this checkout.
+  config.networks ??= {};
+  config.networks.local = { bind: "127.0.0.1:0", type: "ephemeral" };
   config.canisters["m1-bounded-benchmark"] = {
     type: "motoko",
     main: "tests/cluster-tests/M1BoundedBenchmark.Test.mo",

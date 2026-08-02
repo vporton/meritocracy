@@ -89,7 +89,7 @@ Run it from the repository root:
 scripts/icp/test-zendb-authoritative.sh
 ```
 
-The next local-only harness is `scripts/icp/test-zendb-benchmark.sh`. It copies
+The local-only harness `scripts/icp/test-zendb-benchmark.sh` copies
 `fixtures/zendb/M1BoundedBenchmark.mo` into the same immutable source boundary,
 then runs 16-document expected and 32-document 2x synthetic distributions on a
 fresh DFX replica. It exercises its owning-side rejection checks for an
@@ -100,11 +100,24 @@ byte figures. It also deletes and recreates the repair index to record rebuild
 entries. Its exact planned coverage and API gaps are recorded in
 [`third_party/zendb/v2.0.1.benchmark-proof.json`](../../third_party/zendb/v2.0.1.benchmark-proof.json).
 
-This harness is not yet executed evidence. ZenDB v2.0.1 does not return insert
-or index-create instruction counts, and this harness intentionally does not
-invent them. It also does not establish archive cross-canister byte costs,
-low-cycle behavior, or any durable-intent/RBAC/upgrade proof. Those omissions
-remain G2 blockers.
+The `2026-08-02` execution passed on a fresh ephemeral project-local DFX
+loopback replica with the exact pinned source archive, DFX `0.32.0`, Mops CLI
+`2.19.2`, and moc `1.4.1`. The expected/2x results, respectively, were: 16/32
+input documents; 181/174 average document bytes; 2,982/5,878 bounded remote
+write bytes; 186/183 one-document recovery-read bytes; 1,511,238/1,475,755
+query instructions; 3,087,405/3,064,034 replace instructions; 1,310,724/
+1,310,369 delete instructions; 854/1,545 logical-ID index bytes; and 16/32
+rebuilt repair-index entries. The owner-side 262,145-byte-document and
+1,048,577-byte-batch rejection assertions also passed before any remote call.
+The complete machine-readable record is
+[`third_party/zendb/v2.0.1.benchmark-proof.json`](../../third_party/zendb/v2.0.1.benchmark-proof.json).
+
+ZenDB v2.0.1 does not return insert or index-create instruction counts, and
+this harness intentionally does not invent them. It also does not establish
+archive cross-canister byte costs, low-cycle behavior, or any
+durable-intent/RBAC/upgrade proof. Those omissions remain G2 blockers. DFX
+again reported that its Wasm optimization pass could not read the module; the
+existing release blocker remains unwaived.
 
 The runner deliberately does not call `mops install`: Mops CLI `2.19.2`
 performs an unrelated compatibility request to the ICP API before that command
@@ -113,7 +126,10 @@ packtool during the local build. Before it creates a canister, the runner pings
 the fresh `local` replica; every create, build, deploy, and call command names
 `--network local`, and creation uses `--no-wallet`. A missing or unhealthy
 local replica therefore fails the run before an operation can use a configured
-remote network. This is a runner safety property, not benchmark evidence.
+remote network. The runner also configures DFX with an ephemeral
+project-local loopback bind address, so it neither shares nor stops a
+developer's ordinary `127.0.0.1:4943` replica. These are runner safety
+properties, not benchmark evidence.
 
 Run it from the repository root, optionally with an immutable local source
 checkout through `M1_ZENDB_SOURCE_DIR`:

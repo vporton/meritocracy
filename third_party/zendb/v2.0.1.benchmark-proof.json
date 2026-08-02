@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 bounded synthetic benchmark",
-  "status": "IMPLEMENTED, NOT YET EXECUTED: the harness is local-only evidence scaffolding and cannot be reported as a benchmark result until the pinned DFX command succeeds and its output is captured.",
+  "status": "EXECUTED 2026-08-02: the exact pinned harness passed on a fresh ephemeral local DFX replica. This is bounded synthetic evidence only, not a production capacity or instruction-budget approval.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -10,7 +10,7 @@
   "runner": {
     "script": "scripts/icp/test-zendb-benchmark.sh",
     "network": "fresh local DFX replica",
-    "networkBoundary": "The runner does not invoke `mops install`, because that Mops CLI command performs an unrelated ICP API compatibility call before it resolves the pinned lock. It pings the local replica before any canister creation and every create/build/deploy/call command specifies `--network local`; creation also uses `--no-wallet`.",
+    "networkBoundary": "The runner does not invoke `mops install`, because that Mops CLI command performs an unrelated ICP API compatibility call before it resolves the pinned lock. It configures an ephemeral project-local loopback bind address, pings that local replica before any canister creation, and every create/build/deploy/call command specifies `--network local`; creation also uses `--no-wallet`.",
     "syntheticDocuments": { "expected": 16, "twoX": 32 },
     "applicationEnvelopeLimits": { "maxDocumentBytes": 262144, "maxBatchBytes": 1048576 }
   },
@@ -20,6 +20,53 @@
     "bounded caller-to-ZenDB write bytes and one-document recovery-read bytes",
     "index delete/create rebuild result entries"
   ],
+  "execution": {
+    "date": "2026-08-02",
+    "toolchain": {
+      "dfx": "0.32.0",
+      "mopsCli": "2.19.2",
+      "moc": "1.4.1"
+    },
+    "network": "fresh DFX ephemeral project-local loopback replica",
+    "sourceArchiveSha256": "332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844",
+    "scenarios": [
+      {
+        "name": "expected",
+        "inputDocuments": 16,
+        "documentsAfterDelete": 15,
+        "averageDocumentBytes": 181,
+        "totalDocumentBytes": 2729,
+        "logicalIdIndexBytes": 854,
+        "remoteWriteBytes": 2982,
+        "remoteReadBytes": 186,
+        "queryInstructions": 1511238,
+        "replaceInstructions": 3087405,
+        "deleteInstructions": 1310724,
+        "reindexEntries": 16
+      },
+      {
+        "name": "two_x",
+        "inputDocuments": 32,
+        "documentsAfterDelete": 31,
+        "averageDocumentBytes": 174,
+        "totalDocumentBytes": 5420,
+        "logicalIdIndexBytes": 1545,
+        "remoteWriteBytes": 5878,
+        "remoteReadBytes": 183,
+        "queryInstructions": 1475755,
+        "replaceInstructions": 3064034,
+        "deleteInstructions": 1310369,
+        "reindexEntries": 32
+      }
+    ],
+    "rejectionChecks": [
+      "a 262145-byte document is rejected before a remote call",
+      "a 1048577-byte accumulated batch is rejected before a remote call"
+    ],
+    "warnings": [
+      "DFX reported that its Wasm optimization pass could not read the module; this is the already-recorded release blocker and was not waived."
+    ]
+  },
   "doesNotProve": [
     "insert or index-create instruction counts, because the pinned API does not report them",
     "archive cross-canister bytes, low-cycle behavior, crash/upgrade recovery, lost replies, duplicate delivery, RBAC bootstrap revocation, or post-upgrade grant audit",

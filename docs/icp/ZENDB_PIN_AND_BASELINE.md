@@ -93,8 +93,12 @@ same logical ID and content hash without allocating a second key. Before
 revocation it audits the exact two global admins (the provisional owner and
 ZenDB's internal self-grant), revokes the owner, upgrades the remote
 `CanisterDB` artifact, and checks that the owner cannot regain grants or write
-after upgrade. This extension is implemented evidence only until that rerun
-is recorded; a failed or unavailable network is not treated as a pass.
+after upgrade. It also has a bounded collection-v1-to-v2 fixture: it replays
+an unacknowledged one-document source page, accepts a duplicate only when its
+logical ID and content hash match, retains the v1 collection, and verifies both
+v2 records before a visibility switch would be eligible. These are implemented
+evidence only until a local rerun completes; a failed build or unavailable
+network is not treated as a pass.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

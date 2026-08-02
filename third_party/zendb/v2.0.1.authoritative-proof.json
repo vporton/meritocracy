@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "IMPLEMENTED 2026-08-02: the runner retains the prior logical-ID pass and now adds application-owner lost-reply and archive-failure sagas plus bootstrap/self-grant audit and a post-upgrade revocation check. The extended runner has no new execution evidence: its latest local-only rerun started a fresh loopback replica but its optimized build exceeded the runner's 180-second per-operation bound before deployment/test calls.",
+  "status": "IMPLEMENTED 2026-08-02: the runner retains the prior logical-ID pass and now adds application-owner lost-reply and archive-failure sagas, bootstrap/self-grant audit, a post-upgrade revocation check, and a bounded collection-v1-to-v2 replay/resume fixture. The extended runner has no new execution evidence: its latest local-only no-login rerun reached the proof build with DFX's explicit anonymous identity but terminated before producing a Wasm, install, or test call.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -49,11 +49,12 @@
     "a persistent owning canister records its phase before a remote write, observes a deliberately lost reply, rejects duplicate delivery, and reconciles by logical ID/content hash",
     "a separate persistent owner leaves an archive-bound record pending after a real rejected archive call, then activates it only after the same logical-ID/hash archive receipt succeeds",
     "the initial grant audit accepts only the provisional owner and ZenDB self-grant, then revokes the bootstrap owner before upgrade",
-    "after upgrading the remote CanisterDB artifact, the revoked owner remains unable to read grants, write, or escalate"
+    "after upgrading the remote CanisterDB artifact, the revoked owner remains unable to read grants, write, or escalate",
+    "a bounded collection-v1-to-v2 copy replays an unacknowledged source page, reconciles duplicate writes by logical ID/content hash, retains v1, and verifies both v2 records before a visibility switch is eligible"
   ],
   "doesNotProve": [
     "execution of the new lost-reply/archive-failure/bootstrap/post-upgrade assertions (the extended runner is implemented but its latest bounded local build did not complete)",
-    "low-cycle behavior, archive failure, collection-vN repair, or production-sized instruction and byte benchmarks",
+    "low-cycle behavior, production-sized instruction and byte benchmarks, actual collection-vN execution, or an application visibility-manifest upgrade",
     "an atomic multi-document operation or a ZenDB compare-and-set API"
   ]
 }

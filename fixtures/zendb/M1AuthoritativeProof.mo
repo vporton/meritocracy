@@ -49,14 +49,16 @@ persistent actor this_test {
     intent;
   };
 
-  func assertOneLogicalId(
+  func assertOneLogicalIdInCollection(
     db : CanisterDB.CanisterDB,
+    databaseName : Text,
+    collectionName : Text,
     logicalId : Text,
     expectedHash : Blob,
   ) : async () {
     let #ok(result) = await db.zendb_v1_collection_search(
-      database,
-      collection,
+      databaseName,
+      collectionName,
       ZenDB.QueryBuilder().Where("logicalId", #eq(#Text(logicalId))).Limit(1).build(),
     ) else return assert false;
 
@@ -68,6 +70,52 @@ persistent actor this_test {
     let intent = decode(blob);
     assert (intent.logicalId == logicalId);
     assert (intent.contentHash == expectedHash);
+  };
+
+  // A collection-vN migration never trusts a generated ZenDB document ID as
+  // its resume key.  The bounded traversal token is only a scan position; a
+  // repeated page is reconciled by application logical ID and content hash.
+  // The old collection remains readable throughout this copy, and a caller
+  // switches its own visibility manifest only after every expected record is
+  // present in the new collection.
+  func copyOneCollectionVersionPage(
+    db : CanisterDB.CanisterDB,
+    database : Text,
+    sourceCollection : Text,
+    targetCollection : Text,
+    cursor : ZenDB.Types.PaginationToken,
+  ) : async ZenDB.Types.PaginationToken {
+    let pageQuery = ZenDB.QueryBuilder().PaginationToken(cursor).Limit(1).build();
+    let #ok(page) = await db.zendb_v1_collection_search(
+      database,
+      sourceCollection,
+      pageQuery,
+    ) else return Runtime.trap("collection-vN source page could not be read");
+    assert (page.documents.size() <= 1);
+    assert (page.instructions > 0);
+    for ((_, sourceBlob, _) in page.documents.vals()) {
+      let source = decode(sourceBlob);
+      switch (await db.zendb_v1_collection_insert_document(
+        database,
+        targetCollection,
+        encode(source),
+      )) {
+        case (#ok(_)) {};
+        // A lost reply or a resumed cursor can repeat this exact source row.
+        // The pinned API has no idempotent insert, so only the matching
+        // logical-ID/hash record converts that duplicate into success.
+        case (#err(_)) {
+          await assertOneLogicalIdInCollection(
+            db,
+            database,
+            targetCollection,
+            source.logicalId,
+            source.contentHash,
+          );
+        };
+      };
+    };
+    page.pagination_token;
   };
 
   public func runTests() : async () {
@@ -96,7 +144,7 @@ persistent actor this_test {
           collection,
           "state_updated",
           [("state", #Ascending), ("updatedAtNs", #Ascending), ("logicalId", #Ascending)],
-          null,
+          { last_document_id = null },
         ) else return assert false;
 
         let first : Intent = {
@@ -111,7 +159,7 @@ persistent actor this_test {
         // rejects even an otherwise identical duplicate, so the caller must use
         // the logical-ID/hash lookup below to confirm success.
         let #err(_) = await db.zendb_v1_collection_insert_document(database, collection, encode(first)) else return assert false;
-        await assertOneLogicalId(db, first.logicalId, first.contentHash);
+        await assertOneLogicalIdInCollection(db, database, collection, first.logicalId, first.contentHash);
 
         // A same-logical-ID, different-content retry is also rejected. The first
         // durable value remains authoritative and is available for fail-closed
@@ -123,7 +171,7 @@ persistent actor this_test {
           updatedAtNs = 2;
         };
         let #err(_) = await db.zendb_v1_collection_insert_document(database, collection, encode(conflicting)) else return assert false;
-        await assertOneLogicalId(db, first.logicalId, first.contentHash);
+        await assertOneLogicalIdInCollection(db, database, collection, first.logicalId, first.contentHash);
 
         let second : Intent = {
           logicalId = "intent:0002";
@@ -299,6 +347,92 @@ persistent actor this_test {
         let ?(finalLogicalId, finalHash) = await archive.receipt() else return assert false;
         assert (finalLogicalId == receiptLogicalId);
         assert (finalHash == receiptHash);
+      },
+    );
+
+    await test(
+      "collection-vN repair resumes a bounded copy by logical ID and hash",
+      func() : async () {
+        let migrationDatabase = "m1_collection_version";
+        let sourceCollection = "intents_v1";
+        let targetCollection = "intents_v2";
+        let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
+        let #ok(_) = await db.zendb_v1_create_database(migrationDatabase) else return assert false;
+        let #ok(_) = await db.zendb_v1_create_collection(migrationDatabase, sourceCollection, intentSchema, null) else return assert false;
+        let #ok(_) = await db.zendb_v1_create_collection(migrationDatabase, targetCollection, intentSchema, null) else return assert false;
+        for (collectionName in [sourceCollection, targetCollection].vals()) {
+          let #ok(_) = await db.zendb_v1_collection_create_index(
+            migrationDatabase,
+            collectionName,
+            "logical_id_unique",
+            [("logicalId", #Ascending)],
+            ?{ is_unique = true },
+          ) else return assert false;
+        };
+
+        let first : Intent = {
+          logicalId = "intent:collection-v1:0001";
+          contentHash = "collection-v1-first";
+          state = "pending";
+          updatedAtNs = 40;
+        };
+        let second : Intent = {
+          logicalId = "intent:collection-v1:0002";
+          contentHash = "collection-v1-second";
+          state = "pending";
+          updatedAtNs = 41;
+        };
+        let #ok(_) = await db.zendb_v1_collection_insert_document(migrationDatabase, sourceCollection, encode(first)) else return assert false;
+        let #ok(_) = await db.zendb_v1_collection_insert_document(migrationDatabase, sourceCollection, encode(second)) else return assert false;
+
+        // A restart before cursor acknowledgement replays the first page.
+        // The second invocation must reconcile the existing v2 row rather
+        // than inventing another document or overwriting it.
+        let secondCursor = await copyOneCollectionVersionPage(
+          db,
+          migrationDatabase,
+          sourceCollection,
+          targetCollection,
+          { last_document_id = null },
+        );
+        ignore await copyOneCollectionVersionPage(
+          db,
+          migrationDatabase,
+          sourceCollection,
+          targetCollection,
+          null,
+        );
+        ignore await copyOneCollectionVersionPage(
+          db,
+          migrationDatabase,
+          sourceCollection,
+          targetCollection,
+          secondCursor,
+        );
+
+        // The old collection is deliberately retained and independently
+        // readable through the rollback window.  The synthetic visibility
+        // pointer is moved only after both logical records are confirmed.
+        let sourceQuery = ZenDB.QueryBuilder().Limit(2).build();
+        let targetQuery = ZenDB.QueryBuilder().Limit(2).build();
+        let #ok(sourceRows) = await db.zendb_v1_collection_search(migrationDatabase, sourceCollection, sourceQuery) else return assert false;
+        let #ok(targetRows) = await db.zendb_v1_collection_search(migrationDatabase, targetCollection, targetQuery) else return assert false;
+        assert (sourceRows.documents.size() == 2);
+        assert (targetRows.documents.size() == 2);
+        await assertOneLogicalIdInCollection(
+          db,
+          migrationDatabase,
+          targetCollection,
+          first.logicalId,
+          first.contentHash,
+        );
+        await assertOneLogicalIdInCollection(
+          db,
+          migrationDatabase,
+          targetCollection,
+          second.logicalId,
+          second.contentHash,
+        );
       },
     );
   };

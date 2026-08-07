@@ -93,19 +93,21 @@ six roles. Its policy is pure Motoko in
 `StorageAuthorityPolicy.mo`, so it is independently testable without a
 replica, ZenDB instance, target collection, document, or credential.
 
-The Candid surface contains only fixed owner-specific read/write **probes**
-and `policyAudit`. A caller cannot pass a collection, action, role, owner,
-document ID, ZenDB filter, or grant request. Each probe derives the permitted
-owner from its own method, rejects anonymous callers, rejects IDs that are
-empty, control-containing, or longer than 512 characters before an eventual
-storage call, and authorizes only the matching configured application
-principal. `policyAudit` returns the fixed matrix only to governance and does
-not grant governance a data read/write path. The fixed matrix is a private
-persistent field rather than a captured actor-class parameter, so an upgrade
-cannot replace the installed matrix through its new init argument. There is no
-configuration update method, and a canister controller or initializer caller
-is not a policy member because the shared initializer rejects it when it
-appears in the fixed matrix.
+The Candid surface contains only fixed **collection/action** read/write
+**probes** and `policyAudit`: each catalogue collection has its own read and
+write probe, so there is no owner-wide, collection-selected, or generic
+`(collection, action, document)` endpoint. A caller cannot pass a collection,
+action, role, owner, document ID, ZenDB filter, or grant request. Each probe
+derives its collection owner from the method itself, rejects anonymous callers,
+rejects IDs that are empty, control-containing, or longer than 512 characters
+before an eventual storage call, and authorizes only the matching configured
+application principal. `policyAudit` returns the fixed matrix only to
+governance and does not grant governance a data read/write path. The fixed
+matrix is a private persistent field rather than a captured actor-class
+parameter, so an upgrade cannot replace the installed matrix through its new
+init argument. There is no configuration update method, and a canister
+controller or initializer caller is not a policy member because the shared
+initializer rejects it when it appears in the fixed matrix.
 
 `test/StorageAuthorityPolicy.test.mo` covers every catalogue owner and rejects
 anonymous direct ingress, unrelated principals, bootstrap/deployer access,
@@ -121,12 +123,13 @@ the scaffold and disposable caller fixture into a fresh `/tmp` directory, and
 uses only synthetic principals through Mops 2.19.2's lock-pinned
 `pic-js-mops` 0.14.8 client. It never invokes DFX, chooses a wallet, or
 contacts a network. The proof covers anonymous/bootstrapping/unrelated direct
-ingress denial; every owner-specific inter-canister read/write allowance;
-cross-owner, malformed-ID, unrelated-canister, and governance-as-data denial;
-governance-only audit; and an EOP-preserving upgrade supplied with a distinct
-valid init matrix that cannot replace the persisted one. Before G2, the actual
-in-process ZenDB adapter still needs bounded writes, lookups, archive
-behavior, low-cycle handling, lost-reply recovery, and repair/resume tests.
+ingress denial; every declared collection's exact inter-canister read/write
+allowance; cross-owner collection, malformed-ID, unrelated-canister, and
+governance-as-data denial; governance-only audit; and an EOP-preserving
+upgrade supplied with a distinct valid init matrix that cannot replace the
+persisted one. Before G2, the actual in-process ZenDB adapter still needs
+bounded writes, lookups, archive behavior, low-cycle handling, lost-reply
+recovery, and repair/resume tests.
 
 `fixtures/zendb/M1EmbeddedStorageProbe.mo` and
 `scripts/icp/test-zendb-embedded-storage.sh` add a narrower compiler proof for

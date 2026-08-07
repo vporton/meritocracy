@@ -1,31 +1,18 @@
-type data_operation = variant {
-  archiveRead;
-  archiveWrite;
-  coreRead;
-  coreWrite;
-  evidenceRead;
-  evidenceWrite;
-  treasuryRead;
-  treasuryWrite;
-  workflowRead;
-  workflowWrite;
+type _anon_class_7_1 = service { audit: () -> (opt PolicyAudit); data: (operation: DataOperation, logicalId: text) -> (ProbeResult) };
+type ProbeResult = variant { allowed; anonymousCaller; callerNotAllowed; invalidConfiguration; malformedLogicalId };
+type PolicyAudit = record { archive: principal; core: principal; evidence: principal; governance: principal; treasury: principal; workflow: principal };
+type DataOperation = variant {
+  aiArtifactRead; aiArtifactWrite; coreBanVoteRead; coreBanVoteWrite; coreEmailEvidenceRead; coreEmailEvidenceWrite;
+  coreHoldRead; coreHoldWrite; corePayoutDestinationRead; corePayoutDestinationWrite; corePrincipalBindingRead;
+  corePrincipalBindingWrite; coreProfileRead; coreProfileWrite; coreRoleAssignmentRead; coreRoleAssignmentWrite;
+  coreUserRead; coreUserWrite; evidenceKycRead; evidenceKycWrite; migrationEvidenceRead; migrationEvidenceWrite;
+  migrationReceiptRead; migrationReceiptWrite; treasuryChainReceiptRead; treasuryChainReceiptWrite; treasuryJournalRead;
+  treasuryJournalWrite; treasuryObligationRead; treasuryObligationWrite; treasuryPaymentOperationRead;
+  treasuryPaymentOperationWrite; workflowCompletionReceiptRead; workflowCompletionReceiptWrite; workflowResultRead;
+  workflowResultSourceRead; workflowResultSourceWrite; workflowResultWrite; workflowScheduleRead; workflowScheduleWrite;
 };
-type probe_result = variant {
-  allowed;
-  anonymousCaller;
-  callerNotAllowed;
-  invalidConfiguration;
-  malformedLogicalId;
-};
-type policy_audit = record {
-  archive : principal;
-  core : principal;
-  evidence : principal;
-  governance : principal;
-  treasury : principal;
-  workflow : principal;
-};
-service : (principal) -> {
-  audit : () -> (opt policy_audit);
-  data : (data_operation, text) -> (probe_result);
-}
+/// Disposable local-replica caller used only by the M1 storage-authority
+/// boundary proof. It deliberately names the finite probe surface so that the
+/// proof exercises inter-canister caller principals without adding a generic
+/// method to the storage authority itself.
+service : (storageAuthority: principal) -> _anon_class_7_1

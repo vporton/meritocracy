@@ -23,9 +23,9 @@ shared ({ caller = installer }) persistent actor class (
   };
 
   type DataOperation = {
-    #coreRead;
-    #coreWrite;
-    #treasuryWrite;
+    #coreUserRead;
+    #coreUserWrite;
+    #treasuryJournalWrite;
   };
 
   type PolicyAudit = {
@@ -49,13 +49,13 @@ shared ({ caller = installer }) persistent actor class (
   public shared ({ caller }) func verify(logicalId : Text) : async Bool {
     assert not Principal.isAnonymous(caller);
 
-    (await coreCaller.data(#coreRead, logicalId)) == #allowed and
-    (await coreCaller.data(#coreWrite, logicalId)) == #allowed and
-    (await coreCaller.data(#treasuryWrite, logicalId)) == #callerNotAllowed and
-    (await coreCaller.data(#coreRead, "bad\nlogical-id")) == #malformedLogicalId and
+    (await coreCaller.data(#coreUserRead, logicalId)) == #allowed and
+    (await coreCaller.data(#coreUserWrite, logicalId)) == #allowed and
+    (await coreCaller.data(#treasuryJournalWrite, logicalId)) == #callerNotAllowed and
+    (await coreCaller.data(#coreUserRead, "bad\nlogical-id")) == #malformedLogicalId and
     (await coreCaller.audit()) == null and
-    (await governanceCaller.data(#coreRead, logicalId)) == #callerNotAllowed and
+    (await governanceCaller.data(#coreUserRead, logicalId)) == #callerNotAllowed and
     (await governanceCaller.audit()) != null and
-    (await unrelatedCaller.data(#coreRead, logicalId)) == #callerNotAllowed;
+    (await unrelatedCaller.data(#coreUserRead, logicalId)) == #callerNotAllowed;
   };
 };

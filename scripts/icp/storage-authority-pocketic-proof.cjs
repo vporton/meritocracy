@@ -44,31 +44,29 @@ const PolicyAudit = IDL.Record({
   workflow: IDL.Principal,
 });
 const Config = PolicyAudit;
-const DataOperation = IDL.Variant({
-  archiveRead: IDL.Null,
-  archiveWrite: IDL.Null,
-  coreRead: IDL.Null,
-  coreWrite: IDL.Null,
-  evidenceRead: IDL.Null,
-  evidenceWrite: IDL.Null,
-  treasuryRead: IDL.Null,
-  treasuryWrite: IDL.Null,
-  workflowRead: IDL.Null,
-  workflowWrite: IDL.Null,
-});
-const authorityIdl = ({ IDL: Candid }) => Candid.Service({
-  archiveReadProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  archiveWriteProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  coreReadProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  coreWriteProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  evidenceReadProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  evidenceWriteProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  policyAudit: Candid.Func([], [Candid.Opt(PolicyAudit)], []),
-  treasuryReadProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  treasuryWriteProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  workflowReadProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-  workflowWriteProbe: Candid.Func([Candid.Text], [ProbeResult], []),
-});
+const collections = [
+  ["coreUser", "core"], ["corePrincipalBinding", "core"], ["coreProfile", "core"],
+  ["coreEmailEvidence", "core"], ["corePayoutDestination", "core"], ["coreHold", "core"],
+  ["coreRoleAssignment", "core"], ["coreBanVote", "core"],
+  ["workflowResult", "workflow"], ["workflowResultSource", "workflow"],
+  ["workflowSchedule", "workflow"], ["workflowCompletionReceipt", "workflow"],
+  ["treasuryObligation", "treasury"], ["treasuryPaymentOperation", "treasury"],
+  ["treasuryJournal", "treasury"], ["treasuryChainReceipt", "treasury"],
+  ["migrationReceipt", "archive"], ["migrationEvidence", "archive"], ["aiArtifact", "archive"],
+  ["evidenceKyc", "evidence"],
+];
+const operationNames = Object.fromEntries(
+  collections.flatMap(([collection]) => [[`${collection}Read`, IDL.Null], [`${collection}Write`, IDL.Null]]),
+);
+const DataOperation = IDL.Variant(operationNames);
+const authorityIdl = ({ IDL: Candid }) => {
+  const methods = { policyAudit: Candid.Func([], [Candid.Opt(PolicyAudit)], []) };
+  for (const [collection] of collections) {
+    methods[`${collection}ReadProbe`] = Candid.Func([Candid.Text], [ProbeResult], []);
+    methods[`${collection}WriteProbe`] = Candid.Func([Candid.Text], [ProbeResult], []);
+  }
+  return Candid.Service(methods);
+};
 const callerIdl = ({ IDL: Candid }) => Candid.Service({
   audit: Candid.Func([], [Candid.Opt(PolicyAudit)], []),
   data: Candid.Func([DataOperation, Candid.Text], [ProbeResult], []),
@@ -169,32 +167,33 @@ async function main() {
 
     const authority = pic.createActor(authorityIdl, authorityId);
     authority.setPrincipal(Principal.anonymous());
-    expectDecision(await authority.coreReadProbe(logicalId), "anonymousCaller", "anonymous direct ingress");
+    expectDecision(await authority.coreUserReadProbe(logicalId), "anonymousCaller", "anonymous direct ingress");
     authority.setPrincipal(bootstrap);
-    expectDecision(await authority.coreReadProbe(logicalId), "callerNotAllowed", "bootstrap direct ingress");
+    expectDecision(await authority.coreUserReadProbe(logicalId), "callerNotAllowed", "bootstrap direct ingress");
     authority.setPrincipal(externalUnrelated);
-    expectDecision(await authority.coreReadProbe(logicalId), "callerNotAllowed", "unrelated direct ingress");
+    expectDecision(await authority.coreUserReadProbe(logicalId), "callerNotAllowed", "unrelated direct ingress");
 
     const callers = {};
     for (const owner of Object.keys(ownerIds)) callers[owner] = pic.createActor(callerIdl, ownerIds[owner]);
     for (const actor of Object.values(callers)) actor.setPrincipal(bootstrap);
-    for (const owner of ["core", "workflow", "treasury", "archive", "evidence"]) {
-      expectDecision(await callers[owner].data({ [`${owner}Read`]: null }, logicalId), "allowed", `${owner} inter-canister read`);
-      expectDecision(await callers[owner].data({ [`${owner}Write`]: null }, logicalId), "allowed", `${owner} inter-canister write`);
-      expectDecision(await callers[owner].data({ coreRead: null }, owner === "core" ? "bad\nlogical-id" : logicalId), owner === "core" ? "malformedLogicalId" : "callerNotAllowed", `${owner} owner boundary`);
+    for (const [collection, owner] of collections) {
+      expectDecision(await callers[owner].data({ [`${collection}Read`]: null }, logicalId), "allowed", `${collection} inter-canister read`);
+      expectDecision(await callers[owner].data({ [`${collection}Write`]: null }, logicalId), "allowed", `${collection} inter-canister write`);
     }
-    expectDecision(await callers.unrelated.data({ coreRead: null }, logicalId), "callerNotAllowed", "unrelated canister");
-    expectDecision(await callers.governance.data({ coreRead: null }, logicalId), "callerNotAllowed", "governance as data caller");
+    expectDecision(await callers.core.data({ coreUserRead: null }, "bad\nlogical-id"), "malformedLogicalId", "malformed logical ID");
+    expectDecision(await callers.workflow.data({ coreUserRead: null }, logicalId), "callerNotAllowed", "cross-owner collection");
+    expectDecision(await callers.unrelated.data({ coreUserRead: null }, logicalId), "callerNotAllowed", "unrelated canister");
+    expectDecision(await callers.governance.data({ coreUserRead: null }, logicalId), "callerNotAllowed", "governance as data caller");
     if ((await callers.core.audit()).length !== 0) throw new Error("core caller received a governance audit");
     expectAudit(await callers.governance.audit(), initial, "governance audit before upgrade");
 
     await upgradeEopCanister(pic, authorityId, IDL.encode([Config], [replacement]));
-    expectDecision(await callers.core.data({ coreRead: null }, logicalId), "allowed", "core after upgrade");
-    expectDecision(await callers.treasury.data({ treasuryWrite: null }, logicalId), "allowed", "treasury after upgrade");
-    expectDecision(await callers.governance.data({ coreRead: null }, logicalId), "callerNotAllowed", "governance after upgrade");
+    expectDecision(await callers.core.data({ coreUserRead: null }, logicalId), "allowed", "core after upgrade");
+    expectDecision(await callers.treasury.data({ treasuryJournalWrite: null }, logicalId), "allowed", "treasury after upgrade");
+    expectDecision(await callers.governance.data({ coreUserRead: null }, logicalId), "callerNotAllowed", "governance after upgrade");
     expectAudit(await callers.governance.audit(), initial, "governance audit after upgrade");
     authority.setPrincipal(replacement.core);
-    expectDecision(await authority.coreReadProbe(logicalId), "callerNotAllowed", "replacement matrix rejected after upgrade");
+    expectDecision(await authority.coreUserReadProbe(logicalId), "callerNotAllowed", "replacement matrix rejected after upgrade");
   } finally {
     await pic.tearDown();
     await server.stop();

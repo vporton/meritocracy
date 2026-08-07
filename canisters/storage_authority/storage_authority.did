@@ -1,45 +1,55 @@
 type _anon_class_13_1 =
  service {
-   archiveReadProbe: (logicalId: text) -> (ProbeResult);
-   archiveWriteProbe: (logicalId: text) -> (ProbeResult);
-   coreReadProbe: (logicalId: text) -> (ProbeResult);
-   coreWriteProbe: (logicalId: text) -> (ProbeResult);
-   evidenceReadProbe: (logicalId: text) -> (ProbeResult);
-   evidenceWriteProbe: (logicalId: text) -> (ProbeResult);
+   aiArtifactReadProbe: (logicalId: text) -> (ProbeResult);
+   aiArtifactWriteProbe: (logicalId: text) -> (ProbeResult);
+   coreBanVoteReadProbe: (logicalId: text) -> (ProbeResult);
+   coreBanVoteWriteProbe: (logicalId: text) -> (ProbeResult);
+   coreEmailEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
+   coreEmailEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
+   coreHoldReadProbe: (logicalId: text) -> (ProbeResult);
+   coreHoldWriteProbe: (logicalId: text) -> (ProbeResult);
+   corePayoutDestinationReadProbe: (logicalId: text) -> (ProbeResult);
+   corePayoutDestinationWriteProbe: (logicalId: text) -> (ProbeResult);
+   corePrincipalBindingReadProbe: (logicalId: text) -> (ProbeResult);
+   corePrincipalBindingWriteProbe: (logicalId: text) -> (ProbeResult);
+   coreProfileReadProbe: (logicalId: text) -> (ProbeResult);
+   coreProfileWriteProbe: (logicalId: text) -> (ProbeResult);
+   coreRoleAssignmentReadProbe: (logicalId: text) -> (ProbeResult);
+   coreRoleAssignmentWriteProbe: (logicalId: text) -> (ProbeResult);
+   coreUserReadProbe: (logicalId: text) -> (ProbeResult);
+   coreUserWriteProbe: (logicalId: text) -> (ProbeResult);
+   evidenceKycReadProbe: (logicalId: text) -> (ProbeResult);
+   evidenceKycWriteProbe: (logicalId: text) -> (ProbeResult);
+   migrationEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
+   migrationEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
+   migrationReceiptReadProbe: (logicalId: text) -> (ProbeResult);
+   migrationReceiptWriteProbe: (logicalId: text) -> (ProbeResult);
    /// The governance-only audit is the sole administrative endpoint. It grants
    /// neither data access nor a way to alter the fixed matrix after install.
    policyAudit: () -> (opt PolicyAudit);
-   treasuryReadProbe: (logicalId: text) -> (ProbeResult);
-   treasuryWriteProbe: (logicalId: text) -> (ProbeResult);
-   workflowReadProbe: (logicalId: text) -> (ProbeResult);
-   workflowWriteProbe: (logicalId: text) -> (ProbeResult);
+   treasuryChainReceiptReadProbe: (logicalId: text) -> (ProbeResult);
+   treasuryChainReceiptWriteProbe: (logicalId: text) -> (ProbeResult);
+   treasuryJournalReadProbe: (logicalId: text) -> (ProbeResult);
+   treasuryJournalWriteProbe: (logicalId: text) -> (ProbeResult);
+   treasuryObligationReadProbe: (logicalId: text) -> (ProbeResult);
+   treasuryObligationWriteProbe: (logicalId: text) -> (ProbeResult);
+   treasuryPaymentOperationReadProbe: (logicalId: text) -> (ProbeResult);
+   treasuryPaymentOperationWriteProbe: (logicalId: text) -> (ProbeResult);
+   workflowCompletionReceiptReadProbe: (logicalId: text) -> (ProbeResult);
+   workflowCompletionReceiptWriteProbe: (logicalId: text) -> (ProbeResult);
+   workflowResultReadProbe: (logicalId: text) -> (ProbeResult);
+   workflowResultSourceReadProbe: (logicalId: text) -> (ProbeResult);
+   workflowResultSourceWriteProbe: (logicalId: text) -> (ProbeResult);
+   workflowResultWriteProbe: (logicalId: text) -> (ProbeResult);
+   workflowScheduleReadProbe: (logicalId: text) -> (ProbeResult);
+   workflowScheduleWriteProbe: (logicalId: text) -> (ProbeResult);
  };
 type ProbeResult =
- variant {
-   allowed;
-   anonymousCaller;
-   callerNotAllowed;
-   invalidConfiguration;
-   malformedLogicalId;
- };
+ variant { allowed; anonymousCaller; callerNotAllowed; invalidConfiguration; malformedLogicalId };
 type PolicyAudit =
- record {
-   archive: principal;
-   core: principal;
-   evidence: principal;
-   governance: principal;
-   treasury: principal;
-   workflow: principal;
- };
+ record { archive: principal; core: principal; evidence: principal; governance: principal; treasury: principal; workflow: principal };
 type Config =
- record {
-   archive: principal;
-   core: principal;
-   evidence: principal;
-   governance: principal;
-   treasury: principal;
-   workflow: principal;
- };
+ record { archive: principal; core: principal; evidence: principal; governance: principal; treasury: principal; workflow: principal };
 /// M1 storage-authority boundary scaffold.
 ///
 /// This canister deliberately has no ZenDB import, collection, payload, or

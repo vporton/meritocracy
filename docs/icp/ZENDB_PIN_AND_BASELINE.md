@@ -35,6 +35,14 @@ Two clean local builds produced identical Candid and Wasm hashes. Their generate
 
 ## API and authorization findings
 
+**Superseded remote-RBAC topology (2026-08-07):** The project owner selected
+an in-process ZenDB library behind a Motoko storage-authority canister. ZenDB
+is therefore not an externally reachable authorization boundary in the target.
+The remote grant/self-grant findings below remain pin diagnostics only; they do
+not define target authorization or require a user to configure ZenDB grants.
+The binding target boundary and proof obligations are in
+`M1_OPERATOR_HANDOFF.md`.
+
 The candidate's generated Candid exposes `grant_collection_access` and `revoke_collection_access`, whose scope is `(database, collection)`. Its source also creates `reader`, `writer`, `observer`, and `admin` roles. A local initialization grants global `admin` to the initial owner and to the database canister principal itself.
 
 That self-grant is an implementation-required privilege that must be explicitly audited. M1 does **not** accept it as harmless merely because ordinary ingress cannot impersonate a canister principal. The forthcoming proof must show that it cannot create an unauthorized external path, survives upgrades without scope expansion, and remains absent from the desired application-principal grant matrix except where required internally.
@@ -102,6 +110,13 @@ this proof. The older lost-reply, archive, and repair evidence does not waive
 that failure. A read-only upstream tag check on 2026-08-07 found `v2.0.1` is
 the latest released tag; no released successor exists to evaluate under M1.
 Unmerged or future commits remain ineligible evidence.
+
+**Supersession note:** The preceding remote-actor failure must not be read as a
+requirement for the user to repair ZenDB grants or supply a replacement pin.
+It rejects only the remote-RBAC topology. The binding M1 work is to implement
+and test the storage-authority canister described in `M1_OPERATOR_HANDOFF.md`;
+the pin remains subject to its ordinary source, compatibility, capacity, and
+data-integrity evidence.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

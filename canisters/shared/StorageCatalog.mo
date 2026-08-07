@@ -1,12 +1,13 @@
 import Array "mo:base/Array";
 
-/// M1 proposed ZenDB catalogue.  It contains no principals or live grants; the
-/// deployment-time principal matrix is deliberately filled only after the M1
-/// RBAC proof and G2 approval.
+/// M1 proposed in-process ZenDB catalogue. `grants` below is declarative
+/// storage-authority Candid policy, never a ZenDB role/grant API. It contains
+/// no principals or live permissions; the deployment-time principal matrix is
+/// deliberately filled only after the M1 RBAC proof and G2 approval.
 module {
   public type Owner = { #core; #workflow; #treasury; #archive; #evidence };
   public type Access = { #read; #write; #admin };
-  public type Subject = { #ownerCanister; #governance; #zendbInternalSelf };
+  public type Subject = { #ownerCanister; #governance };
   public type Index = {
     name : Text;
     fields : [Text];
@@ -56,8 +57,6 @@ module {
     (#ownerCanister, #read),
     (#ownerCanister, #write),
     (#governance, #admin),
-    // This is an implementation-required ZenDB self-grant, not an application grant.
-    (#zendbInternalSelf, #admin),
   ];
 
   /// Kept as a function because the per-collection index list is composed from

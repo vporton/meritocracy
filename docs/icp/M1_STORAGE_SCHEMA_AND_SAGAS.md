@@ -61,15 +61,35 @@ The initial hard envelope, pending M1 inventory/benchmark replacement, is:
 
 Every list uses a versioned opaque cursor carrying the exact indexed sort key, logical ID, and query/filter hash. Offset pagination and an unindexed filter are rejected. The future implementation must record measured instruction/bytes/index multiplier and set a lower request-specific limit if the current envelope is unsafe.
 
-## Grant matrix and deployment requirements
+## Storage-authority authorization boundary
 
-For every catalogue entry, the desired grant shape is exactly: its owning application canister has collection-scoped reader and writer; the approved governance/SNS principal has admin; the ZenDB internal self-grant is retained only if the pin requires it. No browser/user principal, import operator, unrelated canister, bootstrap deployer, or generic application role has a grant. There is no global application admin.
+Per the 2026-08-07 M1 decision in `M1_OPERATOR_HANDOFF.md`, ZenDB is an
+in-process library in a persistent storage-authority canister. The library has
+no remote Candid ingress and is not an RBAC layer. For every catalogue entry,
+the storage authority's fixed Motoko policy permits only its owning application
+canister to perform the required read/write actions and only the approved
+governance/SNS principal to perform administration. It derives the permitted
+logical-ID scope from the authenticated caller and does not accept caller-
+supplied collection, role, owner, document ID, or arbitrary query authority.
 
-The symbol-only matrix intentionally contains no concrete principal. At deployment, governance must render a principal-bound matrix, hash it, and compare it before target writes. If the pin cannot express a listed scope, a separate ZenDB deployment is required for that boundary. Bootstrap/deployer grants are revoked before an authoritative collection is enabled. A staging-only writer can exist only for the approved migration window and is revoked/downgraded at finalization. The pinned ZenDB self-grant is not a waiver: M1 tests must prove it creates no ingress path and does not expand after upgrade.
+No browser/user principal, import operator, unrelated canister, bootstrap
+deployer, or generic application role may call a sensitive storage operation.
+There is no generic collection CRUD or ZenDB grant-management Candid method.
+At deployment, governance renders and hashes the principal-bound caller/
+collection/action matrix before target writes. A staging-only import action can
+exist only for the approved migration window and is revoked/downgraded at
+finalization. Tests must prove exact direct-ingress, cross-canister, bootstrap,
+and post-upgrade negatives; controller privilege never substitutes for method
+authorization.
 
-## Remote mutation and recovery state machine
+## Cross-canister mutation and recovery state machine
 
-Each owning persistent actor records `MutationIntentV1` before every ZenDB write, including the collection, immutable logical ID, desired hash, expected prior version/hash, operation and attempt IDs, and phase. The state machine is:
+Each owning domain actor records `MutationIntentV1` before every call to the
+storage-authority canister, including the collection, immutable logical ID,
+desired hash, expected prior version/hash, operation and attempt IDs, and
+phase. ZenDB writes execute in-process inside that storage authority; the
+cross-canister reply, not a direct ZenDB call, is the interruption boundary.
+The state machine is:
 
 ```text
 prepared -> remoteWriteStarted -> acknowledged
@@ -80,13 +100,14 @@ prepared -> remoteWriteStarted -> acknowledged
                          +-> conflict | blocked
 ```
 
-Before retrying a lost reply or trap, the actor performs a bounded logical-ID lookup:
+Before retrying a lost reply or trap, the actor asks the storage authority for
+a bounded, caller-authorized logical-ID lookup:
 
 - desired version and hash: acknowledge it;
 - absent insert, or CAS target still has the expected prior version/hash: retry the identical bytes and logical ID;
 - anything else: mark `conflict`, fail closed, and require reconciliation. It never generates a second key or blind overwrite.
 
-A multi-document operation first writes all member documents as pending and journals a `VisibilityManifestV1` whose member-ID root is known before any remote call. Only after every member and then the manifest itself are hash-acknowledged does the application expose the version as active. One bounded ZenDB-side atomic method may replace this sequence only after the exact pin proves its atomic behavior; no application-to-ZenDB `await` is treated as atomic. Intent/receipt evidence is append-only; compaction may preserve a checkpoint but not erase audit history.
+A multi-document operation first writes all member documents as pending and journals a `VisibilityManifestV1` whose member-ID root is known before any cross-canister call. Only after every member and then the manifest itself are hash-acknowledged does the application expose the version as active. One bounded in-process ZenDB operation may replace this sequence only after the exact pin proves its atomic behavior; no cross-canister `await` is treated as atomic. Intent/receipt evidence is append-only; compaction may preserve a checkpoint but not erase audit history.
 
 `MutationIntentV1` has no payload field: canonical bytes remain in the bounded operation-specific state, while the intent records their desired hash. An implementation must retain/reconstruct the identical bytes for a permitted retry, or move to `blocked`; it may not recreate a mutable request from caller input.
 
@@ -98,6 +119,6 @@ Every canister upgrade must retain a semantic stable-type baseline, Candid subty
 
 ## Required proof before G2
 
-This contract does not satisfy M1 acceptance by itself. The target-data fixture implements the owning-canister lost-reply/duplicate-delivery saga, an archive-failure/acknowledged-activation saga, bootstrap/self-grant audit, and a bounded collection-v1-to-v2 page replay that reconciles a duplicate only by matching logical ID/hash while retaining v1. On 2026-08-07, its separate owner-controlled exact-artifact upgrade path failed: the pinned candidate restored a revoked bootstrap admin grant after upgrade. Thus ZenDB `v2.0.1` cannot be authoritative for any catalogue collection. G2 must record a named, collection-specific native-Motoko exception or a later pinned candidate must pass this exact proof; no general fallback is permitted. The remaining suite must still prove the listed records/catalogue against an eligible pin: collection-scope RBAC/direct-ingress negatives, bounded cursor/index plans; interruption before/during/after remote writes and manifest activation; low cycles; archive failure; and executed collection-vN repair/resume.
+This contract does not satisfy M1 acceptance by itself. The target-data fixture implements the owning-canister lost-reply/duplicate-delivery saga, an archive-failure/acknowledged-activation saga, bootstrap/self-grant audit, and a bounded collection-v1-to-v2 page replay that reconciles a duplicate only by matching logical ID/hash while retaining v1. On 2026-08-07, its separate owner-controlled remote-actor upgrade path failed because the pinned candidate restored a bootstrap admin grant after upgrade. That rejects the remote-RBAC topology and remains diagnostic only. The approved M1 direction is instead the storage-authority Candid boundary described above and in `M1_OPERATOR_HANDOFF.md`. The remaining suite must prove that boundary with direct-ingress/caller/upgrade negatives, bounded cursor/index plans; interruption before/during/after cross-canister calls and manifest activation; low cycles; archive failure; and executed collection-vN repair/resume.
 
 Rollback: remove this un-deployed design/scaffolding only. Legacy Node/PostgreSQL behavior, production data, signing authority, and real assets remain unchanged.

@@ -2,6 +2,8 @@
 
 Last updated: 2026-08-07. The repository's AGPL-3.0-only license and related package metadata changes are complete and recorded in `9122ff0`; no additional relicensing gate remains. M1 includes an aggregate-only PostgreSQL inventory command (`docs/icp/POSTGRES_INVENTORY.md`) that loads an ignored local configuration without printing it. Its 2026-08-07 read-only attempt produced only a redaction-safe generic failure category and no report, so it records no target-feature or production-inventory completion evidence. The post-G1 flat lint baseline now passes while preserving the legacy application. This remains the exhaustive legacy audit baseline.
 
+**M1 handoff supersession:** `docs/icp/M1_OPERATOR_HANDOFF.md` records the settled owner decision that ZenDB is in-process behind a Motoko storage-authority canister and that this canister—not ZenDB—enforces RBAC. Any earlier row describing the remote-ZenDB grant topology is historical diagnostic evidence only. The same handoff records that `DATABASE_URL` is already in ignored `backend/.env`; do not request it again. Its remaining aggregate-only inventory failure is a DBA connectivity/TLS/query-permission remediation, not a missing configuration value.
+
 ## Status vocabulary
 
 - `AUDITED`: the legacy implementation and callers were inspected.

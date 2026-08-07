@@ -140,6 +140,35 @@ probe as permission to change either toolchain or to make the candidate
 authoritative without a recorded compatible-toolchain decision, stable/Candid
 compatibility checks, and the remaining bounded mutation/recovery suite.
 
+## Embedded toolchain/dependency decision
+
+**Decision recorded 2026-08-07:** retain the repository's pinned Motoko
+`0.16.3`; do not add ZenDB `v2.0.1` as an embedded target dependency and do
+not introduce a dual-compiler build path.
+
+The executable boundary is:
+
+```sh
+M1_ZENDB_SOURCE_DIR=/path/to/already-resolved/zendb \
+  scripts/icp/test-zendb-embedded-toolchain-boundary.sh
+```
+
+It runs the immutable-source probe first with ZenDB's pinned Motoko `1.4.1`,
+which must compile. It then runs the same fixture and exact lock closure with
+the repository's Motoko `0.16.3`, which must fail. On 2026-08-07 that failure
+was in the locked `core@2.4.0` source: the older compiler has no `Float32`
+type. A repository-compiler pass is intentionally a test failure, not an
+implicit approval: it requires a new recorded dependency/toolchain decision
+and Candid/stable compatibility review before the expectation changes.
+
+This rejects the candidate as a target embedded dependency, not as an immutable
+source/provenance record or diagnostic for the rejected remote topology. No
+target storage operation, deployment, data, identity, credential, wallet, or
+asset action occurred. The only way to reopen embedding under M1 is an exact
+candidate source/dependency/toolchain pin that compiles under the approved
+repository toolchain, followed by the remaining bounded mutation, recovery,
+capacity, upgrade, and authorization evidence.
+
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working
 directory instead of cloning from that checkout. This keeps the supplied source
@@ -153,7 +182,8 @@ authoritative-storage approval.
 Run it from the repository root:
 
 ```sh
-scripts/icp/test-zendb-authoritative.sh
+M1_ZENDB_SOURCE_DIR=/path/to/already-resolved/zendb \
+  scripts/icp/test-zendb-embedded-storage.sh
 ```
 
 The local-only harness `scripts/icp/test-zendb-benchmark.sh` copies

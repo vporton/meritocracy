@@ -140,6 +140,16 @@ is compatibility evidence for the embedded library only; it neither proves a
 storage operation nor authorizes replacing this repository's currently pinned
 Motoko 0.16.3 toolchain with the candidate's 1.4.1 toolchain.
 
+The completed companion boundary test now resolves that compatibility question
+for this exact candidate: `test-zendb-embedded-toolchain-boundary.sh` requires
+the pin compiler to accept the fixture and the repository compiler to reject
+the same locked closure. Motoko 0.16.3 rejects ZenDB's locked `core@2.4.0`
+because it lacks `Float32`. M1 therefore retains Motoko 0.16.3 and rejects
+ZenDB v2.0.1 as an embedded target dependency; it does not add a dual-compiler
+path. See `ZENDB_PIN_AND_BASELINE.md` for the exact decision and reopening
+requirements. This does not approve a native-Motoko exception: any such
+exception remains collection-specific and requires G2 approval.
+
 ## Cross-canister mutation and recovery state machine
 
 Each owning domain actor records `MutationIntentV1` before every call to the

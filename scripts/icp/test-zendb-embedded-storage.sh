@@ -10,6 +10,17 @@ readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly expected_mops_version="CLI 2.19.2"
 readonly expected_moc_version="Motoko compiler 1.4.1"
+readonly expected_repository_moc_version="Motoko compiler 0.16.3"
+
+compiler_mode="zendb"
+case "${1:-}" in
+  "" | --compiler=zendb) ;;
+  --compiler=repository) compiler_mode="repository" ;;
+  *)
+    echo "Usage: $0 [--compiler=zendb|--compiler=repository]" >&2
+    exit 2
+    ;;
+esac
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 probe_source="$repo_root/fixtures/zendb/M1EmbeddedStorageProbe.mo"
@@ -84,13 +95,25 @@ node -e '
   }
 ' "$source_dir"
 
-# The ZenDB pin, not this repository's 0.16.3 compiler, defines the API and
-# stable-type compatibility boundary for this candidate.
-moc_path="$(cd "$source_dir" && "${mops_cli[@]}" toolchain bin moc)"
-[[ "$("$moc_path" --version | head -n 1)" == "$expected_moc_version"* ]] || {
-  echo "Expected pinned ZenDB moc $expected_moc_version; found: $("$moc_path" --version | head -n 1)" >&2
-  exit 1
-}
+# The repository compiler probe is intentionally separate from the pin's
+# compiler probe. A successful pin build does not demonstrate that this
+# repository can embed the candidate under its approved toolchain.
+case "$compiler_mode" in
+  zendb)
+    moc_path="$(cd "$source_dir" && "${mops_cli[@]}" toolchain bin moc)"
+    [[ "$("$moc_path" --version | head -n 1)" == "$expected_moc_version"* ]] || {
+      echo "Expected pinned ZenDB moc $expected_moc_version; found: $("$moc_path" --version | head -n 1)" >&2
+      exit 1
+    }
+    ;;
+  repository)
+    moc_path="$(command -v moc)"
+    [[ "$("$moc_path" --version | head -n 1)" == "$expected_repository_moc_version"* ]] || {
+      echo "Expected repository moc $expected_repository_moc_version; found: $("$moc_path" --version | head -n 1)" >&2
+      exit 1
+    }
+    ;;
+esac
 
 install -m 0644 "$probe_source" "$source_dir/tests/M1EmbeddedStorageProbe.mo"
 source_args=()
@@ -110,4 +133,4 @@ if ! (cd "$source_dir" && "$moc_path" \
 fi
 [[ -s "$workdir/m1-embedded-storage-probe.wasm" ]]
 
-echo "ZenDB v2.0.1 embedded-storage compile proof passed."
+echo "ZenDB v2.0.1 embedded-storage compile proof passed with $compiler_mode compiler."

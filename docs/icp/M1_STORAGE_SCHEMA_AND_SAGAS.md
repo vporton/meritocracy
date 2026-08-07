@@ -128,6 +128,18 @@ valid init matrix that cannot replace the persisted one. Before G2, the actual
 in-process ZenDB adapter still needs bounded writes, lookups, archive
 behavior, low-cycle handling, lost-reply recovery, and repair/resume tests.
 
+`fixtures/zendb/M1EmbeddedStorageProbe.mo` and
+`scripts/icp/test-zendb-embedded-storage.sh` add a narrower compiler proof for
+that remaining adapter work. The runner takes an existing ZenDB checkout only,
+archives the exact pin into a fresh `/tmp` directory, copies and validates each
+lock-recorded dependency source hash, and compiles a private persistent
+`VersionedStableStore` with the candidate's Motoko 1.4.1 compiler. It has no
+Candid method, collection, document, index, remote ZenDB actor, DFX, PocketIC,
+network, identity, or wallet path. The 2026-08-07 local execution passed. This
+is compatibility evidence for the embedded library only; it neither proves a
+storage operation nor authorizes replacing this repository's currently pinned
+Motoko 0.16.3 toolchain with the candidate's 1.4.1 toolchain.
+
 ## Cross-canister mutation and recovery state machine
 
 Each owning domain actor records `MutationIntentV1` before every call to the

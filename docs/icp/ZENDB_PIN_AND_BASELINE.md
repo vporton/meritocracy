@@ -118,6 +118,28 @@ and test the storage-authority canister described in `M1_OPERATOR_HANDOFF.md`;
 the pin remains subject to its ordinary source, compatibility, capacity, and
 data-integrity evidence.
 
+## Embedded-library compiler boundary
+
+`scripts/icp/test-zendb-embedded-storage.sh` is a local-only compiler probe
+for the approved in-process topology. It requires `M1_ZENDB_SOURCE_DIR` to
+name an already available ZenDB git checkout, creates and hashes the exact
+`v2.0.1` archive, copies the resolved `.mops` closure into a fresh `/tmp`
+directory, verifies every lock-recorded source hash, and compiles
+`fixtures/zendb/M1EmbeddedStorageProbe.mo` with the pin's Motoko 1.4.1 binary.
+It does not clone, run `mops install`, contact a registry/network, invoke DFX
+or PocketIC, load an identity/wallet, install a canister, or create any ZenDB
+database, collection, document, index, or grant. The probe has no public
+Candid method and only places `ZenDB.Types.VersionedStableStore` in private
+persistent actor state. It passed locally on 2026-08-07.
+
+This proves that the exact embedded stable-store type can compile behind an
+actor boundary; it is not behavioral, capacity, upgrade, or authorization
+evidence. In particular, the application M1 toolchain currently pins Motoko
+0.16.3 whereas this ZenDB pin requires Motoko 1.4.1. G2 must not treat this
+probe as permission to change either toolchain or to make the candidate
+authoritative without a recorded compatible-toolchain decision, stable/Candid
+compatibility checks, and the remaining bounded mutation/recovery suite.
+
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working
 directory instead of cloning from that checkout. This keeps the supplied source

@@ -1,6 +1,6 @@
 # Dependency closure and advisory inventory
 
-Status: M1 evidence, **not a shipment approval**. Reviewed 2026-08-01.
+Status: M1 evidence, **not a shipment approval**. Reviewed 2026-08-07.
 
 ## Scope and reproducibility
 
@@ -33,7 +33,7 @@ The production-only scan was run against the root workspace with:
 npm audit --omit=dev --workspaces --include-workspace-root --json
 ```
 
-It reported 920 production dependencies, 13 high findings, and zero critical
+It reported 855 production dependencies, 13 high findings, and zero critical
 findings. The exact result is time-sensitive; re-run it before any rollback or
 frontend shipment. A high or critical result fails closed: no affected legacy
 rollback bundle or certified frontend asset may ship until a compatibility-tested
@@ -55,6 +55,13 @@ package reports are covered by these paths: `@reown/appkit-adapter-bitcoin`,
 `@solana/buffer-layout-utils`, and `bigint-buffer`; then `react-router-dom` and
 `react-router`; then `viem` and `ws`. No critical report existed at the review
 time. There is no accepted advisory exception.
+
+The 2026-08-07 review also moved ESLint to root development dependencies and
+added the pinned TypeScript lint parser. They are build-time tooling, not
+runtime dependencies; the production-only scan above excludes their closure.
+The flat-config compatibility pin is ESLint `9.39.1`: the retained
+`eslint-plugin-react@7.37.5` is incompatible with ESLint 10. No production
+dependency, wallet adapter, application route, or API behavior changed.
 
 ## Boundaries
 

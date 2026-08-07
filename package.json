@@ -48,13 +48,13 @@
     "@reown/appkit-adapter-solana": "1.8.23",
     "@types/node": "25.3.0",
     "concurrently": "10.0.4",
-    "eslint": "10.0.1",
     "prisma": "7.9.1",
     "serve": "14.2.6",
     "typescript": "5.9.3"
   },
   "packageManager": "npm@11.10.1",
   "devDependencies": {
+    "eslint": "9.39.1",
     "ic-mops": "2.19.2"
   }
 }

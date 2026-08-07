@@ -289,7 +289,7 @@ export default function Home() {
         <h2>How Funding Decisions Are Made</h2>
         <p>Funding decisions are made by an AI, whose reasonings are transparently published in Audit Logs. AI is oversaw by voters to prevent scams such as prompt injections, banning a user.</p>
         <h2>About the Organization</h2>
-        <p>Meritocracy is an initiative of <a target='_blank' href="https://science-dao.org">World Science DAO</a>, a decentralized organization working on open scientific funding models.</p>
+        <p>Meritocracy is an initiative of <a target='_blank' rel="noopener noreferrer" href="https://science-dao.org">World Science DAO</a>, a decentralized organization working on open scientific funding models.</p>
       </div>
     </div>
   )

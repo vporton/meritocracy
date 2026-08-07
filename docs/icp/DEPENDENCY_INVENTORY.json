@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-08-01",
+  "reviewedAt": "2026-08-07",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "c9541830c8401bf523aa979229a70eff1e40dd36cc975ed7a20ed22cf9002c85",
+    "sha256": "65691a63f9ba70ca30250fc108c7bce0a7898c4d9f98aa7d2c95dcb54649bdf1",
     "lockfileVersion": 3,
-    "packageEntries": 1759
+    "packageEntries": 1791
   },
   "bundles": [
     {
@@ -23,7 +23,7 @@
   ],
   "highOrCritical": {
     "scanCommand": "npm audit --omit=dev --workspaces --include-workspace-root --json",
-    "productionDependencies": 920,
+    "productionDependencies": 855,
     "high": 13,
     "critical": 0,
     "status": "BLOCKED_SHIPMENT",

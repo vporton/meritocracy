@@ -88,23 +88,18 @@ a production-sized load test. It is evidence for the application's required
 intent/lookup protocol, not evidence that ZenDB supplies idempotent insert,
 caller-selected document IDs, CAS, or a multi-document transaction.
 
-The runner now also contains
-an owning-canister lost-reply/duplicate-delivery fixture. It journals the
-remote-write phase before an intentionally trapped reply, then reconciles the
-same logical ID and content hash without allocating a second key. Before
-revocation it audits the exact two global admins (the provisional owner and
-ZenDB's internal self-grant), revokes the owner, upgrades the remote
-`CanisterDB` artifact, and checks that the owner cannot regain grants or write
-after upgrade. It also has a bounded collection-v1-to-v2 fixture: it replays
-an unacknowledged one-document source page, accepts a duplicate only when its
-logical ID and content hash match, retains the v1 collection, and verifies both
-v2 records before a visibility switch would be eligible. These are implemented
-evidence only until a local rerun completes. The latest local rerun installed
-the proof actor and completed these assertions. It correctly rejected the
-external anonymous attempt to upgrade the database child: that canister is
-controlled by the synthetic owner. The post-upgrade assertion therefore remains
-unexecuted until an owner-controlled management-canister upgrade path can
-supply the exact artifact without adding external controller authority.
+The runner includes an owning-canister lost-reply/duplicate-delivery fixture
+and a bounded collection-v1-to-v2 replay fixture. On 2026-08-07 it also ran a
+separate `M1UpgradeOwner` path: the local database child named that owner as
+its sole controller; the owner accepted only the SHA-256/length-bound exact
+candidate artifact, created one bounded synthetic collection, revoked its own
+bootstrap admin grant, and upgraded the child with that same artifact. The
+post-upgrade audit trapped because ZenDB restored the revoked bootstrap admin
+grant. This is a release-blocking M1 failure, not a retryable unknown result:
+ZenDB `v2.0.1` is not authoritative for any collection unless G2 records a
+collection-specific native-Motoko exception or a newly pinned candidate passes
+this proof. The older lost-reply, archive, and repair evidence does not waive
+that failure.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

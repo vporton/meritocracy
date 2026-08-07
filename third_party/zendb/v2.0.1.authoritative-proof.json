@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "IMPLEMENTED 2026-08-02: the runner retains the prior logical-ID pass and now adds application-owner lost-reply and archive-failure sagas, bootstrap/self-grant audit, a post-upgrade revocation check, and a bounded collection-v1-to-v2 replay/resume fixture. Its corrected local-only run installed the proof actor and completed runTests; external anonymous installation of the child database's exact upgrade Wasm was rejected because the synthetic owner, not the external caller, is its controller. No post-upgrade assertion is claimed.",
+  "status": "FAILED POST-UPGRADE RBAC PROOF 2026-08-07: the new owner-controlled local path installed and upgraded the exact pinned CanisterDB artifact, but the revoked bootstrap owner regained its admin grant after upgrade. ZenDB v2.0.1 is therefore not approved as an authoritative collection store. The earlier logical-ID, recovery, archive, and bounded-repair evidence remains limited local evidence only.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -14,10 +14,10 @@
     "dfx": "0.32.0",
     "network": "fresh project-local ephemeral loopback DFX local network",
     "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, creates with --no-wallet, and uses an isolated disposable DFX config for replica lifecycle plus DFX's built-in anonymous identity for every ingress-capable command. It therefore selects no developer PEM/keyring, wallet, or signing authority. Ingress/lifecycle operations are bounded to 180 seconds and exact O3 builds to 360 seconds, each with a 10-second kill grace and cleanup trap. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
-    "installer": "dfx deploy --mode reinstall --yes",
+    "installer": "dfx canister install --mode reinstall --wasm",
     "initialSyntheticCycles": 20000000000000,
-    "testCanister": "m1-authoritative-proof",
-    "entrypoint": "runTests",
+    "testCanister": "m1-authoritative-proof and m1-upgrade-owner",
+    "entrypoint": "runTests plus the owner-controlled post-upgrade audit",
     "upgradeArtifact": "the exact pinned src/RemoteInstance/CanisterDB/lib.mo compiled as zendb-canister with matching default persistence flags",
     "upgradeEntryPoint": "verifyPostUpgradeRevocation"
   },
@@ -26,17 +26,17 @@
     "compiledTestWasmBytes": 3281858,
     "singleIngressLimitBytes": 2097152,
     "observedFailure": "PocketIC BadIngressMessage: request is larger than the maximum allowed message size",
-    "resolution": "the runner now uses the exact pinned DFX 0.32.0 local installer; the proof passes only after that installer succeeds and runTests returns normally"
+    "resolution": "the runner now uses the exact pinned DFX 0.32.0 local installer; a passing assertion requires successful installation and every local audit to return normally"
   },
   "execution": {
-    "date": "2026-08-02",
+    "date": "2026-08-07",
     "toolchain": {
       "dfx": "0.32.0",
       "mopsCli": "2.19.2",
       "moc": "1.4.1"
     },
     "network": "fresh DFX ephemeral project-local loopback replica",
-    "result": "passed: deploy completed, runTests returned normally, and the cleanup stopped the local replica",
+    "result": "failed as required: the local owner was the sole controller of the empty CanisterDB; it installed the digest-bound exact artifact, created a bounded synthetic collection, revoked its own bootstrap admin grant, then upgraded that same artifact. The final audit trapped because the upgrade restored the revoked bootstrap grant.",
     "warning": "DFX reported that its Wasm optimization pass could not read the module. This existing release blocker was not waived."
   },
   "executedCoverage": [
@@ -49,12 +49,12 @@
     "the bootstrap owner and ZenDB self-grant are audited, then the bootstrap owner is revoked before an upgrade attempt",
     "a bounded collection-v1-to-v2 copy replays an unacknowledged source page, reconciles matching duplicate writes, retains v1, and verifies v2 logical IDs/hashes"
   ],
-  "implementedButNotExecutedCoverage": [
-    "after upgrading the remote CanisterDB artifact, the revoked owner remains unable to read grants, write, or escalate",
-    "an owner-controlled management-canister upgrade path for the exact artifact, without granting external installer authority"
+  "failedCoverage": [
+    "the owner-controlled management-canister path supplied only the SHA-256/length-bound exact artifact and the database child had that owner as sole controller",
+    "after exact upgrade, the candidate restored the revoked bootstrap admin grant; the proof trapped before it could accept an authoritative collection"
   ],
   "doesNotProve": [
-    "a post-upgrade grant-revocation assertion: external anonymous installation is correctly rejected because the synthetic owner controls its child database canister",
+    "post-upgrade RBAC preservation or any authoritative use of ZenDB v2.0.1",
     "low-cycle behavior, production-sized instruction and byte benchmarks, actual collection-vN execution, or an application visibility-manifest upgrade",
     "an atomic multi-document operation or a ZenDB compare-and-set API"
   ]

@@ -11,6 +11,7 @@ readonly source_archive_sha256="332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b
 readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66af780f505b07336d18"
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly test_canister="m1-authoritative-proof"
+readonly upgrade_owner_canister="m1-upgrade-owner"
 readonly upgrade_canister="zendb-canister"
 readonly test_canister_cycles="30000000000000"
 readonly upgrade_canister_cycles="10000000000000"
@@ -38,6 +39,7 @@ proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
 proof_archive_owner="$repo_root/fixtures/zendb/M1ArchiveIntentOwner.mo"
 proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveSink.mo"
+proof_upgrade_owner="$repo_root/fixtures/zendb/M1UpgradeOwner.mo"
 
 for command in git mops dfx didc sha256sum gzip install tar node timeout openssl; do
   command -v "$command" >/dev/null || {
@@ -73,6 +75,10 @@ export DFX_MOC_PATH="moc-wrapper"
 }
 [[ -f "$proof_archive_sink" ]] || {
   echo "Missing proof archive receiver: $proof_archive_sink" >&2
+  exit 1
+}
+[[ -f "$proof_upgrade_owner" ]] || {
+  echo "Missing post-upgrade proof owner: $proof_upgrade_owner" >&2
   exit 1
 }
 
@@ -173,11 +179,13 @@ test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
 owner_target="$source_dir/tests/cluster-tests/M1IntentOwner.mo"
 archive_owner_target="$source_dir/tests/cluster-tests/M1ArchiveIntentOwner.mo"
 archive_sink_target="$source_dir/tests/cluster-tests/M1ArchiveSink.mo"
+upgrade_owner_target="$source_dir/tests/cluster-tests/M1UpgradeOwner.mo"
 exact_upgrade_artifact_target="$source_dir/tests/cluster-tests/M1ExactUpgradeArtifact.mo"
 install -m 0644 "$proof_test" "$test_target"
 install -m 0644 "$proof_owner" "$owner_target"
 install -m 0644 "$proof_archive_owner" "$archive_owner_target"
 install -m 0644 "$proof_archive_sink" "$archive_sink_target"
+install -m 0644 "$proof_upgrade_owner" "$upgrade_owner_target"
 
 cd "$source_dir"
 # `pic-js-mops` installs a test Wasm in one ingress message. The synthetic
@@ -208,11 +216,17 @@ node -e '
     shrink: true,
     metadata: [{ name: "candid:service" }]
   };
-  // Build the upstream actor-class source itself for the upgrade artifact.
-  // The child created from the persistent proof actor uses enhanced orthogonal
-  // persistence, so the standalone upgrade artifact must use the upstream
-  // EOP flags as well. A legacy-persistence artifact is not stable-compatible
-  // and the local management canister correctly rejects it.
+  config.canisters["m1-upgrade-owner"] = {
+    type: "motoko",
+    main: "tests/cluster-tests/M1UpgradeOwner.mo",
+    optimize: process.env.M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION ?? "O1",
+    shrink: true,
+    metadata: [{ name: "candid:service" }]
+  };
+  // Build the upstream actor-class source itself for the exact candidate
+  // artifact. The standalone post-upgrade owner installs this same artifact
+  // initially and on upgrade; it does not claim compatibility with the
+  // separate actor-class instances created by the proof actor.
   config.canisters["zendb-canister"] = {
     type: "motoko",
     main: "src/RemoteInstance/CanisterDB/lib.mo",
@@ -230,7 +244,10 @@ local_replica_started=true
 # Fail before creation if this checkout did not start its own local network.
 run_dfx ping local
 run_dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
-run_dfx canister create "$upgrade_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles"
+run_dfx canister create "$upgrade_owner_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
+upgrade_owner_principal="$(run_dfx canister id "$upgrade_owner_canister" --network local)"
+run_dfx canister create "$upgrade_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles" --controller "$upgrade_owner_principal"
+upgrade_canister_principal="$(run_dfx canister id "$upgrade_canister" --network local)"
 echo "Building the disposable proof actor with $M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION; the upgrade artifact remains O3."
 run_dfx build "$upgrade_canister" --network local
 upgrade_wasm="$(find "$source_dir/.dfx/local/canisters/$upgrade_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
@@ -240,7 +257,7 @@ upgrade_wasm="$(find "$source_dir/.dfx/local/canisters/$upgrade_canister" -maxde
 }
 # `install_code` accepts a gzip-compressed Wasm module. Use deterministic gzip
 # so the owner binds a reproducible, exact transport artifact while keeping the
-# ingress below the local HTTP boundary (the raw EOP Wasm is 2.66 MiB).
+# ingress below the local HTTP boundary (the raw candidate Wasm is 2.66 MiB).
 upgrade_wasm_transport="$workdir/zendb-canister.wasm.gz"
 gzip -n -c "$upgrade_wasm" > "$upgrade_wasm_transport"
 # Bind the proof-owner upgrade endpoint to this exact locally built artifact.
@@ -265,30 +282,26 @@ test_wasm="$(find "$source_dir/.dfx/local/canisters/$test_canister" -maxdepth 1 
   echo "Missing compiled proof artifact" >&2
   exit 1
 }
+run_dfx build "$upgrade_owner_canister" --network local
+upgrade_owner_wasm="$(find "$source_dir/.dfx/local/canisters/$upgrade_owner_canister" -maxdepth 1 -type f -name '*.wasm' -print -quit)"
+[[ -s "$upgrade_owner_wasm" ]] || {
+  echo "Missing compiled post-upgrade owner artifact" >&2
+  exit 1
+}
 # `dfx deploy` recompiles the already-built proof actor. Install the exact
 # artifact just produced above so the bounded runner does not spend a second
 # full compiler pass before exercising its synthetic sagas.
 run_dfx canister install "$test_canister" --network local --mode reinstall --wasm "$test_wasm" --yes
 run_dfx canister call "$test_canister" --network local runTests
-
-# Upgrade the synthetic database created by the proof actor with the exact
-# pinned CanisterDB class artifact.  This is the only supported way to test
-# post-upgrade grant preservation; upgrading the proof actor alone would not
-# exercise the remote RBAC stable state.
-upgrade_target_principal="$(run_dfx canister call "$test_canister" --network local upgradeTarget | sed -n 's/.*"\([a-z0-9-]*\)".*/\1/p')"
-[[ -n "$upgrade_target_principal" ]] || {
-  echo "Proof did not return a database canister principal" >&2
-  exit 1
-}
-# First prove an anonymous caller cannot make the owner forward arbitrary code.
-[[ "$(run_dfx canister call "$test_canister" --network local upgradeOwnedExact '(blob "\\00")')" == *false* ]] || {
-  echo "Owner accepted an artifact other than the exact pinned upgrade Wasm" >&2
+run_dfx canister install "$upgrade_owner_canister" --network local --mode reinstall --wasm "$upgrade_owner_wasm" --yes
+[[ "$(run_dfx canister call "$upgrade_owner_canister" --network local configure "(principal \"$upgrade_canister_principal\")")" == *true* ]] || {
+  echo "Post-upgrade owner did not bind its sole-controller database target" >&2
   exit 1
 }
 # DFX accepts a Candid argument file, avoiding shell argument limits while
-# preserving the Wasm's exact bytes. The call is still anonymous; only the
-# child controller performs the management-canister install after digest/size
-# verification inside the owner.
+# preserving the Wasm's exact bytes. The call is anonymous, but the target
+# database has only the synthetic owner as controller; that owner accepts one
+# digest-bound candidate artifact and invokes management-canister install.
 upgrade_argument_text="$workdir/exact-upgrade-argument.did"
 upgrade_argument_hex="$workdir/exact-upgrade-argument.hex"
 node -e '
@@ -302,11 +315,19 @@ node -e '
 # binary Candid argument so the ingress body is the bounded Wasm plus a small
 # Candid envelope rather than its three-byte-per-byte text representation.
 didc encode --format hex < "$upgrade_argument_text" | tr -d '\n' > "$upgrade_argument_hex"
-[[ "$(run_dfx canister call "$test_canister" --network local upgradeOwnedExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
-  echo "Owning proof canister did not install the exact pinned upgrade Wasm" >&2
+[[ "$(run_dfx canister call "$upgrade_owner_canister" --network local installInitialExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
+  echo "Owning proof canister did not install the exact pinned initial Wasm" >&2
   exit 1
 }
-[[ "$(run_dfx canister call "$test_canister" --network local verifyPostUpgradeRevocation)" == *true* ]] || {
+[[ "$(run_dfx canister call "$upgrade_owner_canister" --network local prepareAndRevoke)" == *true* ]] || {
+  echo "Post-upgrade owner could not prepare and revoke its bootstrap grant" >&2
+  exit 1
+}
+[[ "$(run_dfx canister call "$upgrade_owner_canister" --network local upgradeOwnedExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
+  echo "Owning proof canister did not upgrade the exact pinned Wasm" >&2
+  exit 1
+}
+[[ "$(run_dfx canister call "$upgrade_owner_canister" --network local verifyPostUpgradeRevocation)" == *true* ]] || {
   echo "Post-upgrade grant revocation audit failed" >&2
   exit 1
 }

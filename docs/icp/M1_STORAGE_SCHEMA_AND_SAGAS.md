@@ -113,11 +113,19 @@ governance data access, cross-owner calls, malformed logical IDs, anonymous
 configuration, and duplicate configuration. The persistent actor's generated
 stable signature includes that matrix, and `mops test`, `mops check`, `mops
 build`, and `mops check-stable` pass with this scaffold. The former DFX local
-replica runner is intentionally disabled: DFX 0.32 identities are global, so
-its claimed disposable identity isolation was not a valid proof. Before G2, a
-pinned PocketIC replacement with synthetic principals must exercise direct
-ingress, inter-canister and malicious-init-argument post-upgrade negatives,
-then the actual in-process ZenDB adapter's bounded writes, lookups, archive
+replica runner remains intentionally disabled: DFX 0.32 identities are
+global, so its claimed disposable identity isolation was not valid evidence.
+`scripts/icp/test-storage-authority-boundary.sh` is its completed
+identity-free replacement. It pins PocketIC 12.0.0 in `mops.toml`, compiles
+the scaffold and disposable caller fixture into a fresh `/tmp` directory, and
+uses only synthetic principals through Mops 2.19.2's lock-pinned
+`pic-js-mops` 0.14.8 client. It never invokes DFX, chooses a wallet, or
+contacts a network. The proof covers anonymous/bootstrapping/unrelated direct
+ingress denial; every owner-specific inter-canister read/write allowance;
+cross-owner, malformed-ID, unrelated-canister, and governance-as-data denial;
+governance-only audit; and an EOP-preserving upgrade supplied with a distinct
+valid init matrix that cannot replace the persisted one. Before G2, the actual
+in-process ZenDB adapter still needs bounded writes, lookups, archive
 behavior, low-cycle handling, lost-reply recovery, and repair/resume tests.
 
 ## Cross-canister mutation and recovery state machine

@@ -3,6 +3,7 @@ identify = "0.0.2"
 
 [toolchain]
 moc = "0.16.3"
+pocket-ic = "12.0.0"
 
 [canisters.core_canister]
 main = "canisters/core/main.mo"

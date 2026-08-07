@@ -18,8 +18,14 @@ for command in dfx mops node openssl timeout; do
   }
 done
 
-[[ "$(dfx --version)" == "dfx 0.32.0" ]] || {
-  echo "Expected dfx 0.32.0; found: $(dfx --version)" >&2
+# Even the version probe must not initialize or migrate an ambient DFX
+# identity. Use a throwaway config root before the long-lived proof root is
+# created below.
+dfx_version_probe_root="$(mktemp -d /tmp/meritocracy-storage-authority-dfx-version.XXXXXXXX)"
+dfx_version="$(DFX_CONFIG_ROOT="$dfx_version_probe_root" dfx --version)"
+rm -rf -- "$dfx_version_probe_root"
+[[ "$dfx_version" == "dfx 0.32.0" ]] || {
+  echo "Expected dfx 0.32.0; found: $dfx_version" >&2
   exit 1
 }
 [[ "$(mops --version | head -n 1)" == "CLI 2.19.2" ]] || {
@@ -119,7 +125,10 @@ assert_call_equals() {
   }
 }
 
-(cd "$workdir" && dfx start --clean --background >/dev/null 2>&1) || {
+# Starting the local replica does not need a controller identity. Pin it to
+# DFX's built-in anonymous identity so DFX cannot auto-select an ambient
+# developer identity while launching the disposable network.
+(cd "$workdir" && run_dfx anonymous start --clean --background >/dev/null 2>&1) || {
   echo "Failed to start the disposable local DFX replica" >&2
   exit 1
 }
@@ -174,4 +183,15 @@ config_argument="(record { core = principal \"$core\"; workflow = principal \"$w
 # canister, a cross-owner request, and governance-as-data-caller are denied.
 (cd "$workdir" && assert_call_equals bootstrap boundary_verifier verify "(\"$logical_id\")" "true")
 
-echo "Storage-authority local Candid-boundary proof passed."
+# A same-artifact local upgrade must retain the fixed allowlist and every
+# denial. This proves the selected persistent actor boundary does not turn the
+# bootstrap/deployer into a data caller or lose the configured caller matrix.
+# The disposable bootstrap identity is a local test controller only; no
+# controller configuration is changed and no canister outside this temporary
+# replica is touched.
+(cd "$workdir" && run_dfx bootstrap canister install storage_authority --mode upgrade --network local)
+(cd "$workdir" && assert_call_equals anonymous storage_authority coreReadProbe "(\"$logical_id\")" "variant { anonymousCaller }")
+(cd "$workdir" && assert_call_equals bootstrap storage_authority coreWriteProbe "(\"$logical_id\")" "variant { callerNotAllowed }")
+(cd "$workdir" && assert_call_equals bootstrap boundary_verifier verify "(\"$logical_id\")" "true")
+
+echo "Storage-authority local Candid-boundary and same-artifact upgrade proof passed."

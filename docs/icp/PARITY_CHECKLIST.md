@@ -4,6 +4,8 @@ Last updated: 2026-08-07. The repository's AGPL-3.0-only license and related pac
 
 **M1 handoff supersession:** `docs/icp/M1_OPERATOR_HANDOFF.md` records the settled owner decision that ZenDB is in-process behind a Motoko storage-authority canister and that this canister—not ZenDB—enforces RBAC. Any earlier row describing the remote-ZenDB grant topology is historical diagnostic evidence only. The same handoff records that `DATABASE_URL` is already in ignored `backend/.env`; do not request it again. Its remaining aggregate-only inventory failure is a DBA connectivity/TLS/query-permission remediation, not a missing configuration value.
 
+**M1 storage-boundary correction (2026-08-07):** The earlier DFX local-replica claim in DM-004 is not valid evidence. DFX 0.32 identities are global; a local run selected an ambient home-directory identity despite the runner's claimed isolation. The runner is disabled, no production network/data/canister/asset was touched, and the required replacement is an identity-free pinned PocketIC proof with synthetic principals. The storage authority's six-principal matrix is now a private persistent field with a committed stable signature, but its direct-ingress/inter-canister/upgrade proof remains blocked M1 until that PocketIC suite passes.
+
 ## Status vocabulary
 
 - `AUDITED`: the legacy implementation and callers were inspected.

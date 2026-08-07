@@ -1,2 +1,12 @@
 // Version: 1.0.0
-actor { };
+actor {
+  stable var config :
+    {
+      archive : Principal;
+      core : Principal;
+      evidence : Principal;
+      governance : Principal;
+      treasury : Principal;
+      workflow : Principal
+    }
+};

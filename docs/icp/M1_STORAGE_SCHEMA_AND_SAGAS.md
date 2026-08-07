@@ -100,22 +100,25 @@ owner from its own method, rejects anonymous callers, rejects IDs that are
 empty, control-containing, or longer than 512 characters before an eventual
 storage call, and authorizes only the matching configured application
 principal. `policyAudit` returns the fixed matrix only to governance and does
-not grant governance a data read/write path. There is no configuration update
-method, and a canister controller or initializer caller is not a policy member
-because the shared initializer rejects it when it appears in the fixed matrix.
+not grant governance a data read/write path. The fixed matrix is a private
+persistent field rather than a captured actor-class parameter, so an upgrade
+cannot replace the installed matrix through its new init argument. There is no
+configuration update method, and a canister controller or initializer caller
+is not a policy member because the shared initializer rejects it when it
+appears in the fixed matrix.
 
 `test/StorageAuthorityPolicy.test.mo` covers every catalogue owner and rejects
 anonymous direct ingress, unrelated principals, bootstrap/deployer access,
 governance data access, cross-owner calls, malformed logical IDs, anonymous
-configuration, and duplicate configuration. On 2026-08-07, `mops test`,
-`mops check`, `mops build`, and `mops check-stable` passed with this scaffold.
-This is not a claim that the Candid methods have been exercised through a
-local replica, that the init configuration is governance-rendered, or that any
-ZenDB mutation/recovery behavior is proven. Before G2, the fixture must be
-extended with local-replica direct-ingress/inter-canister and post-upgrade
-tests, followed by the actual in-process ZenDB adapter's bounded writes,
-lookups, archive behavior, low-cycle handling, lost-reply recovery, and
-repair/resume tests.
+configuration, and duplicate configuration. The persistent actor's generated
+stable signature includes that matrix, and `mops test`, `mops check`, `mops
+build`, and `mops check-stable` pass with this scaffold. The former DFX local
+replica runner is intentionally disabled: DFX 0.32 identities are global, so
+its claimed disposable identity isolation was not a valid proof. Before G2, a
+pinned PocketIC replacement with synthetic principals must exercise direct
+ingress, inter-canister and malicious-init-argument post-upgrade negatives,
+then the actual in-process ZenDB adapter's bounded writes, lookups, archive
+behavior, low-cycle handling, lost-reply recovery, and repair/resume tests.
 
 ## Cross-canister mutation and recovery state machine
 

@@ -10,7 +10,13 @@ import Policy "StorageAuthorityPolicy";
 /// will select its collection owner in Motoko rather than accepting a generic
 /// collection/action/role request from Candid. No probe persists or exposes
 /// target data, and this canister is not deployed or authoritative.
-shared ({ caller = installer }) persistent actor class (config : Policy.Config) {
+shared ({ caller = installer }) persistent actor class (initialConfig : Policy.Config) {
+  // This is deliberately a persistent private field, rather than an actor
+  // constructor parameter captured by method closures. Upgrade calls still
+  // carry an init argument for the actor class, but that argument must never
+  // replace the installed caller matrix. There is no mutation endpoint.
+  var config : Policy.Config = initialConfig;
+
   assert Policy.canInstall(config, installer);
 
   type ProbeResult = Policy.Decision;

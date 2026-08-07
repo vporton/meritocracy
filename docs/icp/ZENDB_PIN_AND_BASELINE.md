@@ -99,7 +99,9 @@ grant. This is a release-blocking M1 failure, not a retryable unknown result:
 ZenDB `v2.0.1` is not authoritative for any collection unless G2 records a
 collection-specific native-Motoko exception or a newly pinned candidate passes
 this proof. The older lost-reply, archive, and repair evidence does not waive
-that failure.
+that failure. A read-only upstream tag check on 2026-08-07 found `v2.0.1` is
+the latest released tag; no released successor exists to evaluate under M1.
+Unmerged or future commits remain ineligible evidence.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

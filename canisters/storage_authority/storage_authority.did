@@ -1,0 +1,36 @@
+type config = record {
+  archive : principal;
+  core : principal;
+  evidence : principal;
+  governance : principal;
+  treasury : principal;
+  workflow : principal;
+};
+type probe_result = variant {
+  allowed;
+  anonymousCaller;
+  callerNotAllowed;
+  invalidConfiguration;
+  malformedLogicalId;
+};
+type policy_audit = record {
+  archive : principal;
+  core : principal;
+  evidence : principal;
+  governance : principal;
+  treasury : principal;
+  workflow : principal;
+};
+service : (config) -> {
+  archiveReadProbe : (text) -> (probe_result);
+  archiveWriteProbe : (text) -> (probe_result);
+  coreReadProbe : (text) -> (probe_result);
+  coreWriteProbe : (text) -> (probe_result);
+  evidenceReadProbe : (text) -> (probe_result);
+  evidenceWriteProbe : (text) -> (probe_result);
+  policyAudit : () -> (opt policy_audit);
+  treasuryReadProbe : (text) -> (probe_result);
+  treasuryWriteProbe : (text) -> (probe_result);
+  workflowReadProbe : (text) -> (probe_result);
+  workflowWriteProbe : (text) -> (probe_result);
+}

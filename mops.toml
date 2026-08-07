@@ -32,6 +32,13 @@ candid = "canisters/archive_router/archive_router.did"
 [canisters.archive_router.check-stable]
 path = "deployed/archive_router.most"
 
+[canisters.storage_authority]
+main = "canisters/storage_authority/main.mo"
+candid = "canisters/storage_authority/storage_authority.did"
+
+[canisters.storage_authority.check-stable]
+path = "deployed/storage_authority.most"
+
 [canisters.oauth_fixture]
 main = "canisters/oauth_fixture/main.mo"
 candid = "canisters/oauth_fixture/oauth_fixture.did"

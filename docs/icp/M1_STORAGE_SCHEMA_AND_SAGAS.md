@@ -1,6 +1,6 @@
 # M1 storage schema and mutation-saga contract
 
-Status: **IMPLEMENTED design contract / unproven** as of 2026-08-01. This document and the companion Motoko modules define the only candidate schemas for M1 task 4. They do not deploy ZenDB, add a public Candid method, grant a principal, ingest data, enable OAuth, or make any collection authoritative. The required local fault, benchmark, and RBAC proof remains a G2 blocker.
+Status: **IN PROGRESS authorization scaffold / unproven** as of 2026-08-07. This document and the companion Motoko modules define the only candidate schemas for M1 task 4. The local-only storage-authority scaffold adds fixed authorization probes and a governance audit, but does not deploy ZenDB, persist target data, grant a principal, ingest data, enable OAuth, or make any collection authoritative. The required local fault, benchmark, and RBAC proof remains a G2 blocker.
 
 ## Contract boundary
 
@@ -81,6 +81,41 @@ exist only for the approved migration window and is revoked/downgraded at
 finalization. Tests must prove exact direct-ingress, cross-canister, bootstrap,
 and post-upgrade negatives; controller privilege never substitutes for method
 authorization.
+
+### 2026-08-07 executable boundary scaffold
+
+`canisters/storage_authority/main.mo` is the first local-only implementation
+of this boundary. It is a shared persistent actor class configured once with
+six distinct non-anonymous principals: `core`, `workflow`, `treasury`,
+`archive`, `evidence`, and `governance`. The installer must itself be a
+separate non-anonymous principal; it cannot bootstrap itself into any of those
+six roles. Its policy is pure Motoko in
+`StorageAuthorityPolicy.mo`, so it is independently testable without a
+replica, ZenDB instance, target collection, document, or credential.
+
+The Candid surface contains only fixed owner-specific read/write **probes**
+and `policyAudit`. A caller cannot pass a collection, action, role, owner,
+document ID, ZenDB filter, or grant request. Each probe derives the permitted
+owner from its own method, rejects anonymous callers, rejects IDs that are
+empty, control-containing, or longer than 512 characters before an eventual
+storage call, and authorizes only the matching configured application
+principal. `policyAudit` returns the fixed matrix only to governance and does
+not grant governance a data read/write path. There is no configuration update
+method, and a canister controller or initializer caller is not a policy member
+because the shared initializer rejects it when it appears in the fixed matrix.
+
+`test/StorageAuthorityPolicy.test.mo` covers every catalogue owner and rejects
+anonymous direct ingress, unrelated principals, bootstrap/deployer access,
+governance data access, cross-owner calls, malformed logical IDs, anonymous
+configuration, and duplicate configuration. On 2026-08-07, `mops test`,
+`mops check`, `mops build`, and `mops check-stable` passed with this scaffold.
+This is not a claim that the Candid methods have been exercised through a
+local replica, that the init configuration is governance-rendered, or that any
+ZenDB mutation/recovery behavior is proven. Before G2, the fixture must be
+extended with local-replica direct-ingress/inter-canister and post-upgrade
+tests, followed by the actual in-process ZenDB adapter's bounded writes,
+lookups, archive behavior, low-cycle handling, lost-reply recovery, and
+repair/resume tests.
 
 ## Cross-canister mutation and recovery state machine
 

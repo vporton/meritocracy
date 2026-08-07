@@ -334,6 +334,22 @@ function usage(): string {
   return 'Usage: npm run inventory:postgres --workspace backend -- --output /secure/path/inventory.json [--schema public]';
 }
 
+export function inventoryFailureCode(error: unknown): string {
+  if (error instanceof Error && /mismatch|No columns|identifier|Invalid/.test(error.message)) {
+    return 'INVENTORY_VALIDATION_FAILED';
+  }
+
+  const code = typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+    ? error.code
+    : undefined;
+  if (code === '28P01' || code === '28000') return 'INVENTORY_DATABASE_AUTH_FAILED';
+  if (code === '42501') return 'INVENTORY_DATABASE_PERMISSION_DENIED';
+  if (code?.startsWith('08') || ['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH'].includes(code)) {
+    return 'INVENTORY_DATABASE_UNREACHABLE';
+  }
+  return 'INVENTORY_QUERY_FAILED';
+}
+
 function parseArguments(args: string[]): { output: string; schema: string } {
   let output: string | undefined;
   let schema = 'public';
@@ -372,8 +388,7 @@ async function main(): Promise<void> {
     await writeNewPrivateJson(options.output, report);
     process.stdout.write(`Wrote aggregate-only inventory evidence to ${path.resolve(options.output)}\n`);
   } catch (error) {
-    const code = error instanceof Error && /mismatch|No columns|identifier|Invalid/.test(error.message) ? 'INVENTORY_VALIDATION_FAILED' : 'INVENTORY_QUERY_FAILED';
-    process.stderr.write(`${code}: no database URL, credentials, or row values were emitted.\n`);
+    process.stderr.write(`${inventoryFailureCode(error)}: no database URL, credentials, endpoint, or row values were emitted.\n`);
     process.exitCode = 1;
   } finally {
     await client.end().catch(() => undefined);

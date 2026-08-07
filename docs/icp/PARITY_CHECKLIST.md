@@ -1,6 +1,6 @@
 # Legacy-to-ICP feature parity checklist
 
-Last updated: 2026-08-07. The repository's AGPL-3.0-only license and related package metadata changes are complete and recorded in `9122ff0`; no additional relicensing gate remains. M1 now includes an unrun, aggregate-only PostgreSQL inventory command (`docs/icp/POSTGRES_INVENTORY.md`); it records no target-feature or production-inventory completion evidence. The post-G1 flat lint baseline now passes while preserving the legacy application. This remains the exhaustive legacy audit baseline.
+Last updated: 2026-08-07. The repository's AGPL-3.0-only license and related package metadata changes are complete and recorded in `9122ff0`; no additional relicensing gate remains. M1 includes an aggregate-only PostgreSQL inventory command (`docs/icp/POSTGRES_INVENTORY.md`) that loads an ignored local configuration without printing it. Its 2026-08-07 read-only attempt produced only a redaction-safe generic failure category and no report, so it records no target-feature or production-inventory completion evidence. The post-G1 flat lint baseline now passes while preserving the legacy application. This remains the exhaustive legacy audit baseline.
 
 ## Status vocabulary
 

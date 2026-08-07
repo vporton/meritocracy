@@ -12,7 +12,7 @@
     "db:push": "prisma db push --config prisma/prisma.config.js",
     "db:migrate": "prisma migrate dev --config prisma/prisma.config.js",
     "db:studio": "prisma studio --config prisma/prisma.config.js",
-    "inventory:postgres": "node --import tsx scripts/icp-postgres-inventory.ts",
+    "inventory:postgres": "node --env-file-if-exists=.env --import tsx scripts/icp-postgres-inventory.ts",
     "test:canonical": "node --import tsx --test tests/icp-canonical-codec.test.ts",
     "test": "npm run test:security && npm run test:integration",
     "test:security": "node --import tsx --test tests/security.test.ts",

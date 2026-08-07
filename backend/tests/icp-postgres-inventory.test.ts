@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { EXPECTED_TABLES, buildTableStatisticsQuery, isRedactedColumn } from '../scripts/icp-postgres-inventory.js';
+import { EXPECTED_TABLES, buildTableStatisticsQuery, inventoryFailureCode, isRedactedColumn } from '../scripts/icp-postgres-inventory.js';
 
 test('inventory covers all 22 known physical tables', () => {
   assert.equal(EXPECTED_TABLES.length, 22);
@@ -44,4 +44,12 @@ test('database endpoint metadata is hashed rather than retained in the report ca
 
 test('identifier validation rejects SQL injection-shaped metadata', () => {
   assert.throws(() => buildTableStatisticsQuery('public', 'users; DROP TABLE users', []), /identifier/);
+});
+
+test('inventory connection failures retain only a safe operational category', () => {
+  assert.equal(inventoryFailureCode(Object.assign(new Error('password authentication failed'), { code: '28P01' })), 'INVENTORY_DATABASE_AUTH_FAILED');
+  assert.equal(inventoryFailureCode(Object.assign(new Error('permission denied'), { code: '42501' })), 'INVENTORY_DATABASE_PERMISSION_DENIED');
+  assert.equal(inventoryFailureCode(Object.assign(new Error('connection refused'), { code: 'ECONNREFUSED' })), 'INVENTORY_DATABASE_UNREACHABLE');
+  assert.equal(inventoryFailureCode(new Error('users table mismatch')), 'INVENTORY_VALIDATION_FAILED');
+  assert.equal(inventoryFailureCode(new Error('unexpected')), 'INVENTORY_QUERY_FAILED');
 });

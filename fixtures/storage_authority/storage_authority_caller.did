@@ -1,0 +1,31 @@
+type data_operation = variant {
+  archiveRead;
+  archiveWrite;
+  coreRead;
+  coreWrite;
+  evidenceRead;
+  evidenceWrite;
+  treasuryRead;
+  treasuryWrite;
+  workflowRead;
+  workflowWrite;
+};
+type probe_result = variant {
+  allowed;
+  anonymousCaller;
+  callerNotAllowed;
+  invalidConfiguration;
+  malformedLogicalId;
+};
+type policy_audit = record {
+  archive : principal;
+  core : principal;
+  evidence : principal;
+  governance : principal;
+  treasury : principal;
+  workflow : principal;
+};
+service : (principal) -> {
+  audit : () -> (opt policy_audit);
+  data : (data_operation, text) -> (probe_result);
+}

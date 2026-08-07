@@ -1,0 +1,3 @@
+service : (principal, principal, principal) -> {
+  verify : (text) -> (bool);
+}

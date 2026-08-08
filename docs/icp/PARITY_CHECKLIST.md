@@ -6,6 +6,8 @@ Last updated: 2026-08-08. The repository's AGPL-3.0-only license and related pac
 
 **M1 storage-boundary correction (2026-08-07):** The earlier DFX local-replica claim in DM-004 is not valid evidence. DFX 0.32 identities are global; a local run selected an ambient home-directory identity despite the runner's claimed isolation. The runner is disabled, no production network/data/canister/asset was touched. Its passed replacement is an identity-free pinned PocketIC proof with synthetic principals. The storage authority's six-principal matrix is a private persistent field with a committed stable signature; its fixed per-collection/action probe surface survives the tested EOP-preserving upgrade. This is authorization-scaffold evidence only, not a ZenDB/data-mutation/recovery proof.
 
+**M1 toolchain correction (2026-08-08):** The owner selected Motoko `1.4.1` repository-wide to match the exact ZenDB v2.0.1 pin, superseding the earlier `0.16.3` incompatibility decision. The project uses no dual compiler; the exact-source embedded probe compiles in both ZenDB and repository modes. Compatibility shims are limited to a source-identical backend-only `identify@0.0.2` package view, two legacy `motoko-base` aliases pinned to upstream `moc-1.4.1`, and a hashed management-canister IDL for explicit compiler resolution. This changes no Candid surface, storage method, target data, authority, deployment, or ZenDB eligibility proof.
+
 ## Status vocabulary
 
 - `AUDITED`: the legacy implementation and callers were inspected.

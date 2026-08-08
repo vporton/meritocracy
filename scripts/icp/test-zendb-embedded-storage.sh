@@ -10,7 +10,7 @@ readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly expected_mops_version="CLI 2.19.2"
 readonly expected_moc_version="Motoko compiler 1.4.1"
-readonly expected_repository_moc_version="Motoko compiler 0.16.3"
+readonly expected_repository_moc_version="Motoko compiler 1.4.1"
 
 compiler_mode="zendb"
 case "${1:-}" in
@@ -107,7 +107,10 @@ case "$compiler_mode" in
     }
     ;;
   repository)
-    moc_path="$(command -v moc)"
+    # Use Mops' project-selected compiler rather than an ambient PATH entry.
+    # This proves the application toolchain itself is the exact ZenDB compiler;
+    # it never introduces a second compiler path.
+    moc_path="$(cd "$repo_root" && "${mops_cli[@]}" toolchain bin moc)"
     [[ "$("$moc_path" --version | head -n 1)" == "$expected_repository_moc_version"* ]] || {
       echo "Expected repository moc $expected_repository_moc_version; found: $("$moc_path" --version | head -n 1)" >&2
       exit 1

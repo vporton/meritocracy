@@ -142,6 +142,29 @@ compatibility checks, and the remaining bounded mutation/recovery suite.
 
 ## Embedded toolchain/dependency decision
 
+### Superseding decision — 2026-08-08
+
+The project owner selected the pin's exact Motoko `1.4.1` compiler for the
+repository. This supersedes the 2026-08-07 `0.16.3` rejection below; it does
+not introduce a dual compiler. The repository pins `moc = "1.4.1"`, and the
+compiler-boundary runner now requires both the ZenDB checkout and the project
+toolchain to compile the same hash-verified embedded-store probe.
+
+The migration also pins the two historical `motoko-base` aliases needed by
+the `identify` dependency to upstream `moc-1.4.1` commit
+`d1b336e142bec76577e3d63d9f1fac74de48df0a`. The source-identical
+`identify@0.0.2` backend package view omits only its upstream frontend E2E
+actor, which Motoko 1.4 cannot load as a library module. The management
+canister IDL is vendored at `canisters/shared/system_idl/aaaaa-aa.did`
+with SHA-256 `a05c3f0d3088ec89836a5a1bf4138741fc67b1bd587a2c9b282c831c074b605`
+for the compiler's explicit actor-IDL requirement.
+
+`mops test`, `mops check`, `mops build`, `mops check-stable`, and both
+compiler modes of `test-zendb-embedded-toolchain-boundary.sh` passed locally.
+This establishes compiler compatibility only. It does not import ZenDB into a
+target canister or satisfy any mutation, recovery, capacity, upgrade, or RBAC
+proof required before G2.
+
 **Decision recorded 2026-08-07:** retain the repository's pinned Motoko
 `0.16.3`; do not add ZenDB `v2.0.1` as an embedded target dependency and do
 not introduce a dual-compiler build path.

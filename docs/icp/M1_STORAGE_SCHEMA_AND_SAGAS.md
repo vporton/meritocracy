@@ -153,6 +153,16 @@ path. See `ZENDB_PIN_AND_BASELINE.md` for the exact decision and reopening
 requirements. This does not approve a native-Motoko exception: any such
 exception remains collection-specific and requires G2 approval.
 
+**Superseding 2026-08-08 toolchain decision:** the project now pins Motoko
+`1.4.1` repository-wide, matching the exact ZenDB pin, with no dual compiler.
+The same source/lock-verified fixture now compiles under both the candidate
+and repository compiler modes. The pinned `identify@0.0.2` backend-only view,
+legacy Motoko-base aliases, and management-canister IDL make the existing
+canisters compile under that version. This is not a ZenDB integration or
+authority claim: the storage authority still exposes only fixed policy probes,
+and actual bounded writes/lookups, fault recovery, archive, low-cycle, and
+repair/resume proofs remain required before G2.
+
 ## Cross-canister mutation and recovery state machine
 
 Each owning domain actor records `MutationIntentV1` before every call to the

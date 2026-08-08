@@ -1,0 +1,36 @@
+[package]
+name = "identify"
+version = "0.0.2"
+description = "OAuth2 authentication and identity management for OpenID Connect and PKCE"
+repository = "https://github.com/f0i/identify"
+keywords = [
+  "authentication",
+  "identity",
+  "auth",
+  "login",
+  "openid",
+  "oauth2",
+  "oidc",
+  "pkce"
+]
+license = "MIT"
+
+[dependencies]
+core = "1.0.0"
+base = "0.16.0"
+serde = "3.3.2"
+sha2 = "0.1.6"
+hash = "1.0.0"
+cbor = "4.1.0"
+hex = "1.0.2"
+xtended-numbers = "2.1.0"
+candid = "2.1.0"
+
+[toolchain]
+wasmtime = "37.0.0"
+moc = "0.16.3"
+
+[dev-dependencies]
+bench = "1.0.0"
+test = "2.1.1"
+itertools = "0.2.2"

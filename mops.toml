@@ -1,9 +1,23 @@
 [dependencies]
-identify = "0.0.2"
+# The upstream 0.0.2 backend modules are source-identical. This local package
+# view intentionally excludes the upstream frontend E2E actor from the Motoko
+# package search path; Motoko 1.4 rejects actors in a library package.
+identify = "./third_party/identify-0.0.2-backend"
+# `identify`'s transitive `hash` package imports this historical package name.
+# Keep the import name for source compatibility, but resolve it to the exact
+# Motoko 1.4.1-compatible motoko-base source rather than its pre-1.4 commit.
+"base-0.7.3" = "https://github.com/dfinity/motoko-base#d1b336e142bec76577e3d63d9f1fac74de48df0a"
+"base@0.7.3" = "https://github.com/dfinity/motoko-base#d1b336e142bec76577e3d63d9f1fac74de48df0a"
 
 [toolchain]
-moc = "0.16.3"
+moc = "1.4.1"
 pocket-ic = "12.0.0"
+
+[moc]
+# Motoko 1.4 requires an explicit Candid definition for the management
+# canister imported by the pinned `identify` package. The declaration is
+# vendored at this exact path and hash for reproducible compiler resolution.
+args = ["--actor-idl=canisters/shared/system_idl"]
 
 [canisters.core_canister]
 main = "canisters/core/main.mo"

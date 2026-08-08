@@ -138,20 +138,18 @@ archives the exact pin into a fresh `/tmp` directory, copies and validates each
 lock-recorded dependency source hash, and compiles a private persistent
 `VersionedStableStore` with the candidate's Motoko 1.4.1 compiler. It has no
 Candid method, collection, document, index, remote ZenDB actor, DFX, PocketIC,
-network, identity, or wallet path. The 2026-08-07 local execution passed. This
-is compatibility evidence for the embedded library only; it neither proves a
-storage operation nor authorizes replacing this repository's currently pinned
-Motoko 0.16.3 toolchain with the candidate's 1.4.1 toolchain.
+network, identity, or wallet path. The 2026-08-07 local execution passed.
 
-The completed companion boundary test now resolves that compatibility question
-for this exact candidate: `test-zendb-embedded-toolchain-boundary.sh` requires
-the pin compiler to accept the fixture and the repository compiler to reject
-the same locked closure. Motoko 0.16.3 rejects ZenDB's locked `core@2.4.0`
-because it lacks `Float32`. M1 therefore retains Motoko 0.16.3 and rejects
-ZenDB v2.0.1 as an embedded target dependency; it does not add a dual-compiler
-path. See `ZENDB_PIN_AND_BASELINE.md` for the exact decision and reopening
-requirements. This does not approve a native-Motoko exception: any such
-exception remains collection-specific and requires G2 approval.
+**Historical compiler decision:** the former repository Motoko 0.16.3
+compiler rejected ZenDB's locked `core@2.4.0` because it lacks `Float32`.
+The project now selects Motoko 1.4.1, and both exact-source compiler modes
+pass in ZenDB's own lock root. This is isolated compatibility evidence only:
+it does not prove a storage operation or make the ZenDB dependency admissible
+in the application. Both `core@1.0.0` and `core@2.2.0` are locked, but ZenDB
+still imports unqualified `mo:core` and therefore cannot select the latter;
+see `ZENDB_PIN_AND_BASELINE.md`. No dual compiler, silent dependency fork, or
+native-Motoko exception is approved; any exception remains
+collection-specific and requires G2 approval.
 
 **Superseding 2026-08-08 toolchain decision:** the project now pins Motoko
 `1.4.1` repository-wide, matching the exact ZenDB pin, with no dual compiler.

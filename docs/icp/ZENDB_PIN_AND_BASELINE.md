@@ -159,15 +159,20 @@ canister IDL is vendored at `canisters/shared/system_idl/aaaaa-aa.did`
 with SHA-256 `a05c3f0d3088ec89836a5a1bf4138741fc67b1bd587a2c9b282c831c074b605`
 for the compiler's explicit actor-IDL requirement.
 
-`mops test`, `mops check`, `mops build`, `mops check-stable`, and both
-compiler modes of `test-zendb-embedded-toolchain-boundary.sh` passed locally.
-This establishes compiler compatibility only. It does not import ZenDB into a
-target canister or satisfy any mutation, recovery, capacity, upgrade, or RBAC
-proof required before G2.
+`mops test`, `mops check`, `mops build`, and `mops check-stable` pass for the
+current application closure, and both compiler modes of
+`test-zendb-embedded-toolchain-boundary.sh` pass for ZenDB's separate exact
+closure. The application lock contains both `core@1.0.0` and `core@2.2.0`,
+but ZenDB's unqualified `mo:core` import cannot select the latter; these remain
+separate results. This establishes only isolated compiler compatibility. It
+does not import ZenDB into a target canister or satisfy any mutation, recovery,
+capacity, upgrade, or RBAC proof required before G2.
 
-**Decision recorded 2026-08-07:** retain the repository's pinned Motoko
-`0.16.3`; do not add ZenDB `v2.0.1` as an embedded target dependency and do
-not introduce a dual-compiler build path.
+**Historical decision, superseded 2026-08-08:** the repository previously
+retained Motoko `0.16.3` and rejected ZenDB as an embedded target dependency.
+The project now selects `1.4.1`, but still must not add ZenDB to a target
+canister or introduce a dual compiler while the combined dependency graph is
+unresolved.
 
 The executable boundary is:
 
@@ -177,20 +182,22 @@ M1_ZENDB_SOURCE_DIR=/path/to/already-resolved/zendb \
 ```
 
 It runs the immutable-source probe first with ZenDB's pinned Motoko `1.4.1`,
-which must compile. It then runs the same fixture and exact lock closure with
-the repository's Motoko `0.16.3`, which must fail. On 2026-08-07 that failure
-was in the locked `core@2.4.0` source: the older compiler has no `Float32`
-type. A repository-compiler pass is intentionally a test failure, not an
-implicit approval: it requires a new recorded dependency/toolchain decision
-and Candid/stable compatibility review before the expectation changes.
+then with the repository's selected Motoko `1.4.1`; both must compile against
+ZenDB's exact lock closure. This isolated result is not an implicit approval
+to merge that closure into the application: the combined Mops package graph
+remains blocked as described below.
 
-This rejects the candidate as a target embedded dependency, not as an immutable
-source/provenance record or diagnostic for the rejected remote topology. No
-target storage operation, deployment, data, identity, credential, wallet, or
-asset action occurred. The only way to reopen embedding under M1 is an exact
-candidate source/dependency/toolchain pin that compiles under the approved
-repository toolchain, followed by the remaining bounded mutation, recovery,
-capacity, upgrade, and authorization evidence.
+The separate compiler probe now accepts the repository's selected Motoko
+`1.4.1` compiler, but this still does not make the candidate a target embedded
+dependency. The application lock contains both required core versions, but its
+unqualified `mo:core` binding remains identify's `core@1`; ZenDB cannot select
+`core@2.2` without an explicit-import compatibility change. See
+`TOOLCHAIN_AND_OAUTH_EVIDENCE.md`. No target storage operation, deployment,
+data, identity, credential, wallet, or asset action occurred. The only way to
+reopen embedding under M1 is an owner-approved exact compatible identify
+release or narrowly audited compatibility fork together with the exact
+candidate source/dependency/toolchain pin, followed by the remaining bounded
+mutation, recovery, capacity, upgrade, and authorization evidence.
 
 When `M1_ZENDB_SOURCE_DIR` names an already available ZenDB checkout, the
 runner verifies and exports the exact pinned commit into its ephemeral working

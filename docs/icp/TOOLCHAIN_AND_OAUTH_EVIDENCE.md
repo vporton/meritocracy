@@ -7,11 +7,28 @@ Status: M1 task 1 implemented on 2026-08-01. This is a compile-time, no-live-pro
 | Component | Exact pin | Verification |
 | --- | --- | --- |
 | DFX manifest | `0.32.0` | `dfx.json` requires the exact version |
-| Motoko compiler | `0.16.3` | `mops.toml` and Mops-managed binary |
+| Motoko compiler | `1.4.1` | `mops.toml` and Mops-managed binary |
 | Mops CLI | `ic-mops 2.19.2` | Exact root development dependency and `package-lock.json` integrity pin |
 | Mops dependency closure | lockfile format 3 | `mops.lock`, including SHA-256 for every resolved package file |
 
 `mops.lock` is the normative package-content lock. It resolves `identify@0.0.2` and every transitive package; an install with a changed file hash must fail rather than refresh this lock without review.
+
+### Current integration blocker
+
+The repository-wide Motoko `1.4.1` adoption is not yet a validated combined
+ZenDB/`identify` build. The application lock contains both `core@1.0.0` and
+`core@2.2.0`, but only the latter's explicit `mo:core@2.2` import can select
+the second package. ZenDB v2.0.1 imports unqualified `mo:core` and therefore
+receives identify's retained `core@1` binding, where `Nat.bytes` is absent.
+Motoko 1.4 also rejects the current identify and `hex@1.0.2` source's
+pre-1.4 `Text.join`/`Float.format` call shapes once that graph is selected.
+The local exact-source ZenDB compiler probe remains valid only in its separate
+locked package root.
+
+Do not modify `identify` or add a hidden alternate compiler to work around
+this. Resumption requires an owner-approved exact compatible identify release
+or minimal audited compatibility fork, with new source/package/API hashes and
+the OAuth vectors re-run before any target storage integration.
 
 ## `identify` package pin and API boundary
 

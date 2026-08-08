@@ -311,7 +311,7 @@ shared ({ caller = initializer }) persistent actor class Main() = this {
       userInfoEndpoint = "https://api.github.com/user";
       clientId = "Ov23liMbdP36K0AIWTgl";
       redirectUri = "https://login.f0i.de/pkce-callback.html";
-      clientSecret = ?"b58638c2d453de538bc72e5b3b3d4ca7f23b2faa";
+      clientSecret = null;
     });
     var keys : [RSA.PubKey] = [];
     var fetchAttempts = Stats.newAttemptTracker();
@@ -344,7 +344,7 @@ shared ({ caller = initializer }) persistent actor class Main() = this {
       fedCMConfigUrl = null;
       responseType = "code";
       scope = ?"openid email profile";
-      clientSecret = ?"WPL_AP1.Dfkx4Xj8IRFxvHf5.gMZKcA==";
+      clientSecret = null;
       redirectUri = "https://login.f0i.de/oidc-callback.html";
       tokenUrl = ?"https://www.linkedin.com/oauth/v2/accessToken";
     });

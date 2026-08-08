@@ -3,6 +3,10 @@
 # view intentionally excludes the upstream frontend E2E actor from the Motoko
 # package search path; Motoko 1.4 rejects actors in a library package.
 identify = "./third_party/identify-0.0.2-backend"
+# Keep ZenDB's exact core line alongside identify's unqualified core@1 line.
+# Version-qualified imports can resolve this package without replacing the
+# retained OAuth closure's `mo:core` binding.
+"core@2.2" = "2.2.0"
 # `identify`'s transitive `hash` package imports this historical package name.
 # Keep the import name for source compatibility, but resolve it to the exact
 # Motoko 1.4.1-compatible motoko-base source rather than its pre-1.4 commit.

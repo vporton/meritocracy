@@ -135,6 +135,10 @@ module {
     attemptId : Nat64;
     collection : Text;
     logicalId : LogicalId;
+    /// The exact remote version that the operation is trying to make
+    /// authoritative. Recovery must compare this together with the hash; a
+    /// hash match at an unexpected version is not acknowledgement.
+    desiredVersion : Nat64;
     desiredContentHash : Hash;
     expected : ExpectedRemote;
     phase : MutationPhase;

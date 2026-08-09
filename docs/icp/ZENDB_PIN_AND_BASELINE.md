@@ -4,7 +4,13 @@ Status: M1 task 3 is **IN_PROGRESS** as of 2026-08-02. This records one immutabl
 
 ## Pin
 
-The machine-readable pin is [`third_party/zendb/v2.0.1.pin.json`](../../third_party/zendb/v2.0.1.pin.json).
+The machine-readable pin is [`evidence/zendb/v2.0.1.pin.json`](evidence/zendb/v2.0.1.pin.json).
+
+This is historical evidence for the exact remote-CanisterDB Git candidate,
+not the Mops registry package. The direct Mops `zendb@2.0.1` package is pinned
+independently by its file hashes in the application `mops.lock`; its manifest
+hash is `de5d8e816ff756e0bc1bd18555ff106a7ab4ccdf774e3a736847cd870c3ffb7a`.
+No result below validates that package for target storage use.
 
 | Input or artifact | Immutable value |
 | --- | --- |
@@ -51,7 +57,7 @@ The API returns generated document IDs from insert operations. It does not, in t
 
 ## Remaining proof work
 
-The first repeatable remote-RBAC baseline is now `scripts/icp/test-zendb-rbac.sh`. It validates the exact source archive and dependency lock before running the candidate's `CanisterDB.Test` against PocketIC with distinct synthetic proxy-canister principals. The companion [`third_party/zendb/v2.0.1.rbac-proof.json`](../../third_party/zendb/v2.0.1.rbac-proof.json) records its pinned runner, exact coverage, and deliberate limits. It proves collection scope isolation and that ungranted/writer callers cannot read, write, manage collections, or grant roles; it also demonstrates why database-level access is unacceptable for the target matrix. It does not make a grant, deployment, or collection authoritative.
+The first repeatable remote-RBAC baseline is now `scripts/icp/test-zendb-rbac.sh`. It validates the exact source archive and dependency lock before running the candidate's `CanisterDB.Test` against PocketIC with distinct synthetic proxy-canister principals. The companion [`evidence/zendb/v2.0.1.rbac-proof.json`](evidence/zendb/v2.0.1.rbac-proof.json) records its pinned runner, exact coverage, and deliberate limits. It proves collection scope isolation and that ungranted/writer callers cannot read, write, manage collections, or grant roles; it also demonstrates why database-level access is unacceptable for the target matrix. It does not make a grant, deployment, or collection authoritative.
 
 Run it from the repository root:
 
@@ -61,7 +67,7 @@ scripts/icp/test-zendb-rbac.sh
 
 The first target-data proof harness is `scripts/icp/test-zendb-authoritative.sh`,
 with its executed coverage recorded in
-[`third_party/zendb/v2.0.1.authoritative-proof.json`](../../third_party/zendb/v2.0.1.authoritative-proof.json).
+[`evidence/zendb/v2.0.1.authoritative-proof.json`](evidence/zendb/v2.0.1.authoritative-proof.json).
 It validates the pin before copying a synthetic test into an ephemeral source
 checkout and runs it only against a fresh, project-local ephemeral DFX `0.32.0`
 loopback replica. It never invokes `mops install` (which makes an unrelated
@@ -152,21 +158,21 @@ toolchain to compile the same hash-verified embedded-store probe.
 
 The migration also pins the two historical `motoko-base` aliases needed by
 the `identify` dependency to upstream `moc-1.4.1` commit
-`d1b336e142bec76577e3d63d9f1fac74de48df0a`. The source-identical
-`identify@0.0.2` backend package view omits only its upstream frontend E2E
-actor, which Motoko 1.4 cannot load as a library module. The management
-canister IDL is vendored at `canisters/shared/system_idl/aaaaa-aa.did`
-with SHA-256 `a05c3f0d3088ec89836a5a1bf4138741fc67b1bd587a2c9b282c831c074b605`
-for the compiler's explicit actor-IDL requirement.
+`d1b336e142bec76577e3d63d9f1fac74de48df0a`. As of 2026-08-09, the released
+`identify@0.0.2` and `zendb@2.0.1` packages are installed directly by Mops;
+the prior backend-only `identify` source view has been removed. The released
+identify package includes an E2E actor that Motoko 1.4 cannot load from a
+library package path, so `mops check` currently fails before application
+compilation. The management canister IDL remains checked in at
+`canisters/shared/system_idl/aaaaa-aa.did` with SHA-256
+`a05c3f0d3088ec89836a5a1bf4138741fc67b1bd587a2c9b282c831c074b605` for the
+compiler's explicit actor-IDL requirement.
 
-`mops test`, `mops check`, `mops build`, and `mops check-stable` pass for the
-current application closure, and both compiler modes of
-`test-zendb-embedded-toolchain-boundary.sh` pass for ZenDB's separate exact
-closure. The application lock contains both `core@1.0.0` and `core@2.2.0`,
-but ZenDB's unqualified `mo:core` import cannot select the latter; these remain
-separate results. This establishes only isolated compiler compatibility. It
-does not import ZenDB into a target canister or satisfy any mutation, recovery,
-capacity, upgrade, or RBAC proof required before G2.
+Both compiler modes of `test-zendb-embedded-toolchain-boundary.sh` pass for
+ZenDB's separate exact closure. The direct application package closure remains
+blocked by identify's E2E actor; this establishes only isolated compiler
+compatibility. It does not import ZenDB into a target canister or satisfy any
+mutation, recovery, capacity, upgrade, or RBAC proof required before G2.
 
 **Historical decision, superseded 2026-08-08:** the repository previously
 retained Motoko `0.16.3` and rejected ZenDB as an embedded target dependency.
@@ -225,7 +231,7 @@ logical-ID and repair indexes, and reports
 candidate-provided query/replace/delete instruction counts plus document/index
 byte figures. It also deletes and recreates the repair index to record rebuild
 entries. Its exact planned coverage and API gaps are recorded in
-[`third_party/zendb/v2.0.1.benchmark-proof.json`](../../third_party/zendb/v2.0.1.benchmark-proof.json).
+[`evidence/zendb/v2.0.1.benchmark-proof.json`](evidence/zendb/v2.0.1.benchmark-proof.json).
 
 The `2026-08-02` execution passed on a fresh ephemeral project-local DFX
 loopback replica with the exact pinned source archive, DFX `0.32.0`, Mops CLI
@@ -237,7 +243,7 @@ query instructions; 3,087,405/3,064,034 replace instructions; 1,310,724/
 rebuilt repair-index entries. The owner-side 262,145-byte-document and
 1,048,577-byte-batch rejection assertions also passed before any remote call.
 The complete machine-readable record is
-[`third_party/zendb/v2.0.1.benchmark-proof.json`](../../third_party/zendb/v2.0.1.benchmark-proof.json).
+[`evidence/zendb/v2.0.1.benchmark-proof.json`](evidence/zendb/v2.0.1.benchmark-proof.json).
 
 ZenDB v2.0.1 does not return insert or index-create instruction counts, and
 this harness intentionally does not invent them. It also does not establish

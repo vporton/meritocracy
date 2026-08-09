@@ -15,15 +15,19 @@ Status: M1 task 1 implemented on 2026-08-01. This is a compile-time, no-live-pro
 
 ### Current integration blocker
 
-The repository-wide Motoko `1.4.1` adoption is not yet a validated combined
-ZenDB/`identify` build. The application lock contains both `core@1.0.0` and
-`core@2.2.0`, but only the latter's explicit `mo:core@2.2` import can select
-the second package. ZenDB v2.0.1 imports unqualified `mo:core` and therefore
-receives identify's retained `core@1` binding, where `Nat.bytes` is absent.
-Motoko 1.4 also rejects the current identify and `hex@1.0.2` source's
-pre-1.4 `Text.join`/`Float.format` call shapes once that graph is selected.
-The local exact-source ZenDB compiler probe remains valid only in its separate
-locked package root.
+The direct Mops closure is not yet a validated combined ZenDB/`identify`
+build. `mops install --lock update` resolved the released
+`identify@0.0.2` and `zendb@2.0.1` packages on 2026-08-09, but `mops check`
+stops before compiling an application canister: Motoko 1.4 rejects the
+upstream `identify` package's
+`src/frontend/agent-js/e2e/node/canisters/counter.mo` actor in a library
+package search path. The previously used backend-only package view avoided
+that upstream packaging defect and is intentionally no longer vendored.
+
+The Mops ZenDB package itself declares version-qualified Core 2.4 imports. The
+separate exact-source remote-CanisterDB probe remains a different, historical
+candidate with its own lock and source pin; it is not validation evidence for
+the Mops package closure or target storage integration.
 
 Do not modify `identify` or add a hidden alternate compiler to work around
 this. Resumption requires an owner-approved exact compatible identify release

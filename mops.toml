@@ -1,11 +1,13 @@
 [dependencies]
-# The upstream 0.0.2 backend modules are source-identical. This local package
-# view intentionally excludes the upstream frontend E2E actor from the Motoko
-# package search path; Motoko 1.4 rejects actors in a library package.
-identify = "./third_party/identify-0.0.2-backend"
+identify = "0.0.2"
+# This package remains diagnostic-only until the M1 storage proofs approve a
+# specific authoritative use. The Mops lock is the package-content pin; the
+# earlier remote-CanisterDB Git pin remains separate historical evidence.
+zendb = "2.0.1"
 # Keep ZenDB's exact core line alongside identify's unqualified core@1 line.
 # Version-qualified imports can resolve this package without replacing the
 # retained OAuth closure's `mo:core` binding.
+core = "1.0.0"
 "core@2.2" = "2.2.0"
 # `identify`'s transitive `hash` package imports this historical package name.
 # Keep the import name for source compatibility, but resolve it to the exact
@@ -19,8 +21,8 @@ pocket-ic = "12.0.0"
 
 [moc]
 # Motoko 1.4 requires an explicit Candid definition for the management
-# canister imported by the pinned `identify` package. The declaration is
-# vendored at this exact path and hash for reproducible compiler resolution.
+# canister imported by the pinned `identify` package. The checked-in
+# declaration provides reproducible compiler resolution.
 args = ["--actor-idl=canisters/shared/system_idl"]
 
 [canisters.core_canister]

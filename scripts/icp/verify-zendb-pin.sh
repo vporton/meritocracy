@@ -5,7 +5,7 @@
 set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-readonly pin_file="$repository_root/third_party/zendb/v2.0.1.pin.json"
+readonly pin_file="$repository_root/docs/icp/evidence/zendb/v2.0.1.pin.json"
 readonly source_url="https://github.com/NatLabs/ZenDB.git"
 readonly source_commit="481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd"
 readonly source_archive_sha256="332e88c5ed8a777472d0843597d0b3c080b5b6f6e53d251b52aa0883b3444844"

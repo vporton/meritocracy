@@ -79,9 +79,15 @@
     * https://docs.google.com/forms/d/e/1FAIpQLSckvx0yITNlHhs3v1FYy0M6v_4bqh-dcFtN8k3mEX0XajJJCQ/viewform
     * https://www.f6s.com/lumoslabs.co/about
   * https://futo.org/fellows/ - applied 8 Sep 2025
+<<<<<<< Updated upstream
   * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025 - rejected 8 Dec 2025
   * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025
   * https://techforgood.zendesk.com - submitted 12 Oct 2025
+=======
+  * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025 - rejected 8 Dec 2025 - submitted application 17 Aug 2026
+  * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025 - rejected 28 May 2026 (too many applicants)
+  * https://techforgood.zendesk.com - submitted 12 Oct 2025, 27 Jun 2026
+>>>>>>> Stashed changes
   * www.globalgiving.org (they require me to provide annual reports, brochures, newsletters, or news reports)
   * https://rashi.org.il - contacted 12 Oct 2025
   * https://accelerator.ou.org/apply

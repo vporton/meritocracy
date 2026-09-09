@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "mopsTomlDepsHash": "d40f64ad5a74a1bd8ab60cb134e5f7d87d8f488dbfe73ab9171b65211398d772",
+  "mopsTomlDepsHash": "e3b87058c2c3d479dfe786cf9aaff7826198bcd441374810dfde612ec80eabba",
   "deps": {
     "identify": "./packages/identify-m1-compat",
     "core@1": "1.0.0",
@@ -23,7 +23,7 @@
     "xtended-numbers@2": "2.1.0",
     "buffer@0": "0.1.0",
     "base@0": "0.16.0",
-    "hex": "1.0.2",
+    "hex": "./packages/hex-m1-compat",
     "zendb": "2.0.1",
     "base@0.16": "0.16.0",
     "core@2.4": "2.4.0",
@@ -407,12 +407,6 @@
       "buffer@0.1.0/README.md": "997ca71aafccabf4da41269d547e06d7a3e53f55418881178dd369df3eeed7f4",
       "buffer@0.1.0/mops.toml": "29b478ced5ddf863323252cccfa938e0183946e9d94bf01d8ff7a7dfd1ffcb1a",
       "buffer@0.1.0/src/lib.mo": "12ab7e7d3b8f14da06c807aae707d6dae412dc4c447b8e0ee2e1f8e8f1067a48"
-    },
-    "hex@1.0.2": {
-      "hex@1.0.2/src/lib.mo": "d3bd0c32e8af37881adffdadda8e0ecc2de053bde59109bf6641f0459ea16c7b",
-      "hex@1.0.2/mops.toml": "62ee8282d4079a1eec58a77e3a9f3d981cb8f4d9aaff5c37bc345da68ec0f320",
-      "hex@1.0.2/README.md": "d32fb6e0bd0e60eccfca4f208270265aaa5a69f18e1fecf38634419e80ac1a73",
-      "hex@1.0.2/LICENSE": "8b50bfaf3fb817019715454a2888b5111e53ee6a33718b0dcd7d03715c184daf"
     },
     "zendb@2.0.1": {
       "zendb@2.0.1/src/EmbeddedInstance/CandidMap.mo": "e1fcb44e0b17b5d5e6cd4e9e07466d594ccbed446639feb8b8adfb57be92acff",

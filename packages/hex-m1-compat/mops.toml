@@ -1,0 +1,6 @@
+[package]
+name = "hex-m1-compat"
+version = "1.0.2-m1.1"
+description = "Motoko 1.4-compatible hexadecimal encoding used only by the M1 identify compatibility closure"
+repository = "https://github.com/f0i/hex"
+license = "MIT"

@@ -48,10 +48,10 @@ normalized_source_hash() {
   )
 }
 
-[[ "$(sha256sum "$fork/mops.toml" | awk '{print $1}')" == "b900adff96b85400fcc2f4f3d4d8fee02fbbc6bd6d9d8fc23aabcc1c28be48c0" ]] || fail "fork manifest hash changed"
+[[ "$(sha256sum "$fork/mops.toml" | awk '{print $1}')" == "55fd2127e80aff5f5d36746e85cf503a609bdd94b56b3dcf18d643c3f0e13e35" ]] || fail "fork manifest hash changed"
 [[ "$(sha256sum "$fork/src/lib.mo" | awk '{print $1}')" == "22fb166b9036d47df24f4ed4e3245415648b802f229789eb4ea19c45eb83a88f" ]] || fail "public API entry hash changed"
 [[ "$(tree_hash "$fork/src")" == "afbbb093f50dcffbe1c789678c5f7b56c15fc0feb5850e13cc575e0ad4e8672d" ]] || fail "fork source-tree hash changed"
 [[ "$(normalized_source_hash)" == "23260cda1aa97886bc63e77bbcc3fa906f5d65b8e2f3d899408adaa98bf2f93c" ]] || fail "fork exceeds the approved upstream-source delta"
-[[ "$(tree_hash "$fork")" == "6cfd21aabb9e848dd67c1d463ecfb75c94c0a9c7b56fe8b0fbd1d87ae272a32f" ]] || fail "fork package-tree hash changed"
+[[ "$(tree_hash "$fork")" == "eeab90a411e5f13ee0cfef869f79ba4a42a2e8f0001aa24c84e9a3f0d07f97cc" ]] || fail "fork package-tree hash changed"
 
 printf '%s\n' 'identify M1 compatibility fork verification passed'

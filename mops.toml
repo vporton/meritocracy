@@ -3,6 +3,10 @@
 # is restricted to excluding non-library frontend E2E actors and binding its
 # backend to Core 1 explicitly; see packages/identify-m1-compat/COMPATIBILITY.md.
 identify = "./packages/identify-m1-compat"
+# Owner-directed M1 replacement for released hex@1.0.2, which cannot compile
+# under the pinned Motoko 1.4.1 Text.join signature. The public import remains
+# `mo:hex`; see scripts/icp/verify-hex-m1-compat.sh.
+hex = "./packages/hex-m1-compat"
 # This package remains diagnostic-only until the M1 storage proofs approve a
 # specific authoritative use. The Mops lock is the package-content pin; the
 # earlier remote-CanisterDB Git pin remains separate historical evidence.

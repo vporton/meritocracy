@@ -38,13 +38,12 @@ hashes below. It is self-contained and performs no network call. `mops test
 OAuthAttempt` passes all caller/state/expiry/replay/unsupported-provider vectors
 after the fork.
 
-The fork clears the original `counter.mo` blocker, but a full `mops check`
-now reaches a distinct existing transitive Motoko 1.4 incompatibility in
-`hex@1.0.2` (`Text.join`'s changed iterator API). This is not within the
-approved identify-fork scope. Do not patch, replace, or bypass `hex` without a
-new explicit decision and its own source/package/API review. Consequently no
-combined ZenDB/identify target build, storage integration, Candid update, or
-stable-type change is claimed.
+The owner-directed, hash-pinned `hex-m1-compat@1.0.2-m1.1` replacement clears
+the original `hex@1.0.2` `Text.join` blocker without changing identify source
+or API. A full `mops check` now reaches the independent ZenDB transitive
+`memory-collection@0.4.0` `Nat.bytes` incompatibility under the unqualified
+Core-1 binding. Consequently no combined ZenDB/identify target build, storage
+integration, Candid update, or stable-type change is claimed.
 
 The Mops ZenDB package declares version-qualified Core 2.4 imports. The
 separate exact-source remote-CanisterDB probe remains a different historical
@@ -103,16 +102,18 @@ The fixture has no external calls, credentials, OAuth code, verifier, token, cli
 
 ```sh
 scripts/icp/verify-identify-m1-compat.sh
+scripts/icp/verify-hex-m1-compat.sh
 mops install --lock check
 mops test OAuthAttempt
-mops check # currently fails only at the separately unapproved hex@1.0.2 issue
+mops test HexM1Compat
+mops check # currently reaches ZenDB's separate memory-collection issue
 ```
 
 No Candid interface or committed stable signature changed in this task:
 `git diff --name-only -- 'canisters/**/*.did' 'deployed/*.most'` is empty.
-Full `mops check`, build, and stable checks cannot yet be re-established until
-the separately approved `hex` compatibility disposition exists; their failure
-must not be papered over with a second compiler or a wider fork.
+Full `mops check` and build cannot yet be re-established until the separate
+ZenDB `memory-collection` compatibility disposition exists; do not paper over
+that failure with a second compiler or a wider fork. Stable checks pass.
 
 Rollback restores the released `identify@0.0.2` Mops dependency and removes
 only this undeployed local fork, its verifier, evidence, and regenerated lock.

@@ -22,7 +22,7 @@ serde = "3.3.2"
 sha2 = "0.1.6"
 hash = "1.0.0"
 cbor = "4.1.0"
-hex = "1.0.2"
+hex = "../hex-m1-compat"
 xtended-numbers = "2.1.0"
 candid = "2.1.0"
 

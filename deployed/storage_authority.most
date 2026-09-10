@@ -1,4 +1,662 @@
 // Version: 1.0.0
+type BTree__507607917<K, V> =
+  {
+    #heap : BpTree__813506319<Blob, V>;
+    #stableMemory : MemoryBTree__177453764
+  };
+type BTree__64326779<K, V> =
+  {#heap : BpTree__813506319<Blob, V>; #stableMemory : MemoryBTree__57907665};
+type BTree__734128806<K, V> =
+  {
+    #heap : BpTree__813506319<Blob, V>;
+    #stableMemory : MemoryBTree__584697721
+  };
+type BatchPopulateIndex__442002724 =
+  {
+    var avg_instructions_per_document : Nat;
+    var done_processing : Bool;
+    id : Nat;
+    var indexed_documents : Nat;
+    indexes : [Index__456576044];
+    var next_document_to_process : DocumentId__790733957;
+    var num_documents_to_process_per_batch : ?Nat;
+    total_documents : Nat;
+    var total_instructions_used : Nat
+  };
+type BatchPopulateIndex__677948281 =
+  {
+    var avg_instructions_per_document : Nat;
+    var done_processing : Bool;
+    id : Nat;
+    var indexed_documents : Nat;
+    indexes : [Index__401920667];
+    var next_document_to_process : DocumentId__475456252;
+    var num_documents_to_process_per_batch : ?Nat;
+    total_documents : Nat;
+    var total_instructions_used : Nat
+  };
+type BpTree__813506319<K, V> = BpTree__907432994<K, V>;
+type BpTree__907432994<K, V> =
+  {
+    var next_id : Nat;
+    order : Nat;
+    var root : Node__754126191<K, V>;
+    var size : Nat
+  };
+type Branch__168000107<K, V> =
+  (nats : [var Nat], parent : [var ?Branch__168000107<K, V>],
+   keys : [var ?K], children : [var ?Node__754126191<K, V>]);
+type Branch__693075160<K, V> =
+  (nats : [var Nat], parent : [var ?Branch__693075160<K, V>],
+   keys : [var ?K], children : [var ?Node__519412156<K, V>],
+   max : [var ?(K, V)]);
+type CandidBlob__572979216 = Blob;
+type CandidBlob__62653203 = Blob;
+type CandidBlob__780622315 = Blob;
+type CandidMap__590929605 =
+  {candid_map : Map__714078229<Text, NestedCandid__147880177>};
+type CandidMap__661548920 =
+  {candid_map : Map__714078229<Text, NestedCandid__385242406>};
+type CandidQuery__247961287 =
+  {
+    #Array : [Candid__40662071];
+    #Blob : Blob;
+    #Bool : Bool;
+    #Empty;
+    #Float : Float;
+    #Int : Int;
+    #Int16 : Int16;
+    #Int32 : Int32;
+    #Int64 : Int64;
+    #Int8 : Int8;
+    #Map : [KeyValuePair__1072264898];
+    #Maximum;
+    #Minimum;
+    #Nat : Nat;
+    #Nat16 : Nat16;
+    #Nat32 : Nat32;
+    #Nat64 : Nat64;
+    #Nat8 : Nat8;
+    #Null;
+    #Option : Candid__40662071;
+    #Principal : Principal;
+    #Record : [KeyValuePair__1072264898];
+    #Text : Text;
+    #Tuple : [Candid__40662071];
+    #Variant : KeyValuePair__1072264898
+  };
+type CandidQuery__346715090 =
+  {
+    #Array : [Candid__40662071];
+    #Blob : Blob;
+    #Bool : Bool;
+    #Empty;
+    #Float : Float;
+    #Int : Int;
+    #Int16 : Int16;
+    #Int32 : Int32;
+    #Int64 : Int64;
+    #Int8 : Int8;
+    #Map : [KeyValuePair__1072264898];
+    #Maximum;
+    #Minimum;
+    #Nat : Nat;
+    #Nat16 : Nat16;
+    #Nat32 : Nat32;
+    #Nat64 : Nat64;
+    #Nat8 : Nat8;
+    #Null;
+    #Option : Candid__40662071;
+    #Principal : Principal;
+    #Record : [KeyValuePair__1072264898];
+    #Text : Text;
+    #Tuple : [Candid__40662071];
+    #Variant : KeyValuePair__1072264898
+  };
+type CandidQuery__951824458 =
+  {
+    #Array : [Candid__40662071];
+    #Blob : Blob;
+    #Bool : Bool;
+    #Empty;
+    #Float : Float;
+    #Int : Int;
+    #Int16 : Int16;
+    #Int32 : Int32;
+    #Int64 : Int64;
+    #Int8 : Int8;
+    #Map : [KeyValuePair__1072264898];
+    #Maximum;
+    #Minimum;
+    #Nat : Nat;
+    #Nat16 : Nat16;
+    #Nat32 : Nat32;
+    #Nat64 : Nat64;
+    #Nat8 : Nat8;
+    #Null;
+    #Option : Candid__40662071;
+    #Principal : Principal;
+    #Record : [KeyValuePair__1072264898];
+    #Text : Text;
+    #Tuple : [Candid__40662071];
+    #Variant : KeyValuePair__1072264898
+  };
+type CandidType__190849164 =
+  {
+    #Array : CandidType__190849164;
+    #Blob;
+    #Bool;
+    #Empty;
+    #Float;
+    #Int;
+    #Int16;
+    #Int32;
+    #Int64;
+    #Int8;
+    #Map : [(Text, CandidType__190849164)];
+    #Nat;
+    #Nat16;
+    #Nat32;
+    #Nat64;
+    #Nat8;
+    #Null;
+    #Option : CandidType__190849164;
+    #Principal;
+    #Record : [(Text, CandidType__190849164)];
+    #Recursive : Nat;
+    #Text;
+    #Tuple : [CandidType__190849164];
+    #Variant : [(Text, CandidType__190849164)]
+  };
+type CandidType__232032005 = CandidType__190849164;
+type CandidType__302885604 = CandidType__190849164;
+type Candid__211165830 = Candid__482143924;
+type Candid__40662071 =
+  {
+    #Array : [Candid__40662071];
+    #Blob : Blob;
+    #Bool : Bool;
+    #Empty;
+    #Float : Float;
+    #Int : Int;
+    #Int16 : Int16;
+    #Int32 : Int32;
+    #Int64 : Int64;
+    #Int8 : Int8;
+    #Map : [KeyValuePair__1072264898];
+    #Nat : Nat;
+    #Nat16 : Nat16;
+    #Nat32 : Nat32;
+    #Nat64 : Nat64;
+    #Nat8 : Nat8;
+    #Null;
+    #Option : Candid__40662071;
+    #Principal : Principal;
+    #Record : [KeyValuePair__1072264898];
+    #Text : Text;
+    #Tuple : [Candid__40662071];
+    #Variant : KeyValuePair__1072264898
+  };
+type Candid__482143924 = Candid__40662071;
+type Candid__881359021 = Candid__482143924;
+type CompositeIndex__146060843 =
+  {
+    data : BTree__734128806<[CandidQuery__346715090], DocumentId__790733957>;
+    is_unique : Bool;
+    key_details : [(Text, SortDirection__867827841)];
+    name : Text;
+    used_internally : Bool
+  };
+type CompositeIndex__681989396 =
+  {
+    data : BTree__507607917<[CandidQuery__951824458], DocumentId__475456252>;
+    is_unique : Bool;
+    key_details : [(Text, SortDirection__822660936)];
+    name : Text;
+    used_internally : Bool
+  };
+type Data__722180630<K, V> = ([var K], [var V]);
+type DocumentId__475456252 = Blob;
+type DocumentId__790733957 = Blob;
+type DocumentId__858558338 = Nat;
+type DocumentStore__292831111 =
+  BTree__734128806<DocumentId__790733957, Document__650199225>;
+type DocumentStore__783315253 = BTree__64326779<Nat, Document__870519826>;
+type DocumentStore__799207833 =
+  BTree__507607917<DocumentId__475456252, Document__999445964>;
+type Document__650199225 = {#v0 : CandidBlob__62653203};
+type Document__870519826 = {#v0 : CandidBlob__780622315};
+type Document__999445964 = {#v0 : CandidBlob__572979216};
+type FreeMemoryV1__589152223 = MaxBpTree__234161830<Nat, Nat>;
+type Ids__394087625 = [var Nat];
+type Ids__644277580 = [var Nat];
+type Ids__933172343 = [var Nat];
+type Index__137729289 =
+  {
+    data : BTree__64326779<[CandidQuery__247961287], DocumentId__858558338>;
+    is_unique : Bool;
+    key_details : [(Text, SortDirection__716347029)];
+    name : Text;
+    used_internally : Bool
+  };
+type Index__401920667 =
+  {
+    #composite_index : CompositeIndex__681989396;
+    #text_index : TextIndex__321008982
+  };
+type Index__456576044 =
+  {
+    #composite_index : CompositeIndex__146060843;
+    #text_index : TextIndex__464824832
+  };
+type KeyValuePair__1072264898 = (Text, Candid__40662071);
+type Leaf__677153095<K, V> =
+  (nats : [var Nat], parent : [var ?Branch__693075160<K, V>],
+   adjacent_nodes : [var ?Leaf__677153095<K, V>], kvs : [var ?(K, V)],
+   max : [var ?(K, V)]);
+type Leaf__679863100<K, V> =
+  (nats : [var Nat], parent : [var ?Branch__168000107<K, V>],
+   adjacent_nodes : [var ?Leaf__679863100<K, V>], kvs : [var ?(K, V)]);
+type LinkedList__14103841<Item> =
+  {
+    var _head : ?Node__689363239<Item>;
+    var _size : Nat;
+    var _tail : ?Node__689363239<Item>
+  };
+type LinkedList__647036163<A> = LinkedList__14103841<A>;
+type LogLevel__358878703 = {#Debug; #Error; #Info; #Trap; #Warn};
+type LogLevel__662298206 = {#Debug; #Error; #Info; #Trap; #Warn};
+type LogLevel__966999778 = {#Debug; #Error; #Info; #Trap; #Warn};
+type Logger__1053122559 =
+  {
+    var is_running_locally : Bool;
+    var log_level : LogLevel__358878703;
+    var next_thread_id : Nat
+  };
+type Logger__317967536 =
+  {
+    var is_running_locally : Bool;
+    var log_level : LogLevel__966999778;
+    var next_thread_id : Nat
+  };
+type Logger__95230999 =
+  {
+    var is_running_locally : Bool;
+    var log_level : LogLevel__662298206;
+    var next_thread_id : Nat
+  };
+type LruCache__384311799<K, V> =
+  {
+    var capacity : Nat;
+    list : LinkedList__647036163<Data__722180630<K, V>>;
+    map : Map__979008717<K, Node__21812212<Data__722180630<K, V>>>
+  };
+type Map__563433526<K, V> = Map__714078229<K, V>;
+type Map__576607250<K, V> = Map__714078229<K, V>;
+type Map__714078229<K, V> = Map__741714040<K, V>;
+type Map__741714040<K, V> =
+  [var ?(keys : [var ?K], values : [var ?V], indexes : [var Nat],
+         bounds : [var Nat32])];
+type Map__89649707<K, V> = Map__714078229<K, V>;
+type Map__912088175<K, V> = Map__714078229<K, V>;
+type Map__979008717<K, V> = Map__714078229<K, V>;
+type MaxBpTree__234161830<K, V> = MaxBpTree__578320783<K, V>;
+type MaxBpTree__578320783<K, V> =
+  {
+    var next_id : Nat;
+    order : Nat;
+    var root : Node__519412156<K, V>;
+    var size : Nat
+  };
+type MemoryBTree__177453764 = StableMemoryBTree__791820406;
+type MemoryBTree__183487588 =
+  {
+    var branch_count : Nat;
+    branches : MemoryRegionV1__261119375;
+    var count : Nat;
+    data : MemoryRegionV1__261119375;
+    var depth : Nat;
+    var is_root_a_leaf : Bool;
+    is_set : Bool;
+    var leaf_count : Nat;
+    leaves : MemoryRegionV1__261119375;
+    node_capacity : Nat;
+    var root : Nat;
+    values : MemoryRegionV1__261119375
+  };
+type MemoryBTree__423584884 =
+  {
+    var branch_count : Nat;
+    branches : MemoryRegionV1__146647567;
+    var count : Nat;
+    data : MemoryRegionV1__146647567;
+    var depth : Nat;
+    is_prefix_compression_enabled : Bool;
+    var is_root_a_leaf : Bool;
+    is_set : Bool;
+    var leaf_count : Nat;
+    leaves : MemoryRegionV1__146647567;
+    var merge_threshold_count : Nat;
+    node_capacity : Nat;
+    var root : Nat;
+    values : MemoryRegionV1__146647567
+  };
+type MemoryBTree__57907665 = StableMemoryBTree__791820406;
+type MemoryBTree__584697721 = StableMemoryBTree__791820406;
+type MemoryBTree__750448881 =
+  {
+    blobs : MemoryRegionV1__854579294;
+    blocks : MemoryRegionV1__854579294;
+    var branch_count : Nat;
+    branches : MemoryRegionV1__854579294;
+    var count : Nat;
+    data : MemoryRegionV1__854579294;
+    var depth : Nat;
+    var is_root_a_leaf : Bool;
+    is_set : Bool;
+    var leaf_count : Nat;
+    leaves : MemoryRegionV1__854579294;
+    metadata : MemoryRegionV1__854579294;
+    node_capacity : Nat;
+    var root : Nat
+  };
+type MemoryRegionV1__1016521686 = MemoryRegionV1__671198960;
+type MemoryRegionV1__146647567 = MemoryRegionV1__1016521686;
+type MemoryRegionV1__261119375 = MemoryRegionV1__1016521686;
+type MemoryRegionV1__671198960 =
+  {
+    var deallocated : Nat;
+    var free_memory : FreeMemoryV1__589152223;
+    var pages : Nat;
+    region : Region;
+    var size : Nat
+  };
+type MemoryRegionV1__854579294 = MemoryRegionV1__1016521686;
+type MemoryType__57305579 = {#heap; #stableMemory};
+type MemoryType__787426974 = {#heap; #stableMemory};
+type MemoryType__970861617 = {#heap; #stableMemory};
+type NestedCandid__147880177 =
+  {
+    #Candid : (Schema__495982546, Candid__211165830);
+    #CandidMap : Map__714078229<Text, NestedCandid__147880177>
+  };
+type NestedCandid__385242406 =
+  {
+    #Candid : (Schema__227615468, Candid__881359021);
+    #CandidMap : Map__714078229<Text, NestedCandid__385242406>
+  };
+type Node__21812212<A> = Node__689363239<A>;
+type Node__519412156<K, V> =
+  {#branch : Branch__693075160<K, V>; #leaf : Leaf__677153095<K, V>};
+type Node__689363239<Item> =
+  {
+    var _next : ?Node__689363239<Item>;
+    var _prev : ?Node__689363239<Item>;
+    var data : Item
+  };
+type Node__754126191<K, V> =
+  {#branch : Branch__168000107<K, V>; #leaf : Leaf__679863100<K, V>};
+type Options__781059452 =
+  {
+    renameKeys : [(Text, Text)];
+    types : ?[CandidType__190849164];
+    use_icrc_3_value_type : Bool
+  };
+type SchemaFieldConstraint__569989976 =
+  {
+    #Max : Float;
+    #MaxSize : Nat;
+    #Min : Float;
+    #MinSize : Nat;
+    #Size : (min_size : Nat, max_size : Nat)
+  };
+type SchemaFieldConstraint__825644308 =
+  {
+    #Max : Float;
+    #MaxSize : Nat;
+    #Min : Float;
+    #MinSize : Nat;
+    #Size : (min_size : Nat, max_size : Nat)
+  };
+type SchemaFieldConstraint__871393615 =
+  {
+    #Max : Float;
+    #MaxSize : Nat;
+    #Min : Float;
+    #MinSize : Nat;
+    #Size : (min_size : Nat, max_size : Nat)
+  };
+type SchemaMap__1004902762 =
+  {
+    fields_with_array_type : [Text];
+    map : Map__714078229<Text, Schema__227615468>
+  };
+type SchemaMap__666085961 =
+  {
+    fields_with_array_type : [Text];
+    map : Map__714078229<Text, Schema__495982546>
+  };
+type SchemaMap__668072410 =
+  {
+    fields_with_array_type : [Text];
+    map : Map__714078229<Text, Schema__15511388>
+  };
+type Schema__15511388 = CandidType__232032005;
+type Schema__227615468 = CandidType__232032005;
+type Schema__495982546 = CandidType__232032005;
+type Set__1044286102<K> = Set__483445189<K>;
+type Set__1054843949<K> = Set__483445189<K>;
+type Set__188938495<K> = Set__483445189<K>;
+type Set__417722533<K> =
+  [var ?(keys : [var ?K], indexes : [var Nat], bounds : [var Nat32])];
+type Set__483445189<K> = Set__417722533<K>;
+type ShallowCandidTypes__123024209 = ShallowCandidTypes__993620208;
+type ShallowCandidTypes__993620208 =
+  {
+    #ArrayRef : Nat;
+    #OptionRef : Nat;
+    #RecordRef : [(Text, Nat)];
+    #VariantRef : [(Text, Nat)]
+  };
+type SortDirection__716347029 = {#Ascending; #Descending};
+type SortDirection__822660936 = {#Ascending; #Descending};
+type SortDirection__867827841 = {#Ascending; #Descending};
+type StableCollection__1060397489 =
+  {
+    candid_map_cache :
+      TwoQueueCache__192755398<DocumentId__790733957, CandidMap__590929605>;
+    candid_serializer : TypedSerializer__959618360;
+    documents : DocumentStore__292831111;
+    field_constraints :
+      Map__576607250<Text, [SchemaFieldConstraint__871393615]>;
+    fields_with_unique_constraints :
+      Map__576607250<Text, Set__188938495<Nat>>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    hidden_indexes : Set__188938495<Text>;
+    ids : Ids__394087625;
+    indexes : Map__576607250<Text, Index__456576044>;
+    indexes_in_batch_operations : Map__576607250<Text, Index__456576044>;
+    instance_id : Blob;
+    is_running_locally : Bool;
+    logger : Logger__1053122559;
+    memory_type : MemoryType__970861617;
+    name : Text;
+    populate_index_batches :
+      Map__576607250<Nat, BatchPopulateIndex__442002724>;
+    schema : Schema__495982546;
+    schema_keys : [Text];
+    schema_keys_set : Set__188938495<Text>;
+    schema_map : SchemaMap__666085961;
+    unique_constraints : [([Text], CompositeIndex__146060843)]
+  };
+type StableCollection__466954535 =
+  {
+    candid_map_cache :
+      TwoQueueCache__364451251<DocumentId__475456252, CandidMap__661548920>;
+    candid_serializer : TypedSerializer__959618360;
+    documents : DocumentStore__799207833;
+    field_constraints :
+      Map__563433526<Text, [SchemaFieldConstraint__569989976]>;
+    fields_with_unique_constraints :
+      Map__563433526<Text, Set__1054843949<Nat>>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    hidden_indexes : Set__1054843949<Text>;
+    ids : Ids__644277580;
+    indexes : Map__563433526<Text, Index__401920667>;
+    indexes_in_batch_operations : Map__563433526<Text, Index__401920667>;
+    instance_id : Blob;
+    is_compression_enabled : ?Bool;
+    is_running_locally : Bool;
+    logger : Logger__95230999;
+    memory_type : MemoryType__787426974;
+    name : Text;
+    populate_index_batches :
+      Map__563433526<Nat, BatchPopulateIndex__677948281>;
+    schema : Schema__227615468;
+    schema_keys : [Text];
+    schema_keys_set : Set__1054843949<Text>;
+    schema_map : SchemaMap__1004902762;
+    text_index_name : TextIndexNameRef__445673471;
+    unique_constraints : [([Text], CompositeIndex__681989396)]
+  };
+type StableCollection__672695126 =
+  {
+    documents : DocumentStore__783315253;
+    field_constraints :
+      Map__89649707<Text, [SchemaFieldConstraint__825644308]>;
+    fields_with_unique_constraints :
+      Map__89649707<Text, Set__1044286102<Nat>>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    ids : Ids__933172343;
+    indexes : Map__89649707<Text, Index__137729289>;
+    logger : Logger__317967536;
+    memory_type : MemoryType__57305579;
+    name : Text;
+    schema : Schema__15511388;
+    schema_keys : [Text];
+    schema_keys_set : Set__1044286102<Text>;
+    schema_map : SchemaMap__668072410;
+    unique_constraints : [([Text], Index__137729289)]
+  };
+type StableDatabase__324630299 =
+  {
+    collections : Map__89649707<Text, StableCollection__672695126>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    logger : Logger__317967536;
+    memory_type : MemoryType__57305579
+  };
+type StableDatabase__375499081 =
+  {
+    candid_map_cache :
+      TwoQueueCache__192755398<DocumentId__790733957, CandidMap__590929605>;
+    collections : Map__576607250<Text, StableCollection__1060397489>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    ids : Ids__394087625;
+    instance_id : Blob;
+    is_running_locally : Bool;
+    logger : Logger__1053122559;
+    memory_type : MemoryType__970861617;
+    name : Text
+  };
+type StableDatabase__604257954 =
+  {
+    candid_map_cache :
+      TwoQueueCache__364451251<DocumentId__475456252, CandidMap__661548920>;
+    collections : Map__563433526<Text, StableCollection__466954535>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    ids : Ids__644277580;
+    instance_id : Blob;
+    is_compression_enabled : ?Bool;
+    is_running_locally : Bool;
+    logger : Logger__95230999;
+    memory_type : MemoryType__787426974;
+    name : Text
+  };
+type StableMemoryBTree__791820406 = VersionedMemoryBTree__715427344;
+type StableStore__1047378566 =
+  {
+    candid_map_cache :
+      TwoQueueCache__192755398<DocumentId__790733957, CandidMap__590929605>;
+    canister_id : Principal;
+    databases : Map__576607250<Text, StableDatabase__375499081>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    ids : Ids__394087625;
+    instance_id : Blob;
+    is_running_locally : Bool;
+    logger : Logger__1053122559;
+    memory_type : MemoryType__970861617
+  };
+type StableStore__177888996 =
+  {
+    candid_map_cache :
+      TwoQueueCache__364451251<DocumentId__475456252, CandidMap__661548920>;
+    canister_id : Principal;
+    databases : Map__563433526<Text, StableDatabase__604257954>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    ids : Ids__644277580;
+    instance_id : Blob;
+    is_compression_enabled : ?Bool;
+    is_running_locally : Bool;
+    logger : Logger__95230999;
+    memory_type : MemoryType__787426974
+  };
+type StableStore__908796028 =
+  {
+    databases : Map__89649707<Text, StableDatabase__324630299>;
+    freed_btrees : Vector__342968512<StableMemoryBTree__791820406>;
+    logger : Logger__317967536;
+    memory_type : MemoryType__57305579
+  };
+type TextIndexNameRef__445673471 = {var value : ?Text};
+type TextIndex__321008982 =
+  {
+    fields : [Text];
+    internal_index : CompositeIndex__681989396;
+    tokenizer : Tokenizer__963847146
+  };
+type TextIndex__464824832 =
+  {
+    field : Text;
+    internal_index : CompositeIndex__146060843;
+    tokenizer : Tokenizer__918505615
+  };
+type Tokenizer__918505615 = {#basic};
+type Tokenizer__963847146 = {#basic};
+type TwoQueueCache__192755398<K, V> =
+  {
+    var admission_cache : LruCache__384311799<K, ()>;
+    var ghost_cache : LruCache__384311799<K, V>;
+    var main_cache : LruCache__384311799<K, V>
+  };
+type TwoQueueCache__364451251<K, V> =
+  {
+    var admission_cache : LruCache__384311799<K, ()>;
+    var ghost_cache : LruCache__384311799<K, V>;
+    var main_cache : LruCache__384311799<K, V>
+  };
+type TypedSerializer__72887705 =
+  {
+    compound_types : [ShallowCandidTypes__123024209];
+    decoder_candid_types : [CandidType__302885604];
+    encoded_type_header : [Nat8];
+    encoder_candid_types : [CandidType__302885604];
+    options : Options__781059452;
+    record_key_map : Map__912088175<Nat32, Text>;
+    recursive_types_map : Map__912088175<Nat, CandidType__302885604>;
+    renaming_map : Map__912088175<Text, Text>
+  };
+type TypedSerializer__959618360 = TypedSerializer__72887705;
+type Vector__342968512<X> =
+  {var data_blocks : [var [var ?X]]; var i_block : Nat; var i_element : Nat};
+type VersionedMemoryBTree__715427344 =
+  {
+    #v0 : MemoryBTree__750448881;
+    #v0_0_1 : MemoryBTree__183487588;
+    #v0_4_0 : MemoryBTree__423584884
+  };
+type VersionedStableStore__270955729 = {#v0_1_0 : StableStore__908796028};
+type VersionedStableStore__29988456 = {#v1_0_0 : StableStore__1047378566};
+type VersionedStableStore__618031391 = {#v2_0_0 : StableStore__177888996};
 actor {
   stable var config :
     {
@@ -8,5 +666,11 @@ actor {
       governance : Principal;
       treasury : Principal;
       workflow : Principal
+    };
+  stable var embeddedStore :
+    {
+      #v0 : VersionedStableStore__270955729;
+      #v1 : VersionedStableStore__29988456;
+      #v2 : VersionedStableStore__618031391
     }
 };

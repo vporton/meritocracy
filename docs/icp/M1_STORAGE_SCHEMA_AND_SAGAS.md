@@ -131,6 +131,19 @@ persisted one. Before G2, the actual in-process ZenDB adapter still needs
 bounded writes, lookups, archive behavior, low-cycle handling, lost-reply
 recovery, and repair/resume tests.
 
+### 2026-09-10 embedded-state boundary
+
+The storage authority now initializes ZenDB's exact pinned embedded
+`VersionedStableStore` as a private persistent field, bound to
+`Principal.fromActor(this)`. This advances the prior isolated compiler fixture
+to the real canister's type and stable-signature boundary without creating a
+database collection, document, index, storage Candid method, or ZenDB grant
+surface. The committed `deployed/storage_authority.most` is the new
+pre-deployment baseline. It is not an upgrade from a deployed empty actor and
+does not make any collection authoritative. The fixed probes remain the whole
+public surface; bounded writes/lookups, lost-reply recovery, archive,
+interruption/upgrade, low-cycle, and repair/resume proofs are still required.
+
 `fixtures/zendb/M1EmbeddedStorageProbe.mo` and
 `scripts/icp/test-zendb-embedded-storage.sh` add a narrower compiler proof for
 that remaining adapter work. The runner takes an existing ZenDB checkout only,
@@ -156,8 +169,9 @@ collection-specific and requires G2 approval.
 The same source/lock-verified fixture now compiles under both the candidate
 and repository compiler modes. The pinned `identify@0.0.2` backend-only view,
 legacy Motoko-base aliases, and management-canister IDL make the existing
-canisters compile under that version. This is not a ZenDB integration or
-authority claim: the storage authority still exposes only fixed policy probes,
+canisters compile under that version. This is not a ZenDB authority claim: the
+storage authority privately carries only the initialized stable-store type and
+still exposes only fixed policy probes,
 and actual bounded writes/lookups, fault recovery, archive, low-cycle, and
 repair/resume proofs remain required before G2.
 

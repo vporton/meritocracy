@@ -1,4 +1,5 @@
 import Principal "mo:base/Principal";
+import ZenDB "mo:zendb";
 import StorageCatalog "../shared/StorageCatalog";
 import Policy "StorageAuthorityPolicy";
 
@@ -10,12 +11,23 @@ import Policy "StorageAuthorityPolicy";
 /// will select its collection owner in Motoko rather than accepting a generic
 /// collection/action/role request from Candid. No probe persists or exposes
 /// target data, and this canister is not deployed or authoritative.
-shared ({ caller = installer }) persistent actor class (initialConfig : Policy.Config) {
+shared ({ caller = installer }) persistent actor class (initialConfig : Policy.Config) = this {
   // This is deliberately a persistent private field, rather than an actor
   // constructor parameter captured by method closures. Upgrade calls still
   // carry an init argument for the actor class, but that argument must never
   // replace the installed caller matrix. There is no mutation endpoint.
   var config : Policy.Config = initialConfig;
+
+  // The exact M1-pinned embedded store is private state of this actor.  It is
+  // deliberately created without a collection, document, index, or public
+  // storage method: the fixed probes below remain authorization-only until
+  // the bounded mutation/recovery suite proves a particular collection.
+  // In particular, no RemoteInstance/CanisterDB actor or ZenDB grant API is
+  // reachable through this canister's Candid boundary.
+  var embeddedStore : ZenDB.Types.VersionedStableStore = ZenDB.newStableStore(
+    Principal.fromActor(this),
+    null,
+  );
 
   assert Policy.canInstall(config, installer);
 
@@ -42,50 +54,130 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   // `(collection, action, document)` interface. A future in-process ZenDB
   // call can be added only behind the matching, fixed collection/action
   // method. The caller cannot choose a collection or action from Candid.
-  public shared ({ caller }) func coreUserReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreUserWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func corePrincipalBindingReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func corePrincipalBindingWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreProfileReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreProfileWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreEmailEvidenceReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreEmailEvidenceWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func corePayoutDestinationReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func corePayoutDestinationWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreHoldReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreHoldWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreRoleAssignmentReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreRoleAssignmentWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreBanVoteReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
-  public shared ({ caller }) func coreBanVoteWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #core, logicalId) };
+  public shared ({ caller }) func coreUserReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreUserWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func corePrincipalBindingReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func corePrincipalBindingWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreProfileReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreProfileWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreEmailEvidenceReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreEmailEvidenceWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func corePayoutDestinationReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func corePayoutDestinationWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreHoldReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreHoldWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreRoleAssignmentReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreRoleAssignmentWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreBanVoteReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
+  public shared ({ caller }) func coreBanVoteWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #core, logicalId);
+  };
 
-  public shared ({ caller }) func workflowResultReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowResultWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowResultSourceReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowResultSourceWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowScheduleReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowScheduleWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowCompletionReceiptReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
-  public shared ({ caller }) func workflowCompletionReceiptWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #workflow, logicalId) };
+  public shared ({ caller }) func workflowResultReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowResultWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowResultSourceReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowResultSourceWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowScheduleReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowScheduleWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowCompletionReceiptReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
+  public shared ({ caller }) func workflowCompletionReceiptWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #workflow, logicalId);
+  };
 
-  public shared ({ caller }) func treasuryObligationReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryObligationWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryPaymentOperationReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryPaymentOperationWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryJournalReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryJournalWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryChainReceiptReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
-  public shared ({ caller }) func treasuryChainReceiptWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #treasury, logicalId) };
+  public shared ({ caller }) func treasuryObligationReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryObligationWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryPaymentOperationReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryPaymentOperationWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryJournalReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryJournalWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryChainReceiptReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
+  public shared ({ caller }) func treasuryChainReceiptWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #treasury, logicalId);
+  };
 
-  public shared ({ caller }) func migrationReceiptReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #archive, logicalId) };
-  public shared ({ caller }) func migrationReceiptWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #archive, logicalId) };
-  public shared ({ caller }) func migrationEvidenceReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #archive, logicalId) };
-  public shared ({ caller }) func migrationEvidenceWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #archive, logicalId) };
-  public shared ({ caller }) func aiArtifactReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #archive, logicalId) };
-  public shared ({ caller }) func aiArtifactWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #archive, logicalId) };
+  public shared ({ caller }) func migrationReceiptReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #archive, logicalId);
+  };
+  public shared ({ caller }) func migrationReceiptWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #archive, logicalId);
+  };
+  public shared ({ caller }) func migrationEvidenceReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #archive, logicalId);
+  };
+  public shared ({ caller }) func migrationEvidenceWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #archive, logicalId);
+  };
+  public shared ({ caller }) func aiArtifactReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #archive, logicalId);
+  };
+  public shared ({ caller }) func aiArtifactWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #archive, logicalId);
+  };
 
-  public shared ({ caller }) func evidenceKycReadProbe(logicalId : Text) : async ProbeResult { probe(caller, #evidence, logicalId) };
-  public shared ({ caller }) func evidenceKycWriteProbe(logicalId : Text) : async ProbeResult { probe(caller, #evidence, logicalId) };
+  public shared ({ caller }) func evidenceKycReadProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #evidence, logicalId);
+  };
+  public shared ({ caller }) func evidenceKycWriteProbe(logicalId : Text) : async ProbeResult {
+    probe(caller, #evidence, logicalId);
+  };
 
   /// The governance-only audit is the sole administrative endpoint. It grants
   /// neither data access nor a way to alter the fixed matrix after install.

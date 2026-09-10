@@ -10,9 +10,9 @@ const { PocketIc, PocketIcServer } = require(picMopsRoot);
 const { IDL } = require(path.join(coreRoot, "lib/cjs/candid/index.js"));
 const { Principal } = require(path.join(coreRoot, "lib/cjs/principal/index.js"));
 
-const [pocketIcBin, authorityWasm, callerWasm] = process.argv.slice(2);
-if (!pocketIcBin || !authorityWasm || !callerWasm) {
-  throw new Error("Expected PocketIC binary, storage-authority Wasm, and caller Wasm paths");
+const [pocketIcBin, preEmbeddedAuthorityWasm, embeddedAuthorityWasm, callerWasm] = process.argv.slice(2);
+if (!pocketIcBin || !preEmbeddedAuthorityWasm || !embeddedAuthorityWasm || !callerWasm) {
+  throw new Error("Expected PocketIC binary, pre-embedded authority Wasm, embedded authority Wasm, and caller Wasm paths");
 }
 
 const principal = (value) => Principal.fromUint8Array(Uint8Array.of(1, value));
@@ -109,7 +109,7 @@ async function createCanister(pic) {
   return pic.createCanister({ sender: bootstrap, controllers: [bootstrap] });
 }
 
-async function upgradeEopCanister(pic, canisterId, arg) {
+async function upgradeEopCanister(pic, canisterId, wasmPath, arg) {
   const payload = IDL.encode([ManagementInstallCode], [{
     arg: new Uint8Array(arg),
     canister_id: canisterId,
@@ -120,7 +120,7 @@ async function upgradeEopCanister(pic, canisterId, arg) {
       }],
     },
     sender_canister_version: [],
-    wasm_module: new Uint8Array(fs.readFileSync(authorityWasm)),
+    wasm_module: new Uint8Array(fs.readFileSync(wasmPath)),
   }]);
   await pic.client.updateCall({
     canisterId: Principal.fromText("aaaaa-aa"),
@@ -161,7 +161,7 @@ async function main() {
     await pic.installCode({
       canisterId: authorityId,
       sender: bootstrap,
-      wasm: authorityWasm,
+      wasm: preEmbeddedAuthorityWasm,
       arg: IDL.encode([Config], [initial]),
     });
 
@@ -187,13 +187,25 @@ async function main() {
     if ((await callers.core.audit()).length !== 0) throw new Error("core caller received a governance audit");
     expectAudit(await callers.governance.audit(), initial, "governance audit before upgrade");
 
-    await upgradeEopCanister(pic, authorityId, IDL.encode([Config], [replacement]));
+    // This is a real old-to-new canister upgrade: the installed version has no
+    // embedded ZenDB store, while the new artifact introduces the private
+    // VersionedStableStore field.  The replacement constructor matrix must be
+    // ignored; the old persisted authority matrix is the representative state.
+    await upgradeEopCanister(pic, authorityId, embeddedAuthorityWasm, IDL.encode([Config], [replacement]));
     expectDecision(await callers.core.data({ coreUserRead: null }, logicalId), "allowed", "core after upgrade");
     expectDecision(await callers.treasury.data({ treasuryJournalWrite: null }, logicalId), "allowed", "treasury after upgrade");
     expectDecision(await callers.governance.data({ coreUserRead: null }, logicalId), "callerNotAllowed", "governance after upgrade");
     expectAudit(await callers.governance.audit(), initial, "governance audit after upgrade");
     authority.setPrincipal(replacement.core);
     expectDecision(await authority.coreUserReadProbe(logicalId), "callerNotAllowed", "replacement matrix rejected after upgrade");
+
+    // Upgrade the embedded-state artifact itself. This catches a stable-state
+    // reset/reconstruction that might be hidden by only testing the migration
+    // from the pre-embedded version.
+    await upgradeEopCanister(pic, authorityId, embeddedAuthorityWasm, IDL.encode([Config], [replacement]));
+    expectDecision(await callers.core.data({ coreUserRead: null }, logicalId), "allowed", "core after embedded-state re-upgrade");
+    expectDecision(await callers.workflow.data({ coreUserRead: null }, logicalId), "callerNotAllowed", "cross-owner after embedded-state re-upgrade");
+    expectAudit(await callers.governance.audit(), initial, "governance audit after embedded-state re-upgrade");
   } finally {
     await pic.tearDown();
     await server.stop();

@@ -5,7 +5,7 @@ import Policy "StorageAuthorityPolicy";
 
 /// M1 storage-authority boundary scaffold.
 ///
-/// This canister deliberately has no ZenDB import, collection, payload, or
+/// This canister deliberately has no public ZenDB collection, payload, or
 /// grant-management API yet. Its only surface is a bounded authorization probe
 /// used to prove that ingress is rejected and that each future storage method
 /// will select its collection owner in Motoko rather than accepting a generic

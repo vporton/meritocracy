@@ -144,6 +144,38 @@ does not make any collection authoritative. The fixed probes remain the whole
 public surface; bounded writes/lookups, lost-reply recovery, archive,
 interruption/upgrade, low-cycle, and repair/resume proofs are still required.
 
+### Isolated real PocketIC upgrade proof (incomplete)
+
+The required upgrade proof is deliberately neither a unit test nor a mock.
+`scripts/icp/build-storage-authority-upgrade-proof.sh` builds just three Wasm
+artifacts: the committed pre-embedded authority at
+`4b9e51377ca351b4a162c5d102b258536d539ba2`, the current embedded-store
+authority, and the fixed inter-canister caller fixture. It starts no replica.
+`scripts/icp/run-storage-authority-upgrade-proof.sh` consumes those artifacts
+only, starts an identity-free PocketIC instance, installs the pre-embedded
+Wasm, verifies the entire authority matrix, performs a real EOP
+management-canister `install_code` upgrade to the embedded-store Wasm, and
+verifies both the preserved matrix and all required ingress/cross-owner
+denials. It then upgrades that embedded artifact again and repeats the
+preservation checks. The run fails rather than accepting a replaced matrix,
+authorization reset, or bypass.
+
+To execute outside a short-lived workspace, run:
+
+```sh
+scripts/icp/build-storage-authority-upgrade-proof.sh
+scripts/icp/run-storage-authority-upgrade-proof.sh
+```
+
+Set `M1_UPGRADE_PROOF_ARTIFACT_DIR` to retain artifacts elsewhere and set
+`POCKET_IC_BIN` to a cached, exact pinned PocketIC 12.0.0 executable to avoid
+toolchain lookup/download. The narrow CI workflow
+`.github/workflows/m1-storage-authority-upgrade.yml` executes those commands
+with a 20-minute job deadline and uploads the artifact hash manifest. The
+Codex workspace currently terminates the PocketIC phase before a result; that
+is an execution-environment limitation, not success. M1 is **not verified**
+until this real CI/external run passes.
+
 `fixtures/zendb/M1EmbeddedStorageProbe.mo` and
 `scripts/icp/test-zendb-embedded-storage.sh` add a narrower compiler proof for
 that remaining adapter work. The runner takes an existing ZenDB checkout only,

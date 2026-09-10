@@ -19,8 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The old-to-new proof reads the pinned pre-embedded commit.
-          fetch-depth: 3
+          # The old-to-new proof reads a pinned pre-embedded commit, which may
+          # be beyond a shallow or merged history boundary.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 26.5.0

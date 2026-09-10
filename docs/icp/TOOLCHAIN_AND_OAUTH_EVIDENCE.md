@@ -40,10 +40,15 @@ after the fork.
 
 The owner-directed, hash-pinned `hex-m1-compat@1.0.2-m1.1` replacement clears
 the original `hex@1.0.2` `Text.join` blocker without changing identify source
-or API. A full `mops check` now reaches the independent ZenDB transitive
-`memory-collection@0.4.0` `Nat.bytes` incompatibility under the unqualified
-Core-1 binding. Consequently no combined ZenDB/identify target build, storage
-integration, Candid update, or stable-type change is claimed.
+or API. The next source inspection established that `memory-collection@0.4.0`
+already imports Core 2.4 explicitly; its real release defect is a public
+BTree-set wrapper call to a missing `BaseMemoryBTree.bytes` function. The
+owner-approved, hash-pinned `memory-collection-m1-compat@0.4.0-m1.1` package
+adds only that alias to its existing `usedBytes` calculation. Its verifier
+rejects a file change outside the release manifest/Base pair. Full `mops
+check`, tests, build, and stable checks now pass. This is compiler-closure
+evidence only: no combined ZenDB/identify target build, storage integration,
+Candid update, or stable-type change is claimed.
 
 The Mops ZenDB package declares version-qualified Core 2.4 imports. The
 separate exact-source remote-CanisterDB probe remains a different historical

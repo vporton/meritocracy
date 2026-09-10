@@ -2,6 +2,16 @@
 
 Status: M1 task 3 is **IN_PROGRESS** as of 2026-08-02. This records one immutable, locally reproducible candidate and the results that are safe to claim today. It neither approves ZenDB as an authoritative store nor authorizes a deployment, production database access, credentials, or asset movement.
 
+**Current compiler-closure correction (2026-09-09):** The earlier claim that
+`memory-collection@0.4.0` selected Core 1 was incorrect. Its imports are
+already explicit Core 2.4 imports; the released BTree-set wrapper instead calls
+a missing Base `bytes` function. The owner-approved local
+`memory-collection-m1-compat@0.4.0-m1.1` package changes only metadata and
+adds `bytes` as an alias of the existing `usedBytes`; its verifier pins those
+two changed files, and full repository Motoko checks pass. This clears a
+compiler blocker only. ZenDB remains unimported by a target actor and
+non-authoritative pending all M1 recovery, capacity, and RBAC proofs.
+
 ## Pin
 
 The machine-readable pin is [`evidence/zendb/v2.0.1.pin.json`](evidence/zendb/v2.0.1.pin.json).

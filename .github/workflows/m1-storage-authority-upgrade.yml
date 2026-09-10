@@ -19,7 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          # The old-to-new proof reads the pinned pre-embedded commit.
+          fetch-depth: 3
       - uses: actions/setup-node@v4
         with:
           node-version: 26.5.0
@@ -36,6 +37,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          mkdir -p .mops/m1-storage-authority-upgrade-proof
           scripts/icp/build-storage-authority-upgrade-proof.sh 2>&1 | tee .mops/m1-storage-authority-upgrade-proof/build.log
       - name: Run real PocketIC old-to-new-to-new upgrade proof
         shell: bash

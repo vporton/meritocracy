@@ -28,9 +28,13 @@ const ManagementInstallChunkedCode = IDL.Record({
   chunk_hashes_list: IDL.Vec(ChunkHash),
   mode: IDL.Variant({
     install: IDL.Null,
-    // Keep the EOP upgrade shape explicit.  The proof never substitutes an
-    // initializer argument and upgrades only the exact hash-checked fixture.
-    upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool) })),
+    // PocketIC requires an explicit Wasm-memory policy when upgrading an
+    // enhanced-orthogonal-persistence actor. Retaining it is required for
+    // this proof to verify the immutable records survive the upgrade.
+    upgrade: IDL.Opt(IDL.Record({
+      skip_pre_upgrade: IDL.Opt(IDL.Bool),
+      wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })),
+    })),
   }),
   sender_canister_version: IDL.Opt(IDL.Nat64),
   store_canister: IDL.Opt(IDL.Principal),
@@ -116,7 +120,12 @@ async function main() {
     // This is a real EOP upgrade of the same hash-checked fixture Wasm.  The
     // post-upgrade exact retry and changed-hash conflict together distinguish
     // retained immutable records from an empty/replaced collection.
-    await installChunkedCode(pic, bootstrap, canisterId, wasm, { upgrade: [] });
+    await installChunkedCode(pic, bootstrap, canisterId, wasm, {
+      upgrade: [{
+        skip_pre_upgrade: [],
+        wasm_memory_persistence: [{ keep: null }],
+      }],
+    });
     expect(await actor.writeBinding(binding), "acknowledged", "binding exact retry after upgrade");
     expect(await actor.writeBinding({ ...binding, contentHash: hash(3) }), "conflict", "binding conflict after upgrade");
     expect(await actor.writeRole(role), "acknowledged", "role exact retry after upgrade");

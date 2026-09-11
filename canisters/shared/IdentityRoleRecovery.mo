@@ -19,6 +19,9 @@ module {
 
   public type PrincipalBindingInput = {
     logicalId : Text;
+    /// Immutable remote record version. Recovery acknowledges an unknown
+    /// reply only when this and `contentHash` both match the lookup.
+    desiredVersion : Nat64;
     contentHash : Blob;
     userId : Nat64;
     principal : Principal;
@@ -29,6 +32,9 @@ module {
 
   public type RoleAssignmentInput = {
     logicalId : Text;
+    /// Immutable remote record version; role transitions get a new logical
+    /// record rather than overwriting a prior assignment.
+    desiredVersion : Nat64;
     contentHash : Blob;
     principal : Principal;
     role : Text;
@@ -70,15 +76,24 @@ module {
   };
 
   /// A duplicate delivery is harmless only if it has the exact immutable
-  /// content hash. A lookup under the same logical ID with a different hash
-  /// fails closed; callers must create neither a new assignment ID nor a
-  /// replacement role record.
-  public func decideIdempotentWrite(valid : Bool, desiredHash : Blob, observedHash : ?Blob) : Decision {
+  /// version and content hash. A lookup under the same logical ID with either
+  /// value changed fails closed; callers must create neither a new assignment
+  /// ID nor a replacement role record.
+  public func decideIdempotentWrite(
+    valid : Bool,
+    desiredVersion : Nat64,
+    desiredHash : Blob,
+    observed : ?{ version : Nat64; contentHash : Blob },
+  ) : Decision {
     if (not valid or not isHash(desiredHash)) { return #blocked };
-    switch (observedHash) {
+    switch (observed) {
       case (null) { #accept };
-      case (?hash) {
-        if (isHash(hash) and hash == desiredHash) { #accept } else { #conflict };
+      case (?record) {
+        if (
+          record.version == desiredVersion and
+          isHash(record.contentHash) and
+          record.contentHash == desiredHash
+        ) { #accept } else { #conflict };
       };
     };
   };

@@ -14,9 +14,19 @@ import StorageCatalog "../shared/StorageCatalog";
 /// versioned record transition rather than an overwrite.
 module {
   public type WriteResult = { #acknowledged; #blocked; #conflict; #storageError };
+  /// A fixed, bounded recovery observation.  It intentionally reveals no
+  /// principal, OAuth evidence, or document identifier: the owning core actor
+  /// needs only the immutable tuple it journaled before its write attempt.
+  public type BindingObservation = {
+    #absent;
+    #present : { version : Nat64; contentHash : Blob };
+    #conflict;
+    #storageError;
+  };
 
   type BindingRecord = {
     logicalId : Text;
+    version : Nat64;
     contentHash : Blob;
     userId : Nat64;
     principal : Principal;
@@ -27,6 +37,7 @@ module {
 
   type RoleRecord = {
     logicalId : Text;
+    version : Nat64;
     contentHash : Blob;
     principal : Principal;
     role : Text;
@@ -39,6 +50,7 @@ module {
 
   let bindingSchema : ZenDB.Types.Schema = #Record([
     ("logicalId", #Text),
+    ("version", #Nat64),
     ("contentHash", #Blob),
     ("userId", #Nat64),
     ("principal", #Principal),
@@ -49,6 +61,7 @@ module {
 
   let roleSchema : ZenDB.Types.Schema = #Record([
     ("logicalId", #Text),
+    ("version", #Nat64),
     ("contentHash", #Blob),
     ("principal", #Principal),
     ("role", #Text),
@@ -95,6 +108,7 @@ module {
   func bindingFor(input : IdentityRole.PrincipalBindingInput) : BindingRecord {
     {
       logicalId = input.logicalId;
+      version = input.desiredVersion;
       contentHash = input.contentHash;
       userId = input.userId;
       principal = input.principal;
@@ -107,6 +121,7 @@ module {
   func roleFor(input : IdentityRole.RoleAssignmentInput) : RoleRecord {
     {
       logicalId = input.logicalId;
+      version = input.desiredVersion;
       contentHash = input.contentHash;
       principal = input.principal;
       role = input.role;
@@ -125,11 +140,40 @@ module {
           switch (store.bindings.insert(record)) { case (#ok(_)) #acknowledged; case (#err(_)) #storageError };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          switch (IdentityRole.decideIdempotentWrite(true, input.contentHash, ?existing.contentHash)) {
+          switch (IdentityRole.decideIdempotentWrite(
+            true,
+            input.desiredVersion,
+            input.contentHash,
+            ?{ version = existing.version; contentHash = existing.contentHash },
+          )) {
             case (#accept) #acknowledged;
             case (#conflict) #conflict;
             case (#blocked) #blocked;
           };
+        } else {
+          #conflict;
+        };
+      };
+    };
+  };
+
+  /// The recovery lookup is deliberately fixed to the principal-binding
+  /// collection and caps the engine result at two documents.  A duplicated
+  /// logical ID is a conflict, never a selection of an arbitrary record.
+  public func lookupBinding(store : Store, logicalId : Text) : BindingObservation {
+    if (logicalId.size() == 0 or logicalId.size() > 512) return #conflict;
+    for (character in logicalId.chars()) {
+      if (character < '\u{20}' or character == '\u{7f}') return #conflict;
+    };
+    switch (store.bindings.search(ZenDB.QueryBuilder().Where("logicalId", #eq(#Text(logicalId))).Limit(2))) {
+      case (#err(_)) { #storageError };
+      case (#ok(result)) {
+        let records = result.documents;
+        if (records.size() == 0) {
+          #absent;
+        } else if (records.size() == 1) {
+          let (_, existing, _) = records[0];
+          #present({ version = existing.version; contentHash = existing.contentHash });
         } else {
           #conflict;
         };
@@ -149,7 +193,12 @@ module {
           switch (store.roles.insert(record)) { case (#ok(_)) #acknowledged; case (#err(_)) #storageError };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          switch (IdentityRole.decideIdempotentWrite(true, input.contentHash, ?existing.contentHash)) {
+          switch (IdentityRole.decideIdempotentWrite(
+            true,
+            input.desiredVersion,
+            input.contentHash,
+            ?{ version = existing.version; contentHash = existing.contentHash },
+          )) {
             case (#accept) #acknowledged;
             case (#conflict) #conflict;
             case (#blocked) #blocked;

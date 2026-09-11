@@ -11,6 +11,7 @@ let userPrincipal = Principal.fromText("2vxsx-fae");
 let nonAnonymous = Principal.fromText("rrkah-fqaaa-aaaaa-aaaaq-cai");
 let identity : IdentityRole.PrincipalBindingInput = {
   logicalId = "principal-binding:v1:42";
+  desiredVersion = 1;
   contentHash = hash(1);
   userId = 42;
   principal = nonAnonymous;
@@ -20,6 +21,7 @@ let identity : IdentityRole.PrincipalBindingInput = {
 };
 let oauth : IdentityRole.PrincipalBindingInput = {
   logicalId = "principal-binding:v1:43";
+  desiredVersion = 1;
   contentHash = hash(2);
   userId = 43;
   principal = nonAnonymous;
@@ -29,6 +31,7 @@ let oauth : IdentityRole.PrincipalBindingInput = {
 };
 let role : IdentityRole.RoleAssignmentInput = {
   logicalId = "role-assignment:v1:42:auditor";
+  desiredVersion = 1;
   contentHash = hash(4);
   principal = nonAnonymous;
   role = "auditor";
@@ -47,7 +50,23 @@ assert not IdentityRole.validRoleAssignment({ role with role = "bad\nrole" });
 
 // Exact duplicate delivery is acknowledged; a different value under the same
 // immutable logical ID is a conflict, never an implicit role replacement.
-assert IdentityRole.decideIdempotentWrite(true, role.contentHash, null) == #accept;
-assert IdentityRole.decideIdempotentWrite(true, role.contentHash, ?role.contentHash) == #accept;
-assert IdentityRole.decideIdempotentWrite(true, role.contentHash, ?hash(5)) == #conflict;
-assert IdentityRole.decideIdempotentWrite(false, role.contentHash, null) == #blocked;
+assert IdentityRole.decideIdempotentWrite(true, role.desiredVersion, role.contentHash, null) == #accept;
+assert IdentityRole.decideIdempotentWrite(
+  true,
+  role.desiredVersion,
+  role.contentHash,
+  ?{ version = role.desiredVersion; contentHash = role.contentHash },
+) == #accept;
+assert IdentityRole.decideIdempotentWrite(
+  true,
+  role.desiredVersion + 1,
+  role.contentHash,
+  ?{ version = role.desiredVersion; contentHash = role.contentHash },
+) == #conflict;
+assert IdentityRole.decideIdempotentWrite(
+  true,
+  role.desiredVersion,
+  role.contentHash,
+  ?{ version = role.desiredVersion; contentHash = hash(5) },
+) == #conflict;
+assert IdentityRole.decideIdempotentWrite(false, role.desiredVersion, role.contentHash, null) == #blocked;

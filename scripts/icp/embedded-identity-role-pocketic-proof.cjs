@@ -15,8 +15,8 @@ if (!pocketIcBin || !wasm) throw new Error("Expected PocketIC binary and embedde
 
 const Hash = IDL.Vec(IDL.Nat8);
 const Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
-const Binding = IDL.Record({ logicalId: IDL.Text, contentHash: Hash, userId: IDL.Nat64, principal: IDL.Principal, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
-const Role = IDL.Record({ logicalId: IDL.Text, contentHash: Hash, principal: IDL.Principal, role: IDL.Text });
+const Binding = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, userId: IDL.Nat64, principal: IDL.Principal, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
+const Role = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, principal: IDL.Principal, role: IDL.Text });
 const Result = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
 const ChunkHash = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const ManagementUploadChunk = IDL.Record({
@@ -106,13 +106,15 @@ async function main() {
     await installChunkedCode(pic, bootstrap, canisterId, wasm);
     const actor = pic.createActor(idl, canisterId);
     actor.setPrincipal(bootstrap);
-    const binding = { logicalId: "principal-binding:v1:synthetic-42", contentHash: hash(1), userId: 42n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };
-    const role = { logicalId: "role-assignment:v1:synthetic-42:auditor", contentHash: hash(2), principal: subject, role: "auditor" };
+    const binding = { logicalId: "principal-binding:v1:synthetic-42", desiredVersion: 1n, contentHash: hash(1), userId: 42n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };
+    const role = { logicalId: "role-assignment:v1:synthetic-42:auditor", desiredVersion: 1n, contentHash: hash(2), principal: subject, role: "auditor" };
     expect(await actor.writeBinding(binding), "acknowledged", "initial binding write");
     expect(await actor.writeBinding(binding), "acknowledged", "exact binding retry");
+    expect(await actor.writeBinding({ ...binding, desiredVersion: 2n }), "conflict", "binding version conflict");
     expect(await actor.writeBinding({ ...binding, contentHash: hash(3) }), "conflict", "binding hash conflict");
     expect(await actor.writeRole(role), "acknowledged", "initial role write");
     expect(await actor.writeRole(role), "acknowledged", "exact role retry");
+    expect(await actor.writeRole({ ...role, desiredVersion: 2n }), "conflict", "role version conflict");
     expect(await actor.writeRole({ ...role, contentHash: hash(4) }), "conflict", "role hash conflict");
     expect(await actor.writeRole({ ...role, logicalId: "bad\nlogical-id" }), "blocked", "malformed role rejected");
     expect(await actor.writeBinding({ ...binding, principal: Principal.anonymous() }), "blocked", "anonymous identity rejected");
@@ -127,8 +129,10 @@ async function main() {
       }],
     });
     expect(await actor.writeBinding(binding), "acknowledged", "binding exact retry after upgrade");
+    expect(await actor.writeBinding({ ...binding, desiredVersion: 2n }), "conflict", "binding version conflict after upgrade");
     expect(await actor.writeBinding({ ...binding, contentHash: hash(3) }), "conflict", "binding conflict after upgrade");
     expect(await actor.writeRole(role), "acknowledged", "role exact retry after upgrade");
+    expect(await actor.writeRole({ ...role, desiredVersion: 2n }), "conflict", "role version conflict after upgrade");
     expect(await actor.writeRole({ ...role, contentHash: hash(4) }), "conflict", "role conflict after upgrade");
   } finally {
     await pic.tearDown();

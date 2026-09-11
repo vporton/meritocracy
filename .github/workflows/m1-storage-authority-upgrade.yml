@@ -21,12 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          # The old-to-new proof reads a pinned pre-embedded commit, which may
+          # be beyond a shallow or merged history boundary.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 26.5.0
           cache: npm
       - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
       - name: Cache pinned PocketIC toolchain
         uses: actions/cache@v4
         with:
@@ -63,6 +67,8 @@ jobs:
           node-version: 26.5.0
           cache: npm
       - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
       - name: Cache pinned PocketIC toolchain
         uses: actions/cache@v4
         with:

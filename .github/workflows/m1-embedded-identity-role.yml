@@ -23,6 +23,8 @@ jobs:
           node-version: 26.5.0
           cache: npm
       - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
       - name: Cache pinned PocketIC toolchain
         uses: actions/cache@v4
         with:

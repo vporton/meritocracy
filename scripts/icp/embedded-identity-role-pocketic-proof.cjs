@@ -29,9 +29,11 @@ const ManagementInstallChunkedCode = IDL.Record({
   mode: IDL.Variant({ install: IDL.Null }),
   sender_canister_version: IDL.Opt(IDL.Nat64),
   store_canister: IDL.Opt(IDL.Principal),
-  // PocketIC 12.0.0 predates the management-interface rename to
-  // `target_canister`; its chunked installer accepts `canister_id`.
+  // PocketIC 12.0.0's ingress router requires `canister_id`, while the
+  // management method itself validates the standard `target_canister`.
+  // Candid record subtyping permits this additional routing-only field.
   canister_id: IDL.Principal,
+  target_canister: IDL.Principal,
   wasm_module_hash: IDL.Vec(IDL.Nat8),
 });
 const managementCanister = Principal.fromText("aaaaa-aa");
@@ -80,6 +82,7 @@ async function installChunkedCode(pic, sender, canisterId, wasmPath) {
     sender_canister_version: [],
     store_canister: [],
     canister_id: canisterId,
+    target_canister: canisterId,
     wasm_module_hash: new Uint8Array(wasmHash),
   });
 }

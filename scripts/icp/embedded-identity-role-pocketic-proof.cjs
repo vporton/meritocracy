@@ -2,6 +2,8 @@
 // Synthetic-only PocketIC execution proof for the two fixed M1 adapter
 // collections. This process accepts just a pinned binary and fixture Wasm.
 const path = require("node:path");
+const fs = require("node:fs");
+const crypto = require("node:crypto");
 const picMopsRoot = path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/pic-js-mops");
 const coreRoot = path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/@icp-sdk/core");
 const { PocketIc, PocketIcServer } = require(picMopsRoot);
@@ -16,6 +18,23 @@ const Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
 const Binding = IDL.Record({ logicalId: IDL.Text, contentHash: Hash, userId: IDL.Nat64, principal: IDL.Principal, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
 const Role = IDL.Record({ logicalId: IDL.Text, contentHash: Hash, principal: IDL.Principal, role: IDL.Text });
 const Result = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
+const ManagementUploadChunk = IDL.Record({
+  canister_id: IDL.Principal,
+  chunk: IDL.Vec(IDL.Nat8),
+});
+const ManagementInstallChunkedCode = IDL.Record({
+  arg: IDL.Vec(IDL.Nat8),
+  chunk_hashes_list: IDL.Vec(IDL.Vec(IDL.Nat8)),
+  mode: IDL.Variant({ install: IDL.Null }),
+  sender_canister_version: IDL.Opt(IDL.Nat64),
+  store_canister: IDL.Opt(IDL.Principal),
+  target_canister: IDL.Principal,
+  wasm_module_hash: IDL.Vec(IDL.Nat8),
+});
+const managementCanister = Principal.fromText("aaaaa-aa");
+// Candid framing is small but nonzero, so this is deliberately below the
+// 2 MiB PocketIC ingress ceiling.
+const maxChunkBytes = 1_500_000;
 const idl = ({ IDL: Candid }) => Candid.Service({
   writeBinding: Candid.Func([Binding], [Result], []),
   writeRole: Candid.Func([Role], [Result], []),
@@ -25,6 +44,40 @@ function expect(actual, key, label) {
   if (Object.keys(actual).length !== 1 || !(key in actual)) throw new Error(`${label}: expected ${key}, got ${JSON.stringify(actual)}`);
 }
 
+async function managementUpdate(pic, sender, method, type, value) {
+  const payload = IDL.encode([type], [value]);
+  return pic.client.updateCall({
+    canisterId: managementCanister,
+    sender,
+    method,
+    payload: new Uint8Array(payload),
+  });
+}
+
+async function installChunkedCode(pic, sender, canisterId, wasmPath) {
+  const wasm = fs.readFileSync(wasmPath);
+  const chunkHashes = [];
+  for (let offset = 0; offset < wasm.length; offset += maxChunkBytes) {
+    const chunk = new Uint8Array(wasm.subarray(offset, Math.min(offset + maxChunkBytes, wasm.length)));
+    const response = await managementUpdate(pic, sender, "upload_chunk", ManagementUploadChunk, {
+      canister_id: canisterId,
+      chunk,
+    });
+    const [chunkHash] = IDL.decode([IDL.Vec(IDL.Nat8)], response.body);
+    chunkHashes.push(new Uint8Array(chunkHash));
+  }
+  const wasmHash = crypto.createHash("sha256").update(wasm).digest();
+  await managementUpdate(pic, sender, "install_chunked_code", ManagementInstallChunkedCode, {
+    arg: new Uint8Array(),
+    chunk_hashes_list: chunkHashes,
+    mode: { install: null },
+    sender_canister_version: [],
+    store_canister: [],
+    target_canister: canisterId,
+    wasm_module_hash: new Uint8Array(wasmHash),
+  });
+}
+
 async function main() {
   const server = await PocketIcServer.start({ binPath: pocketIcBin, ttl: 60, showRuntimeLogs: false, showCanisterLogs: false });
   const pic = await PocketIc.create(server.getUrl());
@@ -32,7 +85,7 @@ async function main() {
     const bootstrap = Principal.fromUint8Array(Uint8Array.of(1, 1));
     const subject = Principal.fromUint8Array(Uint8Array.of(1, 42));
     const canisterId = await pic.createCanister({ sender: bootstrap, controllers: [bootstrap] });
-    await pic.installCode({ canisterId, sender: bootstrap, wasm, arg: new Uint8Array() });
+    await installChunkedCode(pic, bootstrap, canisterId, wasm);
     const actor = pic.createActor(idl, canisterId);
     actor.setPrincipal(bootstrap);
     const binding = { logicalId: "principal-binding:v1:synthetic-42", contentHash: hash(1), userId: 42n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };

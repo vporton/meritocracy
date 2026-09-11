@@ -18,7 +18,12 @@ while IFS= read -r source_line; do
 done < <("${mops_cli[@]}" sources --no-install)
 
 "$moc_path" -o="$artifact_dir/embedded_identity_role_proof.wasm" \
-  --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
+  --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
   "$repo_root/fixtures/storage_authority/EmbeddedIdentityRoleStoreProof.mo"
+
+# The linked fixture is installed by the runner through the IC chunked-Wasm
+# management API. The runner bounds every individual upload below PocketIC's
+# 2 MiB ingress maximum; this build intentionally does not reject a valid
+# multi-chunk module.
 sha256sum "$artifact_dir/embedded_identity_role_proof.wasm" >"$artifact_dir/SHA256SUMS"
 printf 'M1 embedded identity/role proof artifact built in %s\n' "$artifact_dir"

@@ -60,12 +60,15 @@ async function installChunkedCode(pic, sender, canisterId, wasmPath) {
   const chunkHashes = [];
   for (let offset = 0; offset < wasm.length; offset += maxChunkBytes) {
     const chunk = new Uint8Array(wasm.subarray(offset, Math.min(offset + maxChunkBytes, wasm.length)));
-    const response = await managementUpdate(pic, sender, "upload_chunk", ManagementUploadChunk, {
+    await managementUpdate(pic, sender, "upload_chunk", ManagementUploadChunk, {
       canister_id: canisterId,
       chunk,
     });
-    const [chunkHash] = IDL.decode([ChunkHash], response.body);
-    chunkHashes.push({ hash: new Uint8Array(chunkHash.hash) });
+    // `upload_chunk` defines this hash as SHA-256(chunk). The low-level
+    // PocketIC client confirms the update succeeded but does not preserve a
+    // decodable Candid reply for this management call. `install_chunked_code`
+    // verifies every supplied hash against the canister's stored chunks.
+    chunkHashes.push({ hash: new Uint8Array(crypto.createHash("sha256").update(chunk).digest()) });
   }
   const wasmHash = crypto.createHash("sha256").update(wasm).digest();
   await managementUpdate(pic, sender, "install_chunked_code", ManagementInstallChunkedCode, {

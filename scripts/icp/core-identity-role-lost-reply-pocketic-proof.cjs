@@ -86,7 +86,15 @@ async function main() {
     await expectReject(() => core.reconcileLostReply(), "non-operator core ingress denied");
     core.setPrincipal(operator);
     await expectReject(() => core.writeThenLoseReply(binding), "deliberately lost authority reply");
-    // Upgrade before recovery: the durable pre-await intent must survive.
+    // Upgrade the authority after its successful write but before the core
+    // can reconcile. The fixed collection must reopen its retained record;
+    // recreating it or losing it turns the later exact lookup into a failure.
+    await install(pic, installer, authorityId, authorityWasm, IDL.encode([IDL.Principal], [coreId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    authority.setPrincipal(outsider);
+    expect(await authority.writeBinding(binding), "blocked", "direct authority write denied after upgrade");
+    expect(await authority.lookupBinding(binding.logicalId), "conflict", "direct authority lookup denied after upgrade");
+    // Upgrade the core before recovery: the durable pre-await intent must
+    // also survive independently from the authority's retained collection.
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileLostReply(), "acknowledge", "exact lost-reply reconciliation after upgrade");
     // Deliver the same immutable operation again. The authority must not

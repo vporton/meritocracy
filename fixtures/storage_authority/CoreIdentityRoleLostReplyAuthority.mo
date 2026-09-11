@@ -12,10 +12,15 @@ shared ({ caller = installer }) persistent actor class (core : Principal) = this
   assert not Principal.isAnonymous(core);
   assert installer != core;
   var stableStore : ZenDB.Types.VersionedStableStore = ZenDB.newStableStore(Principal.fromActor(this), null);
-  transient let store = switch (Embedded.create(stableStore)) {
+  // `create` is valid only on a fresh install.  Reopening on EOP upgrade is
+  // essential: an upgrade must retain the immutable record and must not try
+  // to recreate (or silently replace) either fixed collection.
+  var initialized = false;
+  transient let store = switch (if (initialized) Embedded.reopen(stableStore) else Embedded.create(stableStore)) {
     case (?value) value;
-    case null Runtime.trap("unable to create fixed synthetic collection");
+    case null Runtime.trap("unable to open fixed synthetic collection");
   };
+  initialized := true;
 
   public shared ({ caller }) func writeBinding(input : IdentityRole.PrincipalBindingInput) : async Embedded.WriteResult {
     if (caller != core) return #blocked;

@@ -18,13 +18,14 @@ const Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
 const Binding = IDL.Record({ logicalId: IDL.Text, contentHash: Hash, userId: IDL.Nat64, principal: IDL.Principal, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
 const Role = IDL.Record({ logicalId: IDL.Text, contentHash: Hash, principal: IDL.Principal, role: IDL.Text });
 const Result = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
+const ChunkHash = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const ManagementUploadChunk = IDL.Record({
   canister_id: IDL.Principal,
   chunk: IDL.Vec(IDL.Nat8),
 });
 const ManagementInstallChunkedCode = IDL.Record({
   arg: IDL.Vec(IDL.Nat8),
-  chunk_hashes_list: IDL.Vec(IDL.Vec(IDL.Nat8)),
+  chunk_hashes_list: IDL.Vec(ChunkHash),
   mode: IDL.Variant({ install: IDL.Null }),
   sender_canister_version: IDL.Opt(IDL.Nat64),
   store_canister: IDL.Opt(IDL.Principal),
@@ -63,8 +64,8 @@ async function installChunkedCode(pic, sender, canisterId, wasmPath) {
       canister_id: canisterId,
       chunk,
     });
-    const [chunkHash] = IDL.decode([IDL.Vec(IDL.Nat8)], response.body);
-    chunkHashes.push(new Uint8Array(chunkHash));
+    const [chunkHash] = IDL.decode([ChunkHash], response.body);
+    chunkHashes.push({ hash: new Uint8Array(chunkHash.hash) });
   }
   const wasmHash = crypto.createHash("sha256").update(wasm).digest();
   await managementUpdate(pic, sender, "install_chunked_code", ManagementInstallChunkedCode, {

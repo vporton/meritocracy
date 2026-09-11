@@ -160,6 +160,24 @@ denials. It then upgrades that embedded artifact again and repeats the
 preservation checks. The run fails rather than accepting a replaced matrix,
 authorization reset, or bypass.
 
+### 2026-09-11 synthetic identity/role adapter execution
+
+The private `EmbeddedIdentityRoleStore` adapter is exercised only through the
+disposable `EmbeddedIdentityRoleStoreProof` fixture. GitHub Actions
+[run 34621917379](https://github.com/vporton/meritocracy/actions/runs/34621917379)
+passed on commit `8454e70d05e40d61e2ff7cc15b0af59fdff6b754`: it installs the
+hash-recorded fixture into synthetic PocketIC state using bounded 1,000,000-byte
+Wasm chunks, then proves an initial binding and role write, each exact retry,
+changed-hash conflict, malformed role denial, and anonymous identity denial.
+The harness receives only the pinned PocketIC executable and fixture Wasm; it
+does not use DFX state, an identity, wallet, external network, target data, or
+any storage-authority Candid method.
+
+This is bounded adapter execution evidence only. It does not prove core-domain
+durable intents, inter-canister lost-reply/duplicate recovery, record survival
+through interruption or upgrade, archive handling, low-cycle behavior, or
+repair/resume. No collection is authoritative as a result.
+
 To execute outside a short-lived workspace, run:
 
 ```sh

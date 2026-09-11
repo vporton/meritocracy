@@ -4,17 +4,6 @@ on:
   push:
     branches:
       - feat/icp
-  pull_request:
-    paths:
-      - 'canisters/core/IdentityRoleIntent.mo'
-      - 'canisters/shared/IdentityRoleRecovery.mo'
-      - 'canisters/shared/MutationRecovery.mo'
-      - 'canisters/storage_authority/EmbeddedIdentityRoleStore.mo'
-      - 'fixtures/storage_authority/CoreIdentityRoleLostReply*.mo'
-      - 'scripts/icp/*core-identity-role-lost-reply*'
-      - 'mops.toml'
-      - 'mops.lock'
-      - '.github/workflows/m1-core-identity-role-lost-reply.yml'
   workflow_dispatch:
 
 jobs:

@@ -33,7 +33,13 @@ done < <("${mops_cli[@]}" sources --no-install)
 # management API. The runner bounds every individual upload below PocketIC's
 # 2 MiB ingress maximum; this build intentionally does not reject a valid
 # multi-chunk module.
-sha256sum "$staging_dir/embedded_identity_role_proof.wasm" >"$staging_dir/SHA256SUMS"
+# Keep the published manifest relative to its artifact directory.  A checksum
+# containing the disposable staging path would correctly fail after the pair
+# is atomically published, but would make every later proof unusable.
+(
+  cd "$staging_dir"
+  sha256sum embedded_identity_role_proof.wasm >SHA256SUMS
+)
 
 # Publish the checksum last. A runner observing the narrow replacement window
 # fails closed against the old checksum rather than executing an unverified

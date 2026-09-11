@@ -26,7 +26,12 @@ const ManagementUploadChunk = IDL.Record({
 const ManagementInstallChunkedCode = IDL.Record({
   arg: IDL.Vec(IDL.Nat8),
   chunk_hashes_list: IDL.Vec(ChunkHash),
-  mode: IDL.Variant({ install: IDL.Null }),
+  mode: IDL.Variant({
+    install: IDL.Null,
+    // Keep the EOP upgrade shape explicit.  The proof never substitutes an
+    // initializer argument and upgrades only the exact hash-checked fixture.
+    upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool) })),
+  }),
   sender_canister_version: IDL.Opt(IDL.Nat64),
   store_canister: IDL.Opt(IDL.Principal),
   // PocketIC 12.0.0's ingress router requires `canister_id`, while the
@@ -59,7 +64,7 @@ async function managementUpdate(pic, sender, method, type, value) {
   });
 }
 
-async function installChunkedCode(pic, sender, canisterId, wasmPath) {
+async function installChunkedCode(pic, sender, canisterId, wasmPath, mode = { install: null }) {
   const wasm = fs.readFileSync(wasmPath);
   const chunkHashes = [];
   for (let offset = 0; offset < wasm.length; offset += maxChunkBytes) {
@@ -78,7 +83,7 @@ async function installChunkedCode(pic, sender, canisterId, wasmPath) {
   await managementUpdate(pic, sender, "install_chunked_code", ManagementInstallChunkedCode, {
     arg: new Uint8Array(),
     chunk_hashes_list: chunkHashes,
-    mode: { install: null },
+    mode,
     sender_canister_version: [],
     store_canister: [],
     canister_id: canisterId,
@@ -107,6 +112,15 @@ async function main() {
     expect(await actor.writeRole({ ...role, contentHash: hash(4) }), "conflict", "role hash conflict");
     expect(await actor.writeRole({ ...role, logicalId: "bad\nlogical-id" }), "blocked", "malformed role rejected");
     expect(await actor.writeBinding({ ...binding, principal: Principal.anonymous() }), "blocked", "anonymous identity rejected");
+
+    // This is a real EOP upgrade of the same hash-checked fixture Wasm.  The
+    // post-upgrade exact retry and changed-hash conflict together distinguish
+    // retained immutable records from an empty/replaced collection.
+    await installChunkedCode(pic, bootstrap, canisterId, wasm, { upgrade: [] });
+    expect(await actor.writeBinding(binding), "acknowledged", "binding exact retry after upgrade");
+    expect(await actor.writeBinding({ ...binding, contentHash: hash(3) }), "conflict", "binding conflict after upgrade");
+    expect(await actor.writeRole(role), "acknowledged", "role exact retry after upgrade");
+    expect(await actor.writeRole({ ...role, contentHash: hash(4) }), "conflict", "role conflict after upgrade");
   } finally {
     await pic.tearDown();
     await server.stop();

@@ -1,6 +1,6 @@
 # ICP migration execution plan
 
-Last updated: 2026-09-09
+Last updated: 2026-09-11
 
 Status: `M1_EMPIRICAL_SCHEMA_AND_STORAGE_DESIGN` — IN_PROGRESS. G1 is approved and the AGPL-3.0-only license/metadata change is complete. M1 now includes an un-deployed, non-authoritative storage-authority RBAC scaffold; it has no ZenDB persistence, target data, deployment, or legacy behavior change.
 
@@ -72,6 +72,8 @@ Scope/evidence:
 - Baseline verification under Node.js v26.5.0/npm 12.0.1 (`nvm use stable`): root backend+frontend production build passed; backend security suite passed (1/1). Frontend lint did not reach source analysis because ESLint 10 requires `eslint.config.js` while the repository still uses the legacy configuration. This pre-existing tooling gap is recorded below and must be corrected in a small post-G1 tooling commit.
 
 23. **IN_PROGRESS 2026-09-11 (synthetic proof runner cache boundary):** `scripts/icp/run-embedded-identity-role-proof.sh` now copies its already-selected PocketIC binary byte-for-byte to a disposable writable `/tmp` directory before passing it to `pic-js-mops`. The client validates its binary with `chmod`, which cannot modify Mops' read-only cache; the copy preserves the selected binary while retaining the proof's no-DFX, no-identity, no-wallet, and no-network-configuration boundary. Shell and JavaScript syntax checks and `mops test IdentityRoleRecovery` pass; the synthetic fixture Wasm was built and hash-recorded. The isolated PocketIC execution still exceeds the workspace's interactive 30-second command ceiling, so no pass result is claimed. This change neither exposes a storage method nor makes the adapter authoritative.
+
+24. **IMPLEMENTED 2026-09-11 (M1 upgrade-proof push coverage):** `.github/workflows/m1-storage-authority-upgrade.yml` now runs its existing isolated PocketIC proof jobs on every push whose source branch is exactly `feat/icp`, in addition to its existing path-filtered pull-request and manual triggers. The push trigger intentionally has no path filter, so every such push schedules the proof. The jobs, 20-minute limits, pinned dependencies, synthetic-only inputs, no-DFX/no-wallet boundary, and artifact retention are unchanged.
 
 Acceptance:
 

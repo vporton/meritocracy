@@ -1,6 +1,9 @@
 name: M1 storage-authority PocketIC upgrade proof
 
 on:
+  push:
+    branches:
+      - feat/icp
   pull_request:
     paths:
       - 'canisters/storage_authority/**'

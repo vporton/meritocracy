@@ -34,6 +34,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          mkdir -p .mops/m1-embedded-identity-role-proof
           scripts/icp/build-embedded-identity-role-proof.sh 2>&1 | tee .mops/m1-embedded-identity-role-proof/build.log
       - name: Run synthetic fixed-collection proof
         shell: bash

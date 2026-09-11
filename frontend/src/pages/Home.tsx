@@ -5,13 +5,8 @@ import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
-
-interface WorldGdpData {
-  worldGdp: number;
-  formatted: string;
-  currency: string;
-  lastUpdated: string;
-}
+import { getFrontendOrigin } from '../config/origins'
+import { useWorldGdp } from '../hooks/useWorldGdp'
 
 interface UserGdpShareData {
   userId: number;
@@ -22,14 +17,15 @@ interface UserGdpShareData {
 }
 
 export default function Home() {
+  const frontendOrigin = getFrontendOrigin()
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
   const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
-  const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
   const showEvaluationCTA = !user?.onboarded
+  const worldGdp = useWorldGdp()
 
   const formatUsd = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
@@ -51,22 +47,6 @@ export default function Home() {
     }
 
     fetchPrimaryNetworkAddress()
-  }, [])
-
-  // TODO@P3: duplicate code
-  useEffect(() => {
-    const fetchWorldGdp = async () => {
-      try {
-        const response = await api.get('/api/global/gdp')
-        if (response.data.success) {
-          setWorldGdp(response.data.data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch world GDP:', error)
-      }
-    }
-
-    fetchWorldGdp()
   }, [])
 
   useEffect(() => {
@@ -152,48 +132,48 @@ export default function Home() {
   "@graph": [
    {
       "@type": "Organization",
-      "@id": "https://merit.science-dao.org/#organization",
+      "@id": "${frontendOrigin}/#organization",
       "name": "Meritocracy",
-      "url": "https://merit.science-dao.org",
+      "url": "${frontendOrigin}",
       "description": "A decentralized science (DeSci) DAO that funds scientists and open-source developers through transparent governance.",
-      "logo": "https://merit.science-dao.org/logo.png",
+      "logo": "${frontendOrigin}/logo.png",
       "sameAs": [
         "https://science-dao.org"
       ]
     },
     {
       "@type": "WebSite",
-      "@id": "https://merit.science-dao.org/#website",
-      "url": "https://merit.science-dao.org",
+      "@id": "${frontendOrigin}/#website",
+      "url": "${frontendOrigin}",
       "name": "Meritocracy DAO",
       "description": "A decentralized funding platform for scientists and open-source developers.",
       "publisher": {
-        "@id": "https://merit.science-dao.org/#organization"
+        "@id": "${frontendOrigin}/#organization"
       }
     },
     {
       "@type": "WebPage",
-      "@id": "https://merit.science-dao.org/#webpage",
-      "url": "https://merit.science-dao.org",
+      "@id": "${frontendOrigin}/#webpage",
+      "url": "${frontendOrigin}",
       "name": "Meritocracy: DAO for Funding Scientists and Open-Source Developers",
       "description": "Meritocracy is a decentralized science DAO that distributes funding to scientists and open-source developers based on measurable contributions.",
       "isPartOf": {
-        "@id": "https://merit.science-dao.org/#website"
+        "@id": "${frontendOrigin}/#website"
       },
       "about": {
-        "@id": "https://merit.science-dao.org/#software"
+        "@id": "${frontendOrigin}/#software"
       }
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://merit.science-dao.org/#software",
+      "@id": "${frontendOrigin}/#software",
       "name": "Meritocracy",
       "applicationCategory": "BlockchainApplication",
       "operatingSystem": "Web",
-      "url": "https://merit.science-dao.org",
+      "url": "${frontendOrigin}",
       "description": "A decentralized science DAO platform that funds scientists and open-source developers through transparent governance and voting.",
       "creator": {
-        "@id": "https://merit.science-dao.org/#organization"
+        "@id": "${frontendOrigin}/#organization"
       },
       "offers": {
         "@type": "Offer",
@@ -205,7 +185,7 @@ export default function Home() {
 }`}
         </script>
       </Helmet>
-      <Canonical baseUrl="https://merit.science-dao.org" />
+      <Canonical baseUrl={frontendOrigin} />
       <h1>Meritocracy: A DAO<sup><a href='https://science-dao.org/dao-status/'>*</a></sup> for Funding Scientists and Open-Source Developers</h1>
       <p>Meritocracy is a decentralized science (DeSci) DAO that distributes funding to scientists and open-source developers based on measurable contributions. The system uses transparent voting, reputation signals, and on-chain records to allocate resources without traditional grant committees.</p>
       <p>After you connect your accounts, this app asks AI to analyze your works and assigns you a weekly payment, if you are a scientist or free software developer. The service is entirely free for you, you even don't pay blockchain gas fees.</p>

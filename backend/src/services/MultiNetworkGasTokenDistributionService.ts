@@ -17,11 +17,13 @@ import {
   stellarGasTokenNetworkAdapter,
   icpGasTokenNetworkAdapter
 } from './gas-networks/index.js';
+import type { IcpTreasuryFundingAddress } from './gas-networks/IcpGasTokenNetworkAdapter.js';
 import { systemSecretService } from './SystemSecretService.js';
 import emailService from './EmailService.js';
 import { pendingTransactionService } from './PendingTransactionService.js';
 import { prisma } from '../lib/prisma.js';
 import { getVerifiedEmailAddresses } from './userEmailUtils.js';
+import { isEuCountryCode } from '../utils/euCountries.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -68,11 +70,32 @@ type ReserveStatusEntry = {
   gasPrice?: string;
   balanceFormatted?: string;
   gasPriceFormatted?: string;
+  fundingAddresses?: IcpTreasuryFundingAddress[];
 };
 
 type AdapterContextEntry = {
   adapter: GasTokenNetworkAdapter;
   context: GasTokenNetworkContext;
+};
+
+const SUPPORTED_REGIONS = ['EU'] as const;
+type SupportedRegion = (typeof SUPPORTED_REGIONS)[number];
+
+const maybeGetIcpFundingAddresses = async (
+  adapter: GasTokenNetworkAdapter,
+  context: GasTokenNetworkContext
+): Promise<IcpTreasuryFundingAddress[] | undefined> => {
+  if (adapter.type !== 'ICP') {
+    return undefined;
+  }
+
+  try {
+    return await icpGasTokenNetworkAdapter.getTreasuryFundingAddresses(context);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️  Failed to load ICP treasury funding addresses for ${context.networkName}: ${message}`);
+    return undefined;
+  }
 };
 
 export class MultiNetworkGasTokenDistributionService {
@@ -168,10 +191,13 @@ export class MultiNetworkGasTokenDistributionService {
       const contextEntries = new Map<string, AdapterContextEntry>();
       console.log(`🔍 [MultiNetwork] Refreshing adapter contexts for ${cacheKey}...`);
 
-      // If no specific country is requested, we include all countries that have onboarded users
+      // If no specific scope is requested, include all country contexts and supported regional contexts.
       let countriesToInclude: string[] = [];
+      let regionsToInclude: SupportedRegion[] = [];
       if (tokenOptions.country) {
         countriesToInclude = [tokenOptions.country];
+      } else if (tokenOptions.region) {
+        regionsToInclude = [tokenOptions.region];
       } else {
         // If tests override eligible users, derive countries from the override to avoid DB-dependent contexts.
         if (this.eligibleUsersOverride) {
@@ -189,6 +215,8 @@ export class MultiNetworkGasTokenDistributionService {
           });
           countriesToInclude = usersWithCountry.map(u => u.residenceCountry!);
         }
+
+        regionsToInclude = [...SUPPORTED_REGIONS];
       }
 
       for (const adapter of this.networkAdapters) {
@@ -202,8 +230,8 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         for (const context of baseContexts) {
-          // Add Global context (only if we are not restricted to a specific country)
-          if (!tokenOptions.country) {
+          // Add Global context only if we are not restricted to a narrower scope.
+          if (!tokenOptions.country && !tokenOptions.region) {
             contextEntries.set(context.networkId, { adapter, context });
           }
 
@@ -211,41 +239,38 @@ export class MultiNetworkGasTokenDistributionService {
           for (const country of countriesToInclude) {
             try {
               const secret = await systemSecretService.ensureCountrySecret(context.networkId, country);
-
-              let finalWalletAddress = 'ADDRESS-NOT-RESOLVED';
-              let finalPrivateKey: string | undefined = undefined;
-
-              if (secret) {
-                finalPrivateKey = secret.trim();
-                if (adapter.deriveAddress) {
-                  try {
-                    finalWalletAddress = await adapter.deriveAddress(finalPrivateKey);
-                  } catch (e) {
-                    console.error(`Derivation failed for ${context.networkId} (${country}):`, e);
-                    finalWalletAddress = 'DERIVATION-FAILED';
-                  }
-                } else {
-                  finalWalletAddress = 'DERIVE-NOT-SUPPORTED';
-                }
-              } else {
-                finalWalletAddress = 'SECRET-MISSING-DB';
-              }
-
-              const newNetworkId = `${context.networkId}-${country}`;
-              contextEntries.set(newNetworkId, {
+              const scopedContext = await this.buildScopedContext(
                 adapter,
-                context: {
-                  ...context,
-                  networkId: newNetworkId,
-                  networkName: `${context.networkName} (${country})`,
-                  country,
-                  privateKey: finalPrivateKey,
-                  walletAddress: finalWalletAddress,
-                  baseNetworkId: context.networkId
-                }
+                context,
+                country,
+                'country',
+                secret
+              );
+              contextEntries.set(scopedContext.networkId, {
+                adapter,
+                context: scopedContext
               });
             } catch (error) {
               console.error(`❌ Failed to setup country context for ${context.networkId} / ${country}:`, error);
+            }
+          }
+
+          for (const region of regionsToInclude) {
+            try {
+              const secret = await systemSecretService.ensureRegionSecret(context.networkId, region);
+              const scopedContext = await this.buildScopedContext(
+                adapter,
+                context,
+                region,
+                'region',
+                secret
+              );
+              contextEntries.set(scopedContext.networkId, {
+                adapter,
+                context: scopedContext
+              });
+            } catch (error) {
+              console.error(`❌ Failed to setup region context for ${context.networkId} / ${region}:`, error);
             }
           }
         }
@@ -279,8 +304,50 @@ export class MultiNetworkGasTokenDistributionService {
     return {
       tokenType: overrides?.tokenType ?? this.defaultTokenOptions.tokenType,
       tokenSymbol: overrides?.tokenSymbol,
-      country: overrides?.country
+      country: overrides?.country,
+      region: overrides?.region
     };
+  }
+
+  private async buildScopedContext(
+    adapter: GasTokenNetworkAdapter,
+    context: GasTokenNetworkContext,
+    scopeCode: string,
+    scopeType: 'country' | 'region',
+    secret: string
+  ): Promise<GasTokenNetworkContext> {
+    let walletAddress = 'ADDRESS-NOT-RESOLVED';
+
+    if (adapter.deriveAddress) {
+      try {
+        walletAddress = await adapter.deriveAddress(secret.trim());
+      } catch (error) {
+        console.error(`Derivation failed for ${context.networkId} (${scopeCode}):`, error);
+        walletAddress = 'DERIVATION-FAILED';
+      }
+    } else {
+      walletAddress = 'DERIVE-NOT-SUPPORTED';
+    }
+
+    return {
+      ...context,
+      networkId: `${context.networkId}-${scopeCode}`,
+      networkName: `${context.networkName} (${scopeCode})`,
+      country: scopeType === 'country' ? scopeCode : undefined,
+      region: scopeType === 'region' ? (scopeCode as SupportedRegion) : undefined,
+      privateKey: secret.trim(),
+      walletAddress,
+      baseNetworkId: context.networkId
+    };
+  }
+
+  private isUserInRegion(user: User, region: SupportedRegion): boolean {
+    switch (region) {
+      case 'EU':
+        return isEuCountryCode(user.residenceCountry);
+      default:
+        return false;
+    }
   }
 
   private normalizeTokenAddress(tokenAddress: unknown): string | null {
@@ -356,7 +423,7 @@ export class MultiNetworkGasTokenDistributionService {
 
   /**
    * Fetch users eligible for distribution calculations.
-   * Users currently blocked by ban/review are handled downstream by deferring their payout,
+   * Users currently blocked by ban/review or an overdue Liveliness check are handled downstream by deferring their payout,
    * so their owed amount can be released quickly after unban.
    */
   private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
@@ -379,7 +446,19 @@ export class MultiNetworkGasTokenDistributionService {
     const now = new Date();
     const isBanned = !!(user.bannedTill && user.bannedTill > now);
     const isUnderReview = !!user.paymentHoldStartedAt;
-    return isBanned || isUnderReview;
+    // Keep existing installations and integration fixtures operational until the
+    // dedicated Didit workflow is configured. Once configured, every payout
+    // requires a current Liveliness result.
+    const livelinessEnabled = Boolean(process.env.DIDIT_WORKFLOW_LIVELINESS_ID);
+    const isLivelinessExpired = livelinessEnabled &&
+      (user.livelinessStatus !== 'APPROVED' || !user.livelinessDueAt || user.livelinessDueAt <= now);
+    return isBanned || isUnderReview || isLivelinessExpired;
+  }
+
+  private getPaymentHoldReason(user: User): string {
+    if (user.bannedTill && user.bannedTill > new Date()) return 'BANNED_HOLD';
+    if (user.paymentHoldStartedAt) return 'UNDER_REVIEW_HOLD';
+    return 'LIVELINESS_REQUIRED';
   }
 
   private async getTokenReserve(context: GasTokenNetworkContext): Promise<number> {
@@ -453,11 +532,15 @@ export class MultiNetworkGasTokenDistributionService {
       }
     >();
 
-    // Use collectNetworkAdapterContexts to get all relevant contexts (Global + Countries)
+    // Use collectNetworkAdapterContexts to get all relevant contexts (global, regional, country).
     const contextEntries = await this.collectNetworkAdapterContexts(tokenOptions);
 
     for (const [contextId, { adapter, context }] of contextEntries.entries()) {
-      const userFilter = context.country ? (u: User) => u.residenceCountry === context.country : undefined;
+      const userFilter = context.country
+        ? (u: User) => u.residenceCountry === context.country
+        : context.region
+          ? (u: User) => this.isUserInRegion(u, context.region as SupportedRegion)
+          : undefined;
 
       const eligibleUsers = users.filter(user => {
         if (userFilter && !userFilter(user)) return false;
@@ -472,7 +555,7 @@ export class MultiNetworkGasTokenDistributionService {
       const totalShareDenom = eligibleUsers.reduce((sum, u) => sum + (u.shareInGDP ?? 0), 0);
 
       if (eligibleUsers.length === 0 || totalShareDenom <= 0) {
-        if (!context.country) {
+        if (!context.country && !context.region) {
           console.warn(
             `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
           );
@@ -532,7 +615,7 @@ export class MultiNetworkGasTokenDistributionService {
       const totalAvailable = spendableFromWallet + currentReserve; // currentReserve checks the separate reserve table, mostly for reporting now
 
       if (totalAvailable <= 0 && totalBacklogLiability <= 0) {
-        if (!context.country) {
+        if (!context.country && !context.region) {
           console.warn(
             `⚠️  No ${context.tokenSymbol} funds available for distribution on ${context.networkName}`
           );
@@ -631,9 +714,7 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         if (this.isUserPaymentBlocked(user)) {
-          const holdReason = user.bannedTill && user.bannedTill > new Date()
-            ? 'BANNED_HOLD'
-            : 'UNDER_REVIEW_HOLD';
+          const holdReason = this.getPaymentHoldReason(user);
 
           result.reservedAmount += dist.amountToken;
 
@@ -957,9 +1038,7 @@ export class MultiNetworkGasTokenDistributionService {
         }
 
         if (this.isUserPaymentBlocked(user)) {
-          const holdReason = user.bannedTill && user.bannedTill > new Date()
-            ? 'BANNED_HOLD'
-            : 'UNDER_REVIEW_HOLD';
+          const holdReason = this.getPaymentHoldReason(user);
 
           result.reservedAmount += dist.amountToken;
 
@@ -1539,46 +1618,40 @@ export class MultiNetworkGasTokenDistributionService {
       const networkResults = new Map<string, NetworkDistributionResult>();
       const errors: string[] = [];
 
-      const networkPromises = Array.from(networkDistributions.entries()).map(
-        async ([networkId, payload]) => {
-          const { adapter, context, distributions } = payload;
+      for (const [networkId, payload] of networkDistributions.entries()) {
+        const { adapter, context, distributions } = payload;
 
-          try {
-            if (distributions.length === 0) {
-              networkResults.set(networkId, {
-                networkId: context.networkId,
-                networkName: context.networkName,
-                adapterType: context.adapterType,
-                tokenSymbol: context.tokenSymbol,
-                tokenType: context.tokenType,
-                tokenDecimals: context.tokenDecimals,
-                distributedAmount: 0,
-                reservedAmount: 0,
-                errors: [],
-                distributed: 0,
-                reserved: 0
-              });
-              return;
-            }
-
-            const networkResult = await this.processNetworkDistribution(
-              adapter,
-              context,
-              distributions
-            );
-            networkResults.set(networkId, networkResult);
-            errors.push(
-              ...networkResult.errors.map(error => `[${context.networkName}] ${error} `)
-            );
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
-            console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        try {
+          if (distributions.length === 0) {
+            networkResults.set(networkId, {
+              networkId: context.networkId,
+              networkName: context.networkName,
+              adapterType: context.adapterType,
+              tokenSymbol: context.tokenSymbol,
+              tokenType: context.tokenType,
+              tokenDecimals: context.tokenDecimals,
+              distributedAmount: 0,
+              reservedAmount: 0,
+              errors: [],
+              distributed: 0,
+              reserved: 0
+            });
+            continue;
           }
-        }
-      );
 
-      await Promise.all(networkPromises);
+          const networkResult = await this.processNetworkDistribution(
+            adapter,
+            context,
+            distributions
+          );
+          networkResults.set(networkId, networkResult);
+          errors.push(...networkResult.errors.map(error => `[${context.networkName}] ${error} `));
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
+          console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        }
+      }
 
       const result: MultiNetworkDistributionResult = {
         networkResults,
@@ -1634,47 +1707,41 @@ export class MultiNetworkGasTokenDistributionService {
       const networkResults = new Map<string, NetworkDistributionResult>();
       const errors: string[] = [];
 
-      const networkPromises = Array.from(networkDistributions.entries()).map(
-        async ([networkId, payload]) => {
-          const { adapter, context, distributions } = payload;
+      for (const [networkId, payload] of networkDistributions.entries()) {
+        const { adapter, context, distributions } = payload;
 
-          try {
-            if (distributions.length === 0) {
-              networkResults.set(networkId, {
-                networkId: context.networkId,
-                networkName: context.networkName,
-                adapterType: context.adapterType,
-                tokenSymbol: context.tokenSymbol,
-                tokenType: context.tokenType,
-                tokenDecimals: context.tokenDecimals,
-                distributedAmount: 0,
-                reservedAmount: 0,
-                errors: [],
-                distributed: 0,
-                reserved: 0
-              });
-              return;
-            }
-
-            // Use two-stage processing instead of immediate execution
-            const networkResult = await this.processNetworkDistributionTwoStage(
-              adapter,
-              context,
-              distributions
-            );
-            networkResults.set(networkId, networkResult);
-            errors.push(
-              ...networkResult.errors.map(error => `[${context.networkName}] ${error} `)
-            );
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
-            console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        try {
+          if (distributions.length === 0) {
+            networkResults.set(networkId, {
+              networkId: context.networkId,
+              networkName: context.networkName,
+              adapterType: context.adapterType,
+              tokenSymbol: context.tokenSymbol,
+              tokenType: context.tokenType,
+              tokenDecimals: context.tokenDecimals,
+              distributedAmount: 0,
+              reservedAmount: 0,
+              errors: [],
+              distributed: 0,
+              reserved: 0
+            });
+            continue;
           }
-        }
-      );
 
-      await Promise.all(networkPromises);
+          // Use two-stage processing instead of immediate execution
+          const networkResult = await this.processNetworkDistributionTwoStage(
+            adapter,
+            context,
+            distributions
+          );
+          networkResults.set(networkId, networkResult);
+          errors.push(...networkResult.errors.map(error => `[${context.networkName}] ${error} `));
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`[${context.networkName}] Fatal error: ${errorMessage} `);
+          console.error(`💥[${context.networkName}] Fatal error: `, errorMessage);
+        }
+      }
 
       const result: MultiNetworkDistributionResult = {
         networkResults,
@@ -1715,29 +1782,36 @@ export class MultiNetworkGasTokenDistributionService {
   }
 
 
-  async getUserDistributionHistory(userId: number) {
+  async getUserDistributionHistory(userId: number, limit = 100) {
     return await this.prisma.gasTokenDistribution.findMany({
       where: { userId },
-      orderBy: { distributionDate: 'desc' }
+      orderBy: { distributionDate: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500)
     });
   }
 
-  async getNetworkDistributionHistory(networkId: string) {
+  async getNetworkDistributionHistory(networkId: string, limit = 100) {
     return await this.prisma.gasTokenDistribution.findMany({
       where: { network: networkId },
       include: {
-        user: true
+        user: {
+          select: { id: true, name: true }
+        }
       },
-      orderBy: { distributionDate: 'desc' }
+      orderBy: { distributionDate: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500)
     });
   }
 
-  async getAllDistributionHistory() {
+  async getAllDistributionHistory(limit = 100) {
     return await this.prisma.gasTokenDistribution.findMany({
       include: {
-        user: true
+        user: {
+          select: { id: true, name: true }
+        }
       },
-      orderBy: { distributionDate: 'desc' }
+      orderBy: { distributionDate: 'desc' },
+      take: Math.min(Math.max(limit, 1), 500)
     });
   }
 
@@ -1762,6 +1836,7 @@ export class MultiNetworkGasTokenDistributionService {
     entry: AdapterContextEntry
   ): Promise<ReserveStatusEntry> {
     const { adapter, context } = entry;
+    const fundingAddresses = await maybeGetIcpFundingAddresses(adapter, context);
     const reserveRow = await this.prisma.gasTokenReserve.findFirst({
       where: this.buildTokenWhere(context),
       orderBy: { id: 'desc' }
@@ -1791,7 +1866,8 @@ export class MultiNetworkGasTokenDistributionService {
       lastDistribution: reserveRow?.lastDistribution ?? null,
       adapterType: context.adapterType,
       networkName: context.networkName,
-      address: context.walletAddress
+      address: context.walletAddress,
+      fundingAddresses
     };
   }
 
@@ -1838,11 +1914,14 @@ export class MultiNetworkGasTokenDistributionService {
     let lookupKey = networkId;
     if (tokenOptions.country && !networkId.endsWith(`-${tokenOptions.country}`)) {
       lookupKey = `${networkId}-${tokenOptions.country}`;
+    } else if (tokenOptions.region && !networkId.endsWith(`-${tokenOptions.region}`)) {
+      lookupKey = `${networkId}-${tokenOptions.region}`;
     }
     const entry = contexts.get(lookupKey);
     if (!entry) return undefined;
 
     const { adapter, context } = entry;
+    const fundingAddresses = await maybeGetIcpFundingAddresses(adapter, context);
 
     // 1. Get info from DB
     const reserveRow = await this.prisma.gasTokenReserve.findFirst({
@@ -1865,7 +1944,8 @@ export class MultiNetworkGasTokenDistributionService {
       lastDistribution,
       adapterType: context.adapterType,
       networkName: context.networkName,
-      address: context.walletAddress
+      address: context.walletAddress,
+      fundingAddresses
     };
 
     // 3. Supplement with live blockchain info
@@ -1877,8 +1957,9 @@ export class MultiNetworkGasTokenDistributionService {
 
         if (!enabledEvmNetworks.includes(networkId)) {
           // Try exact suffix match first
-          if (tokenOptions.country && networkId.endsWith(`-${tokenOptions.country}`)) {
-            const potential = networkId.slice(0, -1 * (tokenOptions.country.length + 1));
+          const scopedSuffix = tokenOptions.country ?? tokenOptions.region;
+          if (scopedSuffix && networkId.endsWith(`-${scopedSuffix}`)) {
+            const potential = networkId.slice(0, -1 * (scopedSuffix.length + 1));
             if (enabledEvmNetworks.includes(potential)) {
               baseNetworkId = potential;
             }
@@ -1970,7 +2051,9 @@ export class MultiNetworkGasTokenDistributionService {
         walletAddress: sanitized.walletAddress,
         tokenSymbol: sanitized.tokenSymbol,
         tokenType: sanitized.tokenType,
-        baseNetworkId: sanitized.baseNetworkId
+        baseNetworkId: sanitized.baseNetworkId,
+        country: sanitized.country,
+        region: sanitized.region
       };
     });
   }
@@ -1994,7 +2077,7 @@ export class MultiNetworkGasTokenDistributionService {
         let matchedInfo: { name: string; chainId: number; address: string; balance: bigint; gasPrice: bigint } | undefined;
 
         for (const [baseNetworkId, info] of networkInfo) {
-          if (contextKey === baseNetworkId || contextKey.startsWith(`${baseNetworkId} -`)) {
+          if (contextKey === baseNetworkId || contextKey.startsWith(`${baseNetworkId}-`)) {
             matchedInfo = info;
             break;
           }

@@ -1,13 +1,18 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useConnect, useAccount, useSignMessage } from 'wagmi';
+import { useAppKit, useAppKitAccount, useAppKitEvents, useAppKitState } from '@reown/appkit/react';
+import { AlertController } from '@reown/appkit-controllers';
+import { useConnection, useDisconnect, useSignMessage } from 'wagmi';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';
-import { validateNonEvmAddresses, NonEvmAddressErrors } from '../utils/addressValidation';
+import { NonEvmAddressInput, validateNonEvmAddresses } from '../utils/addressValidation';
 import './ConnectForm.css';
 import Canonical from './Canonical';
 import { Helmet } from 'react-helmet-async';
+import { hasReownWalletModal } from '../config/wagmi';
+import { getApiOrigin, getFrontendOrigin } from '../config/origins';
+import { trackAnalyticsEvent } from '../utils/analytics';
 
 interface ConnectStatus {
   [provider: string]: string | undefined;
@@ -19,27 +24,6 @@ interface DisplayProvider {
   value: string;
   displayValue: string;
   isBlockchain: boolean;
-}
-
-interface OAuthClientIds {
-  github: string;
-  orcid: string;
-  bitbucket: string;
-  gitlab: string;
-}
-
-interface OAuthRedirectUris {
-  github: string;
-  orcid: string;
-  bitbucket: string;
-  gitlab: string;
-}
-
-interface OAuthAuthUrls {
-  github: string;
-  orcid: string;
-  bitbucket: string;
-  gitlab: string;
 }
 
 interface MessageEvent {
@@ -57,6 +41,74 @@ interface MessageEvent {
     error?: string;
   };
 }
+
+interface SolanaPublicKey {
+  toBase58(): string;
+}
+
+interface SolanaWalletProvider {
+  publicKey?: SolanaPublicKey;
+  isPhantom?: boolean;
+  isSolflare?: boolean;
+  isBackpack?: boolean;
+  isMetaMask?: boolean;
+  providers?: SolanaWalletProvider[];
+  connect?: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: SolanaPublicKey } | void>;
+  request?: (args: { method: string; params?: unknown }) => Promise<{ publicKey?: SolanaPublicKey } | string | void>;
+}
+
+interface SolanaWindow extends Window {
+  backpack?: SolanaWalletProvider | { solana?: SolanaWalletProvider };
+  phantom?: { solana?: SolanaWalletProvider };
+  solana?: SolanaWalletProvider;
+  solflare?: SolanaWalletProvider | { solana?: SolanaWalletProvider };
+}
+
+interface SolanaWalletOption {
+  id: string;
+  label: string;
+  provider: SolanaWalletProvider;
+}
+
+type AddressFormValues = {
+  ethereumAddress: string;
+} & Record<keyof NonEvmAddressInput, string>;
+
+type AddressFormErrors = Partial<Record<keyof AddressFormValues, string>>;
+
+const ADDRESS_FORM_FIELDS: (keyof AddressFormValues)[] = [
+  'ethereumAddress',
+  'solanaAddress',
+  'bitcoinAddress',
+  'bitcoinCashAddress',
+  'polkadotAddress',
+  'cosmosAddress',
+  'stellarAddress',
+  'icpAddress',
+];
+
+const getEmptyAddressForm = (): AddressFormValues => ({
+  ethereumAddress: '',
+  solanaAddress: '',
+  bitcoinAddress: '',
+  bitcoinCashAddress: '',
+  polkadotAddress: '',
+  cosmosAddress: '',
+  stellarAddress: '',
+  icpAddress: '',
+});
+
+const getEmptyWalletAutofillState = (initial?: Partial<Record<'solanaAddress' | 'bitcoinAddress', string>>) => ({
+  solanaAddress: initial?.solanaAddress ?? '',
+  bitcoinAddress: initial?.bitcoinAddress ?? '',
+});
+
+const getEmptyWalletAutofillSuppressionState = (
+  initial?: Partial<Record<'solanaAddress' | 'bitcoinAddress', boolean>>
+) => ({
+  solanaAddress: initial?.solanaAddress ?? false,
+  bitcoinAddress: initial?.bitcoinAddress ?? false,
+});
 
 const BLOCKCHAIN_PROVIDER_NAMES = new Set([
   'Ethereum',
@@ -107,36 +159,167 @@ const copyTextToClipboard = async (text: string) => {
   return Promise.resolve();
 };
 
+const serializeDebugData = (value: unknown) => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '[unserializable]';
+  }
+};
+
+const normalizeSolanaProvider = (value: unknown): SolanaWalletProvider | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const provider = value as SolanaWalletProvider | { solana?: SolanaWalletProvider };
+  return provider.solana ?? (provider as SolanaWalletProvider);
+};
+
+const canConnectSolanaProvider = (provider?: SolanaWalletProvider): provider is SolanaWalletProvider => {
+  return Boolean(provider && (typeof provider.connect === 'function' || typeof provider.request === 'function'));
+};
+
+const getSolanaWalletLabel = (id: string, provider?: SolanaWalletProvider): string => {
+  if (provider?.isMetaMask) {
+    return 'MetaMask';
+  }
+
+  if (provider?.isPhantom) {
+    return 'Phantom';
+  }
+
+  if (provider?.isSolflare) {
+    return 'Solflare';
+  }
+
+  if (provider?.isBackpack) {
+    return 'Backpack';
+  }
+
+  return id;
+};
+
+const getInjectedSolanaWallets = (): SolanaWalletOption[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const solanaWindow = window as SolanaWindow;
+  const rootProvider = normalizeSolanaProvider(solanaWindow.solana);
+  const candidateEntries: Array<{ id: string; provider?: SolanaWalletProvider }> = [
+    { id: 'MetaMask', provider: rootProvider?.isMetaMask ? rootProvider : undefined },
+    { id: 'Phantom', provider: normalizeSolanaProvider(solanaWindow.phantom) },
+    { id: 'Solflare', provider: normalizeSolanaProvider(solanaWindow.solflare) },
+    { id: 'Backpack', provider: normalizeSolanaProvider(solanaWindow.backpack) },
+    { id: 'Injected Solana', provider: rootProvider },
+  ];
+
+  const injectedProviders = Array.isArray(rootProvider?.providers) ? rootProvider.providers : [];
+
+  for (const [index, provider] of injectedProviders.entries()) {
+    candidateEntries.push({
+      id: `Injected Solana ${index + 1}`,
+      provider,
+    });
+  }
+
+  const seenProviders = new Set<SolanaWalletProvider>();
+
+  return candidateEntries.flatMap(candidate => {
+    if (!canConnectSolanaProvider(candidate.provider) || seenProviders.has(candidate.provider)) {
+      return [];
+    }
+
+    seenProviders.add(candidate.provider);
+
+    return [{
+      id: candidate.id,
+      label: getSolanaWalletLabel(candidate.id, candidate.provider),
+      provider: candidate.provider,
+    }];
+  });
+};
+
+const selectInjectedSolanaWallet = (wallets: SolanaWalletOption[]): SolanaWalletOption | null => {
+  if (wallets.length === 0) {
+    return null;
+  }
+
+  if (wallets.length === 1 || typeof window === 'undefined' || typeof window.prompt !== 'function') {
+    return wallets[0];
+  }
+
+  const choices = wallets.map((wallet, index) => `${index + 1}. ${wallet.label}`).join('\n');
+  const selection = window.prompt(`Choose a Solana wallet:\n${choices}`, '1');
+  if (selection === null) {
+    return null;
+  }
+
+  const selectedIndex = Number.parseInt(selection, 10) - 1;
+  return wallets[selectedIndex] ?? wallets[0] ?? null;
+};
+
+const connectInjectedSolanaWallet = async (): Promise<string | null> => {
+  try {
+    const wallets = getInjectedSolanaWallets();
+    const selectedWallet = selectInjectedSolanaWallet(wallets);
+    if (!selectedWallet) {
+      return null;
+    }
+
+    const { provider } = selectedWallet;
+    const result = provider.connect
+      ? await provider.connect()
+      : await provider.request?.({ method: 'connect' });
+    const resultPublicKey = typeof result === 'string' ? result : result?.publicKey;
+    const publicKey = resultPublicKey ?? provider.publicKey;
+
+    if (!publicKey) {
+      return null;
+    }
+
+    return typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
+  } catch (error) {
+    console.error('Failed to connect injected Solana wallet:', error);
+    return null;
+  }
+};
+
 const ConnectForm = () => {
-  const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData } = useAuth();
+  const { login, registerEmail, resendVerification, isLoading, isAuthenticated, user, refreshUser, updateAuthData, logout } = useAuth();
   const navigate = useNavigate();
-  const { connect, connectors } = useConnect();
-  const { address, isConnected, connector } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { open: openAppKit } = useAppKit();
+  const { open: isAppKitOpen, loading: isAppKitLoading, connectingWallet, initialized: isAppKitInitialized, activeChain } = useAppKitState();
+  const appKitEvents = useAppKitEvents();
+  const solanaAccount = useAppKitAccount({ namespace: 'solana' });
+  const bitcoinAccount = useAppKitAccount({ namespace: 'bip122' });
+  const { address, isConnected } = useConnection();
+  const { mutateAsync: disconnectWalletAsync } = useDisconnect();
+  const { mutateAsync: signWalletMessageAsync } = useSignMessage();
   const [searchParams] = useSearchParams();
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>({});
   const [emailForm, setEmailForm] = useState({ email: '', name: '' });
   const [showEmailForm, setShowEmailForm] = useState(false);
   const kycTokenParam = searchParams.get('kycToken') || '';
-  const [manualEthAddress, setManualEthAddress] = useState('');
-  const [manualEthStatus, setManualEthStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [manualEthError, setManualEthError] = useState<string | null>(null);
-  const [nonEvmForm, setNonEvmForm] = useState({
-    solanaAddress: '',
-    bitcoinAddress: '',
-    bitcoinCashAddress: '',
-    polkadotAddress: '',
-    cosmosAddress: '',
-    stellarAddress: '',
-    icpAddress: '',
-  });
-  const [nonEvmErrors, setNonEvmErrors] = useState<NonEvmAddressErrors>({});
+  const livelinessTokenParam = searchParams.get('livelinessToken') || '';
+  const [addressForm, setAddressForm] = useState<AddressFormValues>(getEmptyAddressForm());
+  const addressFormRef = useRef<AddressFormValues>(getEmptyAddressForm());
+  const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({});
+  const walletAutofillRef = useRef(getEmptyWalletAutofillState());
+  const walletAutofillSuppressedRef = useRef(getEmptyWalletAutofillSuppressionState());
+  const persistAddressFormRef = useRef<((overrides?: Partial<AddressFormValues>) => Promise<boolean>) | null>(null);
   const [copiedProvider, setCopiedProvider] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pendingWalletAuth, setPendingWalletAuth] = useState(false);
+  const [appKitAlertMessage, setAppKitAlertMessage] = useState('');
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const latestEthereumConnectionRef = useRef<{ isConnected: boolean; address?: string }>({
+    isConnected: false,
+    address: undefined,
+  });
   const userEmails = user?.emails?.length
     ? user.emails
     : user?.email
@@ -153,19 +336,16 @@ const ConnectForm = () => {
         return;
       }
 
-      console.log('Wallet connected, proceeding with authentication...', { address, isConnected });
 
       try {
         // Clear the pending flag immediately to prevent re-entry
         setPendingWalletAuth(false);
         setConnectStatus(prev => ({ ...prev, ethereum: 'signing' }));
 
-        // Request signature
-        const message = `Connect to Meritocracy platform with address: ${address}`;
-        console.log('Requesting signature for message:', message);
+        const challengeResponse = await authApi.createEthereumChallenge(address);
+        const { challengeId, message } = challengeResponse.data;
 
-        const signature = await signMessageAsync({ message });
-        console.log('Signature received:', signature ? 'yes' : 'no');
+        const signature = await signWalletMessageAsync({ message });
 
         if (!signature) {
           throw new Error('Signature was cancelled');
@@ -178,7 +358,8 @@ const ConnectForm = () => {
         const authResult = await login({
           ethereumAddress: address,
           signature,
-          message
+          message,
+          challengeId
         }, 'ethereum');
 
         console.log('Authentication result:', authResult);
@@ -203,36 +384,213 @@ const ConnectForm = () => {
     };
 
     handleAuthentication();
-  }, [pendingWalletAuth, isConnected, address, signMessageAsync, login]);
+  }, [pendingWalletAuth, isConnected, address, signWalletMessageAsync, login]);
 
   useEffect(() => {
-    if (user) {
-      setManualEthAddress(user.ethereumAddress ?? '');
-      setNonEvmForm({
-        solanaAddress: user.solanaAddress ?? '',
-        bitcoinAddress: user.bitcoinAddress ?? '',
-        bitcoinCashAddress: user.bitcoinCashAddress ?? '',
-        polkadotAddress: user.polkadotAddress ?? '',
-        cosmosAddress: user.cosmosAddress ?? '',
-        stellarAddress: user.stellarAddress ?? '',
-        icpAddress: user.icpAddress ?? '',
-      });
-    } else {
-      setManualEthAddress('');
-      setNonEvmForm({
-        solanaAddress: '',
-        bitcoinAddress: '',
-        bitcoinCashAddress: '',
-        polkadotAddress: '',
-        cosmosAddress: '',
-        stellarAddress: '',
-        icpAddress: '',
-      });
+    if (connectStatus.ethereum === 'selecting' && isConnected && address) {
+      setPendingWalletAuth(true);
     }
-    setManualEthStatus('idle');
-    setManualEthError(null);
-    setNonEvmErrors({});
+  }, [connectStatus.ethereum, isConnected, address]);
+
+  useEffect(() => {
+    latestEthereumConnectionRef.current = {
+      isConnected,
+      address: typeof address === 'string' ? address.trim() : undefined,
+    };
+  }, [isConnected, address]);
+
+  useEffect(() => {
+    const syncAlertState = () => {
+      setAppKitAlertMessage(AlertController.state.open ? AlertController.state.message : '');
+    };
+
+    syncAlertState();
+    const unsubscribeMessage = AlertController.subscribeKey('message', syncAlertState);
+    const unsubscribeOpen = AlertController.subscribeKey('open', syncAlertState);
+
+    return () => {
+      unsubscribeMessage();
+      unsubscribeOpen();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasReownWalletModal) {
+      return;
+    }
+
+    console.log('AppKit state update', {
+      ethereumStatus: connectStatus.ethereum,
+      isAppKitInitialized,
+      isAppKitOpen,
+      isAppKitLoading,
+      connectingWallet: connectingWallet?.name,
+      activeChain,
+      isConnected,
+      address,
+      alert: appKitAlertMessage || undefined,
+    });
+  }, [
+    connectStatus.ethereum,
+    isAppKitInitialized,
+    isAppKitOpen,
+    isAppKitLoading,
+    connectingWallet,
+    activeChain,
+    isConnected,
+    address,
+    appKitAlertMessage,
+  ]);
+
+  useEffect(() => {
+    if (!hasReownWalletModal || !appKitEvents.timestamp) {
+      return;
+    }
+
+    console.log('AppKit event update', {
+      timestamp: appKitEvents.timestamp,
+      data: appKitEvents.data,
+      pendingEvents: appKitEvents.pendingEvents,
+      walletImpressions: appKitEvents.walletImpressions,
+      reportedErrors: appKitEvents.reportedErrors,
+    });
+  }, [appKitEvents, appKitEvents.timestamp]);
+
+  useEffect(() => {
+    const nextAddressForm = user ? {
+      ethereumAddress: user.ethereumAddress ?? '',
+      solanaAddress: user.solanaAddress ?? '',
+      bitcoinAddress: user.bitcoinAddress ?? '',
+      bitcoinCashAddress: user.bitcoinCashAddress ?? '',
+      polkadotAddress: user.polkadotAddress ?? '',
+      cosmosAddress: user.cosmosAddress ?? '',
+      stellarAddress: user.stellarAddress ?? '',
+      icpAddress: user.icpAddress ?? '',
+    } : getEmptyAddressForm();
+
+    addressFormRef.current = nextAddressForm;
+
+    if (user) {
+      setAddressForm(nextAddressForm);
+    } else {
+      setAddressForm(nextAddressForm);
+    }
+    setAddressErrors({});
+    setConnectStatus(prev => {
+      const { addresses, ...rest } = prev;
+      return rest;
+    });
+    walletAutofillRef.current = getEmptyWalletAutofillState({
+      solanaAddress: user?.solanaAddress?.trim(),
+      bitcoinAddress: user?.bitcoinAddress?.trim(),
+    });
+    walletAutofillSuppressedRef.current = getEmptyWalletAutofillSuppressionState();
   }, [user]);
+
+  const syncWalletAddressField = (field: 'solanaAddress' | 'bitcoinAddress', nextValue?: string): string | undefined => {
+    const trimmedValue = nextValue?.trim();
+    const previousWalletValue = walletAutofillRef.current[field];
+
+    if (!trimmedValue) {
+      walletAutofillRef.current[field] = '';
+      return undefined;
+    }
+
+    if (walletAutofillSuppressedRef.current[field] && trimmedValue === previousWalletValue) {
+      return undefined;
+    }
+
+    const currentValue = addressFormRef.current[field].trim();
+
+    walletAutofillRef.current[field] = trimmedValue;
+
+    if (currentValue && currentValue !== previousWalletValue) {
+      return undefined;
+    }
+
+    if (currentValue === trimmedValue) {
+      return undefined;
+    }
+
+    const nextForm = {
+      ...addressFormRef.current,
+      [field]: trimmedValue,
+    };
+
+    addressFormRef.current = nextForm;
+    setAddressForm(nextForm);
+
+    setAddressErrors(prev => {
+      if (!prev[field]) {
+        return prev;
+      }
+
+      const { [field]: _removed, ...rest } = prev;
+      return rest;
+    });
+
+    return trimmedValue;
+  };
+
+  const bitcoinWalletAddress = bitcoinAccount.allAccounts.find(account => account.namespace === 'bip122' && account.type === 'payment')?.address
+    ?? (typeof bitcoinAccount.address === 'string' ? bitcoinAccount.address : undefined);
+
+  const resolveSolanaAccountAddress = () => {
+    const injected = typeof solanaAccount.address === 'string' && solanaAccount.address.trim()
+      ? solanaAccount.address.trim()
+      : undefined;
+    if (injected) {
+      return injected;
+    }
+
+    const fallback = solanaAccount.allAccounts.find(account => account.namespace === 'solana' && account.address);
+    return fallback?.address?.trim() || undefined;
+  };
+
+  useEffect(() => {
+    const effectiveAddress = resolveSolanaAccountAddress();
+    const updatedValue = syncWalletAddressField('solanaAddress', effectiveAddress);
+    if (user && updatedValue) {
+      void persistAddressFormRef.current?.({ solanaAddress: updatedValue });
+    }
+  }, [solanaAccount.address, solanaAccount.allAccounts, user]);
+
+  useEffect(() => {
+    const effectiveAddress = typeof address === 'string' ? address.trim() : '';
+    const currentValue = addressFormRef.current.ethereumAddress.trim();
+
+    if (!effectiveAddress || effectiveAddress === currentValue) {
+      return;
+    }
+
+    const nextForm = {
+      ...addressFormRef.current,
+      ethereumAddress: effectiveAddress,
+    };
+
+    addressFormRef.current = nextForm;
+    setAddressForm(nextForm);
+
+    setAddressErrors(prev => {
+      if (!prev.ethereumAddress) {
+        return prev;
+      }
+
+      const { ethereumAddress: _removed, ...rest } = prev;
+      return rest;
+    });
+
+    if (user) {
+      void persistAddressFormRef.current?.({ ethereumAddress: effectiveAddress });
+    }
+  }, [address, user]);
+
+  useEffect(() => {
+    const updatedValue = syncWalletAddressField('bitcoinAddress', bitcoinWalletAddress);
+    if (user && updatedValue) {
+      void persistAddressFormRef.current?.({ bitcoinAddress: updatedValue });
+    }
+  }, [bitcoinWalletAddress, user]);
 
   // Scroll to email form when it's shown
   useEffect(() => {
@@ -343,7 +701,12 @@ const ConnectForm = () => {
                 <li key={`${provider.name}-${index}`} className="connected-provider-item">
                   <div className="provider-value">
                     <strong>{provider.name}:</strong>
-                    <span>{provider.displayValue}</span>
+                    <span
+                      title={provider.isBlockchain ? provider.value : undefined}
+                      aria-label={provider.isBlockchain ? provider.value : undefined}
+                    >
+                      {provider.displayValue}
+                    </span>
                   </div>
                   {provider.isBlockchain && (
                     <button
@@ -405,6 +768,14 @@ const ConnectForm = () => {
       setConnectStatus(prev => ({ ...prev, [provider]: 'disconnecting' }));
 
       const response = await authApi.disconnectProvider(provider, payload);
+      if (provider === 'ethereum' && isConnected) {
+        await disconnectWalletAsync();
+      }
+      if (response.data.deleted || response.data.user?.isDeleted) {
+        await logout();
+        setConnectStatus({});
+        return;
+      }
       if (response.data.user) {
         await refreshUser();
         setConnectStatus(prev => {
@@ -438,7 +809,7 @@ const ConnectForm = () => {
   // Ethereum/Web3 Connect - show wallet selection
   const handleEthereumConnect = async () => {
     console.log('Ethereum connect button clicked!');
-    console.log('Current state:', { isConnected, isProviderConnected: isProviderConnected('ethereum'), connectors: connectors.length });
+    console.log('Current state:', { isConnected, isProviderConnected: isProviderConnected('ethereum') });
 
     // Check if already connected to our platform and user wants to disconnect
     if (isProviderConnected('ethereum')) {
@@ -446,33 +817,39 @@ const ConnectForm = () => {
       return handleDisconnect('ethereum');
     }
 
-    // Always show wallet selection modal first, regardless of current connection state
-    console.log('Showing wallet selection modal...');
-    setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
-  };
-
-  // Handle wallet selection
-  const handleWalletSelect = async (selectedConnector: any) => {
     try {
-      setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
-      console.log('Connecting to wallet:', selectedConnector.name);
-
-      // If already connected to this connector, proceed with authentication immediately
-      if (isConnected && selectedConnector.name === connector?.name && address) {
-        console.log('Already connected to this wallet, proceeding with authentication...');
+      if (isConnected && address) {
+        console.log('Wallet already connected, proceeding with authentication...');
         setPendingWalletAuth(true);
         return;
       }
 
-      // Connect to the selected wallet
-      console.log('Initiating wallet connection...');
-      await connect({ connector: selectedConnector });
-      console.log('Wallet connection initiated');
+      if (!hasReownWalletModal) {
+        setConnectStatus(prev => ({
+          ...prev,
+          ethereum: 'error',
+          error: 'Wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable Reown.'
+        }));
+        return;
+      }
 
-      // Set flag to trigger authentication once connection is established
-      setPendingWalletAuth(true);
+      setAppKitAlertMessage('');
+      setConnectStatus(prev => ({ ...prev, ethereum: 'selecting' }));
+      console.log('Opening Reown wallet chooser...');
+      await openAppKit({ view: 'Connect', namespace: 'eip155' });
+
+      const latestWalletState = latestEthereumConnectionRef.current;
+      if (latestWalletState.isConnected && latestWalletState.address) {
+        setPendingWalletAuth(true);
+      }
     } catch (error: any) {
-      console.error('Wallet connection error:', error);
+      console.error('Wallet selection error:', error);
+      const latestWalletState = latestEthereumConnectionRef.current;
+      if (latestWalletState.isConnected && latestWalletState.address) {
+        setPendingWalletAuth(true);
+        return;
+      }
+
       if (error.message.includes('rejected') || error.message.includes('cancelled')) {
         setConnectStatus(prev => ({ ...prev, ethereum: 'cancelled' }));
       } else {
@@ -482,52 +859,30 @@ const ConnectForm = () => {
   };
 
   // OAuth Connect Handler
-  const handleOAuthConnect = (provider: string) => {
+  const handleOAuthConnect = async (provider: string) => {
     // Check if already connected and user wants to disconnect
     if (isProviderConnected(provider)) {
       return handleDisconnect(provider);
     }
-    const clientIds: OAuthClientIds = {
-      github: (import.meta.env.VITE_GITHUB_CLIENT_ID || '').trim(),
-      orcid: (import.meta.env.VITE_ORCID_CLIENT_ID || '').trim(),
-      bitbucket: (import.meta.env.VITE_BITBUCKET_CLIENT_ID || '').trim(),
-      gitlab: (import.meta.env.VITE_GITLAB_CLIENT_ID || '').trim(),
-    };
-
-    // Get current user's token to include in OAuth state parameter for user linking
-    const currentToken = localStorage.getItem('authToken');
-    const stateParam = currentToken ? encodeURIComponent(currentToken) : '';
-
-    console.log(`${provider} OAuth: currentToken ${currentToken ? 'present' : 'missing'}, stateParam: ${stateParam ? 'included' : 'not included'}`);
-
-    const redirectUris: OAuthRedirectUris = {
-      github: `${import.meta.env.VITE_API_URL}/api/auth/github/callback`,
-      orcid: `${import.meta.env.VITE_API_URL}/api/auth/orcid/callback`,
-      bitbucket: `${import.meta.env.VITE_API_URL}/api/auth/bitbucket/callback`,
-      gitlab: `${import.meta.env.VITE_API_URL}/api/auth/gitlab/callback`,
-    };
-
-    const authUrls: OAuthAuthUrls = {
-      github: `https://github.com/login/oauth/authorize?client_id=${clientIds.github}&redirect_uri=${encodeURIComponent(redirectUris.github)}&scope=&state=${stateParam}`,
-      orcid: `https://${import.meta.env.VITE_ORCID_DOMAIN}/oauth/authorize?client_id=${clientIds.orcid}&response_type=code&scope=/authenticate&redirect_uri=${encodeURIComponent(redirectUris.orcid)}&state=${stateParam}`,
-      bitbucket: `https://bitbucket.org/site/oauth2/authorize?client_id=${clientIds.bitbucket}&response_type=code&redirect_uri=${encodeURIComponent(redirectUris.bitbucket)}&state=${stateParam}`,
-      gitlab: `https://gitlab.com/oauth/authorize?client_id=${clientIds.gitlab}&redirect_uri=${encodeURIComponent(redirectUris.gitlab)}&response_type=code&scope=${encodeURIComponent('read_user openid')}&state=${stateParam}`,
-    };
-
-    if (!clientIds[provider as keyof OAuthClientIds]) {
-      alert(`${provider.toUpperCase()} client ID not configured`);
-      return;
-    }
-
-    // Open OAuth flow in popup window
-    const popup = window.open(
-      authUrls[provider as keyof OAuthAuthUrls],
-      `${provider}_oauth`,
-      'width=600,height=600,scrollbars=yes,resizable=yes'
-    );
+    // Open synchronously so browser popup protection does not block the window
+    // while the server creates a signed, cookie-bound OAuth state.
+    const popup = window.open('about:blank', `${provider}_oauth`, 'width=600,height=600,scrollbars=yes,resizable=yes');
 
     if (!popup) {
       alert('Popup was blocked. Please allow popups for this site.');
+      return;
+    }
+
+    try {
+      const { data } = await authApi.startOAuth(provider);
+      popup.location.href = data.authorizationUrl;
+    } catch (error: any) {
+      popup.close();
+      setConnectStatus(prev => ({
+        ...prev,
+        [provider]: 'error',
+        error: error.response?.data?.error || 'OAuth is not configured'
+      }));
       return;
     }
 
@@ -549,27 +904,13 @@ const ConnectForm = () => {
 
     // Handle the OAuth callback message
     const handleMessage = async (event: MessageEvent) => {
-      console.log(`XXX Message received for ${provider}:`, {
-        origin: event.origin,
-        expectedOrigin: window.location.origin,
-        data: event.data,
-        hasType: event.data?.type
-      });
-
-      if (event.origin !== window.location.origin) {
-        console.log(`XXX Message origin mismatch for ${provider}, ignoring`);
+      if (event.origin !== getApiOrigin() || event.source !== popup) {
         return;
       }
 
       // Only process OAuth-related messages, ignore other messages (like MetaMask)
       if (!event.data || typeof event.data !== 'object' || !event.data.type) {
-        console.log(`XXX Message has no type for ${provider}, ignoring`);
         return;
-      }
-
-      // Only log actual OAuth messages
-      if (event.data.type === 'OAUTH_SUCCESS' || event.data.type === 'OAUTH_ERROR') {
-        console.log(`XXX OAuth message received for ${provider}:`, event.data);
       }
 
       if (event.data.type === 'OAUTH_SUCCESS' && event.data.provider === provider) {
@@ -578,33 +919,17 @@ const ConnectForm = () => {
         // Don't close popup here - let the popup close itself
 
         try {
-          console.log(`OAuth success for ${provider}:`, event.data);
           setConnectStatus(prev => ({ ...prev, [provider]: 'success' }));
 
           // The backend already handled authentication, just update the frontend state
           const { user, session } = event.data.authData!;
 
-          console.log(`Updating auth data for ${provider}:`, {
-            user: {
-              id: user.id,
-              githubHandle: user.githubHandle,
-              orcidId: user.orcidId,
-              ethereumAddress: user.ethereumAddress,
-              bitbucketHandle: user.bitbucketHandle,
-              gitlabHandle: user.gitlabHandle
-            },
-            sessionToken: session.token ? 'present' : 'missing'
-          });
-
           // Update AuthContext with the new user and session
           updateAuthData(user, session.token);
-
-          console.log(`Auth data updated for ${provider}, clearing status in 2 seconds`);
 
           // Reset status after a short delay to allow connecting more accounts
           // Use a longer delay to ensure React state has updated
           setTimeout(() => {
-            console.log(`Clearing status for ${provider}`);
             setConnectStatus(prev => {
               const { [provider]: _, ...rest } = prev;
               return rest;
@@ -641,7 +966,7 @@ const ConnectForm = () => {
 
       try {
         setConnectStatus(prev => ({ ...prev, kyc: 'connecting' }));
-        console.log('Auto-initiating Receiver KYC with token:', kycTokenParam);
+        console.log('Auto-initiating Receiver KYC from an email link');
 
         // initiateKyc with token implies Receiver KYC
         const response = await authApi.initiateKyc(kycTokenParam);
@@ -699,6 +1024,28 @@ const ConnectForm = () => {
 
     autoHandleReceiverKyc();
   }, [kycTokenParam, connectStatus.kyc, updateAuthData, refreshUser]);
+
+  const startLivelinessCheck = async (token?: string) => {
+    try {
+      setConnectStatus(prev => ({ ...prev, liveliness: 'connecting' }));
+      const response = await authApi.initiateLiveliness(token);
+      const data = response.data;
+      if (data.session && data.user) {
+        updateAuthData(data.user, data.session.token);
+      }
+      if (!data.url) throw new Error('No Liveliness URL received');
+      window.location.href = data.url;
+    } catch (error: any) {
+      console.error('Liveliness connection error:', error);
+      setConnectStatus(prev => ({ ...prev, liveliness: 'error', error: error.message }));
+    }
+  };
+
+  // Email links start the renewal without requiring the recipient to sign in first.
+  useEffect(() => {
+    if (!livelinessTokenParam || connectStatus.liveliness) return;
+    void startLivelinessCheck(livelinessTokenParam);
+  }, [livelinessTokenParam, connectStatus.liveliness]);
 
 
   // Voting KYC connection handler
@@ -773,6 +1120,11 @@ const ConnectForm = () => {
           console.log('Email registration success:', result.message);
         }
 
+        trackAnalyticsEvent('sign_up', {
+          method: 'email',
+          status: result.requiresVerification ? 'verification_required' : 'verified',
+        });
+
         if (result.requiresVerification) {
           // Show "verification sent" status instead of success
           setConnectStatus(prev => ({ ...prev, email: 'verification-sent' }));
@@ -829,10 +1181,18 @@ const ConnectForm = () => {
     }
   };
 
-  const handleNonEvmChange = (field: keyof typeof nonEvmForm) => (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAddressChange = (field: keyof AddressFormValues) => (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-    setNonEvmForm(prev => ({ ...prev, [field]: value }));
-    setNonEvmErrors(prev => {
+    if (field === 'solanaAddress' || field === 'bitcoinAddress') {
+      walletAutofillSuppressedRef.current[field] = value.trim() !== walletAutofillRef.current[field];
+    }
+    const nextForm = {
+      ...addressFormRef.current,
+      [field]: value,
+    };
+    addressFormRef.current = nextForm;
+    setAddressForm(nextForm);
+    setAddressErrors(prev => {
       if (!prev[field]) {
         return prev;
       }
@@ -841,104 +1201,153 @@ const ConnectForm = () => {
     });
   };
 
-  const handleManualEthereumSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const persistAddressForm = async (overrides: Partial<AddressFormValues> = {}) => {
     if (!user) {
-      setManualEthStatus('error');
-      setManualEthError('You must be logged in to save an Ethereum address');
-      return;
+      setConnectStatus(prev => ({ ...prev, addresses: 'error', error: 'You must be logged in to save addresses' }));
+      return false;
     }
 
-    const trimmed = manualEthAddress.trim();
-    if (trimmed && !isAddress(trimmed)) {
-      setManualEthStatus('error');
-      setManualEthError('Invalid Ethereum address format.');
-      return;
+    const mergedForm: AddressFormValues = { ...addressFormRef.current, ...overrides };
+    const trimmedForm: AddressFormValues = ADDRESS_FORM_FIELDS.reduce<AddressFormValues>((acc, key) => {
+      acc[key] = (mergedForm[key] ?? '').trim();
+      return acc;
+    }, {} as AddressFormValues);
+
+    const validationErrors: AddressFormErrors = {
+      ...validateNonEvmAddresses({
+        solanaAddress: trimmedForm.solanaAddress,
+        bitcoinAddress: trimmedForm.bitcoinAddress,
+        bitcoinCashAddress: trimmedForm.bitcoinCashAddress,
+        polkadotAddress: trimmedForm.polkadotAddress,
+        cosmosAddress: trimmedForm.cosmosAddress,
+        stellarAddress: trimmedForm.stellarAddress,
+        icpAddress: trimmedForm.icpAddress,
+      })
+    };
+
+    if (trimmedForm.ethereumAddress && !isAddress(trimmedForm.ethereumAddress)) {
+      validationErrors.ethereumAddress = 'Invalid Ethereum address format.';
     }
+
+    if (Object.keys(validationErrors).length > 0) {
+      const firstError = Object.values(validationErrors).find(value => value) || 'Please check the address formats.';
+      setAddressErrors(validationErrors);
+      setConnectStatus(prev => ({ ...prev, addresses: 'error', error: firstError }));
+      return false;
+    }
+
+    setAddressErrors({});
+    setConnectStatus(prev => ({ ...prev, addresses: 'processing', error: undefined }));
 
     try {
-      setManualEthStatus('saving');
-      setManualEthError(null);
-
       await usersApi.update(user.id, {
-        ethereumAddress: trimmed || null
+        ethereumAddress: trimmedForm.ethereumAddress || null,
+        solanaAddress: trimmedForm.solanaAddress || null,
+        bitcoinAddress: trimmedForm.bitcoinAddress || null,
+        bitcoinCashAddress: trimmedForm.bitcoinCashAddress || null,
+        polkadotAddress: trimmedForm.polkadotAddress || null,
+        cosmosAddress: trimmedForm.cosmosAddress || null,
+        stellarAddress: trimmedForm.stellarAddress || null,
+        icpAddress: trimmedForm.icpAddress || null,
       });
 
       await refreshUser();
+      addressFormRef.current = trimmedForm;
+      setAddressForm(trimmedForm);
 
-      setManualEthStatus('success');
-      setTimeout(() => setManualEthStatus('idle'), 2000);
-    } catch (error: any) {
-      console.error('Manual Ethereum address update failed:', error);
-      const errorMessage = error?.response?.data?.details?.ethereumAddress
-        || error?.response?.data?.error
-        || error?.message
-        || 'Failed to save Ethereum address';
-      setManualEthStatus('error');
-      setManualEthError(errorMessage);
-    }
-  };
-
-  const handleNonEvmSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!user) {
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: 'You must be logged in to save addresses' }));
-      return;
-    }
-
-    try {
-      const validationErrors = validateNonEvmAddresses(nonEvmForm);
-      if (Object.keys(validationErrors).length > 0) {
-        const firstError = Object.values(validationErrors)[0];
-        setNonEvmErrors(validationErrors);
-        setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: firstError || 'Please check the address formats.' }));
-        return;
-      }
-
-      setNonEvmErrors({});
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'processing', error: undefined }));
-
-      await usersApi.update(user.id, {
-        solanaAddress: nonEvmForm.solanaAddress.trim() || null,
-        bitcoinAddress: nonEvmForm.bitcoinAddress.trim() || null,
-        bitcoinCashAddress: nonEvmForm.bitcoinCashAddress.trim() || null,
-        polkadotAddress: nonEvmForm.polkadotAddress.trim() || null,
-        cosmosAddress: nonEvmForm.cosmosAddress.trim() || null,
-        stellarAddress: nonEvmForm.stellarAddress.trim() || null,
-        icpAddress: nonEvmForm.icpAddress.trim() || null,
-      });
-
-      await refreshUser();
+      walletAutofillRef.current = {
+        solanaAddress: trimmedForm.solanaAddress,
+        bitcoinAddress: trimmedForm.bitcoinAddress,
+      };
+      walletAutofillSuppressedRef.current = getEmptyWalletAutofillSuppressionState();
 
       setConnectStatus(prev => {
         const { error, ...rest } = prev;
-        return { ...rest, nonEvmAddresses: 'success' };
+        return { ...rest, addresses: 'success' };
       });
 
       setTimeout(() => {
         setConnectStatus(prev => {
-          const { nonEvmAddresses, ...rest } = prev;
+          const { addresses, ...rest } = prev;
           return rest;
         });
       }, 2000);
+
+      return true;
     } catch (error: any) {
-      console.error('Non-EVM address update failed:', error);
+      console.error('Address update failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Failed to save addresses';
       const detailErrors = error?.response?.data?.details;
       if (detailErrors && typeof detailErrors === 'object') {
-        const recognizedKeys = ['solanaAddress', 'bitcoinAddress', 'bitcoinCashAddress', 'polkadotAddress', 'cosmosAddress', 'stellarAddress', 'icpAddress'] as const;
-        const mappedErrors: NonEvmAddressErrors = {};
-        for (const key of recognizedKeys) {
+        const mappedErrors: AddressFormErrors = {};
+        for (const key of ADDRESS_FORM_FIELDS) {
           const value = (detailErrors as Record<string, unknown>)[key];
           if (typeof value === 'string') {
             mappedErrors[key] = value;
           }
         }
-        setNonEvmErrors(mappedErrors);
+        if (Object.keys(mappedErrors).length > 0) {
+          setAddressErrors(mappedErrors);
+        }
       }
-      setConnectStatus(prev => ({ ...prev, nonEvmAddresses: 'error', error: errorMessage }));
+      setConnectStatus(prev => ({ ...prev, addresses: 'error', error: errorMessage }));
+      return false;
+    }
+  };
+
+  persistAddressFormRef.current = persistAddressForm;
+
+  const handleAddressesSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    await persistAddressForm();
+  };
+
+  const handleWalletAddressConnect = async (
+    field: 'solanaAddress' | 'bitcoinAddress',
+    namespace: 'solana' | 'bip122'
+  ) => {
+    walletAutofillSuppressedRef.current[field] = false;
+
+    if (namespace === 'solana') {
+      try {
+        setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
+        const injectedSolanaAddress = await connectInjectedSolanaWallet();
+        if (injectedSolanaAddress) {
+          const updatedValue = syncWalletAddressField(field, injectedSolanaAddress);
+          if (user && updatedValue) {
+            void persistAddressForm({ [field]: updatedValue });
+          }
+          return;
+        }
+      } catch (error: any) {
+        setConnectStatus(prev => ({
+          ...prev,
+          addresses: 'error',
+          error: error?.message || 'Failed to connect Solana wallet'
+        }));
+        return;
+      }
+    }
+
+    if (!hasReownWalletModal) {
+      setConnectStatus(prev => ({
+        ...prev,
+        addresses: 'error',
+        error: 'Wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable wallet autofill.'
+      }));
+      return;
+    }
+
+    try {
+      setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
+      await openAppKit({ view: 'Connect', namespace });
+    } catch (error: any) {
+      setConnectStatus(prev => ({
+        ...prev,
+        addresses: 'error',
+        error: error?.message || 'Failed to open wallet selector'
+      }));
     }
   };
 
@@ -973,8 +1382,6 @@ const ConnectForm = () => {
     const status = connectStatus[provider];
     const isConnected = isProviderConnected(provider);
 
-    console.log(`Button text for ${provider}:`, { status, isConnected });
-
     // Map provider names to display names
     const providerDisplayNames: Record<string, string> = {
       ethereum: 'Ethereum',
@@ -990,6 +1397,14 @@ const ConnectForm = () => {
 
     // Special handling for email: check verification status
     if (provider === 'email' && !status) {
+      if (verifiedEmails.length > 0) {
+        return 'Disconnect Email';
+      }
+
+      if (pendingEmails.length > 0) {
+        return 'Waiting for Email Verification';
+      }
+
       return userEmails.length > 0 ? 'Add Email' : 'Connect with Email';
     }
 
@@ -1061,10 +1476,10 @@ const ConnectForm = () => {
 
     // Special handling for email verification status
     if (provider === 'email' && !status) {
-      if (pendingEmails.length > 0) {
-        className += ' waiting-for-verification';
-      } else if (userEmails.length > 0) {
+      if (verifiedEmails.length > 0) {
         className += ' connected';
+      } else if (pendingEmails.length > 0) {
+        className += ' waiting-for-verification';
       }
     } else if (provider === 'votingKyc' && !status) {
       if (user?.kycVotingStatus === 'APPROVED') {
@@ -1081,6 +1496,15 @@ const ConnectForm = () => {
     return className;
   };
 
+  const handleEmailButtonClick = async () => {
+    if (!connectStatus.email && verifiedEmails.length > 0) {
+      await handleEmailRemove(verifiedEmails[0].email);
+      return;
+    }
+
+    await handleEmailConnect();
+  };
+
   const hasConnectedAccounts = (): boolean => {
     if (!user) return false;
 
@@ -1095,8 +1519,12 @@ const ConnectForm = () => {
     return hasSocial && hasEmail && hasEth;
   };
 
+  const evaluationRetryBlockedUntil = user?.evaluationBlockedTill && new Date(user.evaluationBlockedTill) > new Date()
+    ? user.evaluationBlockedTill
+    : null;
+
   const handleStartEvaluation = async () => {
-    if (!user || !isAuthenticated || onboardingLoading || user.onboarded || !hasConnectedAccounts()) {
+    if (!user || !isAuthenticated || onboardingLoading || user.onboarded || !hasConnectedAccounts() || evaluationRetryBlockedUntil) {
       return;
     }
 
@@ -1124,7 +1552,8 @@ const ConnectForm = () => {
       }
     } catch (error) {
       console.error('Start evaluation error:', error);
-      alert('Failed to start evaluation. Please try again.');
+      const message = (error as any)?.response?.data?.message || 'Failed to start evaluation. Please try again.';
+      alert(message);
     } finally {
       setOnboardingLoading(false);
     }
@@ -1136,7 +1565,7 @@ const ConnectForm = () => {
         <title>Meritocracy App - Connect Your Account and Receive Money</title>
         <meta name="description" content="Meritocracy App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
       </Helmet>
-      <Canonical baseUrl="https://merit.science-dao.org/connect" />
+      <Canonical baseUrl={`${getFrontendOrigin()}/connect`} />
       <h2>Connect to Meritocracy Platform</h2>
 
       {renderConnectedStatus()}
@@ -1144,11 +1573,17 @@ const ConnectForm = () => {
 
       {isAuthenticated && user && !user.onboarded && (
         <div className="evaluation-start-card">
-          <p>{hasConnectedAccounts() ? 'All required accounts are connected.' : 'Add the required accounts and an Ethereum address to start evaluation.'}</p>
+          <p>
+            {evaluationRetryBlockedUntil
+              ? `Re-evaluation will be available after ${new Date(evaluationRetryBlockedUntil).toLocaleString()}.`
+              : hasConnectedAccounts()
+                ? 'All required accounts are connected.'
+                : 'Add the required accounts and an Ethereum address to start evaluation.'}
+          </p>
           <button
             className="connect-button start-evaluation-button"
             onClick={handleStartEvaluation}
-            disabled={!hasConnectedAccounts() || onboardingLoading}
+            disabled={!hasConnectedAccounts() || onboardingLoading || !!evaluationRetryBlockedUntil}
           >
             <span className="connect-icon">🚀</span>
             {onboardingLoading ? 'Starting Evaluation...' : 'Start Evaluation'}
@@ -1166,6 +1601,20 @@ const ConnectForm = () => {
 
       {user?.kycStatus !== 'APPROVED' && !kycTokenParam && (
         <p className="kyc-notice">KYC verification will be requested via email once funds are allocated to you.</p>
+      )}
+
+      {user?.onboarded && (!user.livelinessDueAt || user.livelinessStatus !== 'APPROVED' || new Date(user.livelinessDueAt) <= new Date()) && !livelinessTokenParam && (
+        <div className="kyc-notice">
+          <p>Your Didit Liveliness check needs renewal, so payouts are paused until it is completed. This check confirms that you are present; it does not require recent work.</p>
+          <button
+            className="connect-button kyc-button"
+            onClick={() => void startLivelinessCheck()}
+            disabled={isLoading || connectStatus.liveliness === 'connecting'}
+          >
+            {connectStatus.liveliness === 'connecting' ? 'Starting Liveliness check...' : 'Renew Didit Liveliness check'}
+          </button>
+          {connectStatus.liveliness === 'error' && <span className="error-message">{connectStatus.error}</span>}
+        </div>
       )}
 
       <p style={{ color: 'red' }}>BitBucket is not supported yet.</p>
@@ -1248,7 +1697,7 @@ const ConnectForm = () => {
         {/* Email Connect */}
         <button
           className={getButtonClass('email')}
-          onClick={handleEmailConnect}
+          onClick={handleEmailButtonClick}
           disabled={isLoading || connectStatus.email === 'connecting' || connectStatus.email === 'disconnecting'}
         >
           <span className="connect-icon">📧</span>
@@ -1281,49 +1730,160 @@ const ConnectForm = () => {
         </div>
       )}
 
-      <div className="ethereum-manual">
-        <h3>Ethereum Address (Manual)</h3>
-        <p className="ethereum-manual-note">
-          Use this if you don’t want to connect a wallet. You can still connect a wallet later.
+      <div className="addresses-form">
+        <h3>Blockchain Addresses</h3>
+        <p className="addresses-form-note">
+          Enter your preferred blockchain addresses here. You can still connect a wallet later if you prefer. Wallet autofill currently supports Ethereum login plus Solana and Bitcoin wallet sessions.
         </p>
-        <form onSubmit={handleManualEthereumSubmit}>
+        <form onSubmit={handleAddressesSubmit}>
           <div className="form-group">
             <label htmlFor="ethereumAddress">Ethereum Address</label>
             <input
               type="text"
               id="ethereumAddress"
-              value={manualEthAddress}
-              onChange={(event) => {
-                setManualEthAddress(event.target.value);
-                if (manualEthStatus === 'error') {
-                  setManualEthStatus('idle');
-                  setManualEthError(null);
-                }
-              }}
+              value={addressForm.ethereumAddress}
+              onChange={handleAddressChange('ethereumAddress')}
               placeholder="0x..."
-              disabled={!isAuthenticated || manualEthStatus === 'saving'}
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
             />
+            {addressErrors.ethereumAddress && (
+              <p className="error-message">{addressErrors.ethereumAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="solanaAddress">Solana Address</label>
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => handleWalletAddressConnect('solanaAddress', 'solana')}
+              disabled={connectStatus.addresses === 'processing'}
+            >
+              Connect Solana wallet
+            </button>
+            <input
+              type="text"
+              id="solanaAddress"
+              value={addressForm.solanaAddress}
+              onChange={handleAddressChange('solanaAddress')}
+              placeholder="Enter your Solana address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.solanaAddress && (
+              <p className="error-message">{addressErrors.solanaAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="bitcoinAddress">Bitcoin Address</label>
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => handleWalletAddressConnect('bitcoinAddress', 'bip122')}
+              disabled={connectStatus.addresses === 'processing'}
+            >
+              Connect Bitcoin wallet
+            </button>
+            <input
+              type="text"
+              id="bitcoinAddress"
+              value={addressForm.bitcoinAddress}
+              onChange={handleAddressChange('bitcoinAddress')}
+              placeholder="Enter your Bitcoin address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.bitcoinAddress && (
+              <p className="error-message">{addressErrors.bitcoinAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="bitcoinCashAddress">Bitcoin Cash Address</label>
+            <input
+              type="text"
+              id="bitcoinCashAddress"
+              value={addressForm.bitcoinCashAddress}
+              onChange={handleAddressChange('bitcoinCashAddress')}
+              placeholder="Enter your Bitcoin Cash address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.bitcoinCashAddress && (
+              <p className="error-message">{addressErrors.bitcoinCashAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="polkadotAddress">Polkadot Address</label>
+            <input
+              type="text"
+              id="polkadotAddress"
+              value={addressForm.polkadotAddress}
+              onChange={handleAddressChange('polkadotAddress')}
+              placeholder="Enter your Polkadot address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.polkadotAddress && (
+              <p className="error-message">{addressErrors.polkadotAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="cosmosAddress">Cosmos (ATOM) Address</label>
+            <input
+              type="text"
+              id="cosmosAddress"
+              value={addressForm.cosmosAddress}
+              onChange={handleAddressChange('cosmosAddress')}
+              placeholder="Enter your Cosmos Hub address"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.cosmosAddress && (
+              <p className="error-message">{addressErrors.cosmosAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="stellarAddress">Stellar Address</label>
+            <input
+              type="text"
+              id="stellarAddress"
+              value={addressForm.stellarAddress}
+              onChange={handleAddressChange('stellarAddress')}
+              placeholder="Enter your Stellar public key (starts with G)"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.stellarAddress && (
+              <p className="error-message">{addressErrors.stellarAddress}</p>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="icpAddress">ICP Address</label>
+            <input
+              type="text"
+              id="icpAddress"
+              value={addressForm.icpAddress}
+              onChange={handleAddressChange('icpAddress')}
+              placeholder="Enter your ICP account ID or principal"
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
+            />
+            {addressErrors.icpAddress && (
+              <p className="error-message">{addressErrors.icpAddress}</p>
+            )}
           </div>
           <div className="form-actions">
             <button
               type="submit"
               className="submit-button"
-              disabled={!isAuthenticated || manualEthStatus === 'saving'}
+              disabled={!isAuthenticated || connectStatus.addresses === 'processing'}
             >
-              {manualEthStatus === 'saving' ? 'Saving...' : 'Save Ethereum Address'}
+              {connectStatus.addresses === 'processing' ? 'Saving...' : 'Save Addresses'}
             </button>
           </div>
-          {manualEthStatus === 'success' && (
-            <p className="success-message">Ethereum address saved successfully.</p>
+          {connectStatus.addresses === 'success' && (
+            <p className="success-message">Addresses saved successfully.</p>
           )}
-          {manualEthStatus === 'error' && manualEthError && (
-            <p className="error-message">{manualEthError}</p>
+          {connectStatus.addresses === 'error' && connectStatus.error && (
+            <p className="error-message">{connectStatus.error}</p>
           )}
-          {!isAuthenticated && (
-            <p className="info-message">Log in or connect an account before saving an Ethereum address.</p>
-          )}
-        </form>
-      </div>
+      {!isAuthenticated && (
+        <p className="info-message">Log in or connect an account before saving addresses.</p>
+      )}
+    </form>
+  </div>
 
       {/* Email Form - Moved here to be more visible */}
       {showEmailForm && (
@@ -1383,132 +1943,10 @@ const ConnectForm = () => {
         </div>
       )}
 
-      <div className="non-evm-addresses">
-        <h3>Non-EVM Addresses</h3>
-        <form onSubmit={handleNonEvmSubmit}>
-          <div className="form-group">
-            <label htmlFor="solanaAddress">Solana Address</label>
-            <input
-              type="text"
-              id="solanaAddress"
-              value={nonEvmForm.solanaAddress}
-              onChange={handleNonEvmChange('solanaAddress')}
-              placeholder="Enter your Solana address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.solanaAddress && (
-              <p className="error-message">{nonEvmErrors.solanaAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="bitcoinAddress">Bitcoin Address</label>
-            <input
-              type="text"
-              id="bitcoinAddress"
-              value={nonEvmForm.bitcoinAddress}
-              onChange={handleNonEvmChange('bitcoinAddress')}
-              placeholder="Enter your Bitcoin address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.bitcoinAddress && (
-              <p className="error-message">{nonEvmErrors.bitcoinAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="bitcoinCashAddress">Bitcoin Cash Address</label>
-            <input
-              type="text"
-              id="bitcoinCashAddress"
-              value={nonEvmForm.bitcoinCashAddress}
-              onChange={handleNonEvmChange('bitcoinCashAddress')}
-              placeholder="Enter your Bitcoin Cash address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.bitcoinCashAddress && (
-              <p className="error-message">{nonEvmErrors.bitcoinCashAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="polkadotAddress">Polkadot Address</label>
-            <input
-              type="text"
-              id="polkadotAddress"
-              value={nonEvmForm.polkadotAddress}
-              onChange={handleNonEvmChange('polkadotAddress')}
-              placeholder="Enter your Polkadot address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.polkadotAddress && (
-              <p className="error-message">{nonEvmErrors.polkadotAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="cosmosAddress">Cosmos (ATOM) Address</label>
-            <input
-              type="text"
-              id="cosmosAddress"
-              value={nonEvmForm.cosmosAddress}
-              onChange={handleNonEvmChange('cosmosAddress')}
-              placeholder="Enter your Cosmos Hub address"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.cosmosAddress && (
-              <p className="error-message">{nonEvmErrors.cosmosAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="stellarAddress">Stellar Address</label>
-            <input
-              type="text"
-              id="stellarAddress"
-              value={nonEvmForm.stellarAddress}
-              onChange={handleNonEvmChange('stellarAddress')}
-              placeholder="Enter your Stellar public key (starts with G)"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.stellarAddress && (
-              <p className="error-message">{nonEvmErrors.stellarAddress}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="icpAddress">ICP Address</label>
-            <input
-              type="text"
-              id="icpAddress"
-              value={nonEvmForm.icpAddress}
-              onChange={handleNonEvmChange('icpAddress')}
-              placeholder="Enter your ICP account ID or principal"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            />
-            {nonEvmErrors.icpAddress && (
-              <p className="error-message">{nonEvmErrors.icpAddress}</p>
-            )}
-          </div>
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={!isAuthenticated || connectStatus.nonEvmAddresses === 'processing'}
-            >
-              {connectStatus.nonEvmAddresses === 'processing' ? 'Saving...' : 'Save Addresses'}
-            </button>
-          </div>
-          {connectStatus.nonEvmAddresses === 'success' && (
-            <p className="success-message">Addresses saved successfully.</p>
-          )}
-          {connectStatus.nonEvmAddresses === 'error' && connectStatus.error && (
-            <p className="error-message">{connectStatus.error}</p>
-          )}
-          {!isAuthenticated && (
-            <p className="info-message">Log in or connect an account before saving addresses.</p>
-          )}
-        </form>
-      </div>
-
 
       {/* Error Display */}
       {Object.entries(connectStatus).map(([provider, status]) =>
-        status === 'error' && provider !== 'nonEvmAddresses' && (
+        status === 'error' && provider !== 'addresses' && (
           <div key={provider} className="error-message">
             {provider.toUpperCase()} connection failed: {connectStatus.error}
           </div>
@@ -1521,41 +1959,6 @@ const ConnectForm = () => {
         </p>
       </div>
 
-      {/* Wallet Selection Modal */}
-      {connectStatus.ethereum === 'selecting' && (
-        <div className="wallet-selection-modal">
-          <div className="modal-overlay" onClick={() => setConnectStatus(prev => ({ ...prev, ethereum: undefined }))} />
-          <div className="modal-content">
-            <h3>Select a Wallet</h3>
-            <div className="wallet-options">
-
-              {connectors.map((connector) => (
-                <button
-                  key={connector.uid}
-                  className="wallet-option"
-                  onClick={() => handleWalletSelect(connector)}
-                >
-                  <span className="wallet-icon">
-                    {connector.name === 'MetaMask' && '🦊'}
-                    {connector.name === 'WalletConnect' && '🔗'}
-                    {connector.name === 'Coinbase Wallet' && '🔵'}
-                    {connector.name === 'Safe' && '🛡️'}
-                    {connector.name === 'Rainbow' && '🌈'}
-                    {!['MetaMask', 'WalletConnect', 'Coinbase Wallet', 'Safe', 'Rainbow'].includes(connector.name) && '💳'}
-                  </span>
-                  <span className="wallet-name">{connector.name}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              className="modal-close"
-              onClick={() => setConnectStatus(prev => ({ ...prev, ethereum: undefined }))}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

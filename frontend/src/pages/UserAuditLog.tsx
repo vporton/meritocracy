@@ -3,8 +3,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import './UserAuditLog.css';
 import { markdownToHtml } from '../utils/markdown';
+
+function safeExternalUrl(value: string): string | null {
+    try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
+    } catch {
+        return null;
+    }
+}
 import Canonical from '../components/Canonical';
-import { User } from '../services/api';
+import { API_BASE_URL, User } from '../services/api';
+import { getFrontendOrigin } from '../config/origins';
 
 interface WorthValue {
     key: 'overall' | 'scientist' | 'fossDev' | 'scienceMarketer';
@@ -17,6 +27,7 @@ interface Assessment {
     text: string;
     sources: string[];
     timestamp: string;
+    modelVersion?: string;
     worthValues?: WorthValue[];
     isPending?: boolean;
     isError?: boolean;
@@ -33,6 +44,7 @@ interface AssessmentsResponse {
 }
 
 export default function UserAuditLog() {
+    const frontendOrigin = getFrontendOrigin();
     const { userId } = useParams<{ userId: string }>();
     const [searchParams] = useSearchParams();
     const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
@@ -42,7 +54,7 @@ export default function UserAuditLog() {
         queryKey: ['user-assessments', userId, page],
         queryFn: async () => {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/ban-voting/${userId}/assessments?page=${page}&pageSize=3`
+                `${API_BASE_URL}/api/ban-voting/${userId}/assessments?page=${page}&pageSize=3`
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch assessments');
@@ -56,7 +68,7 @@ export default function UserAuditLog() {
         queryKey: ['user-profile', userId],
         queryFn: async () => {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/users/${userId}`
+                `${API_BASE_URL}/api/users/${userId}`
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch user profile');
@@ -181,7 +193,7 @@ export default function UserAuditLog() {
             <Helmet>
                 <title>{`Recommended Salary for "${displayName}"${page !== 1 ? ` (Archive page ${page})` : ""} - Meritocracy`}</title>
             </Helmet>
-            <Canonical baseUrl="https://merit.science-dao.org" />
+            <Canonical baseUrl={frontendOrigin} />
             <div className="container">
                 <header className="page-header">
                     <Link to="/ban-voting" className="back-link"><span data-nosnippet="data-nosnippet">← Back to Voting</span></Link>
@@ -225,6 +237,11 @@ export default function UserAuditLog() {
                                             {badgeLabel}
                                         </span>
                                     </div>
+                                    {assessment.modelVersion && (
+                                        <p className="model-version" data-nosnippet="data-nosnippet">
+                                            <strong>AI model/version:</strong> {assessment.modelVersion}
+                                        </p>
+                                    )}
                                     <div className="assessment-content">
                                         {assessment.worthValues && assessment.worthValues.length > 0 && (
                                             <section className="worth-section">
@@ -256,9 +273,11 @@ export default function UserAuditLog() {
                                                     <ul>
                                                         {assessment.sources.map((source, sIndex) => (
                                                             <li key={sIndex}>
-                                                                <a href={source} target="_blank" rel="noopener noreferrer">
-                                                                    {source}
-                                                                </a>
+                                                        {safeExternalUrl(source) ? (
+                                                            <a href={safeExternalUrl(source)!} target="_blank" rel="noopener noreferrer">
+                                                                {source}
+                                                            </a>
+                                                        ) : source}
                                                             </li>
                                                         ))}
                                                     </ul>

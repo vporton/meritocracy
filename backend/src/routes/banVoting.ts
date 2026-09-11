@@ -21,22 +21,29 @@ router.post('/vote', requireAuth, async (req, res): Promise<void> => {
         const voterId = (req as any).userId;
         const { targetUserId, message, type } = req.body;
 
-        if (!targetUserId) {
+        const parsedTargetUserId = Number(targetUserId);
+        if (!Number.isSafeInteger(parsedTargetUserId) || parsedTargetUserId < 1) {
             res.status(400).json({ error: 'Missing targetUserId' });
             return;
         }
+
+        if (message !== undefined && (typeof message !== 'string' || message.length > 2000)) {
+            res.status(400).json({ error: 'Message must be a string of at most 2000 characters' });
+            return;
+        }
+        const normalizedMessage = typeof message === 'string' ? message : '';
 
         if (type && type !== 'BAN' && type !== 'UNBAN') {
             res.status(400).json({ error: 'Invalid vote type. Must be BAN or UNBAN.' });
             return;
         }
 
-        if (voterId === Number(targetUserId)) {
+        if (voterId === parsedTargetUserId) {
             res.status(400).json({ error: 'You cannot vote to ban yourself' });
             return;
         }
 
-        const vote = await BanVotingService.submitBanVote(voterId, Number(targetUserId), message, type as 'BAN' | 'UNBAN');
+        const vote = await BanVotingService.submitBanVote(voterId, parsedTargetUserId, normalizedMessage, type as 'BAN' | 'UNBAN');
 
         res.status(201).json({
             message: 'Vote submitted successfully',
@@ -54,7 +61,7 @@ router.post('/vote', requireAuth, async (req, res): Promise<void> => {
             return;
         }
 
-        res.status(500).json({ error: error.message || 'Failed to submit vote' });
+        res.status(500).json({ error: 'Failed to submit vote' });
     }
 });
 
@@ -64,6 +71,10 @@ router.get('/:userId/assessments', async (req, res): Promise<void> => {
         const targetId = Number(req.params.userId);
         const page = Number(req.query.page) || 1;
         const pageSize = Number(req.query.pageSize) || 3;
+        if (!Number.isSafeInteger(targetId) || targetId < 1 || !Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50) {
+            res.status(400).json({ error: 'Invalid pagination or user ID' });
+            return;
+        }
         const assessments = await BanVotingService.getUserAssessmentsPaginated(targetId, { page, pageSize });
         res.json(assessments);
     } catch (error: any) {

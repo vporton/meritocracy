@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { worldGdpApi } from '../services/api';
 import { Helmet } from 'react-helmet-async';
 import Canonical from '../components/Canonical';
+import { API_BASE_URL } from '../services/api';
+import { getFrontendOrigin } from '../config/origins';
 import './BanVoting.css';
 
 interface AIResponse {
@@ -43,6 +45,7 @@ interface VoteResponse {
 }
 
 export default function BanVoting() {
+    const frontendOrigin = getFrontendOrigin();
     const { user: authUser } = useAuth();
     const queryClient = useQueryClient();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -57,7 +60,7 @@ export default function BanVoting() {
     const { data: users, isLoading, isError } = useQuery<User[]>({
         queryKey: ['ban-voting-users'],
         queryFn: async () => {
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/ban-voting`, {
+            const response = await fetch(`${API_BASE_URL}/api/ban-voting`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
@@ -83,7 +86,7 @@ export default function BanVoting() {
     // Submit vote mutation
     const voteMutation = useMutation({
         mutationFn: async ({ targetUserId, message }: { targetUserId: number, message: string }) => {
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/ban-voting/vote`, {
+            const response = await fetch(`${API_BASE_URL}/api/ban-voting/vote`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -152,7 +155,7 @@ export default function BanVoting() {
           content="Participate in Meritocracy's ban voting to flag or reverse bans on accounts suspected of prompt injection or severe plagiarism."
         />
       </Helmet>
-      <Canonical baseUrl="https://merit.science-dao.org" />
+      <Canonical baseUrl={frontendOrigin} />
       <div className="container">
                 <header className="page-header">
                     <h1>Ban Voting System</h1>

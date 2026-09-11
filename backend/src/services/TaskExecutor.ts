@@ -1,8 +1,9 @@
 import { PrismaClient, Task, } from '@prisma/client';
 import { TaskStatus, TaskRunnerData, TaskRunnerRegistry } from '../types/task.js';
-import { createAIBatchStore, createAIOutputter, createAIRunner } from './openai.js';
+import { createAIBatchStore, createAIOutputter } from './openai.js';
 import { BaseOpenAIRunner } from '@/runners/OpenAIRunners.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
+import { aiResultKindForRunner, extractAiSources, extractAiStructuredResult, storeAiResult } from './aiResults.js';
 
 export class TaskExecutor {
   private prisma: PrismaClient;
@@ -175,7 +176,7 @@ export class TaskExecutor {
     }
 
     return task.dependencies.every((dep: any) =>
-      dep.dependency.status !== TaskStatus.NOT_STARTED
+      dep.dependency.status === TaskStatus.COMPLETED
     );
   }
 
@@ -204,10 +205,11 @@ export class TaskExecutor {
     }
 
     let executed = false;
-    const task = await this.prisma.task.findUniqueOrThrow({ // TODO@P3: Avoid repeated database queries.
+    const task = await this.prisma.task.findUniqueOrThrow({
       where: { id: taskId },
       select: {
         storeId: true,
+        runnerClassName: true,
         NonBatches: {
           include: {
             nonbatchMappings: true,
@@ -215,16 +217,39 @@ export class TaskExecutor {
         },
       },
     });
+    const store = await createAIBatchStore(task.storeId ?? undefined, taskId);
+    const outputter = await createAIOutputter(store);
+
     for (const nonBatch of task.NonBatches) {
       for (const mapping of nonBatch.nonbatchMappings) {
-        const store = await createAIBatchStore(task.storeId!, taskId);
-        const outputter = await createAIOutputter(store);
         const output = await outputter.getOutput(mapping.customId); // Query output to warrant that the task fully ran.
         if (output === undefined) {
           await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
         } else {
-          await TaskRunnerRegistry.completeTask(this.prisma, taskId, output);
-          executed = true;
+          const result = extractAiStructuredResult(output);
+          if (!result) {
+            await storeAiResult(this.prisma, {
+              customId: mapping.customId,
+              taskId,
+              resultKind: aiResultKindForRunner(task.runnerClassName),
+              errorMessage: 'Provider reply did not contain a structured result',
+            });
+            await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
+          } else {
+            const sources = extractAiSources(output);
+            await storeAiResult(this.prisma, {
+              customId: mapping.customId,
+              taskId,
+              resultKind: aiResultKindForRunner(task.runnerClassName),
+              result,
+              sources,
+            });
+            await TaskRunnerRegistry.completeTask(this.prisma, taskId, {
+              ...result,
+              ...(sources.length > 0 ? { sources } : {}),
+            });
+            executed = true;
+          }
         }
       }
     }

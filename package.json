@@ -43,9 +43,12 @@
     }
   },
   "dependencies": {
+    "@reown/appkit-adapter-bitcoin": "^1.8.20",
+    "@reown/appkit-adapter-solana": "^1.8.20",
     "@types/node": "^25.3.0",
     "concurrently": "^10.0.3",
     "eslint": "^10.0.1",
+    "prisma": "^7.9.0",
     "serve": "^14.2.6",
     "typescript": "^5.9.3"
   },

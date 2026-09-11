@@ -194,7 +194,7 @@ export class MultiNetworkEthereumService {
                 chain: polygon,
                 rpcUrl: process.env.ETHEREUM_POLYGON_RPC_URL,
                 enabled: process.env.ETHEREUM_POLYGON_ENABLED === 'true',
-                nativeTokenSymbol: polygon.nativeCurrency.symbol,
+                nativeTokenSymbol: 'POL',
                 nativeTokenDecimals: polygon.nativeCurrency.decimals,
                 nativeTokenCoingeckoId: 'matic-network'
             },

@@ -28,6 +28,8 @@ model User {
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   bannedTill              DateTime?
+  evaluationBlockedTill   DateTime?
+  evaluationBlockReason   String?
   paymentHoldStartedAt    DateTime?
   compensationDueAt       DateTime?
   lastPaymentAmount       Decimal?
@@ -39,6 +41,10 @@ model User {
   kycRejectedAt           DateTime?
   kycRejectionReason      String?
   kycData                 String?
+  livelinessStatus        String?
+  livelinessVerifiedAt    DateTime?
+  livelinessDueAt         DateTime?
+  livelinessRequestedAt   DateTime?
   kycVotingStatus         String?
   kycVotingVerifiedAt     DateTime?
   kycVotingRejectedAt     DateTime?
@@ -61,9 +67,11 @@ model User {
   @@index([onboarded])
   @@index([onboarded, shareInGDP(sort: Desc)])
   @@index([shareInGDP])
+  @@index([evaluationBlockedTill])
   @@index([paymentHoldStartedAt])
   @@index([compensationDueAt])
   @@index([kycStatus])
+  @@index([livelinessDueAt])
   @@index([cosmosAddress])
   @@index([icpAddress])
   @@unique([issuingState, personalNumber])
@@ -115,6 +123,19 @@ model Session {
   @@map("sessions")
 }
 
+model EthereumAuthChallenge {
+  id        String    @id
+  address   String
+  message   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([address])
+  @@index([expiresAt])
+  @@map("ethereum_auth_challenges")
+}
+
 model Batches {
   id            Int            @id @default(autoincrement())
   createdAt     DateTime       @default(now())
@@ -149,7 +170,7 @@ model NonBatches {
 model NonBatchMapping {
   id         Int        @id @default(autoincrement())
   customId   String     @unique
-  response   String
+  response   String?
   nonBatchId Int
   createdAt  DateTime   @default(now())
   batch      NonBatches @relation(fields: [nonBatchId], references: [id], onDelete: Cascade)
@@ -170,6 +191,7 @@ model Task {
   Batches         Batches[]
   NonBatches      NonBatches[]
   openaiLogs      OpenAILog[]
+  aiResults       AiResult[]
   dependents      TaskDependency[] @relation("TaskDependents")
   dependencies    TaskDependency[] @relation("TaskDependencies")
 
@@ -182,6 +204,40 @@ model Task {
   @@index([lockTime])
   @@index([isDeleted])
   @@map("tasks")
+}
+
+// Canonical, provider-neutral AI outcome.  Do not store the provider's full
+// response here: `result` is the validated application response only.
+model AiResult {
+  id               Int              @id @default(autoincrement())
+  customId         String           @unique
+  taskId           Int?
+  resultKind       String
+  status           String           @default("PENDING")
+  result           Json?
+  errorMessage     String?
+  requestInitiated DateTime         @default(now())
+  responseReceived DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  task             Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  sources          AiResultSource[]
+
+  @@index([taskId])
+  @@index([resultKind])
+  @@map("ai_results")
+}
+
+model AiResultSource {
+  id         Int      @id @default(autoincrement())
+  aiResultId Int
+  ordinal    Int
+  url        String
+  aiResult   AiResult @relation(fields: [aiResultId], references: [id], onDelete: Cascade)
+
+  @@unique([aiResultId, ordinal])
+  @@unique([aiResultId, url])
+  @@map("ai_result_sources")
 }
 
 model TaskDependency {

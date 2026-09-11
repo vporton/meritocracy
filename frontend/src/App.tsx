@@ -8,7 +8,6 @@ import Navigation from './components/Navigation'
 import Home from './pages/Home'
 import Logs from './pages/Logs'
 import ConnectForm from './components/ConnectForm'
-import OAuthCallback from './components/OAuthCallback'
 import VerifyEmail from './pages/VerifyEmail'
 import Admin from './pages/Admin'
 import BanVoting from './pages/BanVoting'
@@ -22,7 +21,6 @@ const queryClient = new QueryClient()
 
 function App() {
   const testVar = import.meta.env.VITE_TEST_INSTANCE;
-  console.log("ENV:", import.meta.env); // TODO@P3: Remove this.
   const isTest = testVar === 'true';
   return (
     <HelmetProvider>
@@ -49,10 +47,6 @@ function App() {
                       <Route path="/treasury" element={<Treasury />} />
                       {/* Redirect old login route to new connect route */}
                       <Route path="/login" element={<Navigate to="/connect" replace />} />
-                      <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
-                      <Route path="/auth/orcid/callback" element={<OAuthCallback provider="orcid" />} />
-                      <Route path="/auth/bitbucket/callback" element={<OAuthCallback provider="bitbucket" />} />
-                      <Route path="/auth/gitlab/callback" element={<OAuthCallback provider="gitlab" />} />
                     </Routes>
                   </main>
                   <footer>
@@ -64,6 +58,7 @@ function App() {
                       <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
                       <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
                       <a href="https://science-dao.org/contact/">Contact</a> |{"  "}
+                      <a href="https://github.com/vporton/meritocracy/issues/new" target="_blank" rel="noopener noreferrer">Report a bug</a> |{"  "}
                       <a href="https://github.com/vporton/meritocracy" title="Meritocracy on GitHub">
                         <img src="/github-mark.svg" alt="GitHub" width="20" height="20" style={{ verticalAlign: 'middle' }} />
                         <span style={{ marginLeft: '0.25rem' }}>GitHub</span>

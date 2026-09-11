@@ -26,6 +26,7 @@ export interface DBLogEntry {
   details: any;
   status?: string;
   error?: string;
+  deleted?: boolean;
 }
 
 export interface LogsFilter {
@@ -136,10 +137,18 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
+    const results = await this.prisma.aiResult.findMany({
+      where: { customId: { in: logs.map(log => log.customId) } },
+      include: { sources: { orderBy: { ordinal: 'asc' } } },
+    });
+    const resultByCustomId = new Map(results.map(result => [result.customId, result]));
 
-    return logs.map(log => ({
+    return logs.map(log => {
+      const result = resultByCustomId.get(log.customId);
+      return {
       id: `openai-${log.id}`,
       type: 'openai' as const,
       timestamp: log.createdAt,
@@ -162,29 +171,40 @@ export class DBLogsService {
         status: 'sent'
       },
       response: {
-        data: log.responseData ? JSON.parse(log.responseData) : null,
-        timestamp: log.responseReceived,
-        status: log.responseReceived ? 'received' : 'pending',
+        data: result ? { result: result.result, sources: result.sources.map(source => source.url) } : null,
+        timestamp: result?.responseReceived ?? log.responseReceived,
+        status: result?.status.toLowerCase() ?? (log.responseReceived ? 'received' : 'pending'),
         error: log.errorMessage || null
       },
-      status: log.responseReceived ? 'completed' : 'pending',
+      status: result?.status.toLowerCase() ?? (log.responseReceived ? 'completed' : 'pending'),
       error: log.errorMessage || undefined
-    }));
+    };
+    });
   }
 
   /**
    * Get Task execution logs
    */
   private async getTaskLogs(filter: LogsFilter): Promise<DBLogEntry[]> {
-    const where: any = {
-      isDeleted: false
-    };
+    const where: any = {};
+    const andConditions: any[] = [];
 
     if (filter.userId) {
-      // Find tasks that contain this userId in their runnerData
-      where.runnerData = {
-        contains: `"userId":${filter.userId}`
-      };
+      // Task runner data is stored as JSON text, so accept both compact and spaced encodings.
+      andConditions.push({
+        OR: [
+          {
+            runnerData: {
+              contains: `"userId":${filter.userId}`
+            }
+          },
+          {
+            runnerData: {
+              contains: `"userId": ${filter.userId}`
+            }
+          }
+        ]
+      });
     }
 
     if (filter.taskId) {
@@ -199,6 +219,10 @@ export class DBLogsService {
       if (filter.endDate) {
         where.createdAt.lte = filter.endDate;
       }
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     const tasks = await this.prisma.task.findMany({
@@ -217,7 +241,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
 
     return tasks.map(task => {
@@ -264,6 +289,7 @@ export class DBLogsService {
         action,
         details,
         status: task.status,
+        deleted: task.isDeleted,
         error: task.status === 'CANCELLED' ? 'Task was cancelled' : undefined
       };
     });
@@ -307,7 +333,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
 
     return users.map(user => ({
@@ -368,7 +395,8 @@ export class DBLogsService {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: Math.min((filter.offset ?? 0) + (filter.limit ?? 100), 1000)
     });
 
     return sessions.map(session => ({
@@ -379,7 +407,6 @@ export class DBLogsService {
       action: 'Authentication Session',
       details: {
         id: session.id,
-        token: session.token.substring(0, 20) + '...', // Truncate token for security
         expiresAt: session.expiresAt,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
@@ -401,7 +428,8 @@ export class DBLogsService {
   }> {
     const [openaiCount, taskCount, userCount, sessionCount] = await Promise.all([
       this.prisma.openAILog.count(),
-      this.prisma.task.count({ where: { isDeleted: false } }),
+      // Tasks are part of the historical audit trail, so count soft-deleted rows too.
+      this.prisma.task.count(),
       this.prisma.user.count(),
       this.prisma.session.count()
     ]);

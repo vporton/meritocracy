@@ -1,4 +1,3 @@
-import Client from 'bitcoin-core';
 import bs58 from 'bs58';
 import { createECDH, createHash } from 'crypto';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -13,6 +12,7 @@ import type {
   TokenDistributionOptions
 } from './types.js';
 import { withRetry } from '../../utils/retry.js';
+import { JsonRpcClient, type RpcCommandClient } from './JsonRpcClient.js';
 
 const ECPair = ECPairFactory(tinysecp);
 
@@ -48,27 +48,16 @@ const readBitcoinCashConfig = (): BitcoinNetworkConfig => ({
   wif: process.env.BCH_WIF ?? process.env.BITCOIN_WIF
 });
 
-const createClient = (config: BitcoinNetworkConfig): Client => {
+const createClient = (config: BitcoinNetworkConfig): RpcCommandClient => {
   if (!config.rpcUrl /*|| !config.rpcUsername || !config.rpcPassword*/) {
     throw new Error('[Bitcoin Cash] RPC configuration missing');
   }
-  const normalizedHost = config.rpcUrl.replace(/\/+$/, '');
-  const options: Record<string, unknown> = {
-    host: normalizedHost
-  };
-
-  const hasBasicAuth = Boolean(config.rpcUsername && config.rpcPassword);
-  if (hasBasicAuth) {
-    options.username = config.rpcUsername;
-    options.password = config.rpcPassword;
-  }
-
-  if (config.headers && Object.keys(config.headers).length > 0) {
-    options.headers = config.headers;
-  }
-
-  const ClientConstructor = Client as unknown as new (config?: any) => Client;
-  return new ClientConstructor(options);
+  return new JsonRpcClient({
+    url: config.rpcUrl,
+    username: config.rpcUsername,
+    password: config.rpcPassword,
+    headers: config.headers,
+  });
 };
 
 const doubleSha256 = (data: Uint8Array): Buffer => {
@@ -116,21 +105,21 @@ const deriveP2PKHAddressFromWif = (wif: string): string => {
 
 export class BitcoinCashGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   readonly type = 'BITCOIN_CASH';
-  private client?: Client;
+  private client?: RpcCommandClient;
   private resolvedWalletAddress?: string;
   private fallbackBalanceNoticeShown = false;
   private fallbackAddressMissingWarned = false;
 
-  private async getClient(): Promise<Client> {
+  private async getClient(): Promise<RpcCommandClient> {
     const config = readBitcoinCashConfig();
     if (!this.client) {
       const client = createClient(config);
       // Wrap command with retry
       const originalCommand = client.command.bind(client);
-      client.command = async (...args: any[]) => {
+      client.command = async (method: string, ...params: unknown[]) => {
         return withRetry(
-          () => originalCommand(...args),
-          { taskName: `Bitcoin Cash RPC ${args[0]}` }
+          () => originalCommand(method, ...params),
+          { taskName: `Bitcoin Cash RPC ${method}` }
         );
       };
       this.client = client;
@@ -165,12 +154,12 @@ export class BitcoinCashGasTokenNetworkAdapter implements GasTokenNetworkAdapter
 
   private async resolveWalletAddress(
     config: BitcoinNetworkConfig,
-    _client: Client
+    _client: RpcCommandClient
   ): Promise<string | undefined> {
     return this.ensureStaticWalletAddress(config);
   }
 
-  private async getFeeRate(config: BitcoinNetworkConfig, client: Client): Promise<number> {
+  private async getFeeRate(config: BitcoinNetworkConfig, client: RpcCommandClient): Promise<number> {
     try {
       const estimate = await client.command('estimatesmartfee', 6);
       const feerateBTCperKB = typeof estimate?.feerate === 'number' ? estimate.feerate : Number(estimate?.feerate ?? 0);
@@ -185,7 +174,7 @@ export class BitcoinCashGasTokenNetworkAdapter implements GasTokenNetworkAdapter
   }
 
   private async tryWalletlessBalanceLookup(
-    client: Client,
+    client: RpcCommandClient,
     config: BitcoinNetworkConfig
   ): Promise<number | undefined> {
     const address = this.ensureStaticWalletAddress(config);

@@ -184,6 +184,9 @@ export class TaskRunnerRegistry {
         status: TaskStatus.COMPLETED,
         completedAt: new Date(),
         updatedAt: new Date(),
+        // Keep the compact, validated task outcome available to task/audit views.
+        // The provider reply itself lives nowhere in this row.
+        runnerData: JSON.stringify({ ...existingData, ...output }),
       }
     });
 

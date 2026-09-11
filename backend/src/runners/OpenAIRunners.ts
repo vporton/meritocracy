@@ -9,6 +9,9 @@ import { BaseRunner, registerUtilityRunners } from './UtilityRunners.js';
 import { isConfigValueTrue } from '../services/utils.js';
 import { deleteTaskIfOrphaned } from '../utils/taskCleanup.js';
 import { extractVerifiedEmails } from '../services/userEmailUtils.js';
+import emailService from '../services/EmailService.js';
+import type { OpenAIFlexMode } from '../services/openai.js';
+import { aiResultKindForRunner, extractAiSources, getStoredAiResult, storeAiResult } from '../services/aiResults.js';
 
 // Constants
 const DEFAULT_MODEL = process.env.OPENAI_MODEL!;
@@ -19,6 +22,8 @@ const OVERRIDE_MAX_TOOL_CALLS = process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS ?
   parseInt(process.env.OPENAI_OVERRIDE_MAX_TOOL_CALLS) : undefined;
 const DEFAULT_TEMPERATURE = 0.2;
 const BAN_DURATION_YEARS = 1;
+const FAILED_EVALUATION_RETRY_MONTHS = 5;
+const CRACKPOT_RETRY_YEARS = 5;
 const OPEN_AI_FAKE = isConfigValueTrue(process.env.OPEN_AI_FAKE);
 
 /**
@@ -135,6 +140,7 @@ interface OpenAIRequestResult {
 
 interface ScientistCheckResponse {
   isActiveScientistOrFOSSDev: boolean;
+  failureCategory: 'NONE' | 'NOT_ACTIVE_OR_WRITER' | 'CRACKPOT';
   why: string;
 }
 
@@ -172,6 +178,10 @@ interface TaskRunnerResult {
 export abstract class BaseOpenAIRunner extends BaseRunner {
   protected getModelOptions(): ResponseCreateParams | undefined {
     return undefined;
+  }
+
+  protected useBatchMode(): boolean {
+    return true;
   }
 
   protected useWebSearchTool(): boolean {
@@ -227,7 +237,9 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         where: { customId },
         data: {
           responseReceived: new Date(),
-          responseData: responseData ? JSON.stringify(responseData) : null,
+          // Full provider replies are deliberately not persisted.  The compact,
+          // validated result is stored in ai_results instead.
+          responseData: null,
           errorMessage: errorMessage || null
         }
       });
@@ -237,6 +249,16 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
         error: error instanceof Error ? error.message : String(error)
       });
     }
+  }
+
+  protected async storeCanonicalResult(customId: string, result: object, sources: string[] = []): Promise<void> {
+    await storeAiResult(this.prisma, {
+      customId,
+      taskId: this.taskId,
+      resultKind: aiResultKindForRunner(this.constructor.name),
+      result,
+      sources,
+    });
   }
 
   /**
@@ -256,13 +278,14 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     options: ResponseCreateParams | undefined = {},
     taskId: number
   ): Promise<OpenAIRequestResult> {
-    const store = await createAIBatchStore(undefined, taskId);
+    const openAIFlexMode: OpenAIFlexMode | undefined = this.useBatchMode() ? undefined : 'nonbatch';
+    const store = await createAIBatchStore(undefined, taskId, openAIFlexMode);
     const storeId = store.getStoreId();
     await this.prisma.task.update({
       where: { id: taskId },
       data: { storeId }
     });
-    const runner = await createAIRunner(store);
+    const runner = await createAIRunner(store, openAIFlexMode);
 
     const requestBody = <ResponseCreateParamsNonStreaming | { max_tool_calls: number }>{
       instructions: prompt, // system/developer message.
@@ -376,7 +399,8 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     let fakeResponse: any = {};
 
     // TODO@P3: Seems out-of-place here.
-    const store = await createAIBatchStore(undefined, task.id);
+    const openAIFlexMode: OpenAIFlexMode | undefined = this.useBatchMode() ? undefined : 'nonbatch';
+    const store = await createAIBatchStore(undefined, task.id, openAIFlexMode);
     const storeId = store.getStoreId();
     await this.prisma.task.update({ // Replace this by one `.insert`.
       where: { id: task.id },
@@ -387,6 +411,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       case 'ScientistOnboardingRunner':
         fakeResponse = {
           isActiveScientistOrFOSSDev: true,
+          failureCategory: 'NONE',
           why: 'Fake mode: Always return true for onboarding'
         };
         break;
@@ -430,13 +455,12 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
     //   }]
     // };
 
-    // Only store if we have a non-batch store (which has storeResponseByCustomId method)
-    if ('storeResponseByCustomId' in store) {
-      await (store as any).storeResponseByCustomId({
-        customId,
-        response: fakeResponse/*fakeOpenAIResponse*/ as any
-      });
-    }
+    await storeAiResult(this.prisma, {
+      customId,
+      taskId: task.id,
+      resultKind: aiResultKindForRunner(runnerName),
+      result: fakeResponse,
+    });
 
     // Update task with fake response
     await this.prisma.task.update({
@@ -589,13 +613,109 @@ export class ScientistOnboardingRunner extends BaseOpenAIRunner {
     await this.initiateOpenAIRequest(task, onboardingPrompt, userPrompt, scientistCheckSchema, this.getModelOptions());
   }
 
-  // Simplify this and similar functions.
-  protected async onOutput(customId: string, output: any): Promise<void> {
-    if (output.isActiveScientistOrFOSSDev) {
-      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
-    } else {
-      await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+  private getRetryUntil(failureCategory: ScientistCheckResponse['failureCategory']): Date {
+    const retryUntil = new Date();
+
+    if (failureCategory === 'CRACKPOT') {
+      retryUntil.setFullYear(retryUntil.getFullYear() + CRACKPOT_RETRY_YEARS);
+      return retryUntil;
     }
+
+    retryUntil.setMonth(retryUntil.getMonth() + FAILED_EVALUATION_RETRY_MONTHS);
+    return retryUntil;
+  }
+
+  protected async onOutput(customId: string, output: ScientistCheckResponse): Promise<void> {
+    await this.storeCanonicalResult(customId, output);
+    const userId = this.data.userId;
+    if (!userId) {
+      throw new TaskRunnerError('User ID is required for onboarding decisions', this.taskId, this.constructor.name);
+    }
+
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        onboarded: true,
+        evaluationBlockedTill: true,
+        evaluationBlockReason: true
+      }
+    });
+
+    if (!currentUser) {
+      throw new TaskRunnerError(`User ${userId} was not found while applying onboarding outcome`, this.taskId, this.constructor.name);
+    }
+
+    const previousStatus = this.getEvaluationStatus(
+      currentUser.onboarded,
+      currentUser.evaluationBlockedTill,
+      currentUser.evaluationBlockReason
+    );
+
+    if (output.isActiveScientistOrFOSSDev) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          onboarded: true,
+          evaluationBlockedTill: null,
+          evaluationBlockReason: null
+        }
+      });
+      await this.notifyStatusChangeIfNeeded(userId, currentUser.name, previousStatus, 'ACTIVE_RESEARCHER');
+      await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
+      return;
+    }
+
+    const failureCategory = output.failureCategory === 'CRACKPOT'
+      ? 'CRACKPOT'
+      : 'NOT_ACTIVE_OR_WRITER';
+    const retryUntil = this.getRetryUntil(failureCategory);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        onboarded: false,
+        shareInGDP: null,
+        evaluationBlockedTill: retryUntil,
+        evaluationBlockReason: failureCategory
+      }
+    });
+
+    const nextStatus = failureCategory === 'CRACKPOT'
+      ? 'CRACKPOT'
+      : 'NOT_ACTIVE_OR_WRITER';
+    await this.notifyStatusChangeIfNeeded(userId, currentUser.name, previousStatus, nextStatus);
+
+    await TaskRunnerRegistry.markTaskAsCancelled(this.prisma, this.taskId);
+  }
+
+  private getEvaluationStatus(
+    onboarded: boolean,
+    evaluationBlockedTill: Date | null,
+    evaluationBlockReason: string | null
+  ): 'ACTIVE_RESEARCHER' | 'CRACKPOT' | 'NOT_ACTIVE_OR_WRITER' {
+    if (onboarded) {
+      return 'ACTIVE_RESEARCHER';
+    }
+
+    if (evaluationBlockedTill && evaluationBlockedTill > new Date() && evaluationBlockReason === 'CRACKPOT') {
+      return 'CRACKPOT';
+    }
+
+    return 'NOT_ACTIVE_OR_WRITER';
+  }
+
+  private async notifyStatusChangeIfNeeded(
+    userId: number,
+    userName: string | null,
+    previousStatus: 'ACTIVE_RESEARCHER' | 'CRACKPOT' | 'NOT_ACTIVE_OR_WRITER',
+    nextStatus: 'ACTIVE_RESEARCHER' | 'CRACKPOT' | 'NOT_ACTIVE_OR_WRITER'
+  ): Promise<void> {
+    if (previousStatus === nextStatus) {
+      return;
+    }
+
+    await emailService.sendEvaluationStatusChangeEmail(userId, userName, previousStatus, nextStatus);
   }
 }
 
@@ -638,6 +758,8 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
       sources: sources
     };
 
+    await this.storeCanonicalResult(customId, output, sources);
+
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, outputWithSources);
   }
 
@@ -650,22 +772,11 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
       throw new Error('No storeId found for task');
     }
 
-    const store = await createAIBatchStore(task.storeId, this.taskId);
-    const outputter = await createAIOutputter(store);
-
     try {
-      const response = (await outputter.getOutput(customId))!;
-
-      // Persist the response in the mapping table for future lookups (e.g. Audit Logs)
-      try {
-        if ('storeResponseByCustomId' in store) {
-          await (store as any).storeResponseByCustomId({ customId, response });
-        }
-      } catch (storeError) {
-        this.log('error', `Failed to store response in mapping table`, { customId, error: String(storeError) });
-      }
-
-      return response;
+      const stored = await getStoredAiResult(this.prisma, customId);
+      if (stored) return stored;
+      const store = await createAIBatchStore(task.storeId, this.taskId);
+      return (await createAIOutputter(store)).getOutput(customId) ?? null;
     } catch (error) {
       this.log('error', 'Failed to get full OpenAI response', { customId, error });
       return null;
@@ -676,47 +787,7 @@ export class WorthAssessmentRunner extends RunnerWithRandomizedPrompt {
    * Extract sources from OpenAI response
    */
   private extractSourcesFromResponse(response: any): string[] {
-    if (!response || !response.output) {
-      return [];
-    }
-
-    const sources: string[] = [];
-
-    // Look through all output messages for web search results
-    for (const message of response.output) {
-      if (message && message.content) {
-        for (const content of message.content) {
-          if (content.type === 'text' && content.text) {
-            // Look for URLs in the text content
-            const urlMatches = content.text.match(/https?:\/\/[^\s\)]+/g);
-            if (urlMatches) {
-              sources.push(...urlMatches);
-            }
-          }
-
-          // Look for web search sources in the content
-          if (content.sources && Array.isArray(content.sources)) {
-            for (const source of content.sources) {
-              if (source.url) {
-                sources.push(source.url);
-              }
-            }
-          }
-        }
-      }
-
-      // Look for web search calls in the message
-      if (message.web_search_call && message.web_search_call.action && message.web_search_call.action.sources) {
-        for (const source of message.web_search_call.action.sources) {
-          if (source.url) {
-            sources.push(source.url);
-          }
-        }
-      }
-    }
-
-    // Remove duplicates
-    return [...new Set(sources)];
+    return extractAiSources(response);
   }
 }
 
@@ -733,6 +804,10 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
     };
   }
 
+  protected useBatchMode(): boolean {
+    return false;
+  }
+
   /**
    * Execute the prompt randomization task
    * @param task - The task containing the original prompt to randomize
@@ -747,6 +822,7 @@ export class RandomizePromptRunner extends BaseOpenAIRunner {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
+    await this.storeCanonicalResult(customId, output);
     await TaskRunnerRegistry.completeTask(this.prisma, this.taskId, output);
   }
 }
@@ -901,6 +977,7 @@ export class PromptInjectionRunner extends RunnerWithRandomizedPrompt {
   }
 
   protected async onOutput(customId: string, output: any): Promise<void> {
+    await this.storeCanonicalResult(customId, output);
     if (output.hasPromptInjectionOrPlagiarism) {
       // Get the task to pass to handleInjectionDetected
       const task = await this.getTaskWithDependencies(this.taskId);

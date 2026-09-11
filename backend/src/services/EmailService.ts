@@ -7,6 +7,7 @@ interface EmailConfig {
   host: string;
   port: number;
   secure: boolean;
+  senderEmail: string;
   auth: {
     user: string;
     pass: string;
@@ -28,6 +29,7 @@ class EmailService {
       host: process.env.SMTP_HOST || 'localhost',
       port: parseInt(process.env.SMTP_PORT || '25'),
       secure: process.env.SMTP_SECURE === 'true',
+      senderEmail: process.env.SMTP_SENDER_EMAIL || process.env.SMTP_USER || 'no-reply@localhost',
       auth: {
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || ''
@@ -67,6 +69,73 @@ class EmailService {
     }
   }
 
+  async sendEvaluationStatusChangeEmail(
+    userId: number,
+    recipientName: string | null | undefined,
+    previousStatus: string,
+    nextStatus: string
+  ): Promise<boolean> {
+    if (!this.transporter) {
+      console.error('Email service not configured - cannot send evaluation status change email');
+      return false;
+    }
+
+    try {
+      const recipientEmails = await getVerifiedEmailAddresses(prisma, userId);
+      if (recipientEmails.length === 0) {
+        console.log(`No verified email addresses found for user ${userId}; skipping evaluation status notification`);
+        return false;
+      }
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config?.auth.user || `no-reply@${new URL(frontendUrl).hostname}`;
+      const subject = `Your Meritocracy evaluation status changed to ${this.formatEvaluationStatusLabel(nextStatus)}`;
+      const safeRecipientName = this.escapeHtml(recipientName || 'there');
+      const previousLabel = this.formatEvaluationStatusLabel(previousStatus);
+      const nextLabel = this.formatEvaluationStatusLabel(nextStatus);
+      const text = `
+Dear ${recipientName || 'there'},
+
+Your Meritocracy evaluation status changed from ${previousLabel} to ${nextLabel}.
+
+If you think this is wrong, you can revisit your connected accounts and try again when re-evaluation is available.
+
+— Meritocracy Platform
+      `.trim();
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #111;">
+          <h2 style="color: #1f2937;">Meritocracy evaluation update</h2>
+          <p>Dear ${safeRecipientName},</p>
+          <p>Your Meritocracy evaluation status changed from <strong>${this.escapeHtml(previousLabel)}</strong> to <strong>${this.escapeHtml(nextLabel)}</strong>.</p>
+          <p>If you think this is wrong, review your connected accounts and try again when re-evaluation is available.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+          <p style="font-size: 12px; color: #6b7280;">Meritocracy Platform</p>
+        </div>
+      `;
+
+      let sentAny = false;
+      for (const recipientEmail of recipientEmails) {
+        try {
+          await this.transporter.sendMail({
+            from: `"Meritocracy Platform" <${senderEmail}>`,
+            to: recipientEmail,
+            subject,
+            html,
+            text
+          });
+          sentAny = true;
+        } catch (error) {
+          console.error(`Failed to send evaluation status email to user ${userId} at ${recipientEmail}`, error);
+        }
+      }
+
+      return sentAny;
+    } catch (error) {
+      console.error('Failed to send evaluation status change email:', error);
+      return false;
+    }
+  }
+
   async sendVerificationEmail(email: string, verificationToken: string, userId: number): Promise<boolean> {
     if (!this.transporter) {
       console.error('Email service not configured - cannot send verification email');
@@ -77,11 +146,9 @@ class EmailService {
       const normalizedEmail = normalizeEmail(email);
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
-      // Use a proper sender address - in development mode, use a default one
-      // If the user doesn't contain a domain (no @ symbol), use localhost domain
-      const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user; // TODO@P3: Move to `this.config`.
+      const senderEmail = this.config?.senderEmail ?? this.config?.auth.user ?? 'no-reply@localhost';
 
-        const mailOptions = {
+      const mailOptions = {
         from: `"Meritocracy Platform" <${senderEmail}>`,
         to: normalizedEmail,
         subject: 'Verify Your Email Address - Meritocracy Platform',
@@ -127,11 +194,6 @@ class EmailService {
       const info = await this.transporter.sendMail(mailOptions);
       console.log('Verification email sent successfully:', info.messageId);
 
-      // In development mode, also log the verification details for easy testing
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Verification URL: ${verificationUrl}`);
-      }
-
       // Store the verification token in the database
       await this.storeVerificationToken(verificationToken, normalizedEmail, userId);
 
@@ -149,7 +211,7 @@ class EmailService {
 
       await prisma.emailVerificationToken.create({
         data: {
-          token,
+          token: this.hashVerificationToken(token),
           email,
           userId,
           expiresAt
@@ -164,7 +226,7 @@ class EmailService {
   async verifyEmailToken(token: string): Promise<{ success: boolean; userId?: number; error?: string }> {
     try {
       const verificationToken = await prisma.emailVerificationToken.findUnique({
-        where: { token },
+        where: { token: this.hashVerificationToken(token) },
         include: { user: true }
       });
 
@@ -180,11 +242,18 @@ class EmailService {
         return { success: false, error: 'Verification token has expired' };
       }
 
-      await prisma.$transaction(async (tx) => {
-        await tx.emailVerificationToken.update({
-          where: { id: verificationToken.id },
+      const consumed = await prisma.$transaction(async (tx) => {
+        const updateResult = await tx.emailVerificationToken.updateMany({
+          where: {
+            id: verificationToken.id,
+            used: false,
+            expiresAt: { gt: new Date() }
+          },
           data: { used: true }
         });
+        if (updateResult.count !== 1) {
+          return false;
+        }
 
         await tx.userEmail.upsert({
           where: { email: verificationToken.email },
@@ -200,7 +269,12 @@ class EmailService {
         });
 
         await syncPrimaryEmail(tx, verificationToken.userId);
+        return true;
       });
+
+      if (!consumed) {
+        return { success: false, error: 'Verification token has already been used or expired' };
+      }
 
       return { success: true, userId: verificationToken.userId };
     } catch (error) {
@@ -211,6 +285,10 @@ class EmailService {
 
   generateVerificationToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  private hashVerificationToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   async cleanupExpiredTokens(): Promise<void> {
@@ -414,6 +492,42 @@ This report was automatically generated by Victor Porton's Foundation compliance
     }
   }
 
+  async sendLivelinessRequestEmail(email: string, token: string, name?: string): Promise<boolean> {
+    if (!this.transporter) {
+      console.error('Email service not configured - cannot send Liveliness request email');
+      return false;
+    }
+
+    try {
+      const livelinessUrl = `${process.env.FRONTEND_URL}/connect?livelinessToken=${token}`;
+      const senderEmail = process.env.SMTP_SENDER_EMAIL || this.config!.auth.user;
+      const mailOptions = {
+        from: `"Meritocracy Platform" <${senderEmail}>`,
+        to: email,
+        subject: 'Action required: renew your Didit Liveliness check',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Renew your payout eligibility check</h2>
+            <p>Hello ${name || 'there'},</p>
+            <p>Before your next payout, please complete a short Didit Liveliness check. This periodically confirms that the recipient is present; it does not require you to have produced new work recently.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${livelinessUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Complete Liveliness check</a>
+            </div>
+            <p>If the button does not work, copy this link into your browser:</p>
+            <p style="word-break: break-all; color: #666;">${livelinessUrl}</p>
+          </div>
+        `,
+        text: `Hello ${name || 'there'},\n\nBefore your next payout, please complete a short Didit Liveliness check. This periodically confirms that the recipient is present; it does not require new work.\n\nComplete it here: ${livelinessUrl}`
+      };
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('Liveliness request email sent successfully:', info.messageId);
+      return true;
+    } catch (error) {
+      console.error('Failed to send Liveliness request email:', error);
+      return false;
+    }
+  }
+
   async sendVotingPleaEmail(targetName: string, voteType: 'BAN' | 'UNBAN'): Promise<void> {
     if (!this.transporter) {
       console.warn('Email service not configured - skipping voting plea emails');
@@ -523,7 +637,7 @@ You can stop receiving these emails from your account preferences on the Connect
 
       await (prisma as any).kycToken.create({
         data: {
-          token,
+          token: this.hashKycToken(token),
           userId,
           expiresAt
         }
@@ -534,17 +648,17 @@ You can stop receiving these emails from your account preferences on the Connect
     }
   }
 
-  async verifyKycToken(token: string, userId: number): Promise<{ success: boolean; error?: string }> {
+  async consumeKycToken(token: string, expectedUserId?: number): Promise<{ success: boolean; userId?: number; error?: string }> {
     try {
       const kycToken = await (prisma as any).kycToken.findUnique({
-        where: { token },
+        where: { token: this.hashKycToken(token) },
       });
 
       if (!kycToken) {
         return { success: false, error: 'Invalid KYC token' };
       }
 
-      if (kycToken.userId !== userId) {
+      if (expectedUserId !== undefined && kycToken.userId !== expectedUserId) {
         return { success: false, error: 'KYC token does not belong to this user' };
       }
 
@@ -556,26 +670,56 @@ You can stop receiving these emails from your account preferences on the Connect
         return { success: false, error: 'KYC token has expired' };
       }
 
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to verify KYC token:', error);
-      return { success: false, error: 'Failed to verify KYC token' };
-    }
-  }
-
-  async markKycTokenAsUsed(token: string): Promise<void> {
-    try {
-      await (prisma as any).kycToken.update({
-        where: { token },
+      const consumed = await (prisma as any).kycToken.updateMany({
+        where: {
+          id: kycToken.id,
+          used: false,
+          expiresAt: { gt: new Date() }
+        },
         data: { used: true }
       });
+      if (consumed.count !== 1) {
+        return { success: false, error: 'KYC token has already been used or expired' };
+      }
+
+      return { success: true, userId: kycToken.userId };
     } catch (error) {
-      console.error('Failed to mark KYC token as used:', error);
+      console.error('Failed to consume KYC token:', error);
+      return { success: false, error: 'Failed to verify KYC token' };
     }
   }
 
   generateKycToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  private hashKycToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  private formatEvaluationStatusLabel(status: string): string {
+    if (status === 'ACTIVE_RESEARCHER') {
+      return 'active researcher';
+    }
+
+    if (status === 'CRACKPOT') {
+      return 'crackpot';
+    }
+
+    if (status === 'NOT_ACTIVE_OR_WRITER') {
+      return 'not active researcher or writer';
+    }
+
+    return status.toLowerCase().replace(/_/g, ' ');
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }
 

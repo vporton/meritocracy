@@ -2,8 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 // import environment from 'vite-plugin-environment';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
 
 dotenv.config();
+
+const polyfillsPath = fileURLToPath(new URL('./src/polyfills.ts', import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -23,18 +26,29 @@ export default defineConfig({
   define: {
     global: 'globalThis',
     'process.env': {},
+    'process.browser': 'true',
+    'process.version': JSON.stringify('v18.16.0'),
   },
   resolve: {
     alias: {
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       buffer: 'buffer',
+      randomfill: polyfillsPath,
     },
   },
   optimizeDeps: {
     include: ['buffer', 'crypto-browserify', 'stream-browserify', 'ethers', 'wagmi', 'axios'],
   },
   preview: {
-    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'meritocracy.fly.dev', 'meritocracy-staging.fly.dev', 'merit.science-dao.org'],
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0',
+      'merit.science-dao.org',
+      'api.merit.science-dao.org',
+      'merit-staging.science-dao.org',
+      'api.merit-staging.science-dao.org',
+    ],
   },
 })

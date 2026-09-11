@@ -1,6 +1,7 @@
 import axios, { AxiosResponse } from 'axios'
+import { getApiOrigin } from '../config/origins'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+export const API_BASE_URL = getApiOrigin()
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -22,6 +23,7 @@ interface User {
   id: number;
   email?: string;
   emailVerified?: boolean;
+  isDeleted?: boolean;
   emails?: Array<{
     email: string;
     verified: boolean;
@@ -43,11 +45,16 @@ interface User {
   gitlabHandle?: string;
   onboarded: boolean;
   shareInGDP?: number;
+  evaluationBlockedTill?: string | null;
+  evaluationBlockReason?: string | null;
   // KYC fields
   kycStatus?: string;
   kycVerifiedAt?: string;
   kycRejectedAt?: string;
   kycRejectionReason?: string;
+  livelinessStatus?: string;
+  livelinessVerifiedAt?: string;
+  livelinessDueAt?: string;
   createdAt: string;
   updatedAt: string;
   votingPleaUnsubscribed?: boolean;
@@ -109,10 +116,19 @@ interface SalaryStats {
   medianRecommendedSalary: number;
 }
 
+interface TokenPriceQuote {
+  symbol: string;
+  coinId: string;
+  usd: number;
+  lastUpdatedAt: string | null;
+  source: 'coingecko';
+}
+
 interface AuthData {
   ethereumAddress?: string;
   signature?: string;
   message?: string;
+  challengeId?: string;
   name?: string;
   orcidId?: string;
   accessToken?: string;
@@ -161,6 +177,7 @@ interface DBLogEntry {
   };
   status?: string;
   error?: string;
+  deleted?: boolean;
 }
 
 interface LogsFilter {
@@ -228,18 +245,24 @@ export const authApi = {
     api.post(`/api/auth/login/${provider}`, userData),
   registerEmail: (email: string, name?: string): Promise<AxiosResponse<{ message: string; user: User; session?: { token: string; expiresAt: string }; requiresVerification?: boolean }>> =>
     api.post('/api/auth/register/email', { email, name }),
-  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User }>> =>
+  verifyEmail: (token: string): Promise<AxiosResponse<{ message: string; user: User; session: { token: string; expiresAt: string } }>> =>
     api.post('/api/auth/verify/email', { token }),
   resendVerification: (email?: string): Promise<AxiosResponse<{ message: string }>> =>
     api.post('/api/auth/resend-verification', email ? { email } : {}),
-  disconnectProvider: (provider: string, payload?: Record<string, unknown>): Promise<AxiosResponse<{ message: string; user: User }>> =>
+  disconnectProvider: (provider: string, payload?: Record<string, unknown>): Promise<AxiosResponse<{ message: string; user: User | null; deleted?: boolean }>> =>
     api.post(`/api/auth/disconnect/${provider}`, payload || {}),
   logout: (): Promise<AxiosResponse<{ message: string }>> => api.post('/api/auth/logout'),
   getCurrentUser: (): Promise<AxiosResponse<{ user: User }>> => api.get('/api/auth/me'),
+  createEthereumChallenge: (ethereumAddress: string): Promise<AxiosResponse<{ challengeId: string; message: string; expiresAt: string }>> =>
+    api.post('/api/auth/challenge/ethereum', { ethereumAddress }),
+  startOAuth: (provider: string): Promise<AxiosResponse<{ authorizationUrl: string }>> =>
+    api.post(`/api/auth/oauth/${provider}/start`, {}, { withCredentials: true }),
   cleanupSessions: (): Promise<AxiosResponse<{ message: string; deletedCount: number }>> => api.delete('/api/auth/sessions/cleanup'),
   // KYC API
   initiateKyc: (kycToken?: string): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User; skipped?: boolean; message?: string }>> =>
     api.post('/api/auth/kyc/initiate', { kycToken }),
+  initiateLiveliness: (livelinessToken?: string): Promise<AxiosResponse<{ url: string | null; sessionId: string | null; session?: { token: string; expiresAt: string }; user?: User }>> =>
+    api.post('/api/auth/liveliness/initiate', { livelinessToken }),
   getKycStatus: (): Promise<AxiosResponse<{ kycStatus?: string; kycVerifiedAt?: string; kycRejectedAt?: string; kycRejectionReason?: string }>> =>
     api.get('/api/auth/kyc/status'),
 }
@@ -276,6 +299,11 @@ export const worldGdpApi = {
     api.get('/api/global/gdp'),
 }
 
+export const tokenPricesApi = {
+  get: (symbols: string[]): Promise<AxiosResponse<{ success: boolean; data: { quotes: Record<string, TokenPriceQuote>; source: string; requestedSymbols: string[]; supportedSymbols: string[] } }>> =>
+    api.get('/api/global/token-prices', { params: { symbols: symbols.join(',') } }),
+}
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
@@ -286,4 +314,4 @@ api.interceptors.response.use(
 )
 
 export default api
-export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats }
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats, TokenPriceQuote }

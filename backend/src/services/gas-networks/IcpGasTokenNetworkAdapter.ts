@@ -34,11 +34,17 @@ interface IcpTokenConfig {
   transferFeeDecimals: number;
   networkSuffix?: string;
   nativeSymbol?: string;
+  erc20ContractAddress?: string;
 }
 
 const DEFAULT_ICP_LEDGER_CANISTER_ID = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
 const DEFAULT_ICP_HOST = 'https://ic0.app';
 const DEFAULT_ICP_DECIMALS = 8;
+const DEFAULT_CKBTC_MINTER_CANISTER_ID = 'mqygn-kiaaa-aaaar-qaadq-cai';
+const DEFAULT_CKETH_HELPER_CONTRACT_ADDRESS = '0x6abDA0438307733FC299e9C229FD3cc074bD8cC0';
+const DEFAULT_USDT_ERC20_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+const DEFAULT_USDC_ERC20_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+const DEFAULT_EURC_ERC20_CONTRACT_ADDRESS = '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c';
 const ICRC1_ACCOUNT = IDL.Record({
   owner: IDL.Principal,
   subaccount: IDL.Opt(IDL.Vec(IDL.Nat8))
@@ -72,6 +78,14 @@ const icrc1IdlFactory = ({ IDL: idl }: { IDL: typeof IDL }) =>
       Err: ICRC1_TRANSFER_ERROR
     })], [])
   });
+const ckbtcMinterIdlFactory = ({ IDL: idl }: { IDL: any }) =>
+  idl.Service({
+    get_btc_address: idl.Func(
+      [idl.Record({ owner: idl.Opt(idl.Principal), subaccount: idl.Opt(idl.Vec(idl.Nat8)) })],
+      [idl.Text],
+      []
+    )
+  });
 
 type Icrc1Actor = {
   icrc1_balance_of: (account: { owner: Principal; subaccount: [] | [Uint8Array] }) => Promise<bigint>;
@@ -86,6 +100,22 @@ type Icrc1Actor = {
     memo: [];
     created_at_time: [];
   }) => Promise<{ Ok?: bigint; Err?: Record<string, unknown> }>;
+};
+
+
+export interface IcpTreasuryFundingAddress {
+  network: 'Bitcoin' | 'Ethereum' | 'ICP';
+  label: string;
+  address: string;
+  note?: string;
+  kind?: 'btc-deposit' | 'eth-deposit' | 'erc20-deposit' | 'manual';
+  receiverPrincipal?: string;
+  receiverPrincipalBytes32?: string;
+  tokenContractAddress?: string;
+}
+
+type CkbtcMinterActor = {
+  get_btc_address: (args: { owner: [] | [Principal]; subaccount: [] | [Uint8Array] }) => Promise<string>;
 };
 
 const ICP_TOKENS: readonly IcpTokenConfig[] = [
@@ -122,7 +152,9 @@ const ICP_TOKENS: readonly IcpTokenConfig[] = [
     ledgerCanisterId: process.env.ICP_CKUSDT_LEDGER_CANISTER_ID ?? 'cngnf-vqaaa-aaaar-qag4q-cai',
     transferFeeDecimals: 6,
     networkSuffix: 'ckusdt',
-    nativeSymbol: 'ICP'
+    nativeSymbol: 'ICP',
+    erc20ContractAddress:
+      process.env.ICP_CKUSDT_ERC20_CONTRACT_ADDRESS?.trim() || DEFAULT_USDT_ERC20_CONTRACT_ADDRESS
   },
   {
     tokenType: 'ICRC1',
@@ -131,7 +163,9 @@ const ICP_TOKENS: readonly IcpTokenConfig[] = [
     ledgerCanisterId: process.env.ICP_CKUSDC_LEDGER_CANISTER_ID ?? 'xevnm-gaaaa-aaaar-qafnq-cai',
     transferFeeDecimals: 6,
     networkSuffix: 'ckusdc',
-    nativeSymbol: 'ICP'
+    nativeSymbol: 'ICP',
+    erc20ContractAddress:
+      process.env.ICP_CKUSDC_ERC20_CONTRACT_ADDRESS?.trim() || DEFAULT_USDC_ERC20_CONTRACT_ADDRESS
   },
   {
     tokenType: 'ICRC1',
@@ -140,7 +174,9 @@ const ICP_TOKENS: readonly IcpTokenConfig[] = [
     ledgerCanisterId: process.env.ICP_CKEURC_LEDGER_CANISTER_ID ?? 'pe5t5-diaaa-aaaar-qahwa-cai',
     transferFeeDecimals: 6,
     networkSuffix: 'ckeurc',
-    nativeSymbol: 'ICP'
+    nativeSymbol: 'ICP',
+    erc20ContractAddress:
+      process.env.ICP_CKEURC_ERC20_CONTRACT_ADDRESS?.trim() || DEFAULT_EURC_ERC20_CONTRACT_ADDRESS
   }
 ] as const;
 
@@ -165,9 +201,36 @@ const readIcpConfig = (): IcpNetworkConfig => {
             ...token,
             ledgerCanisterId: process.env.ICP_LEDGER_CANISTER_ID ?? DEFAULT_ICP_LEDGER_CANISTER_ID
           }
-        : { ...token }
+        : {
+            ...token,
+            erc20ContractAddress: normalizeEthereumAddress(token.erc20ContractAddress)
+          }
     )
   };
+};
+
+const normalizeEthereumAddress = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
+    throw new Error(`[ICP] Invalid Ethereum address configured: ${trimmed}`);
+  }
+
+  return trimmed;
+};
+
+const principalToBytes32Hex = (principalText: string): string => {
+  const principalBytes = Principal.fromText(principalText).toUint8Array();
+  if (principalBytes.length > 32) {
+    throw new Error('[ICP] Principal bytes exceed bytes32 length');
+  }
+
+  const padded = Buffer.alloc(32);
+  padded.set(principalBytes, 0);
+  return `0x${padded.toString('hex')}`;
 };
 
 const toBaseUnits = (amountToken: number, decimals: number): bigint => {
@@ -209,6 +272,8 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   private identity?: Ed25519KeyIdentity;
   private icrcActors = new Map<string, Icrc1Actor>();
   private icrcMetadataCache = new Map<string, Promise<{ symbol: string; decimals: number; fee: bigint }>>();
+  private ckbtcMinter?: CkbtcMinterActor;
+  private fundingAddressCache = new Map<string, Promise<IcpTreasuryFundingAddress[] | undefined>>();
 
   private ensureEnabledConfig(): IcpNetworkConfig {
     const config = readIcpConfig();
@@ -245,8 +310,10 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
   private async getLedger(config: IcpNetworkConfig): Promise<LedgerCanister> {
     if (!this.ledger) {
       this.ledger = LedgerCanister.create({
-        agent: await this.getAgent(config),
-        canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID)
+        // The ledger wrapper still exposes legacy @dfinity structural types while
+        // the implementation uses the equivalent @icp-sdk/core runtime values.
+        agent: await this.getAgent(config) as any,
+        canisterId: Principal.fromText(config.ledgerCanisterId ?? DEFAULT_ICP_LEDGER_CANISTER_ID) as any
       });
     }
     return this.ledger;
@@ -263,6 +330,26 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
       canisterId: Principal.fromText(canisterId)
     }) as unknown as Icrc1Actor;
     this.icrcActors.set(canisterId, actor);
+    return actor;
+  }
+
+
+  private async getCkbtcMinter(config: IcpNetworkConfig): Promise<CkbtcMinterActor> {
+    if (this.ckbtcMinter) {
+      return this.ckbtcMinter;
+    }
+
+    const actor = Actor.createActor(
+      ckbtcMinterIdlFactory as never,
+      {
+        agent: await this.getAgent(config),
+        canisterId: Principal.fromText(
+          process.env.ICP_CKBTC_MINTER_CANISTER_ID ?? DEFAULT_CKBTC_MINTER_CANISTER_ID
+        )
+      }
+    ) as unknown as CkbtcMinterActor;
+
+    this.ckbtcMinter = actor;
     return actor;
   }
 
@@ -407,6 +494,112 @@ export class IcpGasTokenNetworkAdapter implements GasTokenNetworkAdapter {
     );
 
     return contexts;
+  }
+
+  async getTreasuryFundingAddresses(
+    context: GasTokenNetworkContext
+  ): Promise<IcpTreasuryFundingAddress[] | undefined> {
+    if (
+      context.tokenSymbol !== 'ckBTC' &&
+      context.tokenSymbol !== 'ckETH' &&
+      context.tokenSymbol !== 'ckUSDT' &&
+      context.tokenSymbol !== 'ckUSDC' &&
+      context.tokenSymbol !== 'ckEURC'
+    ) {
+      return undefined;
+    }
+
+    const cacheKey = `${context.networkId}:${context.walletAddress ?? ''}`;
+    const cached = this.fundingAddressCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const promise = this.loadTreasuryFundingAddresses(context).catch(error => {
+      this.fundingAddressCache.delete(cacheKey);
+      throw error;
+    });
+    this.fundingAddressCache.set(cacheKey, promise);
+    return promise;
+  }
+
+  private async loadTreasuryFundingAddresses(
+    context: GasTokenNetworkContext
+  ): Promise<IcpTreasuryFundingAddress[] | undefined> {
+    const config = this.ensureEnabledConfig();
+    const principalText = context.walletAddress ?? (await this.resolveWalletAddress(config, { tokenType: 'ICRC1' }));
+    const normalizedPrincipal = principalText ? this.normalizePrincipalAddress(principalText) : undefined;
+    const receiverPrincipalBytes32 = normalizedPrincipal ? principalToBytes32Hex(normalizedPrincipal) : undefined;
+
+    if (context.tokenSymbol === 'ckBTC') {
+      if (!principalText) {
+        return undefined;
+      }
+
+      const minter = await this.getCkbtcMinter(config);
+      const owner = Principal.fromText(this.normalizePrincipalAddress(principalText));
+      const btcAddress = await withRetry(
+        () => minter.get_btc_address({ owner: [owner], subaccount: [] }),
+        { taskName: 'ckBTC get_btc_address' }
+      );
+
+      return [
+        {
+          network: 'Bitcoin',
+          label: 'Treasury Bitcoin deposit address',
+          address: btcAddress,
+          kind: 'btc-deposit',
+          note: 'Send BTC here, then call the ckBTC minter update_balance flow to mint ckBTC to the treasury principal.'
+        },
+        {
+          network: 'ICP',
+          label: 'Treasury ICP principal',
+          address: owner.toText(),
+          receiverPrincipal: owner.toText(),
+          receiverPrincipalBytes32,
+          note: 'This principal receives the minted ckBTC on ICP.'
+        }
+      ];
+    }
+
+    if (!principalText) {
+      return undefined;
+    }
+
+    const receiverPrincipal = normalizedPrincipal ?? this.normalizePrincipalAddress(principalText);
+    const helperContractAddress =
+      normalizeEthereumAddress(process.env.ICP_CKETH_HELPER_CONTRACT_ADDRESS) ?? DEFAULT_CKETH_HELPER_CONTRACT_ADDRESS;
+    const isStablecoin =
+      context.tokenSymbol === 'ckUSDT' ||
+      context.tokenSymbol === 'ckUSDC' ||
+      context.tokenSymbol === 'ckEURC';
+    const token = this.getTokenConfig(config, context);
+    const stablecoinContractAddress = normalizeEthereumAddress(token.erc20ContractAddress);
+
+    return [
+      {
+        network: 'Ethereum',
+        label: isStablecoin ? `${context.tokenSymbol} helper contract` : 'ckETH helper contract',
+        address: helperContractAddress,
+        kind: isStablecoin ? (stablecoinContractAddress ? 'erc20-deposit' : 'manual') : 'eth-deposit',
+        receiverPrincipal,
+        receiverPrincipalBytes32,
+        tokenContractAddress: stablecoinContractAddress,
+        note: isStablecoin
+          ? stablecoinContractAddress
+            ? `Approve the helper contract to spend ${context.tokenSymbol.slice(2)}, then call deposit with the treasury principal as receiver.`
+            : `Set ${context.tokenSymbol === 'ckUSDT' ? 'ICP_CKUSDT_ERC20_CONTRACT_ADDRESS' : context.tokenSymbol === 'ckUSDC' ? 'ICP_CKUSDC_ERC20_CONTRACT_ADDRESS' : 'ICP_CKEURC_ERC20_CONTRACT_ADDRESS'} to enable direct browser-wallet deposits.`
+          : 'Call the helper contract deposit function on Ethereum and pass the treasury principal as the receiver.'
+      },
+      {
+        network: 'ICP',
+        label: 'Treasury ICP principal',
+        address: receiverPrincipal,
+        receiverPrincipal,
+        receiverPrincipalBytes32,
+        note: `Use this principal as the ${context.tokenSymbol} receiver when depositing from Ethereum.`
+      }
+    ];
   }
 
   private async resolveWalletAddress(

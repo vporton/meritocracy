@@ -1,5 +1,5 @@
   * https://airtable.com/app19BOc2TF5bAstw/shr86elKgWTSCP4AY/tbld93rVIguyQLORG
-    * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU The site does not work 26 Sep 2025; 12 Jan 2026.
+    * https://radworks.mirror.xyz/7RDTvdxABVndpZge9VT09Ku5JXD8lCCCpLRRZaVrtJU - submitted 5 Jul 2026
     * https://open.harmony.one/300m-on-bounties-grants-daos/apply-for-grants-or-dao - paused  
     * https://algorand.co/ - seem to have ended grants program.
     * https://solana.org/grants-funding - submitted 27 Sep 2025 - rejected 15 Oct 2025 "didn't see a sufficient public good for the Solana ecosystem".
@@ -8,7 +8,10 @@
     * Celo Foundation
       * https://www.prezenti.xyz - only projects with traction
       * https://www.coinfabrik.com/web3-grants/celo-foundation-grants/ Application reviews are currently on pause - submitted to CeloPG 27 Sep 2025.
+      * https://celo.org/builders - seems not to work for me
     * Ethereum Foundation - unlikely to support: They impower builders, not end users.
+    * TODO
+    * 4EVERLAND - submitted 5 Jul 2026
     * TODO
 * https://www.google.com/search?q=bitcoin+grants
   * Kraken - https://www.kraken.com/features/grants - submitted 28 Sep 2025.
@@ -17,7 +20,7 @@
   * https://grants.bitcoindevs.xyz/apply - applied to OpenSats 28 Sep 2025.
   * https://www.coinfabrik.com/web3-grants/
     * TODO
-    * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025.
+    * BNB https://www.coinfabrik.com/web3-grants/bnb-chain-grants/ - submitted 29 Sep 2025 - rejected 23 Mar 2026 "due to high number of applicants"
     * Moonbeam - submitted 29 Sep 2025 - rejected 10 Oct 2025 ("high volume of applications received").
     * Arbitrum - 29 Sep 2025:
       * Phase 3 of the Arbitrum Foundation Grant Program has now ended!
@@ -79,15 +82,9 @@
     * https://docs.google.com/forms/d/e/1FAIpQLSckvx0yITNlHhs3v1FYy0M6v_4bqh-dcFtN8k3mEX0XajJJCQ/viewform
     * https://www.f6s.com/lumoslabs.co/about
   * https://futo.org/fellows/ - applied 8 Sep 2025
-<<<<<<< Updated upstream
   * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025 - rejected 8 Dec 2025
-  * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025
-  * https://techforgood.zendesk.com - submitted 12 Oct 2025
-=======
-  * https://www.ffwd.org/accelerator - submitted interest form 12 Oct 2025 - rejected 8 Dec 2025 - submitted application 17 Aug 2026
   * https://www.praxislabs.org/nonprofit-accelerator - submitted 2027 year interest form 12 Oct 2025 - rejected 28 May 2026 (too many applicants)
   * https://techforgood.zendesk.com - submitted 12 Oct 2025, 27 Jun 2026
->>>>>>> Stashed changes
   * www.globalgiving.org (they require me to provide annual reports, brochures, newsletters, or news reports)
   * https://rashi.org.il - contacted 12 Oct 2025
   * https://accelerator.ou.org/apply
@@ -98,7 +95,7 @@
   * https://chainforgood.org - submitted 12 Oct 2025
   * AKINDO https://app.akindo.io - applied
   * Alfred P. Sloan Foundation https://sloan.org - mailed about AIIM 17 Sep 2025 - rejected 14 Oct 2025 "paying attention to experiments in funding and resource allocation, but are not currently making grants in this area"
-* A email from ffwd.com
+* A email from                  .com
   * Okta for Good: Nonprofit Technology Fellowship https://www.okta.com/company/okta-for-good/nonprofit-technology-fellows/ - submitted 18 Oct 2025 - rejected 15 Dec 2025
   * Open Technology Fund https://www.opentech.fund/funds/internet-freedom-fund/ - submitted 18 Oct 2025, rejected 12 Nov 2025 "not clearly fit within OTF’s remit"
 * breakthroughprize.org - emailed 19 Oct 2025.
@@ -168,7 +165,7 @@
     * Peters Family Foundation 
     * TODO
 * University of Liverpool https://liverpool.ac.uk - contacted on a partnership 7 Feb 2026 - TODO: My site is broken during submission.
-* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission) - again considered since 28 Feb 2026
+* We Make Change https://app.wemakechange.org - submitted 14 Feb 2026 - rejected 16 Feb 2026 (disagree with my mission) - again considered since 28 Feb 2026 - encourage you to apply at a later time when you'll have achieved more sizeable impact
 * OSV Fellowship https://osv.llc - applied 14 Feb 2026 - rejected 20 Feb 2026 "Due to a high volume of applications"
 * https://www.google.com/search?q=crypto+grants
   * https://blockchaingrants.org
@@ -179,6 +176,35 @@
     * TODO
   * TODO
 * THE KH IMPACT FUND - mailed 27 Feb 2026
-* Morgan Stanley Inclusive & Sustainable Ventures (MSISV) - submitted 7 Mar 2026
-* Bellagio Center Residency Program Expression of Interest (EOI) https://residency.rockefellerfoundation.org/nomination/dashboard.asp - submitted 7 Mar 2026
+* Morgan Stanley Inclusive & Sustainable Ventures (MSISV) - submitted 7 Mar 2026 - rejected 11 Jun 2026
+* Bellagio Center Residency Program Expression of Interest (EOI) https://residency.rockefellerfoundation.org/nomination/dashboard.asp - submitted 7 Mar 2026 - rejected 1 Jun 2026 "many candidates"
 * Codex for Open Source https://openai.com/form/codex-for-oss/ - submitted 7 Mar 2026
+* Renaissance Philanthropy https://www.renaissancephilanthropy.org - contacted 8 Mar 2026
+* Science Philanthropy Alliance - contacted 9 Mar 2026
+* DIV Fund https://www.div.fund/apply - TODO apply on rolling basis [need to read a long text]
+* https://www.google.com/search?q=open-science+foundations
+  * OSSF https://openscience.software/ - emailed 7 Jun 2026
+  * Open Science Foundation https://opening.science - emailed 7 Jun 2026 - replied 10 Jun "will notify me when call opens"
+  * GRIOS https://www.grios.org/ - wrote 7 Jun 2026
+  * Science Europe https://scienceeurope.org - emailed 7 Jun 2026
+  * openscience.bg - emailed 7 Jun 2026
+* Nature journal - sent ChatGPT-generated pitch 9 Jun 2026
+* Surplus - applied 12 Jun 2026
+* Western Union Global Fellowship Program https://watson.is - submitted 16 Jub 2026
+* techtotherescue.org - requires PDF impact report
+* Global Good Fund Fellowship "The enterprise must have at least one full-time employee in addition to the candidate."
+* 10x Impact Labs: AI for Nonprofits Accelerator 10ximpact.in - applied 20 Jun 2026
+* Fund for Innovation in Development https://fundinnovation.dev - must be implemented in a low-income country
+* Just Tech Fellowship https://www.ssrc.org/programs/just-tech/just-tech-fellowship/ - emailed 20 Jun 2026
+* Templeton.org - submitted 5 Jul 2025 (Notification by October 09, 2026)
+* https://greenpill.network
+  * https://bread.coop - submitted post-capitalist idea 7 Jul 2026, submitted my project 7 Jul 2026
+  * TODO
+* https://google.com?q=ai+safety+grant
+  * aisafety.com
+    * grantmaking.ai - applied 14 Jul 2026
+    * Leo Gao's Experimental  Microgranting Program - applied 14 Jul 2026
+    * https://bluedot.org/programs/rapid-grants - applied 14 Jul 2026
+    * AI Alignment Foundation (AIAF) aialignmentfoundation.org - applied 14 Jul 2026
+  * AI Safety Research Fund - applied 14 Jul 2026
+* ICP Alliance - applied 18 Jul 2026

@@ -1,22 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { adminApi } from '../services/api';
 import './Admin.css';
 
+type WeeklyCronStatus = {
+    running: boolean;
+    schedule: string;
+    nextRun?: string | null;
+};
+
+type AdminStatus = {
+    gasDistributionEnabled: boolean;
+    cronStatus: WeeklyCronStatus;
+};
+
 const Admin: React.FC = () => {
-    const [password, setPassword] = useState(localStorage.getItem('adminPassword') || '');
+    const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [status, setStatus] = useState<{ gasDistributionEnabled: boolean; cronStatus: any } | null>(null);
+    const [status, setStatus] = useState<AdminStatus | null>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [triggering, setTriggering] = useState(false);
     const [reassessing, setReassessing] = useState(false);
-
-    useEffect(() => {
-        if (password) {
-            checkStatus();
-        }
-    }, []);
 
     const checkStatus = async () => {
         setLoading(true);
@@ -24,7 +29,6 @@ const Admin: React.FC = () => {
             const response = await adminApi.getStatus(password);
             setStatus(response.data);
             setIsAuthenticated(true);
-            localStorage.setItem('adminPassword', password);
         } catch (error) {
             setIsAuthenticated(false);
             setMessage({ text: 'Invalid password or connection error', type: 'error' });
@@ -95,7 +99,6 @@ const Admin: React.FC = () => {
     };
 
     const logout = () => {
-        localStorage.removeItem('adminPassword');
         setIsAuthenticated(false);
         setPassword('');
         setStatus(null);
@@ -154,12 +157,18 @@ const Admin: React.FC = () => {
                         <div className="status-item">
                             <span className="label">Next Scheduled Run:</span>
                             <span className="value">
-                                {status?.cronStatus?.nextRun ? new Date(status.cronStatus.nextRun).toLocaleString() : 'Not scheduled'}
+                                {status?.cronStatus?.nextRun
+                                    ? `${new Date(status.cronStatus.nextRun).toLocaleString()} (testing only)`
+                                    : 'Testing only'}
                             </span>
                         </div>
                         <div className="status-item">
-                            <span className="label">Schedule:</span>
+                            <span className="label">Weekly Schedule (UTC):</span>
                             <span className="value">{status?.cronStatus?.schedule || 'Unknown'}</span>
+                        </div>
+                        <div className="status-item">
+                            <span className="label">Execution State:</span>
+                            <span className="value">{status?.cronStatus?.running ? 'Running now' : 'Idle'}</span>
                         </div>
                     </div>
 
@@ -183,7 +192,7 @@ const Admin: React.FC = () => {
                             onClick={triggerReWorthAssessment}
                             disabled={triggering || reassessing}
                         >
-                            {reassessing ? 'Running Re-worth-assessment...' : 'Run Re-worth-assessment for Onboarded Users'}
+                            {reassessing ? 'Running Quarterly Review...' : 'Run Quarterly Review for Onboarded Users'}
                         </button>
                     </div>
 
@@ -202,10 +211,10 @@ const Admin: React.FC = () => {
 
                 {reassessing && (
                     <div className="admin-card processing-card">
-                        <h2>Processing Re-worth-assessment</h2>
+                        <h2>Processing Quarterly Review</h2>
                         <div className="loader-container">
                             <div className="loader"></div>
-                            <p>The reassessment process is running for all onboarded users. This may take several minutes.</p>
+                            <p>The quarterly active-user review and re-worth-assessment is running for all onboarded users. This may take several minutes.</p>
                         </div>
                     </div>
                 )}

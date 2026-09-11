@@ -1,11 +1,39 @@
 import { PrismaClient } from '@prisma/client';
-import * as cron from 'node-cron';
 import { UserEvaluationFlow, UserEvaluationData } from './UserEvaluationFlow.js';
 import { TaskManager } from './TaskManager.js';
 import { MultiNetworkGasTokenDistributionService, multiNetworkGasTokenDistributionService } from './MultiNetworkGasTokenDistributionService.js';
 import { DisconnectedAccountCleanupService } from './DisconnectedAccountCleanupService.js';
 import { GlobalDataService } from './GlobalDataService.js';
 import { startApiSelfKeepAlive } from './SelfPingKeepAlive.js';
+import emailService from './EmailService.js';
+import { getVerifiedEmailAddresses } from './userEmailUtils.js';
+
+export const cronJobMetadata = {
+  quarterlyEvaluation: {
+    cron: '0 2 1 */3 *',
+    description: '1st day of every 3rd month at 2:00 AM UTC (quarterly active-user review and re-worth assessment)'
+  },
+  weeklyGasDistribution: {
+    cron: '0 20 * * 0',
+    description: 'Every Sunday at 20:00 UTC (weekly gas distribution, follows configured biweekly interval)'
+  },
+  compensationPayout: {
+    cron: '0 * * * *',
+    description: 'Hourly at minute 0 UTC (compensation payout release)'
+  },
+  livelinessCheck: {
+    cron: '0 9 * * *',
+    description: 'Daily at 09:00 UTC (send due Didit Liveliness renewal requests before payout)'
+  },
+  monthlyCleanup: {
+    cron: '0 4 1 * *',
+    description: '1st of every month at 4:00 AM UTC (disconnected account cleanup)'
+  },
+  worldGdpRefresh: {
+    cron: '0 6 1 * *',
+    description: '1st of every month at 06:00 UTC (world GDP refresh)'
+  }
+} as const;
 
 export class CronExecutionLockedError extends Error {
   constructor(public readonly requestedTask: string, public readonly runningTask: string) {
@@ -19,10 +47,6 @@ export class CronService {
   private userEvaluationFlow: UserEvaluationFlow;
   private multiNetworkGasTokenDistributionService: MultiNetworkGasTokenDistributionService;
   private disconnectedAccountCleanupService: DisconnectedAccountCleanupService;
-  private cronJob: cron.ScheduledTask | null = null;
-  private weeklyGasDistributionJob: cron.ScheduledTask | null = null;
-  private compensationPayoutJob: cron.ScheduledTask | null = null;
-  private monthlyCleanupJob: cron.ScheduledTask | null = null;
   private readonly distributionIntervalWeeks: 1 | 2;
   private static activeExecution: { token: symbol; taskName: string; startedAt: Date } | null = null;
 
@@ -35,13 +59,9 @@ export class CronService {
     this.distributionIntervalWeeks = interval === 2 ? 2 : 1;
   }
 
-  private async runWithExclusiveExecution<T>(taskName: string, operation: () => Promise<T>): Promise<T> {
+  private runWithExclusiveExecution<T>(taskName: string, operation: () => Promise<T>): Promise<T> {
     const releaseLock = this.acquireExecutionLock(taskName);
-    try {
-      return await operation();
-    } finally {
-      releaseLock();
-    }
+    return operation().finally(releaseLock);
   }
 
   private acquireExecutionLock(taskName: string): () => void {
@@ -64,188 +84,47 @@ export class CronService {
     };
   }
 
-  private handleScheduledExecutionError(jobName: string, error: unknown): void {
-    if (error instanceof CronExecutionLockedError) {
-      console.log(`⏭️ ${jobName} skipped: ${error.message}`);
-      return;
-    }
-    console.error(`💥 ${jobName} failed:`, error);
-  }
+  getCronStatus() {
+    const activeExecution = CronService.activeExecution;
+    const activeTaskName = activeExecution?.taskName ?? null;
 
-  /**
-   * Start the bi-monthly cron job for user evaluation flows
-   * Runs on the 1st of every other month at 2:00 AM UTC
-   */
-  startBiMonthlyEvaluationCron() {
-    if (this.cronJob) {
-      console.log('⚠️  Bi-monthly evaluation cron job is already running');
-      return;
-    }
-
-    // Cron expression: "0 2 1 */2 *" means:
-    // - 0 minutes
-    // - 2 hours (2 AM)
-    // - 1st day of month
-    // - Every 2nd month (January, March, May, July, September, November)
-    // - Every day of week
-    this.cronJob = cron.schedule('0 2 1 */2 *', async () => {
-      console.log('🕐 Bi-monthly evaluation cron job triggered');
-      try {
-        await this.runBiMonthlyEvaluation();
-      } catch (error) {
-        this.handleScheduledExecutionError('Bi-monthly evaluation cron job', error);
+    return {
+      activeExecution: activeExecution
+        ? {
+            taskName: activeExecution.taskName,
+            startedAt: activeExecution.startedAt.toISOString()
+          }
+        : null,
+      quarterlyEvaluation: {
+        running: activeTaskName === 'quarterly evaluation',
+        schedule: `${cronJobMetadata.quarterlyEvaluation.cron} (${cronJobMetadata.quarterlyEvaluation.description})`
+      },
+      weeklyGasDistribution: {
+        running: activeTaskName === 'weekly gas distribution',
+        schedule: `${cronJobMetadata.weeklyGasDistribution.cron} (${cronJobMetadata.weeklyGasDistribution.description}; interval=${this.distributionIntervalWeeks} week(s))`
+      },
+      compensationPayout: {
+        running: activeTaskName === 'compensation payouts',
+        schedule: `${cronJobMetadata.compensationPayout.cron} (${cronJobMetadata.compensationPayout.description})`
+      },
+      livelinessCheck: {
+        running: activeTaskName === 'liveliness checks',
+        schedule: `${cronJobMetadata.livelinessCheck.cron} (${cronJobMetadata.livelinessCheck.description})`
+      },
+      monthlyCleanup: {
+        running: activeTaskName === 'monthly cleanup',
+        schedule: `${cronJobMetadata.monthlyCleanup.cron} (${cronJobMetadata.monthlyCleanup.description})`
+      },
+      worldGdpRefresh: {
+        running: activeTaskName === 'world GDP refresh',
+        schedule: `${cronJobMetadata.worldGdpRefresh.cron} (${cronJobMetadata.worldGdpRefresh.description})`
       }
-    }, {
-      timezone: 'UTC'
-    });
-
-    this.cronJob.start();
-    console.log('✅ Bi-monthly evaluation cron job started (runs on 1st of every other month at 2:00 AM UTC)');
+    };
   }
 
-  /**
-   * Stop the bi-monthly cron job
-   */
-  stopBiMonthlyEvaluationCron() {
-    if (this.cronJob) {
-      this.cronJob.stop();
-      this.cronJob = null;
-      console.log('⏹️  Bi-monthly evaluation cron job stopped');
-    }
-  }
-
-  /**
-   * Start the weekly cron job for gas token distribution.
-   * Runs every Sunday at 20:00 UTC (End of the week).
-   * 
-   * CRITICAL: This timing is synchronized with the weekly ban voting system.
-   * Voting begins at the beginning of the week (Monday 00:00) and distribution
-   * happens at the end (Sunday 20:00) to ensure that users who are voted to be
-   * banned during the week are excluded from that week's distribution.
-   * Do not change this timing without ensuring the BanVotingService cycle is also updated.
-   */
-  startWeeklyGasDistributionCron() {
-    if (this.weeklyGasDistributionJob) {
-      console.log('⚠️  Weekly gas distribution cron job is already running');
-      return;
-    }
-
-    // Cron expression: "0 20 * * 0" means:
-    // - 0 minutes
-    // - 20 hours (8 PM)
-    // - Every day of month
-    // - Every month
-    // - 0 = Sunday
-    this.weeklyGasDistributionJob = cron.schedule('0 20 * * 0', async () => {
-      console.log('🕐 Weekly gas token distribution cron job triggered (End of Week)');
-      try {
-        await this.runWeeklyGasDistribution();
-      } catch (error) {
-        this.handleScheduledExecutionError('Weekly gas token distribution cron job', error);
-      }
-    }, {
-      timezone: 'UTC'
-    });
-
-    this.weeklyGasDistributionJob.start();
-    console.log('✅ Weekly gas distribution cron job started (runs every Sunday at 20:00 UTC)');
-  }
-
-  /**
-   * Start hourly compensation payout runner.
-   * This releases held balances quickly after a user is unbanned.
-   */
-  startCompensationPayoutCron() {
-    if (this.compensationPayoutJob) {
-      console.log('⚠️  Compensation payout cron job is already running');
-      return;
-    }
-
-    this.compensationPayoutJob = cron.schedule('0 * * * *', async () => {
-      console.log('🕐 Compensation payout cron job triggered');
-      try {
-        await this.runCompensationPayouts();
-      } catch (error) {
-        this.handleScheduledExecutionError('Compensation payout cron job', error);
-      }
-    }, {
-      timezone: 'UTC'
-    });
-
-    this.compensationPayoutJob.start();
-    console.log('✅ Compensation payout cron job started (runs hourly at minute 0 UTC)');
-  }
-
-  /**
-   * Stop the weekly gas distribution cron job
-   */
-  stopWeeklyGasDistributionCron() {
-    if (this.weeklyGasDistributionJob) {
-      this.weeklyGasDistributionJob.stop();
-      this.weeklyGasDistributionJob = null;
-      console.log('⏹️  Weekly gas distribution cron job stopped');
-    }
-  }
-
-  stopCompensationPayoutCron() {
-    if (this.compensationPayoutJob) {
-      this.compensationPayoutJob.stop();
-      this.compensationPayoutJob = null;
-      console.log('⏹️  Compensation payout cron job stopped');
-    }
-  }
-
-  /**
-   * Start the monthly cron job for disconnected account cleanup
-   * Runs on the 1st of every month at 4:00 AM UTC
-   */
-  startMonthlyCleanupCron() {
-    if (this.monthlyCleanupJob) {
-      console.log('⚠️  Monthly cleanup cron job is already running');
-      return;
-    }
-
-    // Cron expression: "0 4 1 * *" means:
-    // - 0 minutes
-    // - 4 hours (4 AM)
-    // - 1st day of month
-    // - Every month
-    // - Every day of week
-    this.monthlyCleanupJob = cron.schedule('0 4 1 * *', async () => {
-      console.log('🕐 Monthly disconnected account cleanup cron job triggered');
-      try {
-        await this.runMonthlyCleanup();
-      } catch (error) {
-        this.handleScheduledExecutionError('Monthly disconnected account cleanup cron job', error);
-      }
-    }, {
-      timezone: 'UTC'
-    });
-
-    this.monthlyCleanupJob.start();
-    console.log('✅ Monthly cleanup cron job started (runs on 1st of every month at 4:00 AM UTC)');
-  }
-
-  /**
-   * Stop the monthly cleanup cron job
-   */
-  stopMonthlyCleanupCron() {
-    if (this.monthlyCleanupJob) {
-      this.monthlyCleanupJob.stop();
-      this.monthlyCleanupJob = null;
-      console.log('⏹️  Monthly cleanup cron job stopped');
-    }
-  }
-
-  /**
-   * Manually trigger the weekly gas token distribution process
-   * This can be called via API endpoint for testing
-   * @param force - If true, skip the enabled check (used for manual triggers)
-   */
   async runWeeklyGasDistribution(force: boolean = false) {
     return this.runWithExclusiveExecution('weekly gas distribution', async () => {
       console.log('🔄 Starting multi-network token distribution process...');
-      // Keep Fly.io machine awake while preparing/executing a large payout batch.
       const stopKeepAlive = startApiSelfKeepAlive('weekly gas distribution');
 
       try {
@@ -269,9 +148,7 @@ export class CronService {
           };
         }
 
-        // Stage 1: prepare in a single weekly/biweekly batch.
         const result = await this.multiNetworkGasTokenDistributionService.processMultiNetworkDistributionTwoStage();
-        // Stage 2: execute batch right away.
         const execution = await this.multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000);
 
         console.log('✅ Weekly multi-network token distribution completed');
@@ -308,7 +185,6 @@ export class CronService {
   async runCompensationPayouts() {
     return this.runWithExclusiveExecution('compensation payouts', async () => {
       console.log('🔄 Running compensation payout flow...');
-      // Compensation can execute many pending txs; keep pinging API_URL to avoid suspend.
       const stopKeepAlive = startApiSelfKeepAlive('compensation payouts');
 
       try {
@@ -320,7 +196,9 @@ export class CronService {
               { bannedTill: null },
               { bannedTill: { lt: new Date() } }
             ],
-            paymentHoldStartedAt: null
+            paymentHoldStartedAt: null,
+            livelinessStatus: 'APPROVED',
+            livelinessDueAt: { gt: new Date() }
           },
           select: {
             id: true
@@ -366,10 +244,67 @@ export class CronService {
     });
   }
 
-  /**
-   * Manually trigger the monthly disconnected account cleanup process
-   * This can be called via API endpoint for testing
-   */
+  async runLivelinessChecks() {
+    return this.runWithExclusiveExecution('liveliness checks', async () => {
+      if (!process.env.DIDIT_WORKFLOW_LIVELINESS_ID) {
+        console.warn('⚠️  DIDIT_WORKFLOW_LIVELINESS_ID is not configured; skipping Liveliness renewal emails.');
+        return { dueUsers: 0, emailsSent: 0, skipped: 0, configurationMissing: true };
+      }
+
+      const now = new Date();
+      const reminderThreshold = new Date(now);
+      reminderThreshold.setDate(reminderThreshold.getDate() - 7);
+      const dueUsers = await this.prisma.user.findMany({
+        where: {
+          onboarded: true,
+          shareInGDP: { not: null },
+          kycStatus: 'APPROVED',
+          OR: [
+            { livelinessDueAt: null },
+            { livelinessDueAt: { lte: now } }
+          ],
+          AND: [
+            {
+              OR: [
+                { livelinessRequestedAt: null },
+                { livelinessRequestedAt: { lte: reminderThreshold } }
+              ]
+            }
+          ]
+        },
+        select: { id: true, name: true }
+      });
+
+      let emailsSent = 0;
+      let skipped = 0;
+      for (const user of dueUsers) {
+        const emails = await getVerifiedEmailAddresses(this.prisma, user.id);
+        if (emails.length === 0) {
+          skipped++;
+          continue;
+        }
+
+        const token = emailService.generateKycToken();
+        await emailService.storeKycToken(token, user.id);
+        const deliveryResults = await Promise.all(
+          emails.map(email => emailService.sendLivelinessRequestEmail(email, token, user.name || undefined))
+        );
+        if (deliveryResults.some(Boolean)) {
+          emailsSent += deliveryResults.filter(Boolean).length;
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { livelinessStatus: 'PENDING', livelinessRequestedAt: now }
+          });
+        } else {
+          skipped++;
+        }
+      }
+
+      console.log(`🫡 Didit Liveliness: ${dueUsers.length} due users, ${emailsSent} emails sent, ${skipped} skipped.`);
+      return { dueUsers: dueUsers.length, emailsSent, skipped, configurationMissing: false };
+    });
+  }
+
   async runMonthlyCleanup() {
     return this.runWithExclusiveExecution('monthly cleanup', async () => {
       console.log('🔄 Starting monthly disconnected account cleanup process...');
@@ -401,21 +336,61 @@ export class CronService {
     });
   }
 
-  /**
-   * Manually trigger the bi-monthly evaluation process
-   * This can be called via API endpoint for testing
-   */
-  async runBiMonthlyEvaluation() {
-    return this.runWithExclusiveExecution('bi-monthly evaluation', async () => {
-      console.log('🔄 Starting bi-monthly evaluation process...');
-      // Re-evaluating all users may run for a long time; keep Fly.io instance active.
-      const stopKeepAlive = startApiSelfKeepAlive('bi-monthly evaluation');
+  async runWorldGdpRefresh() {
+    return this.runWithExclusiveExecution('world GDP refresh', async () => {
+      console.log('🔄 Checking whether world GDP data needs a refresh...');
+      const shouldUpdate = await GlobalDataService.shouldUpdateGdp();
+      if (!shouldUpdate) {
+        console.log('ℹ️  World GDP is up to date; skipping refresh.');
+        return {
+          refreshed: false,
+          reason: 'not_due'
+        };
+      }
+
+      console.log('📈 Refreshing world GDP data...');
+      const success = await GlobalDataService.fetchAndUpdateWorldGdp();
+      if (!success) {
+        console.error('❌ World GDP refresh failed');
+        return {
+          refreshed: false,
+          reason: 'failed'
+        };
+      }
+
+      return {
+        refreshed: true
+      };
+    });
+  }
+
+  async runQuarterlyEvaluation(force: boolean = false) {
+    return this.runWithExclusiveExecution('quarterly evaluation', async () => {
+      console.log('🔄 Starting quarterly evaluation process...');
+      const stopKeepAlive = startApiSelfKeepAlive('quarterly evaluation');
 
       try {
-        // Find every onboarded user for re-worth assessment
+        if (!force && !this.shouldRunCurrentQuarter()) {
+          console.log('⏭️  Quarterly evaluation trigger received outside quarter boundary; skipping run.');
+          return {
+            eligibleUsers: 0,
+            successful: 0,
+            failed: 0,
+            errors: [] as string[],
+            skippedByQuarterlySchedule: true,
+            salaryStatsUpdated: false
+          };
+        }
+
         const eligibleUsers = await this.prisma.user.findMany({
           where: {
-            onboarded: true
+            // A crank finding temporarily removes a user from funding, but it
+            // must not prevent the next scheduled assessment from considering
+            // them again. Other non-onboarded users still require onboarding.
+            OR: [
+              { onboarded: true },
+              { evaluationBlockReason: 'CRACKPOT' }
+            ]
           },
           select: {
             id: true,
@@ -428,10 +403,10 @@ export class CronService {
           }
         });
 
-        console.log(`📊 Found ${eligibleUsers.length} eligible users for evaluation`);
+        console.log(`📊 Found ${eligibleUsers.length} eligible users for quarterly evaluation`);
 
         if (eligibleUsers.length === 0) {
-          console.log('ℹ️  No users eligible for bi-monthly evaluation');
+          console.log('ℹ️  No users eligible for quarterly evaluation');
           const salaryStatsUpdated = await GlobalDataService.recomputeAndStoreSalaryStats();
           if (!salaryStatsUpdated) {
             console.warn('⚠️  Failed to recompute and store salary stats after re-worth assessment');
@@ -445,7 +420,6 @@ export class CronService {
           };
         }
 
-        // Process each eligible user
         const results = {
           successful: 0,
           failed: 0,
@@ -468,7 +442,6 @@ export class CronService {
               }
             };
 
-            // Create evaluation flow (without scientist onboarding since user is already onboarded)
             const rootTaskId = await this.userEvaluationFlow.createEvaluationFlow(evaluationData);
 
             console.log(`✅ Created evaluation flow for user ${user.id}, root task ID: ${rootTaskId}`);
@@ -485,7 +458,7 @@ export class CronService {
           }
         }
 
-        console.log('📊 Bi-monthly evaluation process completed:');
+        console.log('📊 Quarterly evaluation process completed:');
         console.log(`  ✅ Successful: ${results.successful}`);
         console.log(`  ❌ Failed: ${results.failed}`);
 
@@ -508,7 +481,7 @@ export class CronService {
         };
 
       } catch (error) {
-        console.error('💥 Fatal error in bi-monthly evaluation process:', error);
+        console.error('💥 Fatal error in quarterly evaluation process:', error);
         throw error;
       } finally {
         stopKeepAlive();
@@ -516,123 +489,15 @@ export class CronService {
     });
   }
 
-  /**
-   * Get the status of the cron jobs
-   */
-  getCronStatus() {
-    const activeExecution = CronService.activeExecution;
-    return {
-      activeExecution: activeExecution ? {
-        taskName: activeExecution.taskName,
-        startedAt: activeExecution.startedAt.toISOString()
-      } : null,
-      biMonthlyEvaluation: {
-        isRunning: this.cronJob !== null,
-        nextRun: this.cronJob ? this.getNextRunTime() : null,
-        schedule: '0 2 1 */2 * (1st of every other month at 2:00 AM UTC)'
-      },
-      weeklyGasDistribution: {
-        isRunning: this.weeklyGasDistributionJob !== null,
-        nextRun: this.weeklyGasDistributionJob ? this.getNextWeeklyRunTime() : null,
-        schedule: `0 20 * * 0 (Every Sunday at 20:00 UTC, interval=${this.distributionIntervalWeeks} week(s))`
-      },
-      compensationPayout: {
-        isRunning: this.compensationPayoutJob !== null,
-        nextRun: this.compensationPayoutJob ? this.getNextHourlyRunTime() : null,
-        schedule: '0 * * * * (Hourly at minute 0 UTC)'
-      },
-      monthlyCleanup: {
-        isRunning: this.monthlyCleanupJob !== null,
-        nextRun: this.monthlyCleanupJob ? this.getNextMonthlyCleanupRunTime() : null,
-        schedule: '0 4 1 * * (1st of every month at 4:00 AM UTC)'
-      }
-    };
+  async runBiMonthlyEvaluation() {
+    return this.runQuarterlyEvaluation();
   }
 
-  /**
-   * Get the next run time for the bi-monthly evaluation cron job
-   */
-  private getNextRunTime(): Date | null {
-    if (!this.cronJob) return null;
-
-    const now = new Date();
-    const currentDay = now.getDate();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    // Bi-monthly runs on odd months (0, 2, 4, 6, 8, 10) - January, March, May, July, September, November
-    const isOddMonth = currentMonth % 2 === 0;
-
-    // Check if we're before the 1st of this month and this is an odd month
-    if (currentDay < 1 && isOddMonth) {
-      return new Date(currentYear, currentMonth, 1, 2, 0, 0);
-    }
-
-    // Find the next odd month
-    let nextMonth = currentMonth;
-    let nextYear = currentYear;
-
-    // If current month is odd and we're past the 1st, or if current month is even
-    if ((isOddMonth && currentDay >= 1) || !isOddMonth) {
-      // Move to next odd month
-      nextMonth = currentMonth + 1;
-      if (nextMonth > 11) {
-        nextMonth = 0;
-        nextYear = currentYear + 1;
-      }
-
-      // If next month is even, move to the one after that
-      if (nextMonth % 2 === 1) {
-        nextMonth = nextMonth + 1;
-        if (nextMonth > 11) {
-          nextMonth = 0;
-          nextYear = nextYear + 1;
-        }
-      }
-    }
-
-    return new Date(nextYear, nextMonth, 1, 2, 0, 0);
-  }
-
-  /**
-   * Get the next run time for the weekly gas distribution cron job
-   */
-  private getNextWeeklyRunTime(): Date | null {
-    if (!this.weeklyGasDistributionJob) return null;
-
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-
-    // Calculate days until next Sunday
-    const daysUntilSunday = currentDay === 0 ? 7 : (7 - currentDay);
-
-    // If it's Sunday and before 8 PM, next run is today at 8 PM
-    if (currentDay === 0 && (currentHour < 20 || (currentHour === 20 && currentMinute === 0))) {
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0, 0);
-    }
-
-    // Otherwise, next run is next Sunday at 8 PM
-    const nextRun = new Date(now);
-    nextRun.setDate(now.getDate() + daysUntilSunday);
-    nextRun.setHours(20, 0, 0, 0);
-
-    return nextRun;
-  }
-
-  private getNextHourlyRunTime(): Date | null {
-    if (!this.compensationPayoutJob) return null;
-
-    const now = new Date();
-    const next = new Date(now);
-    next.setUTCMinutes(0, 0, 0);
-    next.setUTCHours(next.getUTCHours() + 1);
-    return next;
+  private shouldRunCurrentQuarter(referenceDate: Date = new Date()): boolean {
+    return referenceDate.getUTCMonth() % 3 === 0;
   }
 
   private shouldRunCurrentWeek(referenceDate: Date = new Date()): boolean {
-    // ISO week number parity decides biweekly runs.
     const week = this.getIsoWeekNumber(referenceDate);
     return week % 2 === 0;
   }
@@ -643,37 +508,5 @@ export class CronService {
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  }
-
-  /**
-   * Get the next run time for the monthly cleanup cron job
-   */
-  private getNextMonthlyCleanupRunTime(): Date | null {
-    if (!this.monthlyCleanupJob) return null;
-
-    const now = new Date();
-    const currentDay = now.getDate();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-
-    // If it's the 1st and before 4 AM, next run is today at 4 AM
-    if (currentDay === 1 && (currentHour < 4 || (currentHour === 4 && currentMinute === 0))) {
-      return new Date(now.getFullYear(), now.getMonth(), 1, 4, 0, 0);
-    }
-
-    // Otherwise, next run is the 1st of next month at 4 AM
-    const nextRun = new Date(now.getFullYear(), now.getMonth() + 1, 1, 4, 0, 0);
-
-    return nextRun;
-  }
-
-  /**
-   * Cleanup method to stop cron jobs when the service is destroyed
-   */
-  destroy() {
-    this.stopBiMonthlyEvaluationCron();
-    this.stopWeeklyGasDistributionCron();
-    this.stopCompensationPayoutCron();
-    this.stopMonthlyCleanupCron();
   }
 }

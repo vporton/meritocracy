@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { User, AuthData, authApi } from '../services/api';
+import { API_BASE_URL, User, AuthData, authApi } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -16,6 +16,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_SYNC_STORAGE_KEY = 'meritocracy-auth-sync';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -34,7 +35,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const notifyAuthSync = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(AUTH_SYNC_STORAGE_KEY, Date.now().toString());
+  }, []);
 
   // Set up axios interceptor for auth token
   useEffect(() => {
@@ -86,6 +93,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(userData);
       setToken(session.token);
       localStorage.setItem('authToken', session.token);
+      notifyAuthSync();
 
       return { success: true, user: userData };
     } catch (error: any) {
@@ -97,7 +105,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, notifyAuthSync]);
 
   const logout = useCallback(async () => {
     try {
@@ -111,13 +119,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setToken(null);
       localStorage.removeItem('authToken');
       delete axios.defaults.headers.common['Authorization'];
+      notifyAuthSync();
     }
-  }, [token, API_BASE_URL]);
+  }, [token, API_BASE_URL, notifyAuthSync]);
 
-  const refreshUser = useCallback(async (): Promise<User | undefined> => {
-    if (token) {
+  const refreshUser = useCallback(async (overrideToken?: string): Promise<User | undefined> => {
+    const authToken = overrideToken ?? token ?? localStorage.getItem('authToken');
+
+    if (authToken) {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
+        const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
         setUser(response.data.user);
         return response.data.user;
       } catch (error) {
@@ -126,6 +141,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     }
   }, [token, API_BASE_URL]);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'authToken') {
+        setToken(event.newValue);
+
+        if (!event.newValue) {
+          setUser(null);
+          return;
+        }
+
+        void refreshUser(event.newValue);
+        return;
+      }
+
+      if (event.key === AUTH_SYNC_STORAGE_KEY && token) {
+        void refreshUser();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [refreshUser, token]);
 
   const registerEmail = useCallback(async (email: string, name?: string) => {
     try {
@@ -140,8 +178,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(userData);
         setToken(session.token);
         localStorage.setItem('authToken', session.token);
-      } else {
+        notifyAuthSync();
+      } else if (localStorage.getItem('authToken')) {
+        // An already-authenticated user may be attaching an additional email.
         setUser(userData);
+        notifyAuthSync();
       }
 
       return {
@@ -159,16 +200,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifyAuthSync]);
 
   const verifyEmail = useCallback(async (token: string) => {
     try {
       setIsLoading(true);
 
       const response = await authApi.verifyEmail(token);
-      const { user: userData } = response.data;
+      const { user: userData, session } = response.data;
 
       setUser(userData);
+      setToken(session.token);
+      localStorage.setItem('authToken', session.token);
+      notifyAuthSync();
 
       return {
         success: true,
@@ -183,7 +227,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifyAuthSync]);
 
   const resendVerification = useCallback(async (email?: string) => {
     try {
@@ -209,7 +253,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(userData);
     setToken(sessionToken);
     localStorage.setItem('authToken', sessionToken);
-  }, []);
+    notifyAuthSync();
+  }, [notifyAuthSync]);
 
   const value = useMemo(() => ({
     user,

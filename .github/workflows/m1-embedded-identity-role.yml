@@ -1,0 +1,49 @@
+name: M1 embedded identity-role PocketIC proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/storage_authority/EmbeddedIdentityRoleStore.mo'
+      - 'canisters/shared/IdentityRoleRecovery.mo'
+      - 'fixtures/storage_authority/EmbeddedIdentityRoleStoreProof.mo'
+      - 'scripts/icp/*embedded-identity-role*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-embedded-identity-role.yml'
+  workflow_dispatch:
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-identity-role-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build synthetic fixture
+        shell: bash
+        run: |
+          set -o pipefail
+          scripts/icp/build-embedded-identity-role-proof.sh 2>&1 | tee .mops/m1-embedded-identity-role-proof/build.log
+      - name: Run synthetic fixed-collection proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-embedded-identity-role-proof.sh 2>&1 | tee .mops/m1-embedded-identity-role-proof/proof.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-embedded-identity-role-proof-${{ github.run_id }}
+          path: .mops/m1-embedded-identity-role-proof
+          if-no-files-found: warn

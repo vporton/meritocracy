@@ -71,6 +71,8 @@ Scope/evidence:
 - Identified legacy financial and authorization defects that must be reconciled, not copied; see the risk register below and `PARITY_CHECKLIST.md`.
 - Baseline verification under Node.js v26.5.0/npm 12.0.1 (`nvm use stable`): root backend+frontend production build passed; backend security suite passed (1/1). Frontend lint did not reach source analysis because ESLint 10 requires `eslint.config.js` while the repository still uses the legacy configuration. This pre-existing tooling gap is recorded below and must be corrected in a small post-G1 tooling commit.
 
+23. **IN_PROGRESS 2026-09-11 (synthetic proof runner cache boundary):** `scripts/icp/run-embedded-identity-role-proof.sh` now copies its already-selected PocketIC binary byte-for-byte to a disposable writable `/tmp` directory before passing it to `pic-js-mops`. The client validates its binary with `chmod`, which cannot modify Mops' read-only cache; the copy preserves the selected binary while retaining the proof's no-DFX, no-identity, no-wallet, and no-network-configuration boundary. Shell and JavaScript syntax checks and `mops test IdentityRoleRecovery` pass; the synthetic fixture Wasm was built and hash-recorded. The isolated PocketIC execution still exceeds the workspace's interactive 30-second command ceiling, so no pass result is claimed. This change neither exposes a storage method nor makes the adapter authoritative.
+
 Acceptance:
 
 - Required planning files exist and cross-reference each other.

@@ -12,5 +12,16 @@ mops_cli=(node "$repo_root/node_modules/ic-mops/dist/bin/mops.js")
 (cd "$artifact_dir" && sha256sum -c SHA256SUMS)
 pocket_ic_bin="${POCKET_IC_BIN:-$("${mops_cli[@]}" toolchain bin pocket-ic)}"
 [[ -x "$pocket_ic_bin" ]] || { echo "PocketIC binary is unavailable: $pocket_ic_bin" >&2; exit 1; }
-node "$repo_root/scripts/icp/embedded-identity-role-pocketic-proof.cjs" "$pocket_ic_bin" "$artifact_dir/embedded_identity_role_proof.wasm"
+
+# pic-js-mops validates its supplied binary by chmod'ing it. Mops may keep the
+# pinned binary in a read-only cache, so give the synthetic-only runner a
+# byte-for-byte copy in a disposable writable directory. This never reads DFX
+# state, identities, wallets, or any network configuration.
+runtime_dir="$(mktemp -d "${TMPDIR:-/tmp}/m1-identity-role-pocketic.XXXXXX")"
+trap 'rm -rf -- "$runtime_dir"' EXIT
+runtime_bin="$runtime_dir/pocket-ic"
+cp -- "$pocket_ic_bin" "$runtime_bin"
+chmod 700 "$runtime_bin"
+
+node "$repo_root/scripts/icp/embedded-identity-role-pocketic-proof.cjs" "$runtime_bin" "$artifact_dir/embedded_identity_role_proof.wasm"
 echo "Embedded identity/role PocketIC proof passed."

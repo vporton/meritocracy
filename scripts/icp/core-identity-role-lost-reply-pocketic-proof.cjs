@@ -89,9 +89,17 @@ async function main() {
     // Upgrade before recovery: the durable pre-await intent must survive.
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileLostReply(), "acknowledge", "exact lost-reply reconciliation after upgrade");
+    // Deliver the same immutable operation again. The authority must not
+    // create a second record; its fixed insert-or-exact-lookup path accepts
+    // only this version/hash tuple. Deliberately lose that second reply too,
+    // then prove the core reconciles the retained tuple rather than creating
+    // another logical ID or interpreting a duplicate as a new mutation.
+    await expectReject(() => core.writeThenLoseReply(binding), "deliberately lost duplicate authority reply");
+    expect(await core.reconcileLostReply(), "acknowledge", "exact duplicate-delivery reconciliation");
     // `acknowledge` is reachable only when the authority's fixed core-only
-    // lookup returned the exact persisted version/hash. The runner never
-    // impersonates a canister principal through direct ingress.
+    // lookup returned the exact persisted version/hash, both after an EOP
+    // upgrade and after duplicate delivery. The runner never impersonates a
+    // canister principal through direct ingress.
   } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

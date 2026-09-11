@@ -32,9 +32,9 @@ const ManagementInstallChunkedCode = IDL.Record({
   wasm_module_hash: IDL.Vec(IDL.Nat8),
 });
 const managementCanister = Principal.fromText("aaaaa-aa");
-// Candid framing is small but nonzero, so this is deliberately below the
-// 2 MiB PocketIC ingress ceiling.
-const maxChunkBytes = 1_500_000;
+// PocketIC's chunk store accepts at most 1 MiB; leave room below that bound
+// while also remaining well below the 2 MiB ingress ceiling.
+const maxChunkBytes = 1_000_000;
 const idl = ({ IDL: Candid }) => Candid.Service({
   writeBinding: Candid.Func([Binding], [Result], []),
   writeRole: Candid.Func([Role], [Result], []),

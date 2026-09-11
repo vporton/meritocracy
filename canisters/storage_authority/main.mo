@@ -1,6 +1,7 @@
 import Principal "mo:base/Principal";
 import ZenDB "mo:zendb";
 import StorageCatalog "../shared/StorageCatalog";
+import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
 import Policy "StorageAuthorityPolicy";
 
 /// M1 storage-authority boundary scaffold.
@@ -32,6 +33,10 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   assert Policy.canInstall(config, installer);
 
   type ProbeResult = Policy.Decision;
+  // Compile the fixed identity/role embedded adapter with the authority. It
+  // remains unreachable until its PocketIC mutation/recovery proof and the
+  // owning core-canister journal are complete.
+  type _EmbeddedIdentityRoleStore = EmbeddedIdentityRoleStore.Store;
 
   public type PolicyAudit = {
     core : Principal;

@@ -29,7 +29,9 @@ const ManagementInstallChunkedCode = IDL.Record({
   mode: IDL.Variant({ install: IDL.Null }),
   sender_canister_version: IDL.Opt(IDL.Nat64),
   store_canister: IDL.Opt(IDL.Principal),
-  target_canister: IDL.Principal,
+  // PocketIC 12.0.0 predates the management-interface rename to
+  // `target_canister`; its chunked installer accepts `canister_id`.
+  canister_id: IDL.Principal,
   wasm_module_hash: IDL.Vec(IDL.Nat8),
 });
 const managementCanister = Principal.fromText("aaaaa-aa");
@@ -77,7 +79,7 @@ async function installChunkedCode(pic, sender, canisterId, wasmPath) {
     mode: { install: null },
     sender_canister_version: [],
     store_canister: [],
-    target_canister: canisterId,
+    canister_id: canisterId,
     wasm_module_hash: new Uint8Array(wasmHash),
   });
 }

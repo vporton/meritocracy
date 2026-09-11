@@ -1,0 +1,57 @@
+name: M1 core identity-role lost-reply PocketIC proof
+
+on:
+  push:
+    branches:
+      - feat/icp
+  pull_request:
+    paths:
+      - 'canisters/core/IdentityRoleIntent.mo'
+      - 'canisters/shared/IdentityRoleRecovery.mo'
+      - 'canisters/shared/MutationRecovery.mo'
+      - 'canisters/storage_authority/EmbeddedIdentityRoleStore.mo'
+      - 'fixtures/storage_authority/CoreIdentityRoleLostReply*.mo'
+      - 'scripts/icp/*core-identity-role-lost-reply*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-core-identity-role-lost-reply.yml'
+  workflow_dispatch:
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-core-lost-reply-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build synthetic core and authority fixtures
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .mops/m1-core-identity-role-lost-reply-proof
+          scripts/icp/build-core-identity-role-lost-reply-proof.sh 2>&1 | tee .mops/m1-core-identity-role-lost-reply-proof/build.log
+      - name: Run synthetic lost-reply and upgrade proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-core-identity-role-lost-reply-proof.sh 2>&1 | tee .mops/m1-core-identity-role-lost-reply-proof/proof.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-core-identity-role-lost-reply-${{ github.run_id }}
+          path: .mops/m1-core-identity-role-lost-reply-proof
+          if-no-files-found: warn

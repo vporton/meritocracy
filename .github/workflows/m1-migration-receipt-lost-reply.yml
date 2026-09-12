@@ -1,0 +1,54 @@
+name: M1 migration-receipt PocketIC proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/storage_authority/**'
+      - 'canisters/archive_router/MigrationReceiptIntent.mo'
+      - 'canisters/shared/CycleReserve.mo'
+      - 'canisters/shared/MutationRecovery.mo'
+      - 'fixtures/storage_authority/MigrationReceiptLostReply.mo'
+      - 'scripts/icp/*migration-receipt-lost-reply*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-migration-receipt-lost-reply.yml'
+  workflow_dispatch:
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-migration-receipt-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build synthetic importer and authority fixtures
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .mops/m1-migration-receipt-lost-reply-proof
+          scripts/icp/build-migration-receipt-lost-reply-proof.sh 2>&1 | tee .mops/m1-migration-receipt-lost-reply-proof/build.log
+      - name: Run synthetic low-cycle, interruption, repair, lost-reply, and upgrade proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-migration-receipt-lost-reply-proof.sh 2>&1 | tee .mops/m1-migration-receipt-lost-reply-proof/proof.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-migration-receipt-lost-reply-${{ github.run_id }}
+          path: .mops/m1-migration-receipt-lost-reply-proof
+          if-no-files-found: warn

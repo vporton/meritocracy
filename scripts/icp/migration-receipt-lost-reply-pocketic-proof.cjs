@@ -4,9 +4,11 @@
 const path = require("node:path");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
+const os = require("node:os");
+const { spawn } = require("node:child_process");
 const picRoot = path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/pic-js-mops");
 const coreRoot = path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/@icp-sdk/core");
-const { PocketIc, PocketIcServer } = require(picRoot);
+const { PocketIc } = require(picRoot);
 const { IDL } = require(path.join(coreRoot, "lib/cjs/candid/index.js"));
 const { Principal } = require(path.join(coreRoot, "lib/cjs/principal/index.js"));
 const [bin, authorityWasm, importerWasm] = process.argv.slice(2);
@@ -28,17 +30,54 @@ const management = Principal.fromText("aaaaa-aa");
 // to install the disposable fixture. The proof replenishes only this
 // synthetic importer with PocketIC's test-only API.
 const importerInstallationCycles = 900_000_000_000n;
+const startupTimeoutMs = Number.parseInt(process.env.M1_POCKET_IC_STARTUP_TIMEOUT_MS || "120000", 10);
+if (!Number.isSafeInteger(startupTimeoutMs) || startupTimeoutMs < 30_000 || startupTimeoutMs > 120_000) {
+  throw new Error("M1_POCKET_IC_STARTUP_TIMEOUT_MS must be an integer between 30000 and 120000");
+}
 function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
 async function reject(fn, label) { try { await fn(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
 async function update(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
+async function startPocketIc(binPath) {
+  const runtimeDir = fs.mkdtempSync(path.join(os.tmpdir(), "m1-migration-receipt-pocketic-server-"));
+  const portFile = path.join(runtimeDir, "port");
+  const process = spawn(binPath, ["--port-file", portFile, "--ttl", "60"], { stdio: ["ignore", "ignore", "ignore"] });
+  const deadline = Date.now() + startupTimeoutMs;
+  try {
+    while (Date.now() < deadline) {
+      try {
+        const port = Number.parseInt(fs.readFileSync(portFile, "utf8"), 10);
+        if (Number.isInteger(port) && port > 0 && port <= 65535) {
+          return {
+            url: `http://127.0.0.1:${port}`,
+            async stop() {
+              if (!process.killed) process.kill();
+              await new Promise((resolve) => process.once("exit", resolve));
+              fs.rmSync(runtimeDir, { recursive: true, force: true });
+            },
+          };
+        }
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+      }
+      if (process.exitCode !== null) throw new Error(`PocketIC exited before startup with status ${process.exitCode}`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`PocketIC did not publish its port within ${startupTimeoutMs}ms`);
+  } catch (error) {
+    if (!process.killed) process.kill();
+    await new Promise((resolve) => process.once("exit", resolve));
+    fs.rmSync(runtimeDir, { recursive: true, force: true });
+    throw error;
+  }
+}
 async function install(pic, sender, id, wasmPath, arg, mode = { install: null }) {
   const wasm = fs.readFileSync(wasmPath), hashes = [];
   for (let offset = 0; offset < wasm.length; offset += 1_000_000) { const chunk = new Uint8Array(wasm.subarray(offset, Math.min(offset + 1_000_000, wasm.length))); await update(pic, sender, "upload_chunk", Upload, { canister_id: id, chunk }); hashes.push({ hash: new Uint8Array(crypto.createHash("sha256").update(chunk).digest()) }); }
   await update(pic, sender, "install_chunked_code", Install, { arg: new Uint8Array(arg), chunk_hashes_list: hashes, mode, sender_canister_version: [], store_canister: [], canister_id: id, target_canister: id, wasm_module_hash: new Uint8Array(crypto.createHash("sha256").update(wasm).digest()) });
 }
 async function main() {
-  const server = await PocketIcServer.start({ binPath: bin, ttl: 60, showRuntimeLogs: false, showCanisterLogs: false });
-  const pic = await PocketIc.create(server.getUrl());
+  const server = await startPocketIc(bin);
+  const pic = await PocketIc.create(server.url);
   try {
     const installer = Principal.fromUint8Array(Uint8Array.of(4, 1)), operator = Principal.fromUint8Array(Uint8Array.of(4, 2)), outsider = Principal.fromUint8Array(Uint8Array.of(4, 3));
     const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] });

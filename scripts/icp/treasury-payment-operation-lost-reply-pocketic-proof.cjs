@@ -33,6 +33,7 @@ const management = Principal.fromText("aaaaa-aa");
 const treasuryInstallationCycles = 900_000_000_000n;
 function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
 function expectBool(value, expected, label) { if (value !== expected) throw new Error(`${label}: expected ${expected}, got ${value}`); }
+function expectNat(value, expected, label) { if (value !== expected) throw new Error(`${label}: expected ${expected}, got ${value}`); }
 async function reject(f, label) { try { await f(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
 async function update(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
 async function install(pic, sender, id, wasmPath, arg, mode = { install: null }) {
@@ -90,10 +91,10 @@ async function main() {
     // reconcile that same record; neither path creates a second dispatch.
     await reject(() => treasury.dispatchThenLoseReply(), "deliberately lost synthetic transfer reply");
     expect(await treasury.reconcileTransfer(), "acknowledge", "exact synthetic transfer reconciles after lost reply");
-    expect(await treasury.syntheticDispatchCount(), 1n, "initial synthetic transfer is recorded once");
+    expectNat(await treasury.syntheticDispatchCount(), 1n, "initial synthetic transfer is recorded once");
     await reject(() => treasury.retryDispatchThenLoseReply(), "duplicate synthetic transfer loses reply");
     expect(await treasury.reconcileTransfer(), "acknowledge", "duplicate synthetic transfer reconciles exact receipt");
-    expect(await treasury.syntheticDispatchCount(), 1n, "duplicate delivery cannot create a second synthetic transfer");
+    expectNat(await treasury.syntheticDispatchCount(), 1n, "duplicate delivery cannot create a second synthetic transfer");
     // A separate durable boundary is before any authority await. The absent
     // lookup after the treasury EOP upgrade may authorize only the no-input
     // retry of this retained immutable tuple.

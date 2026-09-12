@@ -135,6 +135,58 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     bindingActive;
   };
 
+  /// Bounded repair for the one fixed binding saga. It takes no tuple, role,
+  /// or principal from its caller: after an interruption it can inspect and
+  /// resend only the already-journaled immutable operation. An archive receipt
+  /// remains a distinct acknowledgement boundary, so a binding cannot become
+  /// active merely because its authority record exists.
+  public shared ({ caller }) func resumeBindingRepair() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?journal = intent else return #blocked;
+    let observation = await authority.lookupCorePrincipalBinding(journal.input.logicalId);
+    let remote : MutationRecovery.RemoteObservation = switch (observation) {
+      case (#absent) #absent;
+      case (#present(value)) #present(value);
+      case (_) return #blocked;
+    };
+    let (updated, decision) = Intent.reconcile(Intent.lostReply(journal), remote);
+    intent := ?updated;
+    switch (decision) {
+      case (#acknowledge) {};
+      case (#retryIdentical) {
+        requireCycleReserve();
+        switch (await authority.writeCorePrincipalBinding(journal.input)) {
+          case (#acknowledged) { intent := ?Intent.lostReply(journal) };
+          case (_) return #blocked;
+        };
+      };
+      case (_) return #blocked;
+    };
+    let tuple : Archive.ArchiveTuple = {
+      logicalId = journal.input.logicalId;
+      version = journal.input.desiredVersion;
+      contentHash = journal.input.contentHash;
+    };
+    switch (bindingArchive) {
+      case (?expected) {
+        if (expected != tuple) return #blocked;
+      };
+      case null { bindingArchive := ?tuple };
+    };
+    let receipt = await archive.lookup(tuple.logicalId);
+    switch (Archive.decide(tuple, receipt)) {
+      case (#acknowledge) { bindingActive := true; return #acknowledge };
+      case (#blocked) return #blocked;
+      case (#remainPending) {};
+    };
+    let archived = await archive.archive(tuple);
+    switch (Archive.decide(tuple, ?archived)) {
+      case (#acknowledge) { bindingActive := true; #acknowledge };
+      case (#remainPending) #remainPending;
+      case (#blocked) #blocked;
+    };
+  };
+
   /// The fixed role path has its own durable journal and fixed authority
   /// calls. It cannot be used to read role data or substitute another tuple
   /// during recovery.
@@ -215,5 +267,55 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   public shared ({ caller }) func isRoleActive() : async Bool {
     onlyOperator(caller);
     roleActive;
+  };
+
+  /// The role repair path is deliberately separate from binding repair. This
+  /// prevents a binding acknowledgement from resuming, activating, or
+  /// replacing an independently journaled role assignment.
+  public shared ({ caller }) func resumeRoleRepair() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?journal = roleIntent else return #blocked;
+    let observation = await authority.lookupCoreRoleAssignment(journal.input.logicalId);
+    let remote : MutationRecovery.RemoteObservation = switch (observation) {
+      case (#absent) #absent;
+      case (#present(value)) #present(value);
+      case (_) return #blocked;
+    };
+    let (updated, decision) = RoleIntent.reconcile(RoleIntent.lostReply(journal), remote);
+    roleIntent := ?updated;
+    switch (decision) {
+      case (#acknowledge) {};
+      case (#retryIdentical) {
+        requireCycleReserve();
+        switch (await authority.writeCoreRoleAssignment(journal.input)) {
+          case (#acknowledged) { roleIntent := ?RoleIntent.lostReply(journal) };
+          case (_) return #blocked;
+        };
+      };
+      case (_) return #blocked;
+    };
+    let tuple : Archive.ArchiveTuple = {
+      logicalId = journal.input.logicalId;
+      version = journal.input.desiredVersion;
+      contentHash = journal.input.contentHash;
+    };
+    switch (roleArchive) {
+      case (?expected) {
+        if (expected != tuple) return #blocked;
+      };
+      case null { roleArchive := ?tuple };
+    };
+    let receipt = await archive.lookup(tuple.logicalId);
+    switch (Archive.decide(tuple, receipt)) {
+      case (#acknowledge) { roleActive := true; return #acknowledge };
+      case (#blocked) return #blocked;
+      case (#remainPending) {};
+    };
+    let archived = await archive.archive(tuple);
+    switch (Archive.decide(tuple, ?archived)) {
+      case (#acknowledge) { roleActive := true; #acknowledge };
+      case (#remainPending) #remainPending;
+      case (#blocked) #blocked;
+    };
   };
 }

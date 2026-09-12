@@ -57,9 +57,11 @@ const coreIdl = ({ IDL: Candid }) => Candid.Service({
   archiveBindingThenLoseReply: Candid.Func([], [], []),
   reconcileBindingArchive: Candid.Func([], [ArchiveDecision], []),
   isBindingActive: Candid.Func([], [Candid.Bool], []),
+  resumeBindingRepair: Candid.Func([], [ArchiveDecision], []),
   archiveRoleThenLoseReply: Candid.Func([], [], []),
   reconcileRoleArchive: Candid.Func([], [ArchiveDecision], []),
   isRoleActive: Candid.Func([], [Candid.Bool], []),
+  resumeRoleRepair: Candid.Func([], [ArchiveDecision], []),
 });
 const archiveIdl = ({ IDL: Candid }) => Candid.Service({
   permit: Candid.Func([], [], []),
@@ -234,6 +236,32 @@ async function main() {
     expect(await core.reconcileLostRoleReply(), "retryIdentical", "absent interrupted role write requires identical retry");
     await expectReject(() => core.retryJournaledRoleWriteThenLoseReply(), "deliberately lost journaled role retry reply");
     expect(await core.reconcileLostRoleReply(), "acknowledge", "journaled role retry reconciliation");
+    // A bounded repair/resume sequence owns no fresh tuple input. Start two
+    // new pre-await interruptions, let their repair writes succeed while the
+    // archive is unavailable, upgrade the core, then prove only the retained
+    // immutable journals can be resumed and activated after re-permission.
+    const repairBinding = { ...binding, logicalId: "principal-binding:v1:synthetic-repair-44", contentHash: hash(11) };
+    const repairRole = { ...role, logicalId: "role-assignment:v1:synthetic-repair-44:auditor", contentHash: hash(12) };
+    archiveSink.setPrincipal(operator);
+    await archiveSink.revoke();
+    core.setPrincipal(operator);
+    await expectReject(() => core.journalThenTrapBeforeAwait(repairBinding), "binding repair starts from durable pre-await journal");
+    await expectReject(() => core.resumeBindingRepair(), "binding repair remains pending when archive is unavailable");
+    expect(await core.isBindingActive(), false, "repair binding remains inactive without archive receipt");
+    await expectReject(() => core.journalRoleThenTrapBeforeAwait(repairRole), "role repair starts from durable pre-await journal");
+    await expectReject(() => core.resumeRoleRepair(), "role repair remains pending when archive is unavailable");
+    expect(await core.isRoleActive(), false, "repair role remains inactive without archive receipt");
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    core.setPrincipal(outsider);
+    await expectReject(() => core.resumeBindingRepair(), "non-operator binding repair denied");
+    await expectReject(() => core.resumeRoleRepair(), "non-operator role repair denied");
+    archiveSink.setPrincipal(operator);
+    await archiveSink.permit();
+    core.setPrincipal(operator);
+    expect(await core.resumeBindingRepair(), "acknowledge", "binding repair resumes exact retained tuple after upgrade");
+    expect(await core.isBindingActive(), true, "binding repair activates only after exact receipt");
+    expect(await core.resumeRoleRepair(), "acknowledge", "role repair resumes exact retained tuple after upgrade");
+    expect(await core.isRoleActive(), true, "role repair activates only after exact receipt");
     // `acknowledge` is reachable only when the authority's fixed core-only
     // lookup returned the exact persisted version/hash, both after an EOP
     // upgrade and after duplicate delivery. The runner never impersonates a

@@ -32,6 +32,7 @@ const management = Principal.fromText("aaaaa-aa");
 // retained journal cannot start an authority mutation while depleted.
 const treasuryInstallationCycles = 900_000_000_000n;
 function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
+function expectBool(value, expected, label) { if (value !== expected) throw new Error(`${label}: expected ${expected}, got ${value}`); }
 async function reject(f, label) { try { await f(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
 async function update(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
 async function install(pic, sender, id, wasmPath, arg, mode = { install: null }) {
@@ -75,7 +76,7 @@ async function main() {
     // exists; archive availability alone is never an activation signal.
     archive.setPrincipal(operator); await archive.revoke();
     await reject(() => treasury.archiveThenLoseReply(), "unavailable archive keeps payment operation pending");
-    expect(await treasury.isActive(), false, "payment operation inactive after archive failure");
+    expectBool(await treasury.isActive(), false, "payment operation inactive after archive failure");
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId, transferId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.reconcileArchive(), "remainPending", "missing archive receipt remains pending after upgrade");
     archive.setPrincipal(operator); await archive.permit();
@@ -83,7 +84,7 @@ async function main() {
     await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [treasuryId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId, transferId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.reconcileArchive(), "acknowledge", "exact archive receipt activates after upgrades");
-    expect(await treasury.isActive(), true, "payment operation active only after exact archive receipt");
+    expectBool(await treasury.isActive(), true, "payment operation active only after exact archive receipt");
     // The valueless downstream sink retains exactly one immutable operation
     // tuple. Both a lost reply and an explicit duplicate delivery can only
     // reconcile that same record; neither path creates a second dispatch.
@@ -112,7 +113,7 @@ async function main() {
     expect(await treasury.reconcileLostReply(), "acknowledge", "repair reconciles retained authority tuple");
     archive.setPrincipal(operator); await archive.revoke();
     await reject(() => treasury.archiveThenLoseReply(), "repair archive remains unavailable");
-    expect(await treasury.isActive(), false, "repair record remains inactive without archive receipt");
+    expectBool(await treasury.isActive(), false, "repair record remains inactive without archive receipt");
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId, transferId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.repairArchiveResume(), "remainPending", "repair archive remains pending after upgrade");
     archive.setPrincipal(operator); await archive.permit();
@@ -120,7 +121,7 @@ async function main() {
     await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [treasuryId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId, transferId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.repairArchiveResume(), "acknowledge", "exact repair archive receipt activates after upgrades");
-    expect(await treasury.isActive(), true, "repair record activates only after exact archive receipt");
+    expectBool(await treasury.isActive(), true, "repair record activates only after exact archive receipt");
   } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

@@ -75,6 +75,12 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   public shared ({ caller }) func journalThenTrapBeforeAwait(input : IdentityRole.PrincipalBindingInput) : async () {
     onlyOperator(caller);
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic binding");
+    // This bounded fixture has one binding saga slot. Starting a distinct
+    // journal replaces its prior completed archive branch, so its receipt and
+    // activation state cannot be mistaken for an acknowledgement of the new
+    // immutable operation.
+    bindingArchive := null;
+    bindingActive := false;
     intent := ?Intent.startRemoteWrite(prepared);
     throw Error.reject("deliberately interrupted before synthetic authority call");
   };
@@ -223,6 +229,10 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   public shared ({ caller }) func journalRoleThenTrapBeforeAwait(input : IdentityRole.RoleAssignmentInput) : async () {
     onlyOperator(caller);
     let ?prepared = RoleIntent.prepare(input) else throw Error.reject("invalid synthetic role");
+    // As above, this fixed role fixture owns one saga slot. A new operation
+    // must begin with no receipt or activation inherited from its predecessor.
+    roleArchive := null;
+    roleActive := false;
     roleIntent := ?RoleIntent.startRemoteWrite(prepared);
     throw Error.reject("deliberately interrupted role before synthetic authority call");
   };

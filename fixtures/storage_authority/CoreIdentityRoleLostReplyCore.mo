@@ -12,8 +12,8 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   assert not Principal.isAnonymous(operator);
   assert installer != operator;
   let authority : actor {
-    writeBinding : shared IdentityRole.PrincipalBindingInput -> async Embedded.WriteResult;
-    lookupBinding : shared Text -> async Embedded.BindingObservation;
+    writeCorePrincipalBinding : shared IdentityRole.PrincipalBindingInput -> async Embedded.WriteResult;
+    lookupCorePrincipalBinding : shared Text -> async Embedded.BindingObservation;
   } = actor (Principal.toText(authorityId));
   var intent : ?Intent.BindingIntent = null;
 
@@ -24,7 +24,7 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic binding");
     // This assignment is the durable pre-await journal boundary.
     intent := ?Intent.startRemoteWrite(prepared);
-    let result = await authority.writeBinding(input);
+    let result = await authority.writeCorePrincipalBinding(input);
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic write failed") } };
     // Trap after the successful remote write so this call's reply is unknown
     // to the caller; the persisted pre-await journal must be reconciled.
@@ -51,7 +51,7 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     if (journal.phase != #remoteWriteStarted) {
       throw Error.reject("synthetic journal is not eligible for identical retry");
     };
-    let result = await authority.writeBinding(journal.input);
+    let result = await authority.writeCorePrincipalBinding(journal.input);
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic retry failed") } };
     intent := ?Intent.lostReply(journal);
     throw Error.reject("deliberately lost synthetic authority retry reply");
@@ -60,7 +60,7 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   public shared ({ caller }) func reconcileLostReply() : async MutationRecovery.RecoveryDecision {
     onlyOperator(caller);
     let ?journal = intent else return #blocked;
-    let observation = await authority.lookupBinding(journal.input.logicalId);
+    let observation = await authority.lookupCorePrincipalBinding(journal.input.logicalId);
     let remote : MutationRecovery.RemoteObservation = switch (observation) {
       case (#absent) #absent;
       case (#present(value)) #present(value);

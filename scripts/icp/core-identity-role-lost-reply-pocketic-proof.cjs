@@ -16,6 +16,7 @@ if (!pocketIcBin || !authorityWasm || !coreWasm) throw new Error("Expected Pocke
 
 const Hash = IDL.Vec(IDL.Nat8);
 const Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
+const Config = IDL.Record({ core: IDL.Principal, workflow: IDL.Principal, treasury: IDL.Principal, archive: IDL.Principal, evidence: IDL.Principal, governance: IDL.Principal });
 const Binding = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, userId: IDL.Nat64, principal: IDL.Principal, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
 const WriteResult = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
 const Observation = IDL.Variant({ absent: IDL.Null, present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }), conflict: IDL.Null, storageError: IDL.Null });
@@ -32,8 +33,8 @@ const ManagementInstallChunkedCode = IDL.Record({
 const managementCanister = Principal.fromText("aaaaa-aa");
 const maxChunkBytes = 1_000_000;
 const authorityIdl = ({ IDL: Candid }) => Candid.Service({
-  writeBinding: Candid.Func([Binding], [WriteResult], []),
-  lookupBinding: Candid.Func([Candid.Text], [Observation], []),
+  writeCorePrincipalBinding: Candid.Func([Binding], [WriteResult], []),
+  lookupCorePrincipalBinding: Candid.Func([Candid.Text], [Observation], []),
 });
 const coreIdl = ({ IDL: Candid }) => Candid.Service({
   writeThenLoseReply: Candid.Func([Binding], [], []),
@@ -74,15 +75,21 @@ async function main() {
     const operator = Principal.fromUint8Array(Uint8Array.of(1, 2));
     const outsider = Principal.fromUint8Array(Uint8Array.of(1, 3));
     const subject = Principal.fromUint8Array(Uint8Array.of(1, 44));
+    const workflow = Principal.fromUint8Array(Uint8Array.of(1, 4));
+    const treasury = Principal.fromUint8Array(Uint8Array.of(1, 5));
+    const archive = Principal.fromUint8Array(Uint8Array.of(1, 6));
+    const evidence = Principal.fromUint8Array(Uint8Array.of(1, 7));
+    const governance = Principal.fromUint8Array(Uint8Array.of(1, 8));
     const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const coreId = await pic.createCanister({ sender: installer, controllers: [installer] });
-    await install(pic, installer, authorityId, authorityWasm, IDL.encode([IDL.Principal], [coreId]));
+    const authorityConfig = { core: coreId, workflow, treasury, archive, evidence, governance };
+    await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [authorityConfig]));
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]));
     const authority = pic.createActor(authorityIdl, authorityId);
     authority.setPrincipal(outsider);
     const binding = { logicalId: "principal-binding:v1:synthetic-44", desiredVersion: 1n, contentHash: hash(7), userId: 44n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };
-    expect(await authority.writeBinding(binding), "blocked", "direct authority write denied");
-    expect(await authority.lookupBinding(binding.logicalId), "conflict", "direct authority lookup denied");
+    expect(await authority.writeCorePrincipalBinding(binding), "blocked", "direct authority write denied");
+    expect(await authority.lookupCorePrincipalBinding(binding.logicalId), "conflict", "direct authority lookup denied");
     const core = pic.createActor(coreIdl, coreId);
     core.setPrincipal(outsider);
     await expectReject(() => core.reconcileLostReply(), "non-operator core ingress denied");
@@ -91,10 +98,10 @@ async function main() {
     // Upgrade the authority after its successful write but before the core
     // can reconcile. The fixed collection must reopen its retained record;
     // recreating it or losing it turns the later exact lookup into a failure.
-    await install(pic, installer, authorityId, authorityWasm, IDL.encode([IDL.Principal], [coreId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [authorityConfig]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     authority.setPrincipal(outsider);
-    expect(await authority.writeBinding(binding), "blocked", "direct authority write denied after upgrade");
-    expect(await authority.lookupBinding(binding.logicalId), "conflict", "direct authority lookup denied after upgrade");
+    expect(await authority.writeCorePrincipalBinding(binding), "blocked", "direct authority write denied after upgrade");
+    expect(await authority.lookupCorePrincipalBinding(binding.logicalId), "conflict", "direct authority lookup denied after upgrade");
     // Upgrade the core before recovery: the durable pre-await intent must
     // also survive independently from the authority's retained collection.
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });

@@ -1,17 +1,17 @@
 import Principal "mo:base/Principal";
+import Runtime "mo:core@2.4/Runtime";
 import ZenDB "mo:zendb";
 import StorageCatalog "../shared/StorageCatalog";
 import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
+import IdentityRole "../shared/IdentityRoleRecovery";
 import Policy "StorageAuthorityPolicy";
 
 /// M1 storage-authority boundary scaffold.
 ///
-/// This canister deliberately has no public ZenDB collection, payload, or
-/// grant-management API yet. Its only surface is a bounded authorization probe
-/// used to prove that ingress is rejected and that each future storage method
-/// will select its collection owner in Motoko rather than accepting a generic
-/// collection/action/role request from Candid. No probe persists or exposes
-/// target data, and this canister is not deployed or authoritative.
+/// This canister exposes only a bounded, collection-specific M1 surface. It
+/// has no generic ZenDB, grant-management, collection, action, document-ID,
+/// or filter API. The fixed identity/role methods below remain un-deployed
+/// proof work and are not an authoritative-store claim.
 shared ({ caller = installer }) persistent actor class (initialConfig : Policy.Config) = this {
   // This is deliberately a persistent private field, rather than an actor
   // constructor parameter captured by method closures. Upgrade calls still
@@ -33,10 +33,21 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   assert Policy.canInstall(config, installer);
 
   type ProbeResult = Policy.Decision;
-  // Compile the fixed identity/role embedded adapter with the authority. It
-  // remains unreachable until its PocketIC mutation/recovery proof and the
-  // owning core-canister journal are complete.
-  type _EmbeddedIdentityRoleStore = EmbeddedIdentityRoleStore.Store;
+  // These two fixed collections are the first bounded embedded-store surface.
+  // They reopen on upgrade rather than recreating or replacing immutable
+  // records. No caller can select a collection, index, document ID, or action.
+  var identityRoleCollectionsInitialized = false;
+  transient let identityRoleStore = switch (
+    if (identityRoleCollectionsInitialized) {
+      EmbeddedIdentityRoleStore.reopen(embeddedStore);
+    } else {
+      EmbeddedIdentityRoleStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null { Runtime.trap("unable to open fixed identity/role collections") };
+  };
+  identityRoleCollectionsInitialized := true;
 
   public type PolicyAudit = {
     core : Principal;
@@ -53,6 +64,41 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
     logicalId : Text,
   ) : ProbeResult {
     Policy.authorizeData(config, caller, owner, logicalId);
+  };
+
+  func coreDataAllowed(caller : Principal, logicalId : Text) : Bool {
+    switch (Policy.authorizeData(config, caller, #core, logicalId)) {
+      case (#allowed) true;
+      case (_) false;
+    };
+  };
+
+  /// Fixed principal-binding write. This is intentionally not a generic
+  /// storage method: only the configured core actor may call it, and the
+  /// adapter accepts immutable logical-ID/version/hash records only.
+  public shared ({ caller }) func writeCorePrincipalBinding(
+    input : IdentityRole.PrincipalBindingInput,
+  ) : async EmbeddedIdentityRoleStore.WriteResult {
+    if (not coreDataAllowed(caller, input.logicalId)) return #blocked;
+    EmbeddedIdentityRoleStore.writeBinding(identityRoleStore, input);
+  };
+
+  /// Fixed recovery lookup for the principal-binding collection. An
+  /// unauthorized caller gets `#conflict`, never an existence signal.
+  public shared ({ caller }) func lookupCorePrincipalBinding(
+    logicalId : Text,
+  ) : async EmbeddedIdentityRoleStore.BindingObservation {
+    if (not coreDataAllowed(caller, logicalId)) return #conflict;
+    EmbeddedIdentityRoleStore.lookupBinding(identityRoleStore, logicalId);
+  };
+
+  /// Fixed role-assignment write. Role revocation remains a later immutable
+  /// logical record; this endpoint cannot overwrite an existing assignment.
+  public shared ({ caller }) func writeCoreRoleAssignment(
+    input : IdentityRole.RoleAssignmentInput,
+  ) : async EmbeddedIdentityRoleStore.WriteResult {
+    if (not coreDataAllowed(caller, input.logicalId)) return #blocked;
+    EmbeddedIdentityRoleStore.writeRole(identityRoleStore, input);
   };
 
   // These collection-specific methods are intentionally not a generic

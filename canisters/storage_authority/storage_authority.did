@@ -1,4 +1,4 @@
-type _anon_class_13_1 =
+type _anon_class_17_1 =
  service {
    aiArtifactReadProbe: (logicalId: text) -> (ProbeResult);
    aiArtifactWriteProbe: (logicalId: text) -> (ProbeResult);
@@ -20,6 +20,9 @@ type _anon_class_13_1 =
    coreUserWriteProbe: (logicalId: text) -> (ProbeResult);
    evidenceKycReadProbe: (logicalId: text) -> (ProbeResult);
    evidenceKycWriteProbe: (logicalId: text) -> (ProbeResult);
+   /// Fixed recovery lookup for the principal-binding collection. An
+   /// unauthorized caller gets `#conflict`, never an existence signal.
+   lookupCorePrincipalBinding: (logicalId: text) -> (BindingObservation);
    migrationEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
    migrationEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
    migrationReceiptReadProbe: (logicalId: text) -> (ProbeResult);
@@ -43,19 +46,83 @@ type _anon_class_13_1 =
    workflowResultWriteProbe: (logicalId: text) -> (ProbeResult);
    workflowScheduleReadProbe: (logicalId: text) -> (ProbeResult);
    workflowScheduleWriteProbe: (logicalId: text) -> (ProbeResult);
+   /// Fixed principal-binding write. This is intentionally not a generic
+   /// storage method: only the configured core actor may call it, and the
+   /// adapter accepts immutable logical-ID/version/hash records only.
+   writeCorePrincipalBinding: (input: PrincipalBindingInput) -> (WriteResult);
+   /// Fixed role-assignment write. Role revocation remains a later immutable
+   /// logical record; this endpoint cannot overwrite an existing assignment.
+   writeCoreRoleAssignment: (input: RoleAssignmentInput) -> (WriteResult);
+ };
+type WriteResult =
+ variant {
+   acknowledged;
+   blocked;
+   conflict;
+   storageError;
+ };
+type RoleAssignmentInput =
+ record {
+   contentHash: blob;
+   desiredVersion: nat64;
+   logicalId: text;
+   "principal": principal;
+   role: text;
  };
 type ProbeResult =
- variant { allowed; anonymousCaller; callerNotAllowed; invalidConfiguration; malformedLogicalId };
+ variant {
+   allowed;
+   anonymousCaller;
+   callerNotAllowed;
+   invalidConfiguration;
+   malformedLogicalId;
+ };
+type PrincipalBindingInput =
+ record {
+   contentHash: blob;
+   desiredVersion: nat64;
+   factor: variant {
+             internetIdentity;
+             oauth;
+           };
+   logicalId: text;
+   "principal": principal;
+   provider: opt text;
+   subjectHash: opt blob;
+   userId: nat64;
+ };
 type PolicyAudit =
- record { archive: principal; core: principal; evidence: principal; governance: principal; treasury: principal; workflow: principal };
+ record {
+   archive: principal;
+   core: principal;
+   evidence: principal;
+   governance: principal;
+   treasury: principal;
+   workflow: principal;
+ };
 type Config =
- record { archive: principal; core: principal; evidence: principal; governance: principal; treasury: principal; workflow: principal };
+ record {
+   archive: principal;
+   core: principal;
+   evidence: principal;
+   governance: principal;
+   treasury: principal;
+   workflow: principal;
+ };
+type BindingObservation =
+ variant {
+   absent;
+   conflict;
+   present: record {
+              contentHash: blob;
+              version: nat64;
+            };
+   storageError;
+ };
 /// M1 storage-authority boundary scaffold.
 ///
-/// This canister deliberately has no public ZenDB collection, payload, or
-/// grant-management API yet. Its only surface is a bounded authorization probe
-/// used to prove that ingress is rejected and that each future storage method
-/// will select its collection owner in Motoko rather than accepting a generic
-/// collection/action/role request from Candid. No probe persists or exposes
-/// target data, and this canister is not deployed or authoritative.
-service : (initialConfig: Config) -> _anon_class_13_1
+/// This canister exposes only a bounded, collection-specific M1 surface. It
+/// has no generic ZenDB, grant-management, collection, action, document-ID,
+/// or filter API. The fixed identity/role methods below remain un-deployed
+/// proof work and are not an authoritative-store claim.
+service : (initialConfig: Config) -> _anon_class_17_1

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Builds only the two disposable synthetic M1 lost-reply fixtures.  It never
-# starts a replica or reads DFX state, identities, wallets, or a network.
+# Builds the exact M1 storage-authority artifact plus a disposable synthetic
+# core fixture. It never starts a replica or reads DFX state, identities,
+# wallets, or a network.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -22,7 +23,7 @@ done < <("${mops_cli[@]}" sources --no-install)
 
 "$moc_path" -o="$staging_dir/core_lost_reply_authority.wasm" \
   --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
-  "$repo_root/fixtures/storage_authority/CoreIdentityRoleLostReplyAuthority.mo"
+  "$repo_root/canisters/storage_authority/main.mo"
 "$moc_path" -o="$staging_dir/core_lost_reply_core.wasm" \
   --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
   "$repo_root/fixtures/storage_authority/CoreIdentityRoleLostReplyCore.mo"

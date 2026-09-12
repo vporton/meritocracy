@@ -672,5 +672,6 @@ actor {
       #v0 : VersionedStableStore__270955729;
       #v1 : VersionedStableStore__29988456;
       #v2 : VersionedStableStore__618031391
-    }
+    };
+  stable var identityRoleCollectionsInitialized : Bool
 };

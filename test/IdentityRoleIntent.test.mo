@@ -41,3 +41,10 @@ assert versionConflict.phase == #conflict;
 let (absent, absentDecision) = Intent.reconcile(reconciling, #absent);
 assert absentDecision == #retryIdentical;
 assert absent.phase == #remoteWriteStarted;
+
+// An interruption before the remote call uses the same durable intent. An
+// absent fixed lookup permits only an identical retry, never a new input.
+let interrupted = Intent.startRemoteWrite(prepared);
+let (retryOnly, retryDecision) = Intent.reconcile(interrupted, #absent);
+assert retryDecision == #retryIdentical;
+assert retryOnly.phase == #remoteWriteStarted;

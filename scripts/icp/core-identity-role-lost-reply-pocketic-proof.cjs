@@ -37,6 +37,8 @@ const authorityIdl = ({ IDL: Candid }) => Candid.Service({
 });
 const coreIdl = ({ IDL: Candid }) => Candid.Service({
   writeThenLoseReply: Candid.Func([Binding], [], []),
+  journalThenTrapBeforeAwait: Candid.Func([Binding], [], []),
+  retryJournaledWriteThenLoseReply: Candid.Func([], [], []),
   reconcileLostReply: Candid.Func([], [Recovery], []),
 });
 const hash = (byte) => Uint8Array.from({ length: 32 }, () => byte);
@@ -104,6 +106,15 @@ async function main() {
     // another logical ID or interpreting a duplicate as a new mutation.
     await expectReject(() => core.writeThenLoseReply(binding), "deliberately lost duplicate authority reply");
     expect(await core.reconcileLostReply(), "acknowledge", "exact duplicate-delivery reconciliation");
+    // A separate interruption point is before any authority await. Its
+    // recovery must observe absence, preserve the immutable journal through
+    // a core EOP upgrade, and retry only the journaled tuple (no new input).
+    const interrupted = { ...binding, logicalId: "principal-binding:v1:synthetic-interrupted-44", contentHash: hash(9) };
+    await expectReject(() => core.journalThenTrapBeforeAwait(interrupted), "interruption after journal before authority await");
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    expect(await core.reconcileLostReply(), "retryIdentical", "absent interrupted write requires identical retry");
+    await expectReject(() => core.retryJournaledWriteThenLoseReply(), "deliberately lost journaled retry reply");
+    expect(await core.reconcileLostReply(), "acknowledge", "journaled retry reconciliation");
     // `acknowledge` is reachable only when the authority's fixed core-only
     // lookup returned the exact persisted version/hash, both after an EOP
     // upgrade and after duplicate delivery. The runner never impersonates a

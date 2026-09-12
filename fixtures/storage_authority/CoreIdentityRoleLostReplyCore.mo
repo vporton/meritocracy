@@ -32,6 +32,31 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     throw Error.reject("deliberately lost synthetic authority reply");
   };
 
+  /// Models a trap after the immutable intent reaches durable actor state but
+  /// before the cross-canister call is even issued. Recovery must observe an
+  /// absent fixed record and retry precisely this journaled input; it may not
+  /// accept a new caller-supplied version, hash, or logical ID.
+  public shared ({ caller }) func journalThenTrapBeforeAwait(input : IdentityRole.PrincipalBindingInput) : async () {
+    onlyOperator(caller);
+    let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic binding");
+    intent := ?Intent.startRemoteWrite(prepared);
+    throw Error.reject("deliberately interrupted before synthetic authority call");
+  };
+
+  /// This has no input by design: following an `#retryIdentical` decision,
+  /// only the durable pre-await intent may be redelivered to the authority.
+  public shared ({ caller }) func retryJournaledWriteThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?journal = intent else throw Error.reject("missing synthetic journal");
+    if (journal.phase != #remoteWriteStarted) {
+      throw Error.reject("synthetic journal is not eligible for identical retry");
+    };
+    let result = await authority.writeBinding(journal.input);
+    switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic retry failed") } };
+    intent := ?Intent.lostReply(journal);
+    throw Error.reject("deliberately lost synthetic authority retry reply");
+  };
+
   public shared ({ caller }) func reconcileLostReply() : async MutationRecovery.RecoveryDecision {
     onlyOperator(caller);
     let ?journal = intent else return #blocked;

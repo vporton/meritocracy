@@ -2,6 +2,7 @@
 // deliberately traps after the authority has written, then reconciles through
 // the fixed lookup using only the retained immutable input.
 import Error "mo:base/Error";
+import Cycles "mo:base/ExperimentalCycles";
 import Principal "mo:base/Principal";
 import Intent "../../canisters/core/IdentityRoleIntent";
 import RoleIntent "../../canisters/core/RoleAssignmentIntent";
@@ -9,6 +10,7 @@ import Embedded "../../canisters/storage_authority/EmbeddedIdentityRoleStore";
 import IdentityRole "../../canisters/shared/IdentityRoleRecovery";
 import MutationRecovery "../../canisters/shared/MutationRecovery";
 import Archive "../../canisters/shared/IdentityRoleArchiveRecovery";
+import CycleReserve "../../canisters/shared/CycleReserve";
 
 shared ({ caller = installer }) persistent actor class (operator : Principal, authorityId : Principal, archiveId : Principal) = this {
   assert not Principal.isAnonymous(operator);
@@ -32,11 +34,32 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
+  // The journal is durable before this guard runs. A depleted canister must
+  // fail closed before beginning a remote mutation, leaving recovery to make
+  // the bounded absent/exact-retry decision after cycles are replenished.
+  func requireCycleReserve() {
+    assert CycleReserve.decide(Cycles.balance()) == #allowed;
+  };
+
+  // A completed fixed lookup is a durable message boundary for the preceding
+  // journal assignment. It is read-only and returns no payload; importantly,
+  // it occurs before the authority *write*. A subsequent low-cycle trap can
+  // therefore retain the immutable intent without creating any record.
+  func checkpointBindingJournal(logicalId : Text) : async () {
+    ignore await authority.lookupCorePrincipalBinding(logicalId);
+  };
+
+  func checkpointRoleJournal(logicalId : Text) : async () {
+    ignore await authority.lookupCoreRoleAssignment(logicalId);
+  };
+
   public shared ({ caller }) func writeThenLoseReply(input : IdentityRole.PrincipalBindingInput) : async () {
     onlyOperator(caller);
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic binding");
     // This assignment is the durable pre-await journal boundary.
     intent := ?Intent.startRemoteWrite(prepared);
+    await checkpointBindingJournal(input.logicalId);
+    requireCycleReserve();
     let result = await authority.writeCorePrincipalBinding(input);
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic write failed") } };
     // Trap after the successful remote write so this call's reply is unknown
@@ -64,6 +87,8 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     if (journal.phase != #remoteWriteStarted) {
       throw Error.reject("synthetic journal is not eligible for identical retry");
     };
+    await checkpointBindingJournal(journal.input.logicalId);
+    requireCycleReserve();
     let result = await authority.writeCorePrincipalBinding(journal.input);
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic retry failed") } };
     intent := ?Intent.lostReply(journal);
@@ -117,6 +142,8 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     onlyOperator(caller);
     let ?prepared = RoleIntent.prepare(input) else throw Error.reject("invalid synthetic role");
     roleIntent := ?RoleIntent.startRemoteWrite(prepared);
+    await checkpointRoleJournal(input.logicalId);
+    requireCycleReserve();
     let result = await authority.writeCoreRoleAssignment(input);
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic role write failed") } };
     roleIntent := ?RoleIntent.lostReply(RoleIntent.startRemoteWrite(prepared));
@@ -156,6 +183,8 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     if (journal.phase != #remoteWriteStarted) {
       throw Error.reject("synthetic role journal is not eligible for identical retry");
     };
+    await checkpointRoleJournal(journal.input.logicalId);
+    requireCycleReserve();
     let result = await authority.writeCoreRoleAssignment(journal.input);
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic role retry failed") } };
     roleIntent := ?RoleIntent.lostReply(journal);

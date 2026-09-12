@@ -101,7 +101,10 @@ async function main() {
     const evidence = Principal.fromUint8Array(Uint8Array.of(1, 7));
     const governance = Principal.fromUint8Array(Uint8Array.of(1, 8));
     const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] });
-    const coreId = await pic.createCanister({ sender: installer, controllers: [installer] });
+    // Start below the fixed synthetic reserve. The first write must journal,
+    // fail before any authority await, and later recover only by retrying its
+    // retained tuple after the test replenishes this disposable canister.
+    const coreId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 100_000_000_000n });
     const archiveId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const authorityConfig = { core: coreId, workflow, treasury, archive, evidence, governance };
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [authorityConfig]));
@@ -123,6 +126,13 @@ async function main() {
     core.setPrincipal(outsider);
     await expectReject(() => core.reconcileLostReply(), "non-operator core ingress denied");
     core.setPrincipal(operator);
+    const lowCycleBinding = { ...binding, logicalId: "principal-binding:v1:synthetic-low-cycles-44", contentHash: hash(6) };
+    await expectReject(() => core.writeThenLoseReply(lowCycleBinding), "low-cycle write journals but makes no authority call");
+    expect(await core.reconcileLostReply(), "retryIdentical", "low-cycle journal observes absent authority record");
+    const replenished = await pic.addCycles(coreId, 2_000_000_000_000);
+    if (replenished < 1_000_000_000_000) throw new Error("low-cycle proof failed to replenish disposable core reserve");
+    await expectReject(() => core.retryJournaledWriteThenLoseReply(), "replenished low-cycle journal loses authority reply");
+    expect(await core.reconcileLostReply(), "acknowledge", "replenished low-cycle journal reconciles exact tuple");
     await expectReject(() => core.writeThenLoseReply(binding), "deliberately lost authority reply");
     // Upgrade the authority after its successful write but before the core
     // can reconcile. The fixed collection must reopen its retained record;

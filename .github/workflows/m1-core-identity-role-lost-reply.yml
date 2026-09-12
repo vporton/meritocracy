@@ -32,7 +32,7 @@ jobs:
           set -o pipefail
           mkdir -p .mops/m1-core-identity-role-lost-reply-proof
           scripts/icp/build-core-identity-role-lost-reply-proof.sh 2>&1 | tee .mops/m1-core-identity-role-lost-reply-proof/build.log
-      - name: Run synthetic interruption, archive, lost-reply, and upgrade proof
+      - name: Run synthetic low-cycle, interruption, archive, lost-reply, and upgrade proof
         shell: bash
         run: |
           set -o pipefail

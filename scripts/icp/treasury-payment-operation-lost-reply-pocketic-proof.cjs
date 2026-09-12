@@ -27,6 +27,10 @@ const Chunk = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const Upload = IDL.Record({ canister_id: IDL.Principal, chunk: IDL.Vec(IDL.Nat8) });
 const Install = IDL.Record({ arg: IDL.Vec(IDL.Nat8), chunk_hashes_list: IDL.Vec(Chunk), mode: IDL.Variant({ install: IDL.Null, upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool), wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })) })) }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(IDL.Principal), canister_id: IDL.Principal, target_canister: IDL.Principal, wasm_module_hash: IDL.Vec(IDL.Nat8) });
 const management = Principal.fromText("aaaaa-aa");
+// This is deliberately below CycleReserve.minimumReserve (one trillion) but
+// high enough for PocketIC to install the disposable fixture. It proves a
+// retained journal cannot start an authority mutation while depleted.
+const treasuryInstallationCycles = 900_000_000_000n;
 function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
 async function reject(f, label) { try { await f(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
 async function update(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
@@ -39,7 +43,7 @@ async function main() {
   const server = await PocketIcServer.start({ binPath: bin, ttl: 60, showRuntimeLogs: false, showCanisterLogs: false }); const pic = await PocketIc.create(server.getUrl());
   try {
     const installer = Principal.fromUint8Array(Uint8Array.of(2, 1)), operator = Principal.fromUint8Array(Uint8Array.of(2, 2)), outsider = Principal.fromUint8Array(Uint8Array.of(2, 3));
-    const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] }), treasuryId = await pic.createCanister({ sender: installer, controllers: [installer] }), archiveId = await pic.createCanister({ sender: installer, controllers: [installer] });
+    const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] }), treasuryId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: treasuryInstallationCycles }), archiveId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const config = { core: Principal.fromUint8Array(Uint8Array.of(2, 4)), workflow: Principal.fromUint8Array(Uint8Array.of(2, 5)), treasury: treasuryId, archive: Principal.fromUint8Array(Uint8Array.of(2, 6)), evidence: Principal.fromUint8Array(Uint8Array.of(2, 7)), governance: Principal.fromUint8Array(Uint8Array.of(2, 8)) };
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]));
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]));
@@ -49,7 +53,18 @@ async function main() {
     const input = { logicalId: "payment-operation:v1:synthetic-1", desiredVersion: 1n, contentHash: h(11), operationId: "operation:synthetic-1", obligationId: "obligation:synthetic-1", assetId: "ICP", amountBaseUnits: 1n, assetDecimals: 8, destinationHash: h(12) };
     authority.setPrincipal(outsider); expect(await authority.writeTreasuryPaymentOperation(input), "blocked", "direct write denied"); expect(await authority.lookupTreasuryPaymentOperation(input.logicalId), "conflict", "direct lookup denied");
     treasury.setPrincipal(outsider); await reject(() => treasury.reconcileLostReply(), "outsider recovery denied");
-    treasury.setPrincipal(operator); await reject(() => treasury.writeThenLoseReply(input), "deliberately lost first reply");
+    // The first payment operation journals, reaches only its fixed read-only
+    // checkpoint, then fails below the reserve before its authority write.
+    // Thus the lookup must be absent and can authorize only no-input retry.
+    treasury.setPrincipal(operator);
+    const lowCycle = { ...input, logicalId: "payment-operation:v1:synthetic-low-cycles-44", contentHash: h(10) };
+    await reject(() => treasury.writeThenLoseReply(lowCycle), "low-cycle payment operation journals but makes no authority write");
+    expect(await treasury.reconcileLostReply(), "retryIdentical", "low-cycle payment operation observes absent authority record");
+    const replenished = await pic.addCycles(treasuryId, 2_000_000_000_000);
+    if (replenished < 1_000_000_000_000) throw new Error("low-cycle proof failed to replenish disposable treasury reserve");
+    await reject(() => treasury.retryJournaledWriteThenLoseReply(), "replenished low-cycle payment operation loses authority reply");
+    expect(await treasury.reconcileLostReply(), "acknowledge", "replenished low-cycle payment operation reconciles exact tuple");
+    await reject(() => treasury.writeThenLoseReply(input), "deliberately lost first reply");
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.reconcileLostReply(), "acknowledge", "exact recovery after EOP upgrades");

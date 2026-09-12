@@ -3,11 +3,13 @@
 // signer, destination address, chain call, or public project interface is
 // enabled by this fixture.
 import Error "mo:base/Error";
+import Cycles "mo:base/ExperimentalCycles";
 import Principal "mo:base/Principal";
 import MutationRecovery "../../canisters/shared/MutationRecovery";
 import Embedded "../../canisters/storage_authority/EmbeddedPaymentOperationStore";
 import Intent "../../canisters/treasury/PaymentOperationIntent";
 import Archive "../../canisters/treasury/PaymentOperationArchiveRecovery";
+import CycleReserve "../../canisters/shared/CycleReserve";
 
 shared ({ caller = installer }) persistent actor class (
   operator : Principal,
@@ -34,6 +36,21 @@ shared ({ caller = installer }) persistent actor class (
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
+  // The durable journal is assigned before this guard. A depleted fixture
+  // therefore cannot begin a payment-operation authority write, and its
+  // only possible recovery remains the retained exact tuple after test-only
+  // replenishment. This proof floor is not a production capacity policy.
+  func requireCycleReserve() {
+    assert CycleReserve.decide(Cycles.balance()) == #allowed;
+  };
+
+  // Preserve an explicit durable message boundary between journalling and a
+  // guarded write. The lookup is fixed, read-only, and tuple-free; it cannot
+  // create a payment operation while the reserve guard rejects the write.
+  func checkpointJournal(logicalId : Text) : async () {
+    ignore await authority.lookupTreasuryPaymentOperation(logicalId);
+  };
+
   func remoteObservation(observation : Embedded.Observation) : ?MutationRecovery.RemoteObservation {
     switch (observation) {
       case (#absent) ?#absent;
@@ -51,6 +68,8 @@ shared ({ caller = installer }) persistent actor class (
     archiveTuple := null;
     active := false;
     journal := ?Intent.startRemoteWrite(prepared);
+    await checkpointJournal(input.logicalId);
+    requireCycleReserve();
     switch (await authority.writeTreasuryPaymentOperation(input)) {
       case (#acknowledged) {};
       case (_) throw Error.reject("synthetic payment-operation write failed");
@@ -93,6 +112,8 @@ shared ({ caller = installer }) persistent actor class (
     onlyOperator(caller);
     let ?saved = journal else throw Error.reject("missing synthetic payment-operation journal");
     if (saved.phase != #remoteWriteStarted) throw Error.reject("synthetic journal is not eligible for identical retry");
+    await checkpointJournal(saved.input.logicalId);
+    requireCycleReserve();
     switch (await authority.writeTreasuryPaymentOperation(saved.input)) {
       case (#acknowledged) {};
       case (_) throw Error.reject("synthetic payment-operation retry failed");

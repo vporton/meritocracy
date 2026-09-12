@@ -9,12 +9,14 @@ import MutationRecovery "../../canisters/shared/MutationRecovery";
 import Embedded "../../canisters/storage_authority/EmbeddedPaymentOperationStore";
 import Intent "../../canisters/treasury/PaymentOperationIntent";
 import Archive "../../canisters/treasury/PaymentOperationArchiveRecovery";
+import Transfer "../../canisters/treasury/PaymentOperationTransferRecovery";
 import CycleReserve "../../canisters/shared/CycleReserve";
 
 shared ({ caller = installer }) persistent actor class (
   operator : Principal,
   authorityId : Principal,
   archiveId : Principal,
+  transferId : Principal,
 ) = this {
   assert not Principal.isAnonymous(operator);
   assert installer != operator;
@@ -27,12 +29,18 @@ shared ({ caller = installer }) persistent actor class (
     archive : shared Archive.ArchiveTuple -> async Archive.ArchiveTuple;
     lookup : shared Text -> async ?Archive.ArchiveTuple;
   } = actor (Principal.toText(archiveId));
+  let transfer : actor {
+    dispatch : shared Archive.ArchiveTuple -> async Archive.ArchiveTuple;
+    lookup : shared Text -> async ?Archive.ArchiveTuple;
+    dispatchCount : shared () -> async Nat;
+  } = actor (Principal.toText(transferId));
 
   // This is the durable pre-await journal. The fixture has one bounded saga
   // slot and never accepts replacement operation material during recovery.
   var journal : ?Intent.Intent = null;
   var archiveTuple : ?Archive.ArchiveTuple = null;
   var active = false;
+  var transferTuple : ?Archive.ArchiveTuple = null;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
@@ -67,6 +75,7 @@ shared ({ caller = installer }) persistent actor class (
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic payment operation");
     archiveTuple := null;
     active := false;
+    transferTuple := null;
     journal := ?Intent.startRemoteWrite(prepared);
     await checkpointJournal(input.logicalId);
     requireCycleReserve();
@@ -89,6 +98,7 @@ shared ({ caller = installer }) persistent actor class (
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic payment operation");
     archiveTuple := null;
     active := false;
+    transferTuple := null;
     journal := ?Intent.startRemoteWrite(prepared);
     throw Error.reject("deliberately interrupted before synthetic payment-operation authority call");
   };
@@ -189,5 +199,47 @@ shared ({ caller = installer }) persistent actor class (
   public shared ({ caller }) func isActive() : async Bool {
     onlyOperator(caller);
     active;
+  };
+
+  /// The valueless fixture may dispatch only after its archive receipt has
+  /// activated the retained operation. It deliberately loses the downstream
+  /// reply; recovery is lookup-only and carries no replacement material.
+  public shared ({ caller }) func dispatchThenLoseReply() : async () {
+    onlyOperator(caller);
+    if (not active) throw Error.reject("payment operation is not active");
+    let ?saved = journal else throw Error.reject("missing synthetic payment-operation journal");
+    let tuple : Archive.ArchiveTuple = {
+      logicalId = saved.input.logicalId;
+      version = saved.input.desiredVersion;
+      contentHash = saved.input.contentHash;
+    };
+    transferTuple := ?tuple;
+    let receipt = await transfer.dispatch(tuple);
+    if (Transfer.decide(tuple, ?receipt) != #acknowledge) throw Error.reject("synthetic transfer mismatch");
+    throw Error.reject("deliberately lost synthetic transfer reply");
+  };
+
+  /// This method takes no input and cannot dispatch. It only acknowledges the
+  /// exact downstream idempotency record retained before the lost reply.
+  public shared ({ caller }) func reconcileTransfer() : async Transfer.Decision {
+    onlyOperator(caller);
+    let ?expected = transferTuple else return #blocked;
+    Transfer.decide(expected, await transfer.lookup(expected.logicalId));
+  };
+
+  /// A duplicate delivery can submit only the retained tuple. The downstream
+  /// sink must return the same idempotency record, after which recovery still
+  /// proves that exactly one valueless dispatch was recorded.
+  public shared ({ caller }) func retryDispatchThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?expected = transferTuple else throw Error.reject("missing synthetic transfer tuple");
+    let receipt = await transfer.dispatch(expected);
+    if (Transfer.decide(expected, ?receipt) != #acknowledge) throw Error.reject("synthetic duplicate transfer mismatch");
+    throw Error.reject("deliberately lost synthetic duplicate transfer reply");
+  };
+
+  public shared ({ caller }) func syntheticDispatchCount() : async Nat {
+    onlyOperator(caller);
+    await transfer.dispatchCount();
   };
 };

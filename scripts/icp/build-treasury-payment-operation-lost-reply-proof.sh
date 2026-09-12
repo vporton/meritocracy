@@ -29,12 +29,16 @@ done < <("${mops_cli[@]}" sources --no-install)
 "$moc_path" -o="$staging_dir/treasury_lost_reply_archive.wasm" \
   --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
   "$repo_root/fixtures/storage_authority/PaymentOperationArchiveSink.mo"
+"$moc_path" -o="$staging_dir/treasury_lost_reply_transfer.wasm" \
+  --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
+  "$repo_root/fixtures/storage_authority/PaymentOperationTransferSink.mo"
 (
   cd "$staging_dir"
-  sha256sum treasury_lost_reply_authority.wasm treasury_lost_reply_treasury.wasm treasury_lost_reply_archive.wasm >SHA256SUMS
+  sha256sum treasury_lost_reply_authority.wasm treasury_lost_reply_treasury.wasm treasury_lost_reply_archive.wasm treasury_lost_reply_transfer.wasm >SHA256SUMS
 )
 mv -- "$staging_dir/treasury_lost_reply_authority.wasm" "$artifact_dir/treasury_lost_reply_authority.wasm"
 mv -- "$staging_dir/treasury_lost_reply_treasury.wasm" "$artifact_dir/treasury_lost_reply_treasury.wasm"
 mv -- "$staging_dir/treasury_lost_reply_archive.wasm" "$artifact_dir/treasury_lost_reply_archive.wasm"
+mv -- "$staging_dir/treasury_lost_reply_transfer.wasm" "$artifact_dir/treasury_lost_reply_transfer.wasm"
 mv -- "$staging_dir/SHA256SUMS" "$artifact_dir/SHA256SUMS"
 printf 'M1 treasury lost-reply proof artifacts built in %s\n' "$artifact_dir"

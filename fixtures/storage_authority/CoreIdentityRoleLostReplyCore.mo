@@ -4,6 +4,7 @@
 import Error "mo:base/Error";
 import Principal "mo:base/Principal";
 import Intent "../../canisters/core/IdentityRoleIntent";
+import RoleIntent "../../canisters/core/RoleAssignmentIntent";
 import Embedded "../../canisters/storage_authority/EmbeddedIdentityRoleStore";
 import IdentityRole "../../canisters/shared/IdentityRoleRecovery";
 import MutationRecovery "../../canisters/shared/MutationRecovery";
@@ -14,8 +15,11 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   let authority : actor {
     writeCorePrincipalBinding : shared IdentityRole.PrincipalBindingInput -> async Embedded.WriteResult;
     lookupCorePrincipalBinding : shared Text -> async Embedded.BindingObservation;
+    writeCoreRoleAssignment : shared IdentityRole.RoleAssignmentInput -> async Embedded.WriteResult;
+    lookupCoreRoleAssignment : shared Text -> async Embedded.RoleObservation;
   } = actor (Principal.toText(authorityId));
   var intent : ?Intent.BindingIntent = null;
+  var roleIntent : ?RoleIntent.RoleIntent = null;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
@@ -68,6 +72,33 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     };
     let (updated, decision) = Intent.reconcile(Intent.lostReply(journal), remote);
     intent := ?updated;
+    decision;
+  };
+
+  /// The fixed role path has its own durable journal and fixed authority
+  /// calls. It cannot be used to read role data or substitute another tuple
+  /// during recovery.
+  public shared ({ caller }) func writeRoleThenLoseReply(input : IdentityRole.RoleAssignmentInput) : async () {
+    onlyOperator(caller);
+    let ?prepared = RoleIntent.prepare(input) else throw Error.reject("invalid synthetic role");
+    roleIntent := ?RoleIntent.startRemoteWrite(prepared);
+    let result = await authority.writeCoreRoleAssignment(input);
+    switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic role write failed") } };
+    roleIntent := ?RoleIntent.lostReply(RoleIntent.startRemoteWrite(prepared));
+    throw Error.reject("deliberately lost synthetic role authority reply");
+  };
+
+  public shared ({ caller }) func reconcileLostRoleReply() : async MutationRecovery.RecoveryDecision {
+    onlyOperator(caller);
+    let ?journal = roleIntent else return #blocked;
+    let observation = await authority.lookupCoreRoleAssignment(journal.input.logicalId);
+    let remote : MutationRecovery.RemoteObservation = switch (observation) {
+      case (#absent) #absent;
+      case (#present(value)) #present(value);
+      case (_) return #blocked;
+    };
+    let (updated, decision) = RoleIntent.reconcile(RoleIntent.lostReply(journal), remote);
+    roleIntent := ?updated;
     decision;
   };
 }

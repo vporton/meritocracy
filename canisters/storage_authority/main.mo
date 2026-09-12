@@ -101,6 +101,16 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
     EmbeddedIdentityRoleStore.writeRole(identityRoleStore, input);
   };
 
+  /// Fixed recovery lookup for role assignments. It is deliberately separate
+  /// from the binding lookup, and returns no role or principal data. An
+  /// unauthorized caller gets `#conflict`, never an existence signal.
+  public shared ({ caller }) func lookupCoreRoleAssignment(
+    logicalId : Text,
+  ) : async EmbeddedIdentityRoleStore.RoleObservation {
+    if (not coreDataAllowed(caller, logicalId)) return #conflict;
+    EmbeddedIdentityRoleStore.lookupRole(identityRoleStore, logicalId);
+  };
+
   // These collection-specific methods are intentionally not a generic
   // `(collection, action, document)` interface. A future in-process ZenDB
   // call can be added only behind the matching, fixed collection/action

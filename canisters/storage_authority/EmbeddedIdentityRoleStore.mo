@@ -23,6 +23,16 @@ module {
     #conflict;
     #storageError;
   };
+  /// The role recovery observation deliberately has the same tiny tuple as a
+  /// binding observation.  It does not disclose the assigned principal or
+  /// role label: the core can reconcile only the immutable tuple it journaled
+  /// before its fixed role-assignment write.
+  public type RoleObservation = {
+    #absent;
+    #present : { version : Nat64; contentHash : Blob };
+    #conflict;
+    #storageError;
+  };
 
   type BindingRecord = {
     logicalId : Text;
@@ -203,6 +213,30 @@ module {
             case (#conflict) #conflict;
             case (#blocked) #blocked;
           };
+        } else {
+          #conflict;
+        };
+      };
+    };
+  };
+
+  /// Fixed, two-record-bounded recovery lookup for role assignments. As with
+  /// bindings, a uniqueness violation is fail-closed instead of selecting an
+  /// arbitrary document.
+  public func lookupRole(store : Store, logicalId : Text) : RoleObservation {
+    if (logicalId.size() == 0 or logicalId.size() > 512) return #conflict;
+    for (character in logicalId.chars()) {
+      if (character < '\u{20}' or character == '\u{7f}') return #conflict;
+    };
+    switch (store.roles.search(ZenDB.QueryBuilder().Where("logicalId", #eq(#Text(logicalId))).Limit(2))) {
+      case (#err(_)) { #storageError };
+      case (#ok(result)) {
+        let records = result.documents;
+        if (records.size() == 0) {
+          #absent;
+        } else if (records.size() == 1) {
+          let (_, existing, _) = records[0];
+          #present({ version = existing.version; contentHash = existing.contentHash });
         } else {
           #conflict;
         };

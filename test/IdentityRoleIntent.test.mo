@@ -2,6 +2,7 @@ import Array "mo:base/Array";
 import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Intent "../canisters/core/IdentityRoleIntent";
+import RoleIntent "../canisters/core/RoleAssignmentIntent";
 import IdentityRole "../canisters/shared/IdentityRoleRecovery";
 import MutationRecovery "../canisters/shared/MutationRecovery";
 
@@ -48,3 +49,25 @@ let interrupted = Intent.startRemoteWrite(prepared);
 let (retryOnly, retryDecision) = Intent.reconcile(interrupted, #absent);
 assert retryDecision == #retryIdentical;
 assert retryOnly.phase == #remoteWriteStarted;
+
+let role : IdentityRole.RoleAssignmentInput = {
+  logicalId = "role-assignment:v1:synthetic-44:auditor";
+  desiredVersion = 1;
+  contentHash = hash(8);
+  principal = input.principal;
+  role = "auditor";
+};
+let preparedRole = switch (RoleIntent.prepare(role)) {
+  case (?value) value;
+  case null { assert false; loop {} };
+};
+let (_, roleAcknowledgement) = RoleIntent.reconcile(
+  RoleIntent.lostReply(RoleIntent.startRemoteWrite(preparedRole)),
+  #present({ version = role.desiredVersion; contentHash = role.contentHash }),
+);
+assert roleAcknowledgement == #acknowledge;
+let (_, roleConflict) = RoleIntent.reconcile(
+  RoleIntent.lostReply(RoleIntent.startRemoteWrite(preparedRole)),
+  #present({ version = role.desiredVersion + 1; contentHash = role.contentHash }),
+);
+assert roleConflict == #conflict;

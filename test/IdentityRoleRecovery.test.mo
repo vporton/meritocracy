@@ -70,3 +70,19 @@ assert IdentityRole.decideIdempotentWrite(
   ?{ version = role.desiredVersion; contentHash = hash(5) },
 ) == #conflict;
 assert IdentityRole.decideIdempotentWrite(false, role.desiredVersion, role.contentHash, null) == #blocked;
+
+// Role recovery is bound to exactly the same immutable tuple. A role lookup
+// therefore cannot turn a changed role record version or hash into an
+// acknowledgement.
+assert IdentityRole.decideIdempotentWrite(
+  true,
+  role.desiredVersion,
+  role.contentHash,
+  ?{ version = role.desiredVersion; contentHash = role.contentHash },
+) == #accept;
+assert IdentityRole.decideIdempotentWrite(
+  true,
+  role.desiredVersion,
+  role.contentHash,
+  ?{ version = role.desiredVersion + 1; contentHash = role.contentHash },
+) == #conflict;

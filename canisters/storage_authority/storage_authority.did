@@ -23,6 +23,9 @@ type _anon_class_17_1 =
    /// Fixed recovery lookup for the principal-binding collection. An
    /// unauthorized caller gets `#conflict`, never an existence signal.
    lookupCorePrincipalBinding: (logicalId: text) -> (BindingObservation);
+   /// Fixed recovery lookup for role assignments. It returns only the
+   /// journaled version/hash tuple, never role or principal data.
+   lookupCoreRoleAssignment: (logicalId: text) -> (RoleObservation);
    migrationEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
    migrationEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
    migrationReceiptReadProbe: (logicalId: text) -> (ProbeResult);
@@ -110,6 +113,16 @@ type Config =
    workflow: principal;
  };
 type BindingObservation =
+ variant {
+   absent;
+   conflict;
+   present: record {
+              contentHash: blob;
+              version: nat64;
+            };
+   storageError;
+ };
+type RoleObservation =
  variant {
    absent;
    conflict;

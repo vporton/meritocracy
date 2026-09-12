@@ -18,6 +18,7 @@ const Hash = IDL.Vec(IDL.Nat8);
 const Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
 const Config = IDL.Record({ core: IDL.Principal, workflow: IDL.Principal, treasury: IDL.Principal, archive: IDL.Principal, evidence: IDL.Principal, governance: IDL.Principal });
 const Binding = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, userId: IDL.Nat64, principal: IDL.Principal, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
+const Role = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, principal: IDL.Principal, role: IDL.Text });
 const WriteResult = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
 const Observation = IDL.Variant({ absent: IDL.Null, present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }), conflict: IDL.Null, storageError: IDL.Null });
 const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
@@ -35,12 +36,16 @@ const maxChunkBytes = 1_000_000;
 const authorityIdl = ({ IDL: Candid }) => Candid.Service({
   writeCorePrincipalBinding: Candid.Func([Binding], [WriteResult], []),
   lookupCorePrincipalBinding: Candid.Func([Candid.Text], [Observation], []),
+  writeCoreRoleAssignment: Candid.Func([Role], [WriteResult], []),
+  lookupCoreRoleAssignment: Candid.Func([Candid.Text], [Observation], []),
 });
 const coreIdl = ({ IDL: Candid }) => Candid.Service({
   writeThenLoseReply: Candid.Func([Binding], [], []),
   journalThenTrapBeforeAwait: Candid.Func([Binding], [], []),
   retryJournaledWriteThenLoseReply: Candid.Func([], [], []),
   reconcileLostReply: Candid.Func([], [Recovery], []),
+  writeRoleThenLoseReply: Candid.Func([Role], [], []),
+  reconcileLostRoleReply: Candid.Func([], [Recovery], []),
 });
 const hash = (byte) => Uint8Array.from({ length: 32 }, () => byte);
 function expect(actual, key, label) {
@@ -90,6 +95,9 @@ async function main() {
     const binding = { logicalId: "principal-binding:v1:synthetic-44", desiredVersion: 1n, contentHash: hash(7), userId: 44n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };
     expect(await authority.writeCorePrincipalBinding(binding), "blocked", "direct authority write denied");
     expect(await authority.lookupCorePrincipalBinding(binding.logicalId), "conflict", "direct authority lookup denied");
+    const role = { logicalId: "role-assignment:v1:synthetic-44:auditor", desiredVersion: 1n, contentHash: hash(8), principal: subject, role: "auditor" };
+    expect(await authority.writeCoreRoleAssignment(role), "blocked", "direct authority role write denied");
+    expect(await authority.lookupCoreRoleAssignment(role.logicalId), "conflict", "direct authority role lookup denied");
     const core = pic.createActor(coreIdl, coreId);
     core.setPrincipal(outsider);
     await expectReject(() => core.reconcileLostReply(), "non-operator core ingress denied");
@@ -102,10 +110,17 @@ async function main() {
     authority.setPrincipal(outsider);
     expect(await authority.writeCorePrincipalBinding(binding), "blocked", "direct authority write denied after upgrade");
     expect(await authority.lookupCorePrincipalBinding(binding.logicalId), "conflict", "direct authority lookup denied after upgrade");
+    expect(await authority.writeCoreRoleAssignment(role), "blocked", "direct authority role write denied after upgrade");
+    expect(await authority.lookupCoreRoleAssignment(role.logicalId), "conflict", "direct authority role lookup denied after upgrade");
     // Upgrade the core before recovery: the durable pre-await intent must
     // also survive independently from the authority's retained collection.
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileLostReply(), "acknowledge", "exact lost-reply reconciliation after upgrade");
+    // Exercise the independent role journal with the exact fixed authority
+    // write and tuple-only lookup after the authority EOP upgrade. No role or
+    // principal data comes back through recovery.
+    await expectReject(() => core.writeRoleThenLoseReply(role), "deliberately lost role authority reply");
+    expect(await core.reconcileLostRoleReply(), "acknowledge", "exact role lost-reply reconciliation");
     // Deliver the same immutable operation again. The authority must not
     // create a second record; its fixed insert-or-exact-lookup path accepts
     // only this version/hash tuple. Deliberately lose that second reply too,

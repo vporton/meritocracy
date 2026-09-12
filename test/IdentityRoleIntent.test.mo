@@ -71,3 +71,10 @@ let (_, roleConflict) = RoleIntent.reconcile(
   #present({ version = role.desiredVersion + 1; contentHash = role.contentHash }),
 );
 assert roleConflict == #conflict;
+
+// A role interruption before its authority call has the same narrow retry
+// rule: absence permits redelivery only of the retained immutable tuple.
+let interruptedRole = RoleIntent.startRemoteWrite(preparedRole);
+let (roleRetryOnly, roleRetryDecision) = RoleIntent.reconcile(interruptedRole, #absent);
+assert roleRetryDecision == #retryIdentical;
+assert roleRetryOnly.phase == #remoteWriteStarted;

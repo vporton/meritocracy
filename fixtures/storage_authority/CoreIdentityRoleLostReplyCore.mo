@@ -101,4 +101,29 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     roleIntent := ?updated;
     decision;
   };
+
+  /// Models a role-assignment interruption after its immutable intent is
+  /// durable but before any authority call. Recovery may retry only this
+  /// stored tuple; accepting replacement role input here would bypass the
+  /// journal and permit a different logical operation after an upgrade.
+  public shared ({ caller }) func journalRoleThenTrapBeforeAwait(input : IdentityRole.RoleAssignmentInput) : async () {
+    onlyOperator(caller);
+    let ?prepared = RoleIntent.prepare(input) else throw Error.reject("invalid synthetic role");
+    roleIntent := ?RoleIntent.startRemoteWrite(prepared);
+    throw Error.reject("deliberately interrupted role before synthetic authority call");
+  };
+
+  /// Deliberately takes no caller input. It can redeliver only the durable
+  /// role intent that a preceding bounded lookup classified as absent.
+  public shared ({ caller }) func retryJournaledRoleWriteThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?journal = roleIntent else throw Error.reject("missing synthetic role journal");
+    if (journal.phase != #remoteWriteStarted) {
+      throw Error.reject("synthetic role journal is not eligible for identical retry");
+    };
+    let result = await authority.writeCoreRoleAssignment(journal.input);
+    switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic role retry failed") } };
+    roleIntent := ?RoleIntent.lostReply(journal);
+    throw Error.reject("deliberately lost synthetic role authority retry reply");
+  };
 }

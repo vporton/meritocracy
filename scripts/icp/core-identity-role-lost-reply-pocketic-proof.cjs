@@ -46,6 +46,8 @@ const coreIdl = ({ IDL: Candid }) => Candid.Service({
   reconcileLostReply: Candid.Func([], [Recovery], []),
   writeRoleThenLoseReply: Candid.Func([Role], [], []),
   reconcileLostRoleReply: Candid.Func([], [Recovery], []),
+  journalRoleThenTrapBeforeAwait: Candid.Func([Role], [], []),
+  retryJournaledRoleWriteThenLoseReply: Candid.Func([], [], []),
 });
 const hash = (byte) => Uint8Array.from({ length: 32 }, () => byte);
 function expect(actual, key, label) {
@@ -137,6 +139,15 @@ async function main() {
     expect(await core.reconcileLostReply(), "retryIdentical", "absent interrupted write requires identical retry");
     await expectReject(() => core.retryJournaledWriteThenLoseReply(), "deliberately lost journaled retry reply");
     expect(await core.reconcileLostReply(), "acknowledge", "journaled retry reconciliation");
+    // Exercise the same pre-await interruption boundary for roles. The
+    // authority has no record before retry, so only the no-input retry may
+    // send the persisted tuple; its lost reply still needs exact recovery.
+    const interruptedRole = { ...role, logicalId: "role-assignment:v1:synthetic-interrupted-44:auditor", contentHash: hash(10) };
+    await expectReject(() => core.journalRoleThenTrapBeforeAwait(interruptedRole), "role interruption after journal before authority await");
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    expect(await core.reconcileLostRoleReply(), "retryIdentical", "absent interrupted role write requires identical retry");
+    await expectReject(() => core.retryJournaledRoleWriteThenLoseReply(), "deliberately lost journaled role retry reply");
+    expect(await core.reconcileLostRoleReply(), "acknowledge", "journaled role retry reconciliation");
     // `acknowledge` is reachable only when the authority's fixed core-only
     // lookup returned the exact persisted version/hash, both after an EOP
     // upgrade and after duplicate delivery. The runner never impersonates a

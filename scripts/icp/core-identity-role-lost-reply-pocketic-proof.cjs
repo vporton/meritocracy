@@ -63,6 +63,7 @@ const coreIdl = ({ IDL: Candid }) => Candid.Service({
 });
 const archiveIdl = ({ IDL: Candid }) => Candid.Service({
   permit: Candid.Func([], [], []),
+  revoke: Candid.Func([], [], []),
   archive: Candid.Func([ArchiveTuple], [ArchiveTuple], []),
   lookup: Candid.Func([Candid.Text], [Candid.Opt(ArchiveTuple)], []),
 });
@@ -181,14 +182,20 @@ async function main() {
     // authority write was acknowledged. Archive unavailability keeps it
     // pending through a core upgrade; a later lost archive reply can be
     // reconciled only by the fixed exact tuple after archive/core upgrades.
+    archiveSink.setPrincipal(operator);
+    await archiveSink.revoke();
+    core.setPrincipal(operator);
     await expectReject(() => core.archiveRoleThenLoseReply(), "role archive unavailable keeps role pending");
     expect(await core.isRoleActive(), false, "role inactive after archive failure");
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileRoleArchive(), "remainPending", "missing role archive receipt remains pending after core upgrade");
     expect(await core.isRoleActive(), false, "role still inactive without receipt");
-    // The archive was permitted for the binding branch above. Its fixed
-    // receipt store accepts a distinct role tuple, but no role data crosses
-    // the archive boundary.
+    // Re-permit the archive only after the unavailable-role negative branch.
+    // Its fixed receipt store accepts a distinct role tuple, but no role data
+    // crosses the archive boundary.
+    archiveSink.setPrincipal(operator);
+    await archiveSink.permit();
+    core.setPrincipal(operator);
     await expectReject(() => core.archiveRoleThenLoseReply(), "deliberately lost role archive acknowledgement");
     await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [coreId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });

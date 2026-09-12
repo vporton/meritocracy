@@ -23,6 +23,14 @@ shared ({ caller = installer }) persistent actor class (core : Principal, operat
     permitted := true;
   };
 
+  /// Test-only availability control. Revoking availability never removes an
+  /// existing immutable receipt; it lets the proof distinguish a new archive
+  /// call that was never accepted from one whose reply was merely lost.
+  public shared ({ caller }) func revoke() : async () {
+    onlyOperator(caller);
+    permitted := false;
+  };
+
   public shared ({ caller }) func archive(tuple : Archive.ArchiveTuple) : async Archive.ArchiveTuple {
     onlyCore(caller);
     if (not permitted or not Archive.validTuple(tuple)) throw Error.reject("synthetic archive unavailable");

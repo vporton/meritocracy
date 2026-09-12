@@ -1,4 +1,4 @@
-type _anon_class_17_1 =
+type _anon_class_19_1 = 
  service {
    aiArtifactReadProbe: (logicalId: text) -> (ProbeResult);
    aiArtifactWriteProbe: (logicalId: text) -> (ProbeResult);
@@ -23,12 +23,15 @@ type _anon_class_17_1 =
    /// Fixed recovery lookup for the principal-binding collection. An
    /// unauthorized caller gets `#conflict`, never an existence signal.
    lookupCorePrincipalBinding: (logicalId: text) -> (BindingObservation);
-   /// Fixed recovery lookup for role assignments. It returns only the
-   /// journaled version/hash tuple, never role or principal data.
+   /// Fixed recovery lookup for role assignments. It is deliberately separate
+   /// from the binding lookup, and returns no role or principal data. An
+   /// unauthorized caller gets `#conflict`, never an existence signal.
    lookupCoreRoleAssignment: (logicalId: text) -> (RoleObservation);
-   /// Fixed tuple-only recovery lookup for payment-operation intents. An
-   /// unauthorized caller receives `conflict`, never an existence signal.
-   lookupTreasuryPaymentOperation: (logicalId: text) -> (PaymentOperationObservation);
+   /// Returns only the immutable recovery tuple to the configured archive
+   /// canister. Other callers cannot learn receipt existence.
+   lookupMigrationReceipt: (logicalId: text) -> (Observation);
+   /// Unauthorized callers receive `#conflict`, never an existence signal.
+   lookupTreasuryPaymentOperation: (logicalId: text) -> (Observation);
    migrationEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
    migrationEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
    migrationReceiptReadProbe: (logicalId: text) -> (ProbeResult);
@@ -59,18 +62,31 @@ type _anon_class_17_1 =
    /// Fixed role-assignment write. Role revocation remains a later immutable
    /// logical record; this endpoint cannot overwrite an existing assignment.
    writeCoreRoleAssignment: (input: RoleAssignmentInput) -> (WriteResult);
+   /// Fixed archive-only receipt write. It is not an importer: callers cannot
+   /// supply source rows, credentials, a collection name, or an arbitrary key.
+   writeMigrationReceipt: (input: Input__1) -> (WriteResult);
    /// Fixed treasury-only immutable payment-operation write. This is not a
    /// signer, transfer, activation, journal, or generic storage endpoint.
-   writeTreasuryPaymentOperation: (input: PaymentOperationInput) -> (WriteResult);
+   writeTreasuryPaymentOperation: (input: Input) -> (WriteResult);
  };
-type WriteResult =
+type WriteResult = 
  variant {
    acknowledged;
    blocked;
    conflict;
    storageError;
  };
-type RoleAssignmentInput =
+type RoleObservation = 
+ variant {
+   absent;
+   conflict;
+   present: record {
+              contentHash: blob;
+              version: nat64;
+            };
+   storageError;
+ };
+type RoleAssignmentInput = 
  record {
    contentHash: blob;
    desiredVersion: nat64;
@@ -78,26 +94,7 @@ type RoleAssignmentInput =
    "principal": principal;
    role: text;
  };
-type PaymentOperationInput =
- record {
-   amountBaseUnits: nat;
-   assetDecimals: nat8;
-   assetId: text;
-   contentHash: blob;
-   desiredVersion: nat64;
-   destinationHash: blob;
-   logicalId: text;
-   obligationId: text;
-   operationId: text;
- };
-type PaymentOperationObservation =
- variant {
-   absent;
-   conflict;
-   present: record { contentHash: blob; version: nat64 };
-   storageError;
- };
-type ProbeResult =
+type ProbeResult = 
  variant {
    allowed;
    anonymousCaller;
@@ -105,7 +102,7 @@ type ProbeResult =
    invalidConfiguration;
    malformedLogicalId;
  };
-type PrincipalBindingInput =
+type PrincipalBindingInput = 
  record {
    contentHash: blob;
    desiredVersion: nat64;
@@ -119,7 +116,7 @@ type PrincipalBindingInput =
    subjectHash: opt blob;
    userId: nat64;
  };
-type PolicyAudit =
+type PolicyAudit = 
  record {
    archive: principal;
    core: principal;
@@ -128,16 +125,7 @@ type PolicyAudit =
    treasury: principal;
    workflow: principal;
  };
-type Config =
- record {
-   archive: principal;
-   core: principal;
-   evidence: principal;
-   governance: principal;
-   treasury: principal;
-   workflow: principal;
- };
-type BindingObservation =
+type Observation = 
  variant {
    absent;
    conflict;
@@ -147,7 +135,39 @@ type BindingObservation =
             };
    storageError;
  };
-type RoleObservation =
+type Input__1 = 
+ record {
+   chunk: nat64;
+   contentHash: blob;
+   desiredVersion: nat64;
+   logicalId: text;
+   migrationId: text;
+   payloadHash: blob;
+   rowCount: nat32;
+   sourceTable: text;
+ };
+type Input = 
+ record {
+   amountBaseUnits: nat;
+   assetDecimals: nat8;
+   assetId: text;
+   contentHash: blob;
+   desiredVersion: nat64;
+   destinationHash: blob;
+   logicalId: text;
+   obligationId: text;
+   operationId: text;
+ };
+type Config = 
+ record {
+   archive: principal;
+   core: principal;
+   evidence: principal;
+   governance: principal;
+   treasury: principal;
+   workflow: principal;
+ };
+type BindingObservation = 
  variant {
    absent;
    conflict;
@@ -158,9 +178,9 @@ type RoleObservation =
    storageError;
  };
 /// M1 storage-authority boundary scaffold.
-///
+/// 
 /// This canister exposes only a bounded, collection-specific M1 surface. It
 /// has no generic ZenDB, grant-management, collection, action, document-ID,
 /// or filter API. The fixed identity/role methods below remain un-deployed
 /// proof work and are not an authoritative-store claim.
-service : (initialConfig: Config) -> _anon_class_17_1
+service : (initialConfig: Config) -> _anon_class_19_1

@@ -4,8 +4,10 @@ import ZenDB "mo:zendb";
 import StorageCatalog "../shared/StorageCatalog";
 import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
 import EmbeddedPaymentOperationStore "EmbeddedPaymentOperationStore";
+import EmbeddedMigrationReceiptStore "EmbeddedMigrationReceiptStore";
 import IdentityRole "../shared/IdentityRoleRecovery";
 import PaymentOperation "../treasury/PaymentOperationIntent";
+import MigrationReceipt "../archive_router/MigrationReceiptIntent";
 import Policy "StorageAuthorityPolicy";
 
 /// M1 storage-authority boundary scaffold.
@@ -71,6 +73,22 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   };
   paymentOperationCollectionInitialized := true;
 
+  // The import receipt collection is fixed to the configured archive actor.
+  // It stores only bounded receipt metadata and hashes; there is no importer,
+  // source-row, credential, or caller-selected collection surface here.
+  var migrationReceiptCollectionInitialized = false;
+  transient let _migrationReceiptStore = switch (
+    if (migrationReceiptCollectionInitialized) {
+      EmbeddedMigrationReceiptStore.reopen(embeddedStore);
+    } else {
+      EmbeddedMigrationReceiptStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null { Runtime.trap("unable to open fixed migration-receipt collection") };
+  };
+  migrationReceiptCollectionInitialized := true;
+
   public type PolicyAudit = {
     core : Principal;
     workflow : Principal;
@@ -97,6 +115,13 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
 
   func treasuryDataAllowed(caller : Principal, logicalId : Text) : Bool {
     switch (Policy.authorizeData(config, caller, #treasury, logicalId)) {
+      case (#allowed) true;
+      case (_) false;
+    };
+  };
+
+  func archiveDataAllowed(caller : Principal, logicalId : Text) : Bool {
+    switch (Policy.authorizeData(config, caller, #archive, logicalId)) {
       case (#allowed) true;
       case (_) false;
     };
@@ -155,6 +180,24 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   ) : async EmbeddedPaymentOperationStore.Observation {
     if (not treasuryDataAllowed(caller, logicalId)) return #conflict;
     EmbeddedPaymentOperationStore.lookup(_paymentOperationStore, logicalId);
+  };
+
+  /// Fixed archive-only receipt write. It is not an importer: callers cannot
+  /// supply source rows, credentials, a collection name, or an arbitrary key.
+  public shared ({ caller }) func writeMigrationReceipt(
+    input : MigrationReceipt.Input
+  ) : async EmbeddedMigrationReceiptStore.WriteResult {
+    if (not archiveDataAllowed(caller, input.logicalId)) return #blocked;
+    EmbeddedMigrationReceiptStore.write(_migrationReceiptStore, input);
+  };
+
+  /// Returns only the immutable recovery tuple to the configured archive
+  /// canister. Other callers cannot learn receipt existence.
+  public shared ({ caller }) func lookupMigrationReceipt(
+    logicalId : Text
+  ) : async EmbeddedMigrationReceiptStore.Observation {
+    if (not archiveDataAllowed(caller, logicalId)) return #conflict;
+    EmbeddedMigrationReceiptStore.lookup(_migrationReceiptStore, logicalId);
   };
 
   // These collection-specific methods are intentionally not a generic

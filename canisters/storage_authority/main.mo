@@ -3,6 +3,7 @@ import Runtime "mo:core@2.4/Runtime";
 import ZenDB "mo:zendb";
 import StorageCatalog "../shared/StorageCatalog";
 import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
+import EmbeddedPaymentOperationStore "EmbeddedPaymentOperationStore";
 import IdentityRole "../shared/IdentityRoleRecovery";
 import Policy "StorageAuthorityPolicy";
 
@@ -48,6 +49,24 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
     case null { Runtime.trap("unable to open fixed identity/role collections") };
   };
   identityRoleCollectionsInitialized := true;
+
+  // The treasury proof has one further fixed collection boundary. It is
+  // private and has no write/read Candid method yet: merely opening the
+  // collection does not authorize a payment, sign material, or make it
+  // authoritative. A separate persistent flag ensures EOP upgrades reopen
+  // rather than recreate that immutable logical-ID collection.
+  var paymentOperationCollectionInitialized = false;
+  transient let _paymentOperationStore = switch (
+    if (paymentOperationCollectionInitialized) {
+      EmbeddedPaymentOperationStore.reopen(embeddedStore);
+    } else {
+      EmbeddedPaymentOperationStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null { Runtime.trap("unable to open fixed payment-operation collection") };
+  };
+  paymentOperationCollectionInitialized := true;
 
   public type PolicyAudit = {
     core : Principal;

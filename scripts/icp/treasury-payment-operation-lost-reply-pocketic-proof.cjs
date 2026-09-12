@@ -21,7 +21,7 @@ const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, 
 const ArchiveTuple = IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash });
 const ArchiveDecision = IDL.Variant({ acknowledge: IDL.Null, remainPending: IDL.Null, blocked: IDL.Null });
 const authorityIdl = ({ IDL: C }) => C.Service({ writeTreasuryPaymentOperation: C.Func([Input], [Write], []), lookupTreasuryPaymentOperation: C.Func([C.Text], [Observation], []) });
-const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []), archiveThenLoseReply: C.Func([], [], []), reconcileArchive: C.Func([], [ArchiveDecision], []), isActive: C.Func([], [C.Bool], []) });
+const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []), repairJournaledOperation: C.Func([], [Recovery], []), archiveThenLoseReply: C.Func([], [], []), reconcileArchive: C.Func([], [ArchiveDecision], []), repairArchiveResume: C.Func([], [ArchiveDecision], []), isActive: C.Func([], [C.Bool], []) });
 const archiveIdl = ({ IDL: C }) => C.Service({ permit: C.Func([], [], []), revoke: C.Func([], [], []), archive: C.Func([ArchiveTuple], [ArchiveTuple], []), lookup: C.Func([C.Text], [C.Opt(ArchiveTuple)], []) });
 const Chunk = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const Upload = IDL.Record({ canister_id: IDL.Principal, chunk: IDL.Vec(IDL.Nat8) });
@@ -92,6 +92,25 @@ async function main() {
     treasury.setPrincipal(operator); expect(await treasury.reconcileLostReply(), "retryIdentical", "absent interrupted payment operation requires identical retry");
     await reject(() => treasury.retryJournaledWriteThenLoseReply(), "journaled payment-operation retry loses reply");
     expect(await treasury.reconcileLostReply(), "acknowledge", "journaled payment-operation retry reconciles exact tuple");
+    // A separate interrupted record exercises the operator-only no-input
+    // repair path through both authority recovery and archive activation.
+    const repair = { ...input, logicalId: "payment-operation:v1:synthetic-repair-48", contentHash: h(14) };
+    await reject(() => treasury.journalThenTrapBeforeAwait(repair), "repair record interrupted before authority await");
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    treasury.setPrincipal(outsider); await reject(() => treasury.repairJournaledOperation(), "outsider repair denied");
+    treasury.setPrincipal(operator); expect(await treasury.repairJournaledOperation(), "retryIdentical", "repair resends only the retained exact tuple");
+    expect(await treasury.reconcileLostReply(), "acknowledge", "repair reconciles retained authority tuple");
+    archive.setPrincipal(operator); await archive.revoke();
+    await reject(() => treasury.archiveThenLoseReply(), "repair archive remains unavailable");
+    expect(await treasury.isActive(), false, "repair record remains inactive without archive receipt");
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    treasury.setPrincipal(operator); expect(await treasury.repairArchiveResume(), "remainPending", "repair archive remains pending after upgrade");
+    archive.setPrincipal(operator); await archive.permit();
+    await reject(() => treasury.archiveThenLoseReply(), "repair archive acknowledgement is deliberately lost");
+    await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [treasuryId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    treasury.setPrincipal(operator); expect(await treasury.repairArchiveResume(), "acknowledge", "exact repair archive receipt activates after upgrades");
+    expect(await treasury.isActive(), true, "repair record activates only after exact archive receipt");
   } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

@@ -17,7 +17,8 @@ shared ({ caller = installer }) persistent actor class (treasury : Principal, op
   func onlyOperator(caller : Principal) { assert caller == operator };
   func allowed(logicalId : Text) : Bool {
     logicalId == "payment-operation:v1:synthetic-1" or
-    logicalId == "payment-operation:v1:synthetic-interrupted-44";
+    logicalId == "payment-operation:v1:synthetic-interrupted-44" or
+    logicalId == "payment-operation:v1:synthetic-repair-48";
   };
 
   public shared ({ caller }) func permit() : async () { onlyOperator(caller); permitted := true };
@@ -33,7 +34,7 @@ shared ({ caller = installer }) persistent actor class (treasury : Principal, op
         if (stored == tuple) return stored else throw Error.reject("synthetic payment-operation archive conflict");
       };
     };
-    if (receipts.size() >= 2) throw Error.reject("synthetic payment-operation archive receipt limit");
+    if (receipts.size() >= 3) throw Error.reject("synthetic payment-operation archive receipt limit");
     receipts := Array.append(receipts, [tuple]);
     tuple;
   };

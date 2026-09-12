@@ -122,6 +122,33 @@ shared ({ caller = installer }) persistent actor class (
     throw Error.reject("deliberately lost synthetic payment-operation retry reply");
   };
 
+  /// Operator repair has no operation input.  It is deliberately useful only
+  /// after an interruption: an absent fixed lookup may re-send the one
+  /// retained tuple, while a present record is reconciled by exact
+  /// version/hash.  In neither branch can repair mint replacement payment or
+  /// transaction material.
+  public shared ({ caller }) func repairJournaledOperation() : async MutationRecovery.RecoveryDecision {
+    onlyOperator(caller);
+    let ?saved = journal else return #blocked;
+    let ?observed = remoteObservation(await authority.lookupTreasuryPaymentOperation(saved.input.logicalId)) else return #blocked;
+    switch (Intent.reconcile(Intent.lostReply(saved), observed)) {
+      case (updated, #retryIdentical) {
+        await checkpointJournal(saved.input.logicalId);
+        requireCycleReserve();
+        switch (await authority.writeTreasuryPaymentOperation(saved.input)) {
+          case (#acknowledged) {};
+          case (_) return #blocked;
+        };
+        journal := ?Intent.lostReply(updated);
+        #retryIdentical;
+      };
+      case (updated, decision) {
+        journal := ?updated;
+        decision;
+      };
+    };
+  };
+
   /// Archive activation is downstream of an exact storage acknowledgement.
   /// The sink receives only the immutable tuple, never amount, destination,
   /// asset, obligation, signing, or chain material. Its successful reply is
@@ -142,6 +169,16 @@ shared ({ caller = installer }) persistent actor class (
   };
 
   public shared ({ caller }) func reconcileArchive() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?expected = archiveTuple else return #blocked;
+    let decision = Archive.decide(expected, await archive.lookup(expected.logicalId));
+    if (decision == #acknowledge) active := true;
+    decision;
+  };
+
+  /// Archive repair is likewise tuple-only.  It cannot activate from archive
+  /// availability, an operator decision, or a fresh payment input.
+  public shared ({ caller }) func repairArchiveResume() : async Archive.ArchiveDecision {
     onlyOperator(caller);
     let ?expected = archiveTuple else return #blocked;
     let decision = Archive.decide(expected, await archive.lookup(expected.logicalId));

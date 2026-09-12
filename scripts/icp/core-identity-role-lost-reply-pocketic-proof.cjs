@@ -35,6 +35,10 @@ const ManagementInstallChunkedCode = IDL.Record({
 });
 const managementCanister = Principal.fromText("aaaaa-aa");
 const maxChunkBytes = 1_000_000;
+// Keep enough cycles for PocketIC to install the core fixture while still
+// starting below CycleReserve.minimumBeforeAuthorityCall (one trillion).
+// PocketIC validates this installation reserve before Wasm execution.
+const coreInstallationCycles = 900_000_000_000n;
 const authorityIdl = ({ IDL: Candid }) => Candid.Service({
   writeCorePrincipalBinding: Candid.Func([Binding], [WriteResult], []),
   lookupCorePrincipalBinding: Candid.Func([Candid.Text], [Observation], []),
@@ -101,10 +105,11 @@ async function main() {
     const evidence = Principal.fromUint8Array(Uint8Array.of(1, 7));
     const governance = Principal.fromUint8Array(Uint8Array.of(1, 8));
     const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] });
-    // Start below the fixed synthetic reserve. The first write must journal,
-    // fail before any authority await, and later recover only by retrying its
-    // retained tuple after the test replenishes this disposable canister.
-    const coreId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 100_000_000_000n });
+    // Start below the fixed synthetic reserve, but above PocketIC's Wasm
+    // installation floor. The first write must journal, fail before any
+    // authority await, and later recover only by retrying its retained tuple
+    // after the test replenishes this disposable canister.
+    const coreId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: coreInstallationCycles });
     const archiveId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const authorityConfig = { core: coreId, workflow, treasury, archive, evidence, governance };
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [authorityConfig]));

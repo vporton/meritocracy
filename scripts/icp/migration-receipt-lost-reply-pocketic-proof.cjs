@@ -19,11 +19,15 @@ const Write = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict:
 const Observation = IDL.Variant({ absent: IDL.Null, present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }), conflict: IDL.Null, storageError: IDL.Null });
 const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
 const authorityIdl = ({ IDL: C }) => C.Service({ writeMigrationReceipt: C.Func([Input], [Write], []), lookupMigrationReceipt: C.Func([C.Text], [Observation], []) });
-const importerIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []) });
+const importerIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []), repairJournaledReceipt: C.Func([], [Recovery], []) });
 const Chunk = IDL.Record({ hash: Hash });
 const Upload = IDL.Record({ canister_id: IDL.Principal, chunk: Hash });
 const Install = IDL.Record({ arg: Hash, chunk_hashes_list: IDL.Vec(Chunk), mode: IDL.Variant({ install: IDL.Null, upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool), wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })) })) }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(IDL.Principal), canister_id: IDL.Principal, target_canister: IDL.Principal, wasm_module_hash: Hash });
 const management = Principal.fromText("aaaaa-aa");
+// Deliberately below CycleReserve.minimumReserve, while leaving enough room
+// to install the disposable fixture. The proof replenishes only this
+// synthetic importer with PocketIC's test-only API.
+const importerInstallationCycles = 900_000_000_000n;
 function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
 async function reject(fn, label) { try { await fn(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
 async function update(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
@@ -38,7 +42,7 @@ async function main() {
   try {
     const installer = Principal.fromUint8Array(Uint8Array.of(4, 1)), operator = Principal.fromUint8Array(Uint8Array.of(4, 2)), outsider = Principal.fromUint8Array(Uint8Array.of(4, 3));
     const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] });
-    const importerId = await pic.createCanister({ sender: installer, controllers: [installer] });
+    const importerId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: importerInstallationCycles });
     const config = { core: Principal.fromUint8Array(Uint8Array.of(4, 4)), workflow: Principal.fromUint8Array(Uint8Array.of(4, 5)), treasury: Principal.fromUint8Array(Uint8Array.of(4, 6)), archive: importerId, evidence: Principal.fromUint8Array(Uint8Array.of(4, 7)), governance: Principal.fromUint8Array(Uint8Array.of(4, 8)) };
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]));
     await install(pic, installer, importerId, importerWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]));
@@ -46,17 +50,27 @@ async function main() {
     const h = (n) => Uint8Array.from({ length: 32 }, () => n);
     const input = { logicalId: "migration-receipt:v1:synthetic:User:7", migrationId: "synthetic-migration", sourceTable: "User", chunk: 7n, rowCount: 500, payloadHash: h(4), desiredVersion: 1n, contentHash: h(9) };
     authority.setPrincipal(outsider); expect(await authority.writeMigrationReceipt(input), "blocked", "outsider receipt write denied"); expect(await authority.lookupMigrationReceipt(input.logicalId), "conflict", "outsider receipt lookup denied");
-    importer.setPrincipal(outsider); await reject(() => importer.reconcileLostReply(), "outsider importer recovery denied");
-    importer.setPrincipal(operator); await reject(() => importer.writeThenLoseReply(input), "lost receipt write reply");
+    importer.setPrincipal(outsider); await reject(() => importer.reconcileLostReply(), "outsider importer recovery denied"); await reject(() => importer.repairJournaledReceipt(), "outsider importer repair denied");
+    // The durable receipt intent reaches only its fixed read-only checkpoint
+    // while below the reserve. The authority record must remain absent, so
+    // the only permissible next step is no-input replay of that same tuple.
+    importer.setPrincipal(operator); await reject(() => importer.writeThenLoseReply(input), "low-cycle receipt journals but makes no authority write");
+    expect(await importer.reconcileLostReply(), "retryIdentical", "low-cycle receipt observes absent authority record");
+    const replenished = await pic.addCycles(importerId, 2_000_000_000_000);
+    if (replenished < 1_000_000_000_000) throw new Error("low-cycle receipt proof failed to replenish disposable importer reserve");
+    await reject(() => importer.retryJournaledWriteThenLoseReply(), "replenished receipt write loses reply");
+    expect(await importer.reconcileLostReply(), "acknowledge", "replenished receipt reconciles exact tuple");
+    const upgradeInput = { ...input, logicalId: "migration-receipt:v1:synthetic:User:9", chunk: 9n, contentHash: h(11) };
+    await reject(() => importer.writeThenLoseReply(upgradeInput), "lost receipt write reply");
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     await install(pic, installer, importerId, importerWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     importer.setPrincipal(operator); expect(await importer.reconcileLostReply(), "acknowledge", "exact receipt recovery after upgrades");
-    await reject(() => importer.writeThenLoseReply(input), "duplicate receipt delivery loses reply"); expect(await importer.reconcileLostReply(), "acknowledge", "duplicate receipt recovery");
+    await reject(() => importer.writeThenLoseReply(upgradeInput), "duplicate receipt delivery loses reply"); expect(await importer.reconcileLostReply(), "acknowledge", "duplicate receipt recovery");
     const interrupted = { ...input, logicalId: "migration-receipt:v1:synthetic:User:8", chunk: 8n, contentHash: h(10) };
     await reject(() => importer.journalThenTrapBeforeAwait(interrupted), "receipt journal interruption");
     await install(pic, installer, importerId, importerWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
-    importer.setPrincipal(operator); expect(await importer.reconcileLostReply(), "retryIdentical", "absent receipt permits only identical retry");
-    await reject(() => importer.retryJournaledWriteThenLoseReply(), "journaled receipt retry loses reply"); expect(await importer.reconcileLostReply(), "acknowledge", "journaled receipt retry exact recovery");
+    importer.setPrincipal(operator); expect(await importer.repairJournaledReceipt(), "retryIdentical", "repair resends only retained exact receipt tuple");
+    expect(await importer.reconcileLostReply(), "acknowledge", "repair exact receipt recovery");
   } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

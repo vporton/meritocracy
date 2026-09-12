@@ -139,10 +139,18 @@ async function main() {
     const lowCycleBinding = { ...binding, logicalId: "principal-binding:v1:synthetic-low-cycles-44", contentHash: hash(6) };
     await expectReject(() => core.writeThenLoseReply(lowCycleBinding), "low-cycle write journals but makes no authority call");
     expect(await core.reconcileLostReply(), "retryIdentical", "low-cycle journal observes absent authority record");
+    // The independent role journal takes the same low-cycle branch before
+    // the shared disposable core is replenished. Neither fixed collection
+    // may receive a write while the reserve guard rejects the attempt.
+    const lowCycleRole = { ...role, logicalId: "role-assignment:v1:synthetic-low-cycles-44:auditor", contentHash: hash(5) };
+    await expectReject(() => core.writeRoleThenLoseReply(lowCycleRole), "low-cycle role write journals but makes no authority call");
+    expect(await core.reconcileLostRoleReply(), "retryIdentical", "low-cycle role journal observes absent authority record");
     const replenished = await pic.addCycles(coreId, 2_000_000_000_000);
     if (replenished < 1_000_000_000_000) throw new Error("low-cycle proof failed to replenish disposable core reserve");
     await expectReject(() => core.retryJournaledWriteThenLoseReply(), "replenished low-cycle journal loses authority reply");
     expect(await core.reconcileLostReply(), "acknowledge", "replenished low-cycle journal reconciles exact tuple");
+    await expectReject(() => core.retryJournaledRoleWriteThenLoseReply(), "replenished low-cycle role journal loses authority reply");
+    expect(await core.reconcileLostRoleReply(), "acknowledge", "replenished low-cycle role journal reconciles exact tuple");
     await expectReject(() => core.writeThenLoseReply(binding), "deliberately lost authority reply");
     // Upgrade the authority after its successful write but before the core
     // can reconcile. The fixed collection must reopen its retained record;

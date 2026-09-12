@@ -68,6 +68,10 @@ const archiveIdl = ({ IDL: Candid }) => Candid.Service({
 });
 const hash = (byte) => Uint8Array.from({ length: 32 }, () => byte);
 function expect(actual, key, label) {
+  if (typeof key === "boolean") {
+    if (actual !== key) throw new Error(`${label}: expected ${key}, got ${JSON.stringify(actual)}`);
+    return;
+  }
   if (Object.keys(actual).length !== 1 || !(key in actual)) throw new Error(`${label}: expected ${key}, got ${JSON.stringify(actual)}`);
 }
 async function expectReject(action, label) {

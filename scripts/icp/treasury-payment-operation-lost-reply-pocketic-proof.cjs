@@ -19,7 +19,7 @@ const Write = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict:
 const Observation = IDL.Variant({ absent: IDL.Null, present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }), conflict: IDL.Null, storageError: IDL.Null });
 const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
 const authorityIdl = ({ IDL: C }) => C.Service({ writeTreasuryPaymentOperation: C.Func([Input], [Write], []), lookupTreasuryPaymentOperation: C.Func([C.Text], [Observation], []) });
-const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []) });
+const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []) });
 const Chunk = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const Upload = IDL.Record({ canister_id: IDL.Principal, chunk: IDL.Vec(IDL.Nat8) });
 const Install = IDL.Record({ arg: IDL.Vec(IDL.Nat8), chunk_hashes_list: IDL.Vec(Chunk), mode: IDL.Variant({ install: IDL.Null, upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool), wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })) })) }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(IDL.Principal), canister_id: IDL.Principal, target_canister: IDL.Principal, wasm_module_hash: IDL.Vec(IDL.Nat8) });
@@ -50,6 +50,15 @@ async function main() {
     await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.reconcileLostReply(), "acknowledge", "exact recovery after EOP upgrades");
     await reject(() => treasury.writeThenLoseReply(input), "duplicate delivery loses reply"); expect(await treasury.reconcileLostReply(), "acknowledge", "duplicate reconciles exact tuple");
+    // A separate durable boundary is before any authority await. The absent
+    // lookup after the treasury EOP upgrade may authorize only the no-input
+    // retry of this retained immutable tuple.
+    const interrupted = { ...input, logicalId: "payment-operation:v1:synthetic-interrupted-44", contentHash: h(13) };
+    await reject(() => treasury.journalThenTrapBeforeAwait(interrupted), "interruption after treasury journal before authority await");
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    treasury.setPrincipal(operator); expect(await treasury.reconcileLostReply(), "retryIdentical", "absent interrupted payment operation requires identical retry");
+    await reject(() => treasury.retryJournaledWriteThenLoseReply(), "journaled payment-operation retry loses reply");
+    expect(await treasury.reconcileLostReply(), "acknowledge", "journaled payment-operation retry reconciles exact tuple");
   } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch((error) => { console.error(error.stack || error.message); process.exitCode = 1; });

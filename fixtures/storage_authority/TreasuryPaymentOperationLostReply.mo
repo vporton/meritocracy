@@ -49,6 +49,19 @@ shared ({ caller = installer }) persistent actor class (
     throw Error.reject("deliberately lost synthetic payment-operation reply");
   };
 
+  /// Models interruption after a validated immutable intent is durable, but
+  /// before any authority call is issued. Recovery must first observe
+  /// `#absent`; it may then resend only this retained tuple through the
+  /// no-input retry method below. In particular, no fresh operation,
+  /// obligation, asset, amount, destination, or transaction material can be
+  /// introduced after the interruption.
+  public shared ({ caller }) func journalThenTrapBeforeAwait(input : Intent.Input) : async () {
+    onlyOperator(caller);
+    let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic payment operation");
+    journal := ?Intent.startRemoteWrite(prepared);
+    throw Error.reject("deliberately interrupted before synthetic payment-operation authority call");
+  };
+
   /// Recovery has no input: it can inspect only the durable tuple and a
   /// fixed authority lookup. A different operation ID/version/hash cannot be
   /// substituted after an unknown result.

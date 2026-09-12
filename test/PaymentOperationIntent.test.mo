@@ -35,6 +35,9 @@ assert acknowledged.phase == #acknowledged;
 let (retry, retryDecision) = Intent.reconcile(recovering, #absent);
 assert retryDecision == #retryIdentical;
 assert retry.phase == #remoteWriteStarted;
+// This is the decision used after an interruption before the authority await:
+// only the original durable input can be retried, never replacement material.
+assert retry.input == input;
 
 let (conflict, conflictDecision) = Intent.reconcile(
   recovering,

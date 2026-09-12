@@ -26,13 +26,13 @@ jobs:
             ~/.cache/mops
             ~/.local/share/mops
           key: m1-core-lost-reply-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
-      - name: Build synthetic core and authority fixtures
+      - name: Build synthetic core, authority, and archive fixtures
         shell: bash
         run: |
           set -o pipefail
           mkdir -p .mops/m1-core-identity-role-lost-reply-proof
           scripts/icp/build-core-identity-role-lost-reply-proof.sh 2>&1 | tee .mops/m1-core-identity-role-lost-reply-proof/build.log
-      - name: Run synthetic interruption, lost-reply, authority-upgrade, and core-upgrade proof
+      - name: Run synthetic interruption, archive, lost-reply, and upgrade proof
         shell: bash
         run: |
           set -o pipefail

@@ -8,8 +8,9 @@ import RoleIntent "../../canisters/core/RoleAssignmentIntent";
 import Embedded "../../canisters/storage_authority/EmbeddedIdentityRoleStore";
 import IdentityRole "../../canisters/shared/IdentityRoleRecovery";
 import MutationRecovery "../../canisters/shared/MutationRecovery";
+import Archive "../../canisters/shared/IdentityRoleArchiveRecovery";
 
-shared ({ caller = installer }) persistent actor class (operator : Principal, authorityId : Principal) = this {
+shared ({ caller = installer }) persistent actor class (operator : Principal, authorityId : Principal, archiveId : Principal) = this {
   assert not Principal.isAnonymous(operator);
   assert installer != operator;
   let authority : actor {
@@ -18,8 +19,14 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     writeCoreRoleAssignment : shared IdentityRole.RoleAssignmentInput -> async Embedded.WriteResult;
     lookupCoreRoleAssignment : shared Text -> async Embedded.RoleObservation;
   } = actor (Principal.toText(authorityId));
+  let archive : actor {
+    archive : shared Archive.ArchiveTuple -> async Archive.ArchiveTuple;
+    lookup : shared Text -> async ?Archive.ArchiveTuple;
+  } = actor (Principal.toText(archiveId));
   var intent : ?Intent.BindingIntent = null;
   var roleIntent : ?RoleIntent.RoleIntent = null;
+  var bindingArchive : ?Archive.ArchiveTuple = null;
+  var bindingActive = false;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
@@ -73,6 +80,32 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     let (updated, decision) = Intent.reconcile(Intent.lostReply(journal), remote);
     intent := ?updated;
     decision;
+  };
+
+  // Activation is a separate durable saga.  The record stays inactive until a
+  // later fixed archive lookup returns the exact tuple; an archive reply is
+  // deliberately lost here to model an ambiguous cross-canister result.
+  public shared ({ caller }) func archiveBindingThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?journal = intent else throw Error.reject("missing synthetic binding journal");
+    let tuple : Archive.ArchiveTuple = { logicalId = journal.input.logicalId; version = journal.input.desiredVersion; contentHash = journal.input.contentHash };
+    bindingArchive := ?tuple;
+    let receipt = await archive.archive(tuple);
+    if (Archive.decide(tuple, ?receipt) != #acknowledge) throw Error.reject("synthetic archive mismatch");
+    throw Error.reject("deliberately lost synthetic archive reply");
+  };
+
+  public shared ({ caller }) func reconcileBindingArchive() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?expected = bindingArchive else return #blocked;
+    let decision = Archive.decide(expected, await archive.lookup(expected.logicalId));
+    if (decision == #acknowledge) bindingActive := true;
+    decision;
+  };
+
+  public shared ({ caller }) func isBindingActive() : async Bool {
+    onlyOperator(caller);
+    bindingActive;
   };
 
   /// The fixed role path has its own durable journal and fixed authority

@@ -27,11 +27,15 @@ done < <("${mops_cli[@]}" sources --no-install)
 "$moc_path" -o="$staging_dir/core_lost_reply_core.wasm" \
   --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
   "$repo_root/fixtures/storage_authority/CoreIdentityRoleLostReplyCore.mo"
+"$moc_path" -o="$staging_dir/core_lost_reply_archive.wasm" \
+  --release --enhanced-orthogonal-persistence "${mops_source_args[@]}" \
+  "$repo_root/fixtures/storage_authority/IdentityRoleArchiveSink.mo"
 (
   cd "$staging_dir"
-  sha256sum core_lost_reply_authority.wasm core_lost_reply_core.wasm >SHA256SUMS
+  sha256sum core_lost_reply_authority.wasm core_lost_reply_core.wasm core_lost_reply_archive.wasm >SHA256SUMS
 )
 mv -- "$staging_dir/core_lost_reply_authority.wasm" "$artifact_dir/core_lost_reply_authority.wasm"
 mv -- "$staging_dir/core_lost_reply_core.wasm" "$artifact_dir/core_lost_reply_core.wasm"
+mv -- "$staging_dir/core_lost_reply_archive.wasm" "$artifact_dir/core_lost_reply_archive.wasm"
 mv -- "$staging_dir/SHA256SUMS" "$artifact_dir/SHA256SUMS"
 printf 'M1 core lost-reply proof artifacts built in %s\n' "$artifact_dir"

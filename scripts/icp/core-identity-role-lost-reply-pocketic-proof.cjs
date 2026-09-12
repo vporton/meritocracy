@@ -11,8 +11,8 @@ const { PocketIc, PocketIcServer } = require(picMopsRoot);
 const { IDL } = require(path.join(coreRoot, "lib/cjs/candid/index.js"));
 const { Principal } = require(path.join(coreRoot, "lib/cjs/principal/index.js"));
 
-const [pocketIcBin, authorityWasm, coreWasm] = process.argv.slice(2);
-if (!pocketIcBin || !authorityWasm || !coreWasm) throw new Error("Expected PocketIC binary, authority Wasm, and core Wasm");
+const [pocketIcBin, authorityWasm, coreWasm, archiveWasm] = process.argv.slice(2);
+if (!pocketIcBin || !authorityWasm || !coreWasm || !archiveWasm) throw new Error("Expected PocketIC binary, authority Wasm, core Wasm, and archive Wasm");
 
 const Hash = IDL.Vec(IDL.Nat8);
 const Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
@@ -22,6 +22,8 @@ const Role = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, conten
 const WriteResult = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
 const Observation = IDL.Variant({ absent: IDL.Null, present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }), conflict: IDL.Null, storageError: IDL.Null });
 const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
+const ArchiveTuple = IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash });
+const ArchiveDecision = IDL.Variant({ acknowledge: IDL.Null, remainPending: IDL.Null, blocked: IDL.Null });
 const ChunkHash = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const ManagementUploadChunk = IDL.Record({ canister_id: IDL.Principal, chunk: IDL.Vec(IDL.Nat8) });
 const ManagementInstallChunkedCode = IDL.Record({
@@ -48,6 +50,14 @@ const coreIdl = ({ IDL: Candid }) => Candid.Service({
   reconcileLostRoleReply: Candid.Func([], [Recovery], []),
   journalRoleThenTrapBeforeAwait: Candid.Func([Role], [], []),
   retryJournaledRoleWriteThenLoseReply: Candid.Func([], [], []),
+  archiveBindingThenLoseReply: Candid.Func([], [], []),
+  reconcileBindingArchive: Candid.Func([], [ArchiveDecision], []),
+  isBindingActive: Candid.Func([], [Candid.Bool], []),
+});
+const archiveIdl = ({ IDL: Candid }) => Candid.Service({
+  permit: Candid.Func([], [], []),
+  archive: Candid.Func([ArchiveTuple], [ArchiveTuple], []),
+  lookup: Candid.Func([Candid.Text], [Candid.Opt(ArchiveTuple)], []),
 });
 const hash = (byte) => Uint8Array.from({ length: 32 }, () => byte);
 function expect(actual, key, label) {
@@ -89,9 +99,11 @@ async function main() {
     const governance = Principal.fromUint8Array(Uint8Array.of(1, 8));
     const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const coreId = await pic.createCanister({ sender: installer, controllers: [installer] });
+    const archiveId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const authorityConfig = { core: coreId, workflow, treasury, archive, evidence, governance };
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [authorityConfig]));
-    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]));
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]));
+    await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [coreId, operator]));
     const authority = pic.createActor(authorityIdl, authorityId);
     authority.setPrincipal(outsider);
     const binding = { logicalId: "principal-binding:v1:synthetic-44", desiredVersion: 1n, contentHash: hash(7), userId: 44n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };
@@ -101,6 +113,10 @@ async function main() {
     expect(await authority.writeCoreRoleAssignment(role), "blocked", "direct authority role write denied");
     expect(await authority.lookupCoreRoleAssignment(role.logicalId), "conflict", "direct authority role lookup denied");
     const core = pic.createActor(coreIdl, coreId);
+    const archiveSink = pic.createActor(archiveIdl, archiveId);
+    archiveSink.setPrincipal(outsider);
+    await expectReject(() => archiveSink.permit(), "outsider archive permit denied");
+    await expectReject(() => archiveSink.lookup(binding.logicalId), "outsider archive lookup denied");
     core.setPrincipal(outsider);
     await expectReject(() => core.reconcileLostReply(), "non-operator core ingress denied");
     core.setPrincipal(operator);
@@ -116,8 +132,24 @@ async function main() {
     expect(await authority.lookupCoreRoleAssignment(role.logicalId), "conflict", "direct authority role lookup denied after upgrade");
     // Upgrade the core before recovery: the durable pre-await intent must
     // also survive independently from the authority's retained collection.
-    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileLostReply(), "acknowledge", "exact lost-reply reconciliation after upgrade");
+    // Archive unavailability cannot activate the core-owned binding. The
+    // pending tuple survives a core upgrade; only an exact later receipt may
+    // move it active, even when that receipt's original reply is lost.
+    await expectReject(() => core.archiveBindingThenLoseReply(), "archive unavailable keeps binding pending");
+    expect(await core.isBindingActive(), false, "binding inactive after archive failure");
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    expect(await core.reconcileBindingArchive(), "remainPending", "missing archive receipt remains pending after core upgrade");
+    expect(await core.isBindingActive(), false, "binding still inactive without receipt");
+    archiveSink.setPrincipal(operator);
+    await archiveSink.permit();
+    core.setPrincipal(operator);
+    await expectReject(() => core.archiveBindingThenLoseReply(), "deliberately lost archive acknowledgement");
+    await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [coreId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    expect(await core.reconcileBindingArchive(), "acknowledge", "exact archive receipt activates after upgrades");
+    expect(await core.isBindingActive(), true, "binding active only after exact archive receipt");
     // Exercise the independent role journal with the exact fixed authority
     // write and tuple-only lookup after the authority EOP upgrade. No role or
     // principal data comes back through recovery.
@@ -135,7 +167,7 @@ async function main() {
     // a core EOP upgrade, and retry only the journaled tuple (no new input).
     const interrupted = { ...binding, logicalId: "principal-binding:v1:synthetic-interrupted-44", contentHash: hash(9) };
     await expectReject(() => core.journalThenTrapBeforeAwait(interrupted), "interruption after journal before authority await");
-    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileLostReply(), "retryIdentical", "absent interrupted write requires identical retry");
     await expectReject(() => core.retryJournaledWriteThenLoseReply(), "deliberately lost journaled retry reply");
     expect(await core.reconcileLostReply(), "acknowledge", "journaled retry reconciliation");
@@ -144,7 +176,7 @@ async function main() {
     // send the persisted tuple; its lost reply still needs exact recovery.
     const interruptedRole = { ...role, logicalId: "role-assignment:v1:synthetic-interrupted-44:auditor", contentHash: hash(10) };
     await expectReject(() => core.journalRoleThenTrapBeforeAwait(interruptedRole), "role interruption after journal before authority await");
-    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     expect(await core.reconcileLostRoleReply(), "retryIdentical", "absent interrupted role write requires identical retry");
     await expectReject(() => core.retryJournaledRoleWriteThenLoseReply(), "deliberately lost journaled role retry reply");
     expect(await core.reconcileLostRoleReply(), "acknowledge", "journaled role retry reconciliation");

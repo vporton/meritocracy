@@ -26,6 +26,8 @@ Last updated: 2026-09-12. The repository's AGPL-3.0-only license and related pac
 
 **M1 fixed embedded role recovery surface (2026-09-12):** The authority now has a distinct core-only `lookupCoreRoleAssignment` method. Its bounded two-record lookup returns only the immutable version/hash tuple needed to reconcile the core's durable role intent; it never returns role labels, principals, document identifiers, or a generic query result. Unauthorized role writes and lookups return `blocked` and `conflict` respectively. The disposable core fixture and PocketIC bridge extend the same authority/core-upgrade lost-reply sequence to an independently journaled role assignment. All seven pure Motoko vectors, target canister checks, fixture type-check, Candid subtyping, and script syntax checks pass. The extended linked-Wasm PocketIC execution has not been rerun locally, so it is not execution evidence until the isolated CI job passes. This remains non-authoritative M1 proof work.
 
+**M1 identity/role archive acknowledgement contract (2026-09-12):** A pure archive decision contract permits acknowledgement only for an exact bounded logical-ID/version/32-byte-hash receipt. It excludes role labels, principals, OAuth evidence, document IDs, and payloads; an unavailable or mismatched receipt stays pending, while malformed data is blocked. Its focused Motoko vector passes. It adds no archive endpoint, storage-authority surface, persistence, target data, deployment, or authority. The required actual archive-failure/activation proof remains outstanding.
+
 ## Status vocabulary
 
 - `AUDITED`: the legacy implementation and callers were inspected.

@@ -254,6 +254,8 @@ A multi-document operation first writes all member documents as pending and jour
 
 `MutationIntentV1` has no payload field: canonical bytes remain in the bounded operation-specific state, while the intent records its desired remote version and 32-byte desired hash. An implementation must retain/reconstruct the identical bytes for a permitted retry, or move to `blocked`; it may not recreate a mutable request from caller input. `MutationRecovery.mo` makes this rule executable: only an exact desired version/hash lookup acknowledges a lost reply; an absent insert or a complete exact expected CAS target permits only the identical retry; partial expectations, malformed hashes, and every concurrent result fail closed.
 
+For the identity/role archive step, `IdentityRoleArchiveRecovery.mo` fixes the equally narrow acknowledgement tuple: bounded logical ID, immutable version, and 32-byte content hash only. It deliberately excludes principals, role labels, OAuth evidence, ZenDB document IDs, and payloads. An absent or mismatched archive receipt leaves activation pending; malformed source or receipt tuples are blocked. This is a pure decision contract, not an archive endpoint or proof that an archive failure has been recovered.
+
 The pure recovery contract also bounds a visibility manifest to 1–500 members and refuses activation until every member intent and the manifest acknowledgement are exact. It is deliberately not a storage implementation or substitute for the required storage-authority fault proof.
 
 ## Collection-vN migration and upgrade

@@ -12,8 +12,17 @@ let expected : Archive.ArchiveTuple = {
   contentHash = hash(7);
 };
 
+let expectedRole : Archive.ArchiveTuple = {
+  logicalId = "role-assignment:v1:synthetic-44:auditor";
+  version = 1;
+  contentHash = hash(8);
+};
+
 assert Archive.validTuple(expected);
 assert Archive.decide(expected, ?expected) == #acknowledge;
+assert Archive.validTuple(expectedRole);
+assert Archive.decide(expectedRole, ?expectedRole) == #acknowledge;
+assert Archive.decide(expectedRole, ?expected) == #remainPending;
 
 // An unavailable archive and any mismatched receipt leave the source record
 // pending. Neither result can activate a record or authorize a replacement.

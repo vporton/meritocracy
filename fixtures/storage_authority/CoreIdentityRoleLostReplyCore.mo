@@ -27,6 +27,8 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
   var roleIntent : ?RoleIntent.RoleIntent = null;
   var bindingArchive : ?Archive.ArchiveTuple = null;
   var bindingActive = false;
+  var roleArchive : ?Archive.ArchiveTuple = null;
+  var roleActive = false;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
@@ -158,5 +160,31 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, au
     switch (result) { case (#acknowledged) {}; case (_) { throw Error.reject("synthetic role retry failed") } };
     roleIntent := ?RoleIntent.lostReply(journal);
     throw Error.reject("deliberately lost synthetic role authority retry reply");
+  };
+
+  // Role activation has the same separate acknowledgement boundary as an
+  // identity binding. The archive receives only this immutable tuple, never
+  // the role label or principal, and a lost reply cannot activate the role.
+  public shared ({ caller }) func archiveRoleThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?journal = roleIntent else throw Error.reject("missing synthetic role journal");
+    let tuple : Archive.ArchiveTuple = { logicalId = journal.input.logicalId; version = journal.input.desiredVersion; contentHash = journal.input.contentHash };
+    roleArchive := ?tuple;
+    let receipt = await archive.archive(tuple);
+    if (Archive.decide(tuple, ?receipt) != #acknowledge) throw Error.reject("synthetic role archive mismatch");
+    throw Error.reject("deliberately lost synthetic role archive reply");
+  };
+
+  public shared ({ caller }) func reconcileRoleArchive() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?expected = roleArchive else return #blocked;
+    let decision = Archive.decide(expected, await archive.lookup(expected.logicalId));
+    if (decision == #acknowledge) roleActive := true;
+    decision;
+  };
+
+  public shared ({ caller }) func isRoleActive() : async Bool {
+    onlyOperator(caller);
+    roleActive;
   };
 }

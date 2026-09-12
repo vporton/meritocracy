@@ -53,6 +53,9 @@ const coreIdl = ({ IDL: Candid }) => Candid.Service({
   archiveBindingThenLoseReply: Candid.Func([], [], []),
   reconcileBindingArchive: Candid.Func([], [ArchiveDecision], []),
   isBindingActive: Candid.Func([], [Candid.Bool], []),
+  archiveRoleThenLoseReply: Candid.Func([], [], []),
+  reconcileRoleArchive: Candid.Func([], [ArchiveDecision], []),
+  isRoleActive: Candid.Func([], [Candid.Bool], []),
 });
 const archiveIdl = ({ IDL: Candid }) => Candid.Service({
   permit: Candid.Func([], [], []),
@@ -155,6 +158,23 @@ async function main() {
     // principal data comes back through recovery.
     await expectReject(() => core.writeRoleThenLoseReply(role), "deliberately lost role authority reply");
     expect(await core.reconcileLostRoleReply(), "acknowledge", "exact role lost-reply reconciliation");
+    // The independently journaled role cannot be active merely because its
+    // authority write was acknowledged. Archive unavailability keeps it
+    // pending through a core upgrade; a later lost archive reply can be
+    // reconciled only by the fixed exact tuple after archive/core upgrades.
+    await expectReject(() => core.archiveRoleThenLoseReply(), "role archive unavailable keeps role pending");
+    expect(await core.isRoleActive(), false, "role inactive after archive failure");
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    expect(await core.reconcileRoleArchive(), "remainPending", "missing role archive receipt remains pending after core upgrade");
+    expect(await core.isRoleActive(), false, "role still inactive without receipt");
+    // The archive was permitted for the binding branch above. Its fixed
+    // receipt store accepts a distinct role tuple, but no role data crosses
+    // the archive boundary.
+    await expectReject(() => core.archiveRoleThenLoseReply(), "deliberately lost role archive acknowledgement");
+    await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [coreId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, coreId, coreWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    expect(await core.reconcileRoleArchive(), "acknowledge", "exact role archive receipt activates after upgrades");
+    expect(await core.isRoleActive(), true, "role active only after exact archive receipt");
     // Deliver the same immutable operation again. The authority must not
     // create a second record; its fixed insert-or-exact-lookup path accepts
     // only this version/hash tuple. Deliberately lose that second reply too,

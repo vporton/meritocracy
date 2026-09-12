@@ -3,6 +3,7 @@
 // synthetic operator permits it; it never receives an identity payload.
 import Error "mo:base/Error";
 import Principal "mo:base/Principal";
+import Array "mo:base/Array";
 import Archive "../../canisters/shared/IdentityRoleArchiveRecovery";
 
 shared ({ caller = installer }) persistent actor class (core : Principal, operator : Principal) = this {
@@ -10,7 +11,9 @@ shared ({ caller = installer }) persistent actor class (core : Principal, operat
   assert not Principal.isAnonymous(operator);
   assert core != operator;
   var permitted = false;
-  var receipt : ?Archive.ArchiveTuple = null;
+  // This fixture permits at most the fixed binding and role acknowledgement
+  // tuples. It is deliberately bounded and holds no source payload.
+  var receipts : [Archive.ArchiveTuple] = [];
 
   func onlyCore(caller : Principal) { assert caller == core };
   func onlyOperator(caller : Principal) { assert caller == operator };
@@ -23,16 +26,21 @@ shared ({ caller = installer }) persistent actor class (core : Principal, operat
   public shared ({ caller }) func archive(tuple : Archive.ArchiveTuple) : async Archive.ArchiveTuple {
     onlyCore(caller);
     if (not permitted or not Archive.validTuple(tuple)) throw Error.reject("synthetic archive unavailable");
-    switch (receipt) {
-      case null { receipt := ?tuple; tuple };
-      case (?stored) {
-        if (stored == tuple) stored else throw Error.reject("synthetic archive conflict");
+    for (stored in receipts.vals()) {
+      if (stored.logicalId == tuple.logicalId) {
+        if (stored == tuple) return stored else throw Error.reject("synthetic archive conflict");
       };
     };
+    if (receipts.size() >= 2) throw Error.reject("synthetic archive receipt limit");
+    receipts := Array.append(receipts, [tuple]);
+    tuple;
   };
 
   public shared ({ caller }) func lookup(logicalId : Text) : async ?Archive.ArchiveTuple {
     onlyCore(caller);
-    switch (receipt) { case (?stored) { if (stored.logicalId == logicalId) ?stored else null }; case null null };
+    for (stored in receipts.vals()) {
+      if (stored.logicalId == logicalId) return ?stored;
+    };
+    null;
   };
 }

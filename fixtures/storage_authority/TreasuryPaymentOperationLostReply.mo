@@ -7,10 +7,12 @@ import Principal "mo:base/Principal";
 import MutationRecovery "../../canisters/shared/MutationRecovery";
 import Embedded "../../canisters/storage_authority/EmbeddedPaymentOperationStore";
 import Intent "../../canisters/treasury/PaymentOperationIntent";
+import Archive "../../canisters/treasury/PaymentOperationArchiveRecovery";
 
 shared ({ caller = installer }) persistent actor class (
   operator : Principal,
   authorityId : Principal,
+  archiveId : Principal,
 ) = this {
   assert not Principal.isAnonymous(operator);
   assert installer != operator;
@@ -19,10 +21,16 @@ shared ({ caller = installer }) persistent actor class (
     writeTreasuryPaymentOperation : shared Intent.Input -> async Embedded.WriteResult;
     lookupTreasuryPaymentOperation : shared Text -> async Embedded.Observation;
   } = actor (Principal.toText(authorityId));
+  let archive : actor {
+    archive : shared Archive.ArchiveTuple -> async Archive.ArchiveTuple;
+    lookup : shared Text -> async ?Archive.ArchiveTuple;
+  } = actor (Principal.toText(archiveId));
 
   // This is the durable pre-await journal. The fixture has one bounded saga
   // slot and never accepts replacement operation material during recovery.
   var journal : ?Intent.Intent = null;
+  var archiveTuple : ?Archive.ArchiveTuple = null;
+  var active = false;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
@@ -40,6 +48,8 @@ shared ({ caller = installer }) persistent actor class (
   public shared ({ caller }) func writeThenLoseReply(input : Intent.Input) : async () {
     onlyOperator(caller);
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic payment operation");
+    archiveTuple := null;
+    active := false;
     journal := ?Intent.startRemoteWrite(prepared);
     switch (await authority.writeTreasuryPaymentOperation(input)) {
       case (#acknowledged) {};
@@ -58,6 +68,8 @@ shared ({ caller = installer }) persistent actor class (
   public shared ({ caller }) func journalThenTrapBeforeAwait(input : Intent.Input) : async () {
     onlyOperator(caller);
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic payment operation");
+    archiveTuple := null;
+    active := false;
     journal := ?Intent.startRemoteWrite(prepared);
     throw Error.reject("deliberately interrupted before synthetic payment-operation authority call");
   };
@@ -87,5 +99,37 @@ shared ({ caller = installer }) persistent actor class (
     };
     journal := ?Intent.lostReply(saved);
     throw Error.reject("deliberately lost synthetic payment-operation retry reply");
+  };
+
+  /// Archive activation is downstream of an exact storage acknowledgement.
+  /// The sink receives only the immutable tuple, never amount, destination,
+  /// asset, obligation, signing, or chain material. Its successful reply is
+  /// deliberately lost so recovery must use its fixed tuple-only lookup.
+  public shared ({ caller }) func archiveThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?saved = journal else throw Error.reject("missing synthetic payment-operation journal");
+    if (saved.phase != #acknowledged) throw Error.reject("payment operation is not storage-acknowledged");
+    let tuple : Archive.ArchiveTuple = {
+      logicalId = saved.input.logicalId;
+      version = saved.input.desiredVersion;
+      contentHash = saved.input.contentHash;
+    };
+    archiveTuple := ?tuple;
+    let receipt = await archive.archive(tuple);
+    if (Archive.decide(tuple, ?receipt) != #acknowledge) throw Error.reject("synthetic payment-operation archive mismatch");
+    throw Error.reject("deliberately lost synthetic payment-operation archive reply");
+  };
+
+  public shared ({ caller }) func reconcileArchive() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?expected = archiveTuple else return #blocked;
+    let decision = Archive.decide(expected, await archive.lookup(expected.logicalId));
+    if (decision == #acknowledge) active := true;
+    decision;
+  };
+
+  public shared ({ caller }) func isActive() : async Bool {
+    onlyOperator(caller);
+    active;
   };
 };

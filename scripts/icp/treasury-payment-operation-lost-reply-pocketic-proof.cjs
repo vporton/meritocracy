@@ -9,8 +9,8 @@ const coreRoot = path.resolve(__dirname, "../../node_modules/ic-mops/node_module
 const { PocketIc, PocketIcServer } = require(picRoot);
 const { IDL } = require(path.join(coreRoot, "lib/cjs/candid/index.js"));
 const { Principal } = require(path.join(coreRoot, "lib/cjs/principal/index.js"));
-const [bin, authorityWasm, treasuryWasm] = process.argv.slice(2);
-if (!bin || !authorityWasm || !treasuryWasm) throw new Error("Expected PocketIC binary, authority Wasm, and treasury Wasm");
+const [bin, authorityWasm, treasuryWasm, archiveWasm] = process.argv.slice(2);
+if (!bin || !authorityWasm || !treasuryWasm || !archiveWasm) throw new Error("Expected PocketIC binary, authority Wasm, treasury Wasm, and archive Wasm");
 
 const Hash = IDL.Vec(IDL.Nat8);
 const Config = IDL.Record({ core: IDL.Principal, workflow: IDL.Principal, treasury: IDL.Principal, archive: IDL.Principal, evidence: IDL.Principal, governance: IDL.Principal });
@@ -18,8 +18,11 @@ const Input = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, conte
 const Write = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
 const Observation = IDL.Variant({ absent: IDL.Null, present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }), conflict: IDL.Null, storageError: IDL.Null });
 const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
+const ArchiveTuple = IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash });
+const ArchiveDecision = IDL.Variant({ acknowledge: IDL.Null, remainPending: IDL.Null, blocked: IDL.Null });
 const authorityIdl = ({ IDL: C }) => C.Service({ writeTreasuryPaymentOperation: C.Func([Input], [Write], []), lookupTreasuryPaymentOperation: C.Func([C.Text], [Observation], []) });
-const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []) });
+const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), journalThenTrapBeforeAwait: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []), retryJournaledWriteThenLoseReply: C.Func([], [], []), archiveThenLoseReply: C.Func([], [], []), reconcileArchive: C.Func([], [ArchiveDecision], []), isActive: C.Func([], [C.Bool], []) });
+const archiveIdl = ({ IDL: C }) => C.Service({ permit: C.Func([], [], []), revoke: C.Func([], [], []), archive: C.Func([ArchiveTuple], [ArchiveTuple], []), lookup: C.Func([C.Text], [C.Opt(ArchiveTuple)], []) });
 const Chunk = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
 const Upload = IDL.Record({ canister_id: IDL.Principal, chunk: IDL.Vec(IDL.Nat8) });
 const Install = IDL.Record({ arg: IDL.Vec(IDL.Nat8), chunk_hashes_list: IDL.Vec(Chunk), mode: IDL.Variant({ install: IDL.Null, upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool), wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })) })) }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(IDL.Principal), canister_id: IDL.Principal, target_canister: IDL.Principal, wasm_module_hash: IDL.Vec(IDL.Nat8) });
@@ -36,26 +39,41 @@ async function main() {
   const server = await PocketIcServer.start({ binPath: bin, ttl: 60, showRuntimeLogs: false, showCanisterLogs: false }); const pic = await PocketIc.create(server.getUrl());
   try {
     const installer = Principal.fromUint8Array(Uint8Array.of(2, 1)), operator = Principal.fromUint8Array(Uint8Array.of(2, 2)), outsider = Principal.fromUint8Array(Uint8Array.of(2, 3));
-    const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] }), treasuryId = await pic.createCanister({ sender: installer, controllers: [installer] });
+    const authorityId = await pic.createCanister({ sender: installer, controllers: [installer] }), treasuryId = await pic.createCanister({ sender: installer, controllers: [installer] }), archiveId = await pic.createCanister({ sender: installer, controllers: [installer] });
     const config = { core: Principal.fromUint8Array(Uint8Array.of(2, 4)), workflow: Principal.fromUint8Array(Uint8Array.of(2, 5)), treasury: treasuryId, archive: Principal.fromUint8Array(Uint8Array.of(2, 6)), evidence: Principal.fromUint8Array(Uint8Array.of(2, 7)), governance: Principal.fromUint8Array(Uint8Array.of(2, 8)) };
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]));
-    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]));
-    const authority = pic.createActor(authorityIdl, authorityId), treasury = pic.createActor(treasuryIdl, treasuryId);
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]));
+    await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [treasuryId, operator]));
+    const authority = pic.createActor(authorityIdl, authorityId), treasury = pic.createActor(treasuryIdl, treasuryId), archive = pic.createActor(archiveIdl, archiveId);
     const h = (n) => Uint8Array.from({ length: 32 }, () => n);
     const input = { logicalId: "payment-operation:v1:synthetic-1", desiredVersion: 1n, contentHash: h(11), operationId: "operation:synthetic-1", obligationId: "obligation:synthetic-1", assetId: "ICP", amountBaseUnits: 1n, assetDecimals: 8, destinationHash: h(12) };
     authority.setPrincipal(outsider); expect(await authority.writeTreasuryPaymentOperation(input), "blocked", "direct write denied"); expect(await authority.lookupTreasuryPaymentOperation(input.logicalId), "conflict", "direct lookup denied");
     treasury.setPrincipal(outsider); await reject(() => treasury.reconcileLostReply(), "outsider recovery denied");
     treasury.setPrincipal(operator); await reject(() => treasury.writeThenLoseReply(input), "deliberately lost first reply");
     await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
-    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.reconcileLostReply(), "acknowledge", "exact recovery after EOP upgrades");
     await reject(() => treasury.writeThenLoseReply(input), "duplicate delivery loses reply"); expect(await treasury.reconcileLostReply(), "acknowledge", "duplicate reconciles exact tuple");
+    // The archive starts unavailable. A storage-acknowledged operation stays
+    // inactive through an EOP treasury upgrade until its exact tuple receipt
+    // exists; archive availability alone is never an activation signal.
+    archive.setPrincipal(operator); await archive.revoke();
+    await reject(() => treasury.archiveThenLoseReply(), "unavailable archive keeps payment operation pending");
+    expect(await treasury.isActive(), false, "payment operation inactive after archive failure");
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    treasury.setPrincipal(operator); expect(await treasury.reconcileArchive(), "remainPending", "missing archive receipt remains pending after upgrade");
+    archive.setPrincipal(operator); await archive.permit();
+    await reject(() => treasury.archiveThenLoseReply(), "deliberately lost payment-operation archive acknowledgement");
+    await install(pic, installer, archiveId, archiveWasm, IDL.encode([IDL.Principal, IDL.Principal], [treasuryId, operator]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    treasury.setPrincipal(operator); expect(await treasury.reconcileArchive(), "acknowledge", "exact archive receipt activates after upgrades");
+    expect(await treasury.isActive(), true, "payment operation active only after exact archive receipt");
     // A separate durable boundary is before any authority await. The absent
     // lookup after the treasury EOP upgrade may authorize only the no-input
     // retry of this retained immutable tuple.
     const interrupted = { ...input, logicalId: "payment-operation:v1:synthetic-interrupted-44", contentHash: h(13) };
     await reject(() => treasury.journalThenTrapBeforeAwait(interrupted), "interruption after treasury journal before authority await");
-    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal], [operator, authorityId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+    await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([IDL.Principal, IDL.Principal, IDL.Principal], [operator, authorityId, archiveId]), { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
     treasury.setPrincipal(operator); expect(await treasury.reconcileLostReply(), "retryIdentical", "absent interrupted payment operation requires identical retry");
     await reject(() => treasury.retryJournaledWriteThenLoseReply(), "journaled payment-operation retry loses reply");
     expect(await treasury.reconcileLostReply(), "acknowledge", "journaled payment-operation retry reconciles exact tuple");

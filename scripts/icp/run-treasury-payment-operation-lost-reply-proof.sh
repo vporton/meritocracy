@@ -5,7 +5,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 artifact_dir="${M1_TREASURY_LOST_REPLY_PROOF_ARTIFACT_DIR:-$repo_root/.mops/m1-treasury-payment-operation-lost-reply-proof}"
 mops_cli=(node "$repo_root/node_modules/ic-mops/dist/bin/mops.js")
-for artifact in treasury_lost_reply_authority.wasm treasury_lost_reply_treasury.wasm SHA256SUMS; do
+for artifact in treasury_lost_reply_authority.wasm treasury_lost_reply_treasury.wasm treasury_lost_reply_archive.wasm SHA256SUMS; do
   [[ -f "$artifact_dir/$artifact" ]] || { echo "Missing treasury lost-reply proof artifact: $artifact" >&2; exit 1; }
 done
 (cd "$artifact_dir" && sha256sum -c SHA256SUMS)
@@ -19,5 +19,5 @@ trap 'rm -rf -- "$runtime_dir"' EXIT
 runtime_bin="$runtime_dir/pocket-ic"
 cp -- "$pocket_ic_bin" "$runtime_bin"
 chmod 700 "$runtime_bin"
-node "$repo_root/scripts/icp/treasury-payment-operation-lost-reply-pocketic-proof.cjs" "$runtime_bin" "$artifact_dir/treasury_lost_reply_authority.wasm" "$artifact_dir/treasury_lost_reply_treasury.wasm"
+node "$repo_root/scripts/icp/treasury-payment-operation-lost-reply-pocketic-proof.cjs" "$runtime_bin" "$artifact_dir/treasury_lost_reply_authority.wasm" "$artifact_dir/treasury_lost_reply_treasury.wasm" "$artifact_dir/treasury_lost_reply_archive.wasm"
 echo "Treasury payment-operation lost-reply PocketIC proof passed."

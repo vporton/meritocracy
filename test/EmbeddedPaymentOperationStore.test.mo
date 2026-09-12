@@ -23,6 +23,12 @@ let input : PaymentOperation.Input = {
 // destination material remains hash-only and the record is within the M1
 // document limit. Invalid candidates cannot be encoded for a future write.
 assert Store.validEncoding(input);
+assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(2) }) == #acknowledged;
+assert Store.decideIdempotentWrite(input, ?{ version = 2; contentHash = hash(2) }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(3) }) == #conflict;
+assert Store.decideIdempotentWrite(input, null) == #conflict;
 assert not Store.validEncoding({ input with amountBaseUnits = 0 });
-assert not Store.validEncoding({ input with destinationHash = Blob.fromArray([1]) });
+assert not Store.validEncoding({
+  input with destinationHash = Blob.fromArray([1])
+});
 assert not Store.validEncoding({ input with logicalId = "bad\nlogical-id" });

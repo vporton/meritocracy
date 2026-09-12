@@ -9,6 +9,21 @@ import PaymentOperation "../treasury/PaymentOperationIntent";
 /// chain receipt: the only destination representation is the immutable hash
 /// already validated by `PaymentOperationIntent`.
 module {
+  public type WriteResult = {
+    #acknowledged;
+    #blocked;
+    #conflict;
+    #storageError;
+  };
+  /// The treasury needs only its durable intent's exact tuple to reconcile a
+  /// lost reply. This cannot disclose operation details or chain material.
+  public type Observation = {
+    #absent;
+    #present : { version : Nat64; contentHash : Blob };
+    #conflict;
+    #storageError;
+  };
+
   type PaymentOperationRecord = {
     logicalId : Text;
     operationId : Text;
@@ -36,8 +51,12 @@ module {
   ]);
 
   let candify : ZenDB.Types.Candify<PaymentOperationRecord> = {
-    from_blob = func(blob : Blob) : ?PaymentOperationRecord { from_candid (blob) };
-    to_blob = func(record : PaymentOperationRecord) : Blob { to_candid (record) };
+    from_blob = func(blob : Blob) : ?PaymentOperationRecord {
+      from_candid (blob);
+    };
+    to_blob = func(record : PaymentOperationRecord) : Blob {
+      to_candid (record);
+    };
   };
 
   /// This opens one named collection only. Its unique logical-ID index is the
@@ -63,11 +82,7 @@ module {
     ?collection;
   };
 
-  /// Kept private to make the exact record encoding type-check now. A later
-  /// fixed treasury-only write path must still implement durable journaling,
-  /// duplicate/lost-reply reconciliation, archive activation, low-cycle, and
-  /// repair/resume proofs before this collection can be authoritative.
-  func _recordFor(input : PaymentOperation.Input) : PaymentOperationRecord {
+  func recordFor(input : PaymentOperation.Input) : PaymentOperationRecord {
     {
       logicalId = input.logicalId;
       operationId = input.operationId;
@@ -88,8 +103,74 @@ module {
   // hashes and the 1,024-digit Nat ceiling remains far below the catalogue's
   // 262,144-byte document limit. This is intentionally not a write operation.
   public func validEncoding(input : PaymentOperation.Input) : Bool {
-    let _record = _recordFor(input);
-    PaymentOperation.valid(input) and
-    Nat.toText(input.amountBaseUnits).size() <= 1_024;
+    PaymentOperation.valid(input) and Nat.toText(input.amountBaseUnits).size() <= 1_024;
+  };
+
+  /// Pure exact-tuple rule shared by the fixed write path and vectors. A
+  /// caller cannot use it to turn an absent observation into acknowledgement.
+  public func decideIdempotentWrite(
+    input : PaymentOperation.Input,
+    observed : ?{ version : Nat64; contentHash : Blob },
+  ) : WriteResult {
+    if (not validEncoding(input)) return #blocked;
+    switch (observed) {
+      case null #conflict;
+      case (?existing) {
+        if (existing.version == input.desiredVersion and existing.contentHash == input.contentHash) {
+          #acknowledged;
+        } else {
+          #conflict;
+        };
+      };
+    };
+  };
+
+  /// Insert once, or acknowledge only the exact version/hash already stored.
+  /// A broken unique index fails closed; this never activates or sends value.
+  public func write(store : Store, input : PaymentOperation.Input) : WriteResult {
+    if (not validEncoding(input)) return #blocked;
+    let record = recordFor(input);
+    switch (store.search(ZenDB.QueryBuilder().Where("logicalId", #eq(#Text(input.logicalId))).Limit(2))) {
+      case (#err(_)) #storageError;
+      case (#ok(result)) {
+        let records = result.documents;
+        if (records.size() == 0) {
+          switch (store.insert(record)) {
+            case (#ok(_)) #acknowledged;
+            case (#err(_)) #storageError;
+          };
+        } else if (records.size() == 1) {
+          let (_, existing, _) = records[0];
+          decideIdempotentWrite(input, ?{ version = existing.version; contentHash = existing.contentHash });
+        } else {
+          #conflict;
+        };
+      };
+    };
+  };
+
+  /// A fixed, two-result-bounded tuple-only recovery lookup.
+  public func lookup(store : Store, logicalId : Text) : Observation {
+    if (logicalId.size() == 0 or logicalId.size() > 512) return #conflict;
+    for (character in logicalId.chars()) {
+      if (character < '\u{20}' or character == '\u{7f}') return #conflict;
+    };
+    switch (store.search(ZenDB.QueryBuilder().Where("logicalId", #eq(#Text(logicalId))).Limit(2))) {
+      case (#err(_)) #storageError;
+      case (#ok(result)) {
+        let records = result.documents;
+        if (records.size() == 0) {
+          #absent;
+        } else if (records.size() == 1) {
+          let (_, existing, _) = records[0];
+          #present({
+            version = existing.version;
+            contentHash = existing.contentHash;
+          });
+        } else {
+          #conflict;
+        };
+      };
+    };
   };
 };

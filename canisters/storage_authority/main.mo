@@ -5,6 +5,7 @@ import StorageCatalog "../shared/StorageCatalog";
 import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
 import EmbeddedPaymentOperationStore "EmbeddedPaymentOperationStore";
 import IdentityRole "../shared/IdentityRoleRecovery";
+import PaymentOperation "../treasury/PaymentOperationIntent";
 import Policy "StorageAuthorityPolicy";
 
 /// M1 storage-authority boundary scaffold.
@@ -64,7 +65,9 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
     }
   ) {
     case (?store) store;
-    case null { Runtime.trap("unable to open fixed payment-operation collection") };
+    case null {
+      Runtime.trap("unable to open fixed payment-operation collection");
+    };
   };
   paymentOperationCollectionInitialized := true;
 
@@ -92,11 +95,18 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
     };
   };
 
+  func treasuryDataAllowed(caller : Principal, logicalId : Text) : Bool {
+    switch (Policy.authorizeData(config, caller, #treasury, logicalId)) {
+      case (#allowed) true;
+      case (_) false;
+    };
+  };
+
   /// Fixed principal-binding write. This is intentionally not a generic
   /// storage method: only the configured core actor may call it, and the
   /// adapter accepts immutable logical-ID/version/hash records only.
   public shared ({ caller }) func writeCorePrincipalBinding(
-    input : IdentityRole.PrincipalBindingInput,
+    input : IdentityRole.PrincipalBindingInput
   ) : async EmbeddedIdentityRoleStore.WriteResult {
     if (not coreDataAllowed(caller, input.logicalId)) return #blocked;
     EmbeddedIdentityRoleStore.writeBinding(identityRoleStore, input);
@@ -105,7 +115,7 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   /// Fixed recovery lookup for the principal-binding collection. An
   /// unauthorized caller gets `#conflict`, never an existence signal.
   public shared ({ caller }) func lookupCorePrincipalBinding(
-    logicalId : Text,
+    logicalId : Text
   ) : async EmbeddedIdentityRoleStore.BindingObservation {
     if (not coreDataAllowed(caller, logicalId)) return #conflict;
     EmbeddedIdentityRoleStore.lookupBinding(identityRoleStore, logicalId);
@@ -114,7 +124,7 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   /// Fixed role-assignment write. Role revocation remains a later immutable
   /// logical record; this endpoint cannot overwrite an existing assignment.
   public shared ({ caller }) func writeCoreRoleAssignment(
-    input : IdentityRole.RoleAssignmentInput,
+    input : IdentityRole.RoleAssignmentInput
   ) : async EmbeddedIdentityRoleStore.WriteResult {
     if (not coreDataAllowed(caller, input.logicalId)) return #blocked;
     EmbeddedIdentityRoleStore.writeRole(identityRoleStore, input);
@@ -124,10 +134,27 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   /// from the binding lookup, and returns no role or principal data. An
   /// unauthorized caller gets `#conflict`, never an existence signal.
   public shared ({ caller }) func lookupCoreRoleAssignment(
-    logicalId : Text,
+    logicalId : Text
   ) : async EmbeddedIdentityRoleStore.RoleObservation {
     if (not coreDataAllowed(caller, logicalId)) return #conflict;
     EmbeddedIdentityRoleStore.lookupRole(identityRoleStore, logicalId);
+  };
+
+  /// Fixed treasury-only immutable payment-operation write. This is not a
+  /// signer, transfer, activation, journal, or generic storage endpoint.
+  public shared ({ caller }) func writeTreasuryPaymentOperation(
+    input : PaymentOperation.Input
+  ) : async EmbeddedPaymentOperationStore.WriteResult {
+    if (not treasuryDataAllowed(caller, input.logicalId)) return #blocked;
+    EmbeddedPaymentOperationStore.write(_paymentOperationStore, input);
+  };
+
+  /// Unauthorized callers receive `#conflict`, never an existence signal.
+  public shared ({ caller }) func lookupTreasuryPaymentOperation(
+    logicalId : Text
+  ) : async EmbeddedPaymentOperationStore.Observation {
+    if (not treasuryDataAllowed(caller, logicalId)) return #conflict;
+    EmbeddedPaymentOperationStore.lookup(_paymentOperationStore, logicalId);
   };
 
   // These collection-specific methods are intentionally not a generic

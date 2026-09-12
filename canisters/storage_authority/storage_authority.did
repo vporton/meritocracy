@@ -26,6 +26,9 @@ type _anon_class_17_1 =
    /// Fixed recovery lookup for role assignments. It returns only the
    /// journaled version/hash tuple, never role or principal data.
    lookupCoreRoleAssignment: (logicalId: text) -> (RoleObservation);
+   /// Fixed tuple-only recovery lookup for payment-operation intents. An
+   /// unauthorized caller receives `conflict`, never an existence signal.
+   lookupTreasuryPaymentOperation: (logicalId: text) -> (PaymentOperationObservation);
    migrationEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
    migrationEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
    migrationReceiptReadProbe: (logicalId: text) -> (ProbeResult);
@@ -56,6 +59,9 @@ type _anon_class_17_1 =
    /// Fixed role-assignment write. Role revocation remains a later immutable
    /// logical record; this endpoint cannot overwrite an existing assignment.
    writeCoreRoleAssignment: (input: RoleAssignmentInput) -> (WriteResult);
+   /// Fixed treasury-only immutable payment-operation write. This is not a
+   /// signer, transfer, activation, journal, or generic storage endpoint.
+   writeTreasuryPaymentOperation: (input: PaymentOperationInput) -> (WriteResult);
  };
 type WriteResult =
  variant {
@@ -71,6 +77,25 @@ type RoleAssignmentInput =
    logicalId: text;
    "principal": principal;
    role: text;
+ };
+type PaymentOperationInput =
+ record {
+   amountBaseUnits: nat;
+   assetDecimals: nat8;
+   assetId: text;
+   contentHash: blob;
+   desiredVersion: nat64;
+   destinationHash: blob;
+   logicalId: text;
+   obligationId: text;
+   operationId: text;
+ };
+type PaymentOperationObservation =
+ variant {
+   absent;
+   conflict;
+   present: record { contentHash: blob; version: nat64 };
+   storageError;
  };
 type ProbeResult =
  variant {

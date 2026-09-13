@@ -1,0 +1,49 @@
+name: M1 workflow completion-receipt PocketIC proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/storage_authority/**'
+      - 'canisters/workflow/CompletionReceiptIntent.mo'
+      - 'canisters/shared/CycleReserve.mo'
+      - 'canisters/shared/MutationRecovery.mo'
+      - 'fixtures/storage_authority/WorkflowCompletionReceiptLostReply.mo'
+      - 'scripts/icp/*workflow-completion-receipt*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-workflow-completion-receipt-lost-reply.yml'
+  workflow_dispatch:
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-workflow-completion-receipt-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build fixtures
+        run: |
+          set -o pipefail
+          mkdir -p .mops/m1-workflow-completion-receipt-proof
+          scripts/icp/build-workflow-completion-receipt-lost-reply-proof.sh 2>&1 | tee .mops/m1-workflow-completion-receipt-proof/build.log
+      - name: Run synthetic recovery proof
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-workflow-completion-receipt-lost-reply-proof.sh 2>&1 | tee .mops/m1-workflow-completion-receipt-proof/proof.log
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-workflow-completion-receipt-${{ github.run_id }}
+          path: .mops/m1-workflow-completion-receipt-proof
+          if-no-files-found: warn

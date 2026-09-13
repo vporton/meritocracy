@@ -4,6 +4,8 @@ Last updated: 2026-09-13
 
 Status: `M1_EMPIRICAL_SCHEMA_AND_STORAGE_DESIGN` — IN_PROGRESS. G1 is approved and the AGPL-3.0-only license/metadata change is complete. M1 now includes an un-deployed, non-authoritative storage-authority RBAC scaffold; it has no ZenDB persistence, target data, deployment, or legacy behavior change.
 
+Latest M1 evidence (2026-09-13): the workflow completion-receipt synthetic recovery fixture, isolated build/run scripts, and path-filtered PocketIC CI workflow are implemented. It journals only a bounded immutable tuple, proves low-cycle absence/no-input retry, lost-reply/duplicate reconciliation, interruption repair, outsider denial, and EOP upgrade preservation in a disposable fixture. Linked-Wasm/PocketIC execution remains CI evidence; no target workflow behavior, target data, deployment, or authority claim is made.
+
 ## Status vocabulary
 
 - `NOT_STARTED`: no implementation exists.

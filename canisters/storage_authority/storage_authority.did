@@ -1,4 +1,4 @@
-type _anon_class_19_1 = 
+type _anon_class_21_1 =
  service {
    aiArtifactReadProbe: (logicalId: text) -> (ProbeResult);
    aiArtifactWriteProbe: (logicalId: text) -> (ProbeResult);
@@ -32,6 +32,9 @@ type _anon_class_19_1 =
    lookupMigrationReceipt: (logicalId: text) -> (Observation);
    /// Unauthorized callers receive `#conflict`, never an existence signal.
    lookupTreasuryPaymentOperation: (logicalId: text) -> (Observation);
+   /// Unauthorized callers receive conflict rather than a receipt-existence
+   /// signal; successful recovery exposes only version/hash.
+   lookupWorkflowCompletionReceipt: (logicalId: text) -> (Observation);
    migrationEvidenceReadProbe: (logicalId: text) -> (ProbeResult);
    migrationEvidenceWriteProbe: (logicalId: text) -> (ProbeResult);
    migrationReceiptReadProbe: (logicalId: text) -> (ProbeResult);
@@ -64,10 +67,13 @@ type _anon_class_19_1 =
    writeCoreRoleAssignment: (input: RoleAssignmentInput) -> (WriteResult);
    /// Fixed archive-only receipt write. It is not an importer: callers cannot
    /// supply source rows, credentials, a collection name, or an arbitrary key.
-   writeMigrationReceipt: (input: Input__1) -> (WriteResult);
+   writeMigrationReceipt: (input: Input__2) -> (WriteResult);
    /// Fixed treasury-only immutable payment-operation write. This is not a
    /// signer, transfer, activation, journal, or generic storage endpoint.
-   writeTreasuryPaymentOperation: (input: Input) -> (WriteResult);
+   writeTreasuryPaymentOperation: (input: Input__1) -> (WriteResult);
+   /// Fixed workflow-only completion receipt write. This neither receives nor
+   /// stores workflow payloads, task inputs, provider responses, or callers.
+   writeWorkflowCompletionReceipt: (input: Input) -> (WriteResult);
  };
 type WriteResult = 
  variant {
@@ -135,7 +141,7 @@ type Observation =
             };
    storageError;
  };
-type Input__1 = 
+type Input__2 =
  record {
    chunk: nat64;
    contentHash: blob;
@@ -146,7 +152,7 @@ type Input__1 =
    rowCount: nat32;
    sourceTable: text;
  };
-type Input = 
+type Input__1 =
  record {
    amountBaseUnits: nat;
    assetDecimals: nat8;
@@ -157,6 +163,14 @@ type Input =
    logicalId: text;
    obligationId: text;
    operationId: text;
+ };
+type Input =
+ record {
+   contentHash: blob;
+   cycleId: text;
+   desiredVersion: nat64;
+   logicalId: text;
+   operationName: text;
  };
 type Config = 
  record {
@@ -183,4 +197,4 @@ type BindingObservation =
 /// has no generic ZenDB, grant-management, collection, action, document-ID,
 /// or filter API. The fixed identity/role methods below remain un-deployed
 /// proof work and are not an authoritative-store claim.
-service : (initialConfig: Config) -> _anon_class_19_1
+service : (initialConfig: Config) -> _anon_class_21_1

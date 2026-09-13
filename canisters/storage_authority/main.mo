@@ -5,9 +5,11 @@ import StorageCatalog "../shared/StorageCatalog";
 import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
 import EmbeddedPaymentOperationStore "EmbeddedPaymentOperationStore";
 import EmbeddedMigrationReceiptStore "EmbeddedMigrationReceiptStore";
+import EmbeddedWorkflowCompletionReceiptStore "EmbeddedWorkflowCompletionReceiptStore";
 import IdentityRole "../shared/IdentityRoleRecovery";
 import PaymentOperation "../treasury/PaymentOperationIntent";
 import MigrationReceipt "../archive_router/MigrationReceiptIntent";
+import WorkflowCompletionReceipt "../workflow/CompletionReceiptIntent";
 import Policy "StorageAuthorityPolicy";
 
 /// M1 storage-authority boundary scaffold.
@@ -89,6 +91,22 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   };
   migrationReceiptCollectionInitialized := true;
 
+  // The workflow completion receipt is a fixed workflow-principal-only
+  // collection. It contains no execution payload or task state, only the
+  // immutable completion identity and recovery tuple.
+  var workflowCompletionReceiptCollectionInitialized = false;
+  transient let _workflowCompletionReceiptStore = switch (
+    if (workflowCompletionReceiptCollectionInitialized) {
+      EmbeddedWorkflowCompletionReceiptStore.reopen(embeddedStore);
+    } else {
+      EmbeddedWorkflowCompletionReceiptStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null { Runtime.trap("unable to open fixed workflow-completion-receipt collection") };
+  };
+  workflowCompletionReceiptCollectionInitialized := true;
+
   public type PolicyAudit = {
     core : Principal;
     workflow : Principal;
@@ -122,6 +140,13 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
 
   func archiveDataAllowed(caller : Principal, logicalId : Text) : Bool {
     switch (Policy.authorizeData(config, caller, #archive, logicalId)) {
+      case (#allowed) true;
+      case (_) false;
+    };
+  };
+
+  func workflowDataAllowed(caller : Principal, logicalId : Text) : Bool {
+    switch (Policy.authorizeData(config, caller, #workflow, logicalId)) {
       case (#allowed) true;
       case (_) false;
     };
@@ -198,6 +223,24 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   ) : async EmbeddedMigrationReceiptStore.Observation {
     if (not archiveDataAllowed(caller, logicalId)) return #conflict;
     EmbeddedMigrationReceiptStore.lookup(_migrationReceiptStore, logicalId);
+  };
+
+  /// Fixed workflow-only completion receipt write. This neither receives nor
+  /// stores workflow payloads, task inputs, provider responses, or callers.
+  public shared ({ caller }) func writeWorkflowCompletionReceipt(
+    input : WorkflowCompletionReceipt.Input
+  ) : async EmbeddedWorkflowCompletionReceiptStore.WriteResult {
+    if (not workflowDataAllowed(caller, input.logicalId)) return #blocked;
+    EmbeddedWorkflowCompletionReceiptStore.write(_workflowCompletionReceiptStore, input);
+  };
+
+  /// Unauthorized callers receive conflict rather than a receipt-existence
+  /// signal; successful recovery exposes only version/hash.
+  public shared ({ caller }) func lookupWorkflowCompletionReceipt(
+    logicalId : Text
+  ) : async EmbeddedWorkflowCompletionReceiptStore.Observation {
+    if (not workflowDataAllowed(caller, logicalId)) return #conflict;
+    EmbeddedWorkflowCompletionReceiptStore.lookup(_workflowCompletionReceiptStore, logicalId);
   };
 
   // These collection-specific methods are intentionally not a generic

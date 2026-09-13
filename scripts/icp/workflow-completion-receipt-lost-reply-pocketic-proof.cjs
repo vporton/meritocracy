@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Synthetic workflow/authority proof only: no DFX, identity, wallet, network,
 // workflow payload, provider response, target data, or deployment.
-const path = require("node:path"), fs = require("node:fs"), crypto = require("node:crypto");
+const path = require("node:path"), fs = require("node:fs"), crypto = require("node:crypto"), os = require("node:os");
+const { spawn } = require("node:child_process");
 const root = path.resolve(__dirname, "../../node_modules/ic-mops/node_modules");
-const { PocketIc, PocketIcServer } = require(path.join(root, "pic-js-mops"));
+const { PocketIc } = require(path.join(root, "pic-js-mops"));
 const { IDL } = require(path.join(root, "@icp-sdk/core/lib/cjs/candid/index.js"));
 const { Principal } = require(path.join(root, "@icp-sdk/core/lib/cjs/principal/index.js"));
 const [bin, authorityWasm, workflowWasm] = process.argv.slice(2);
@@ -19,11 +20,38 @@ const workflowIdl = ({IDL:C}) => C.Service({ writeThenLoseReply:C.Func([Input],[
 const Chunk=IDL.Record({hash:Hash}), Upload=IDL.Record({canister_id:P,chunk:Hash});
 const Install=IDL.Record({arg:Hash,chunk_hashes_list:IDL.Vec(Chunk),mode:IDL.Variant({install:IDL.Null,upgrade:IDL.Opt(IDL.Record({skip_pre_upgrade:IDL.Opt(IDL.Bool),wasm_memory_persistence:IDL.Opt(IDL.Variant({keep:IDL.Null,replace:IDL.Null}))}))}),sender_canister_version:IDL.Opt(IDL.Nat64),store_canister:IDL.Opt(P),canister_id:P,target_canister:P,wasm_module_hash:Hash});
 const management=Principal.fromText("aaaaa-aa"), lowCycles=900_000_000_000n;
+const startupTimeoutMs = Number.parseInt(process.env.M1_POCKET_IC_STARTUP_TIMEOUT_MS || "120000", 10);
+if (!Number.isSafeInteger(startupTimeoutMs) || startupTimeoutMs < 30_000 || startupTimeoutMs > 120_000) throw new Error("M1_POCKET_IC_STARTUP_TIMEOUT_MS must be an integer between 30000 and 120000");
 function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
 async function reject(f,label) { try { await f(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
 async function update(pic,sender,method,type,value) { return pic.client.updateCall({canisterId:management,sender,method,payload:new Uint8Array(IDL.encode([type],[value]))}); }
+async function startPocketIc(binPath) {
+  const runtimeDir = fs.mkdtempSync(path.join(os.tmpdir(), "m1-workflow-receipt-pocketic-server-"));
+  const portFile = path.join(runtimeDir, "port");
+  const process = spawn(binPath, ["--port-file", portFile, "--ttl", "60"], { stdio: ["ignore", "ignore", "ignore"] });
+  const deadline = Date.now() + startupTimeoutMs;
+  try {
+    while (Date.now() < deadline) {
+      try {
+        const port = Number.parseInt(fs.readFileSync(portFile, "utf8"), 10);
+        if (Number.isInteger(port) && port > 0 && port <= 65535) return {
+          url: `http://127.0.0.1:${port}`,
+          async stop() { if (!process.killed) process.kill(); await new Promise((resolve) => process.once("exit", resolve)); fs.rmSync(runtimeDir, { recursive: true, force: true }); },
+        };
+      } catch (error) { if (error.code !== "ENOENT") throw error; }
+      if (process.exitCode !== null) throw new Error(`PocketIC exited before startup with status ${process.exitCode}`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`PocketIC did not publish its port within ${startupTimeoutMs}ms`);
+  } catch (error) {
+    if (!process.killed) process.kill();
+    await new Promise((resolve) => process.once("exit", resolve));
+    fs.rmSync(runtimeDir, { recursive: true, force: true });
+    throw error;
+  }
+}
 async function install(pic,sender,id,file,arg,mode={install:null}) { const wasm=fs.readFileSync(file), hashes=[]; for(let o=0;o<wasm.length;o+=1_000_000){const chunk=new Uint8Array(wasm.subarray(o,Math.min(o+1_000_000,wasm.length)));await update(pic,sender,"upload_chunk",Upload,{canister_id:id,chunk});hashes.push({hash:new Uint8Array(crypto.createHash("sha256").update(chunk).digest())});} await update(pic,sender,"install_chunked_code",Install,{arg:new Uint8Array(arg),chunk_hashes_list:hashes,mode,sender_canister_version:[],store_canister:[],canister_id:id,target_canister:id,wasm_module_hash:new Uint8Array(crypto.createHash("sha256").update(wasm).digest())}); }
-async function main() { const server=await PocketIcServer.start({binPath:bin,ttl:60,showRuntimeLogs:false,showCanisterLogs:false}), pic=await PocketIc.create(server.getUrl()); try {
+async function main() { const server=await startPocketIc(bin), pic=await PocketIc.create(server.url); try {
   const installer=Principal.fromUint8Array(Uint8Array.of(6,1)), operator=Principal.fromUint8Array(Uint8Array.of(6,2)), outsider=Principal.fromUint8Array(Uint8Array.of(6,3));
   const authorityId=await pic.createCanister({sender:installer,controllers:[installer]}), workflowId=await pic.createCanister({sender:installer,controllers:[installer],cycles:lowCycles});
   const config={core:Principal.fromUint8Array(Uint8Array.of(6,4)),workflow:workflowId,treasury:Principal.fromUint8Array(Uint8Array.of(6,5)),archive:Principal.fromUint8Array(Uint8Array.of(6,6)),evidence:Principal.fromUint8Array(Uint8Array.of(6,7)),governance:Principal.fromUint8Array(Uint8Array.of(6,8))};

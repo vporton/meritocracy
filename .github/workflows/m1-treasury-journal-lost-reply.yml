@@ -34,6 +34,9 @@ jobs:
       - name: Execute isolated synthetic recovery proof
         run: |
           timeout 15m scripts/icp/run-treasury-journal-lost-reply-proof.sh 2>&1 | tee .mops/m1-treasury-journal-lost-reply-proof/proof.log
+      - name: Execute isolated synthetic capacity proof
+        run: |
+          timeout 15m scripts/icp/run-treasury-journal-capacity-proof.sh 2>&1 | tee .mops/m1-treasury-journal-lost-reply-proof/capacity.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

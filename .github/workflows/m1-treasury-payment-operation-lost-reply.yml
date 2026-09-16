@@ -10,7 +10,7 @@ on:
       - 'fixtures/storage_authority/TreasuryPaymentOperationLostReply.mo'
       - 'fixtures/storage_authority/PaymentOperationArchiveSink.mo'
       - 'fixtures/storage_authority/PaymentOperationTransferSink.mo'
-      - 'scripts/icp/*treasury-payment-operation-lost-reply*'
+      - 'scripts/icp/*treasury-payment-operation-*'
       - 'mops.toml'
       - 'mops.lock'
       - '.github/workflows/m1-treasury-payment-operation-lost-reply.yml'
@@ -47,6 +47,11 @@ jobs:
         run: |
           set -o pipefail
           timeout 15m scripts/icp/run-treasury-payment-operation-lost-reply-proof.sh 2>&1 | tee .mops/m1-treasury-payment-operation-lost-reply-proof/proof.log
+      - name: Run bounded fixed-adapter capacity proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-treasury-payment-operation-capacity-proof.sh 2>&1 | tee .mops/m1-treasury-payment-operation-lost-reply-proof/capacity.log
       - name: Retain proof artifacts and logs
         if: always()
         uses: actions/upload-artifact@v4

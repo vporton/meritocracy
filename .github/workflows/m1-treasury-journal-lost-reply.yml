@@ -5,6 +5,8 @@ on:
     paths:
       - 'canisters/storage_authority/**'
       - 'canisters/treasury/TreasuryJournalIntent.mo'
+      - 'canisters/treasury/TreasuryJournalBalancedSet.mo'
+      - 'canisters/treasury/TreasuryJournalBalancedSetSaga.mo'
       - 'canisters/shared/**'
       - 'fixtures/storage_authority/TreasuryJournalLostReply.mo'
       - 'scripts/icp/*treasury-journal-*'

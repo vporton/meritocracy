@@ -4,10 +4,12 @@ import ZenDB "mo:zendb";
 import StorageCatalog "../shared/StorageCatalog";
 import EmbeddedIdentityRoleStore "EmbeddedIdentityRoleStore";
 import EmbeddedPaymentOperationStore "EmbeddedPaymentOperationStore";
+import EmbeddedTreasuryJournalStore "EmbeddedTreasuryJournalStore";
 import EmbeddedMigrationReceiptStore "EmbeddedMigrationReceiptStore";
 import EmbeddedWorkflowCompletionReceiptStore "EmbeddedWorkflowCompletionReceiptStore";
 import IdentityRole "../shared/IdentityRoleRecovery";
 import PaymentOperation "../treasury/PaymentOperationIntent";
+import TreasuryJournal "../treasury/TreasuryJournalIntent";
 import MigrationReceipt "../archive_router/MigrationReceiptIntent";
 import WorkflowCompletionReceipt "../workflow/CompletionReceiptIntent";
 import Policy "StorageAuthorityPolicy";
@@ -74,6 +76,22 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
     };
   };
   paymentOperationCollectionInitialized := true;
+
+  // Journal postings are immutable entries, never an authoritative mutable
+  // balance. A future balanced-set saga must separately prove its activation
+  // and reconciliation protocol before this private collection is authoritative.
+  var treasuryJournalCollectionInitialized = false;
+  transient let _treasuryJournalStore = switch (
+    if (treasuryJournalCollectionInitialized) {
+      EmbeddedTreasuryJournalStore.reopen(embeddedStore);
+    } else {
+      EmbeddedTreasuryJournalStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null { Runtime.trap("unable to open fixed treasury-journal collection") };
+  };
+  treasuryJournalCollectionInitialized := true;
 
   // The import receipt collection is fixed to the configured archive actor.
   // It stores only bounded receipt metadata and hashes; there is no importer,
@@ -205,6 +223,24 @@ shared ({ caller = installer }) persistent actor class (initialConfig : Policy.C
   ) : async EmbeddedPaymentOperationStore.Observation {
     if (not treasuryDataAllowed(caller, logicalId)) return #conflict;
     EmbeddedPaymentOperationStore.lookup(_paymentOperationStore, logicalId);
+  };
+
+  /// Fixed treasury-only immutable journal-entry write. It neither computes a
+  /// balance nor accepts a destination, signer, transaction, or chain receipt.
+  public shared ({ caller }) func writeTreasuryJournalEntry(
+    input : TreasuryJournal.Input
+  ) : async EmbeddedTreasuryJournalStore.WriteResult {
+    if (not treasuryDataAllowed(caller, input.logicalId)) return #blocked;
+    EmbeddedTreasuryJournalStore.write(_treasuryJournalStore, input);
+  };
+
+  /// Unauthorized callers receive conflict rather than an existence signal;
+  /// authorized recovery receives only the immutable version/hash tuple.
+  public shared ({ caller }) func lookupTreasuryJournalEntry(
+    logicalId : Text
+  ) : async EmbeddedTreasuryJournalStore.Observation {
+    if (not treasuryDataAllowed(caller, logicalId)) return #conflict;
+    EmbeddedTreasuryJournalStore.lookup(_treasuryJournalStore, logicalId);
   };
 
   /// Fixed archive-only receipt write. It is not an importer: callers cannot

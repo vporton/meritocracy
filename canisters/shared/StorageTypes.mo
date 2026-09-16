@@ -102,6 +102,18 @@ module {
     status : { #prepared; #submitted; #ambiguous; #confirmed; #failed; #paused };
   };
 
+  /// An immutable double-entry posting. A future bounded saga records a
+  /// balanced set of these entries; no mutable balance field is authoritative.
+  public type TreasuryJournalEntryV1 = {
+    envelope : Envelope;
+    journalSequence : Nat64;
+    operationId : LogicalId;
+    accountId : Text;
+    asset : AssetId;
+    direction : { #debit; #credit };
+    amountBaseUnits : Nat;
+  };
+
   public type MigrationReceiptV1 = {
     envelope : Envelope;
     migrationId : Text;

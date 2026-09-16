@@ -143,6 +143,16 @@ function safeStatusHistogramQuery(schema: string, table: string, column: string,
   return `SELECT CASE WHEN ${field} IS NULL THEN '<null>' WHEN ${field} = ANY($1::text[]) THEN ${field} ELSE '<other>' END AS bucket, count(*)::text AS count FROM ${qualified} GROUP BY 1 ORDER BY 1`;
 }
 
+/**
+ * `pg_sequences` exposes `sequencename` (not the information_schema spelling
+ * `sequence_name`). Keep this query separate so its catalog contract is
+ * regression-tested without connecting to a database.
+ */
+export function sequenceInventoryQuery(): string {
+  return `SELECT sequencename AS sequence_name, last_value::text, start_value::text, increment_by::text
+    FROM pg_sequences WHERE schemaname = $1 ORDER BY sequencename`;
+}
+
 function assertExpectedTables(rows: Array<{ table_name: string }>): void {
   const actual = rows.map((row) => row.table_name).sort();
   const expected = [...EXPECTED_TABLES].sort();
@@ -276,8 +286,7 @@ export async function collectInventory(client: ReadonlySqlClient, schema = 'publ
       }
     }
 
-    const sequences = await client.query(`SELECT sequence_name, last_value::text, start_value::text, increment_by::text
-      FROM pg_sequences WHERE schemaname = $1 ORDER BY sequence_name`, [schema]);
+    const sequences = await client.query(sequenceInventoryQuery(), [schema]);
     const { database_name: databaseName, server_address: serverAddress, server_port: serverPort, ...safeCapability } = capability as Record<string, unknown>;
     const report = {
       format: 'meritocracy-postgres-inventory-v1',

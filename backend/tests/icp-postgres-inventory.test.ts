@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { EXPECTED_TABLES, buildTableStatisticsQuery, inventoryFailureCode, isRedactedColumn } from '../scripts/icp-postgres-inventory.js';
+import { EXPECTED_TABLES, buildTableStatisticsQuery, inventoryFailureCode, isRedactedColumn, sequenceInventoryQuery } from '../scripts/icp-postgres-inventory.js';
 
 test('inventory covers all 22 known physical tables', () => {
   assert.equal(EXPECTED_TABLES.length, 22);
@@ -44,6 +44,13 @@ test('database endpoint metadata is hashed rather than retained in the report ca
 
 test('identifier validation rejects SQL injection-shaped metadata', () => {
   assert.throws(() => buildTableStatisticsQuery('public', 'users; DROP TABLE users', []), /identifier/);
+});
+
+test('sequence inventory uses PostgreSQL pg_sequences column names', () => {
+  const sql = sequenceInventoryQuery();
+  assert.match(sql, /sequencename AS sequence_name/);
+  assert.match(sql, /ORDER BY sequencename/);
+  assert.doesNotMatch(sql, /SELECT sequence_name,/);
 });
 
 test('inventory connection failures retain only a safe operational category', () => {

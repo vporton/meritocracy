@@ -41,6 +41,10 @@ jobs:
         run: |
           set -o pipefail
           timeout 15m scripts/icp/run-workflow-completion-receipt-lost-reply-proof.sh 2>&1 | tee .mops/m1-workflow-completion-receipt-proof/proof.log
+      - name: Run bounded adapter capacity proof
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-workflow-completion-receipt-capacity-proof.sh 2>&1 | tee .mops/m1-workflow-completion-receipt-proof/capacity.log
       - if: always()
         uses: actions/upload-artifact@v4
         with:

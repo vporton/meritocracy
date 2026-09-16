@@ -37,6 +37,11 @@ jobs:
         run: |
           set -o pipefail
           timeout 15m scripts/icp/run-core-identity-role-lost-reply-proof.sh 2>&1 | tee .mops/m1-core-identity-role-lost-reply-proof/proof.log
+      - name: Run bounded adapter capacity proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-core-identity-role-capacity-proof.sh 2>&1 | tee .mops/m1-core-identity-role-lost-reply-proof/capacity.log
       - name: Retain proof artifacts and logs
         if: always()
         uses: actions/upload-artifact@v4

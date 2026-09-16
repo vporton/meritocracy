@@ -1,0 +1,42 @@
+name: M1 treasury journal lost-reply proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/storage_authority/**'
+      - 'canisters/treasury/TreasuryJournalIntent.mo'
+      - 'canisters/shared/**'
+      - 'fixtures/storage_authority/TreasuryJournalLostReply.mo'
+      - 'scripts/icp/*treasury-journal-*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-treasury-journal-lost-reply.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - run: npm ci
+      - name: Build disposable proof artifacts
+        run: |
+          mkdir -p .mops/m1-treasury-journal-lost-reply-proof
+          scripts/icp/build-treasury-journal-lost-reply-proof.sh 2>&1 | tee .mops/m1-treasury-journal-lost-reply-proof/build.log
+      - name: Execute isolated synthetic recovery proof
+        run: |
+          timeout 15m scripts/icp/run-treasury-journal-lost-reply-proof.sh 2>&1 | tee .mops/m1-treasury-journal-lost-reply-proof/proof.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m1-treasury-journal-lost-reply-${{ github.run_id }}
+          path: .mops/m1-treasury-journal-lost-reply-proof
+          retention-days: 14

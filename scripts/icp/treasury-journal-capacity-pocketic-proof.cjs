@@ -18,7 +18,16 @@ const Hash = IDL.Vec(IDL.Nat8), P = IDL.Principal;
 const Config = IDL.Record({ core: P, workflow: P, treasury: P, archive: P, evidence: P, governance: P });
 const Input = IDL.Record({ logicalId: IDL.Text, journalSequence: IDL.Nat64, operationId: IDL.Text, accountId: IDL.Text, assetId: IDL.Text, direction: IDL.Variant({ debit: IDL.Null, credit: IDL.Null }), amountBaseUnits: IDL.Nat, assetDecimals: IDL.Nat8, desiredVersion: IDL.Nat64, contentHash: Hash });
 const Recovery = IDL.Variant({ acknowledge: IDL.Null, retryIdentical: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
-const treasuryIdl = ({ IDL: C }) => C.Service({ writeThenLoseReply: C.Func([Input], [], []), reconcileLostReply: C.Func([], [Recovery], []) });
+const BalancedSet = IDL.Record({ logicalId: IDL.Text, entries: IDL.Vec(Input) });
+const Phase = IDL.Variant({ pending: IDL.Null, active: IDL.Null, conflict: IDL.Null, blocked: IDL.Null });
+const treasuryIdl = ({ IDL: C }) => C.Service({
+  writeThenLoseReply: C.Func([Input], [], []),
+  reconcileLostReply: C.Func([], [Recovery], []),
+  prepareBalancedSet: C.Func([BalancedSet], [], []),
+  writeBalancedEntryThenLoseReply: C.Func([C.Nat], [], []),
+  reconcileBalancedEntry: C.Func([C.Nat], [Recovery], []),
+  balancedPhase: C.Func([], [Phase], []),
+});
 const Chunk = IDL.Record({ hash: Hash }), Upload = IDL.Record({ canister_id: P, chunk: Hash });
 const Install = IDL.Record({ arg: Hash, chunk_hashes_list: IDL.Vec(Chunk), mode: IDL.Variant({ install: IDL.Null }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(P), canister_id: P, target_canister: P, wasm_module_hash: Hash });
 const management = Principal.fromText("aaaaa-aa");
@@ -40,6 +49,21 @@ async function install(pic, sender, id, file, arg) {
 }
 const hash = ordinal => Uint8Array.from({ length: 32 }, (_, index) => (ordinal + index) % 256);
 function entry(name, ordinal) { return { logicalId: `treasury-journal:v1:capacity:${name}:${ordinal}`, journalSequence: BigInt(ordinal + 1), operationId: `operation:capacity:${name}:${ordinal}`, accountId: "treasury:synthetic", assetId: "ICP", direction: { debit: null }, amountBaseUnits: BigInt(ordinal + 1), assetDecimals: 8, desiredVersion: 1n, contentHash: hash(ordinal) }; }
+function balancedEntry(name, ordinal) {
+  const debit = ordinal < 8;
+  return {
+    logicalId: `treasury-journal:v1:capacity-balanced:${name}:${ordinal}`,
+    journalSequence: BigInt(1_000_000 + ordinal),
+    operationId: `operation:capacity-balanced:${name}`,
+    accountId: debit ? "treasury:synthetic" : "liability:synthetic",
+    assetId: "ICP",
+    direction: debit ? { debit: null } : { credit: null },
+    amountBaseUnits: 1n,
+    assetDecimals: 8,
+    desiredVersion: 1n,
+    contentHash: hash(128 + ordinal),
+  };
+}
 async function scenario(pic, installer, operator, name, count) {
   const authorityId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 20_000_000_000_000n });
   const treasuryId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 20_000_000_000_000n });
@@ -50,12 +74,23 @@ async function scenario(pic, installer, operator, name, count) {
   const invalid = { ...entry(name, 999), logicalId: "x".repeat(513) };
   await reject(() => treasury.writeThenLoseReply(invalid), `${name} over-limit input is rejected before storage`);
   expect(await treasury.reconcileLostReply(), "blocked", `${name} over-limit input creates no journal`);
+  const tooLargeSet = { logicalId: `treasury-journal-set:v1:capacity:${name}:too-large`, entries: Array.from({ length: 17 }, (_, ordinal) => balancedEntry(name, ordinal)) };
+  await reject(() => treasury.prepareBalancedSet(tooLargeSet), `${name} 17-entry balanced set is rejected before retention or storage`);
+  expect(await treasury.balancedPhase(), "blocked", `${name} rejected balanced set creates no durable set`);
   for (let ordinal = 0; ordinal < count; ordinal += 1) { const input = entry(name, ordinal); encodedInputBytes += IDL.encode([Input], [input]).byteLength; await reject(() => treasury.writeThenLoseReply(input), `${name} write ${ordinal} deliberately loses reply`); expect(await treasury.reconcileLostReply(), "acknowledge", `${name} write ${ordinal} exact tuple reconciles`); }
+  const set = { logicalId: `treasury-journal-set:v1:capacity:${name}:maximum`, entries: Array.from({ length: 16 }, (_, ordinal) => balancedEntry(name, ordinal)) };
+  encodedInputBytes += IDL.encode([BalancedSet], [set]).byteLength;
+  await treasury.prepareBalancedSet(set);
+  for (let ordinal = 0; ordinal < set.entries.length; ordinal += 1) {
+    await reject(() => treasury.writeBalancedEntryThenLoseReply(BigInt(ordinal)), `${name} retained balanced entry ${ordinal} deliberately loses reply`);
+    expect(await treasury.reconcileBalancedEntry(BigInt(ordinal)), "acknowledge", `${name} retained balanced entry ${ordinal} exact tuple reconciles`);
+  }
+  expect(await treasury.balancedPhase(), "active", `${name} complete maximum balanced set alone becomes active`);
   const after = { authority: await pic.getCyclesBalance(authorityId), treasury: await pic.getCyclesBalance(treasuryId) };
-  return { name, writes: count, lookups: count * 2, encodedInputBytes, authorityCycleDelta: (before.authority - after.authority).toString(), treasuryCycleDelta: (before.treasury - after.treasury).toString() };
+  return { name, writes: count + 16, lookups: (count + 16) * 2, balancedSetEntries: 16, encodedInputBytes, authorityCycleDelta: (before.authority - after.authority).toString(), treasuryCycleDelta: (before.treasury - after.treasury).toString() };
 }
 async function main() {
   const server = await startPocketIc(bin), pic = await PocketIc.create(server.url);
-  try { const installer = Principal.fromUint8Array(Uint8Array.of(6, 31)), operator = Principal.fromUint8Array(Uint8Array.of(6, 32)); const report = { schemaVersion: 1, component: "M1 fixed treasury-journal adapter capacity proof", emulator: "PocketIC synthetic-only", scenarios: [await scenario(pic, installer, operator, "expected", 16), await scenario(pic, installer, operator, "two_x", 32)], rejection: { logicalIdBytes: 513, result: "rejected before journal or storage in each scenario" }, limitations: ["Cycle deltas are emulator measurements, not a mainnet instruction or production-cycle budget.", "This covers only the fixed treasury-journal adapter; other collection-specific capacity proofs remain required before G2."] }; fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600, flag: "wx" }); console.log(JSON.stringify(report)); } finally { await pic.tearDown(); await server.stop(); }
+  try { const installer = Principal.fromUint8Array(Uint8Array.of(6, 31)), operator = Principal.fromUint8Array(Uint8Array.of(6, 32)); const report = { schemaVersion: 1, component: "M1 fixed treasury-journal and bounded balanced-set capacity proof", emulator: "PocketIC synthetic-only", scenarios: [await scenario(pic, installer, operator, "expected", 16), await scenario(pic, installer, operator, "two_x", 32)], rejection: { logicalIdBytes: 513, balancedSetEntries: 17, result: "rejected before journal, set retention, or storage in each scenario" }, limitations: ["Cycle deltas are emulator measurements, not a mainnet instruction or production-cycle budget.", "Each scenario also writes and exactly reconciles one maximum 16-entry immutable balanced set; the 17-entry failure limit is enforced before durable set retention.", "This covers only the fixed treasury-journal adapter and its synthetic balanced-set fixture; other collection-specific capacity proofs remain required before G2."] }; fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600, flag: "wx" }); console.log(JSON.stringify(report)); } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch(error => { console.error(error.stack || error.message); process.exitCode = 1; });

@@ -127,6 +127,17 @@ shared ({ caller = installer }) persistent actor class (
     };
   };
 
+  // The complete set and this member's remote-write phase are retained before
+  // this deliberate interruption. Recovery paths accept no posting bytes.
+  public shared ({ caller }) func journalBalancedEntryThenTrapBeforeAwait(index : Nat) : async () {
+    onlyOperator(caller);
+    let ?saved = balancedJournal else throw Error.reject("missing synthetic balanced journal");
+    let started = BalancedSaga.startWrite(saved, index);
+    if (started == saved) throw Error.reject("balanced entry is not writable");
+    balancedJournal := ?started;
+    throw Error.reject("deliberately interrupted before balanced journal authority call");
+  };
+
   // The index is bounded by the retained set (2--16 entries); there is no
   // entry argument. Every actual authority write therefore uses only bytes
   // journaled by `prepareBalancedSet` before this await.
@@ -171,6 +182,33 @@ shared ({ caller = installer }) persistent actor class (
     };
     balancedJournal := ?BalancedSaga.lostReply(started, index);
     throw Error.reject("deliberately lost synthetic balanced journal retry reply");
+  };
+
+  // Operator repair is index-only: after an exact absent observation it can
+  // submit only the already retained immutable tuple, never replacement input.
+  public shared ({ caller }) func repairBalancedEntry(index : Nat) : async MutationRecovery.RecoveryDecision {
+    onlyOperator(caller);
+    let ?saved = balancedJournal else return #blocked;
+    if (index >= saved.entries.size()) return #blocked;
+    let ?remote = observation(await authority.lookupTreasuryJournalEntry(saved.entries[index].input.logicalId)) else return #blocked;
+    let (reconciled, decision) = BalancedSaga.reconcile(saved, index, remote);
+    switch (decision) {
+      case (#retryIdentical) {
+        let ?retained = BalancedSaga.retryInput(reconciled, index) else return #blocked;
+        let started = BalancedSaga.startWrite(reconciled, index);
+        balancedJournal := ?started;
+        await checkpointJournal(retained.logicalId);
+        requireCycleReserve();
+        switch (await authority.writeTreasuryJournalEntry(retained)) {
+          case (#acknowledged) {
+            balancedJournal := ?BalancedSaga.lostReply(started, index);
+            #retryIdentical;
+          };
+          case (_) { balancedJournal := ?reconciled; #blocked };
+        };
+      };
+      case (_) { balancedJournal := ?reconciled; decision };
+    };
   };
 
   public shared ({ caller }) func balancedPhase() : async BalancedSaga.Phase {

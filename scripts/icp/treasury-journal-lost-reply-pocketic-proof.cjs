@@ -1,27 +1,449 @@
 #!/usr/bin/env node
 // Synthetic M1 recovery proof: no account balance, signer, destination,
 // transfer, asset movement, DFX identity, wallet, or external network.
-const path = require("node:path"), fs = require("node:fs"), crypto = require("node:crypto");
-const { PocketIc, PocketIcServer } = require(path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/pic-js-mops"));
-const { IDL } = require(path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/candid/index.js"));
-const { Principal } = require(path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/principal/index.js"));
-const [bin, authorityWasm, fixtureWasm] = process.argv.slice(2); if (!bin || !authorityWasm || !fixtureWasm) throw new Error("Expected PocketIC binary, authority Wasm, and fixture Wasm");
-const P = IDL.Principal, Hash = IDL.Vec(IDL.Nat8), Direction = IDL.Variant({ debit: IDL.Null, credit: IDL.Null });
-const Config = IDL.Record({ core:P, workflow:P, treasury:P, archive:P, evidence:P, governance:P });
-const Input = IDL.Record({ logicalId:IDL.Text, journalSequence:IDL.Nat64, operationId:IDL.Text, accountId:IDL.Text, assetId:IDL.Text, direction:Direction, amountBaseUnits:IDL.Nat, assetDecimals:IDL.Nat8, desiredVersion:IDL.Nat64, contentHash:Hash });
-const Write = IDL.Variant({ acknowledged:IDL.Null, blocked:IDL.Null, conflict:IDL.Null, storageError:IDL.Null });
-const Observation = IDL.Variant({ absent:IDL.Null, present:IDL.Record({ version:IDL.Nat64, contentHash:Hash }), conflict:IDL.Null, storageError:IDL.Null });
-const Recovery = IDL.Variant({ acknowledge:IDL.Null, retryIdentical:IDL.Null, conflict:IDL.Null, blocked:IDL.Null });
-const authorityIdl = ({IDL:C}) => C.Service({ writeTreasuryJournalEntry:C.Func([Input],[Write],[]), lookupTreasuryJournalEntry:C.Func([C.Text],[Observation],[]) });
-const BalancedSet = IDL.Record({logicalId:IDL.Text,entries:IDL.Vec(Input)}), Phase = IDL.Variant({pending:IDL.Null,active:IDL.Null,conflict:IDL.Null,blocked:IDL.Null});
-const fixtureIdl = ({IDL:C}) => C.Service({ writeThenLoseReply:C.Func([Input],[],[]), journalThenTrapBeforeAwait:C.Func([Input],[],[]), reconcileLostReply:C.Func([],[Recovery],[]), retryJournaledWriteThenLoseReply:C.Func([],[],[]), repairJournaledEntry:C.Func([],[Recovery],[]), prepareBalancedSet:C.Func([BalancedSet],[],[]), writeBalancedEntryThenLoseReply:C.Func([IDL.Nat],[],[]), reconcileBalancedEntry:C.Func([IDL.Nat],[Recovery],[]), retryBalancedEntryThenLoseReply:C.Func([IDL.Nat],[],[]), balancedPhase:C.Func([],[Phase],[]) });
-const Chunk=IDL.Record({hash:Hash}), Upload=IDL.Record({canister_id:P,chunk:Hash}), Install=IDL.Record({arg:Hash,chunk_hashes_list:IDL.Vec(Chunk),mode:IDL.Variant({install:IDL.Null,upgrade:IDL.Opt(IDL.Record({skip_pre_upgrade:IDL.Opt(IDL.Bool),wasm_memory_persistence:IDL.Opt(IDL.Variant({keep:IDL.Null,replace:IDL.Null}))}))}),sender_canister_version:IDL.Opt(IDL.Nat64),store_canister:IDL.Opt(P),canister_id:P,target_canister:P,wasm_module_hash:Hash}), management=Principal.fromText("aaaaa-aa");
+const path = require("node:path"),
+  fs = require("node:fs"),
+  crypto = require("node:crypto");
+const { PocketIc, PocketIcServer } = require(
+  path.resolve(
+    __dirname,
+    "../../node_modules/ic-mops/node_modules/pic-js-mops",
+  ),
+);
+const { IDL } = require(
+  path.resolve(
+    __dirname,
+    "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/candid/index.js",
+  ),
+);
+const { Principal } = require(
+  path.resolve(
+    __dirname,
+    "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/principal/index.js",
+  ),
+);
+const [bin, authorityWasm, fixtureWasm] = process.argv.slice(2);
+if (!bin || !authorityWasm || !fixtureWasm)
+  throw new Error("Expected PocketIC binary, authority Wasm, and fixture Wasm");
+const P = IDL.Principal,
+  Hash = IDL.Vec(IDL.Nat8),
+  Direction = IDL.Variant({ debit: IDL.Null, credit: IDL.Null });
+const Config = IDL.Record({
+  core: P,
+  workflow: P,
+  treasury: P,
+  archive: P,
+  evidence: P,
+  governance: P,
+});
+const Input = IDL.Record({
+  logicalId: IDL.Text,
+  journalSequence: IDL.Nat64,
+  operationId: IDL.Text,
+  accountId: IDL.Text,
+  assetId: IDL.Text,
+  direction: Direction,
+  amountBaseUnits: IDL.Nat,
+  assetDecimals: IDL.Nat8,
+  desiredVersion: IDL.Nat64,
+  contentHash: Hash,
+});
+const Write = IDL.Variant({
+  acknowledged: IDL.Null,
+  blocked: IDL.Null,
+  conflict: IDL.Null,
+  storageError: IDL.Null,
+});
+const Observation = IDL.Variant({
+  absent: IDL.Null,
+  present: IDL.Record({ version: IDL.Nat64, contentHash: Hash }),
+  conflict: IDL.Null,
+  storageError: IDL.Null,
+});
+const Recovery = IDL.Variant({
+  acknowledge: IDL.Null,
+  retryIdentical: IDL.Null,
+  conflict: IDL.Null,
+  blocked: IDL.Null,
+});
+const authorityIdl = ({ IDL: C }) =>
+  C.Service({
+    writeTreasuryJournalEntry: C.Func([Input], [Write], []),
+    lookupTreasuryJournalEntry: C.Func([C.Text], [Observation], []),
+  });
+const BalancedSet = IDL.Record({
+    logicalId: IDL.Text,
+    entries: IDL.Vec(Input),
+  }),
+  Phase = IDL.Variant({
+    pending: IDL.Null,
+    active: IDL.Null,
+    conflict: IDL.Null,
+    blocked: IDL.Null,
+  });
+const fixtureIdl = ({ IDL: C }) =>
+  C.Service({
+    writeThenLoseReply: C.Func([Input], [], []),
+    journalThenTrapBeforeAwait: C.Func([Input], [], []),
+    reconcileLostReply: C.Func([], [Recovery], []),
+    retryJournaledWriteThenLoseReply: C.Func([], [], []),
+    repairJournaledEntry: C.Func([], [Recovery], []),
+    prepareBalancedSet: C.Func([BalancedSet], [], []),
+    journalBalancedEntryThenTrapBeforeAwait: C.Func([IDL.Nat], [], []),
+    writeBalancedEntryThenLoseReply: C.Func([IDL.Nat], [], []),
+    reconcileBalancedEntry: C.Func([IDL.Nat], [Recovery], []),
+    retryBalancedEntryThenLoseReply: C.Func([IDL.Nat], [], []),
+    repairBalancedEntry: C.Func([IDL.Nat], [Recovery], []),
+    balancedPhase: C.Func([], [Phase], []),
+  });
+const Chunk = IDL.Record({ hash: Hash }),
+  Upload = IDL.Record({ canister_id: P, chunk: Hash }),
+  Install = IDL.Record({
+    arg: Hash,
+    chunk_hashes_list: IDL.Vec(Chunk),
+    mode: IDL.Variant({
+      install: IDL.Null,
+      upgrade: IDL.Opt(
+        IDL.Record({
+          skip_pre_upgrade: IDL.Opt(IDL.Bool),
+          wasm_memory_persistence: IDL.Opt(
+            IDL.Variant({ keep: IDL.Null, replace: IDL.Null }),
+          ),
+        }),
+      ),
+    }),
+    sender_canister_version: IDL.Opt(IDL.Nat64),
+    store_canister: IDL.Opt(P),
+    canister_id: P,
+    target_canister: P,
+    wasm_module_hash: Hash,
+  }),
+  management = Principal.fromText("aaaaa-aa");
 // Below CycleReserve.minimumReserve (one trillion), but sufficient to install
 // this disposable fixture. The proof replenishes only this synthetic canister.
-const fixtureInstallationCycles=900_000_000_000n;
-function expect(value, tag, label) { if (Object.keys(value).length !== 1 || !(tag in value)) throw new Error(`${label}: expected ${tag}`); }
-async function rejected(f,label) { try { await f(); } catch (_) { return; } throw new Error(`${label}: expected rejected ingress`); }
-async function update(pic,sender,method,type,value) { return pic.client.updateCall({canisterId:management,sender,method,payload:new Uint8Array(IDL.encode([type],[value]))}); }
-async function install(pic,sender,id,wasmPath,arg,mode={install:null}) { const wasm=fs.readFileSync(wasmPath), hashes=[]; for(let offset=0;offset<wasm.length;offset+=1_000_000){const chunk=new Uint8Array(wasm.subarray(offset,Math.min(offset+1_000_000,wasm.length)));await update(pic,sender,"upload_chunk",Upload,{canister_id:id,chunk});hashes.push({hash:new Uint8Array(crypto.createHash("sha256").update(chunk).digest())});} await update(pic,sender,"install_chunked_code",Install,{arg:new Uint8Array(arg),chunk_hashes_list:hashes,mode,sender_canister_version:[],store_canister:[],canister_id:id,target_canister:id,wasm_module_hash:new Uint8Array(crypto.createHash("sha256").update(wasm).digest())}); }
-async function main(){const server=await PocketIcServer.start({binPath:bin,ttl:60,showRuntimeLogs:false,showCanisterLogs:false}),pic=await PocketIc.create(server.getUrl());try {const installer=Principal.fromUint8Array(Uint8Array.of(8,1)),operator=Principal.fromUint8Array(Uint8Array.of(8,2)),outsider=Principal.fromUint8Array(Uint8Array.of(8,3));const authorityId=await pic.createCanister({sender:installer,controllers:[installer]}),fixtureId=await pic.createCanister({sender:installer,controllers:[installer],cycles:fixtureInstallationCycles});const config={core:Principal.fromUint8Array(Uint8Array.of(8,4)),workflow:Principal.fromUint8Array(Uint8Array.of(8,5)),treasury:fixtureId,archive:Principal.fromUint8Array(Uint8Array.of(8,6)),evidence:Principal.fromUint8Array(Uint8Array.of(8,7)),governance:Principal.fromUint8Array(Uint8Array.of(8,8))};await install(pic,installer,authorityId,authorityWasm,IDL.encode([Config],[config]));await install(pic,installer,fixtureId,fixtureWasm,IDL.encode([P,P],[operator,authorityId]));const authority=pic.createActor(authorityIdl,authorityId),fixture=pic.createActor(fixtureIdl,fixtureId),h=n=>Uint8Array.from({length:32},()=>n),entry=(id,sequence,hash,direction={debit:null})=>({logicalId:id,journalSequence:BigInt(sequence),operationId:"operation:synthetic",accountId:"treasury:synthetic",assetId:"ICP",direction,amountBaseUnits:1n,assetDecimals:8,desiredVersion:1n,contentHash:h(hash)});const input=entry("treasury-journal:v1:synthetic",1,11);authority.setPrincipal(outsider);expect(await authority.writeTreasuryJournalEntry(input),"blocked","direct write denied");expect(await authority.lookupTreasuryJournalEntry(input.logicalId),"conflict","direct lookup denied");fixture.setPrincipal(outsider);await rejected(()=>fixture.reconcileLostReply(),"outsider recovery denied");await rejected(()=>fixture.prepareBalancedSet({logicalId:"set",entries:[]}),"outsider balanced preparation denied");fixture.setPrincipal(operator);const lowCycle=entry("treasury-journal:v1:synthetic-low-cycles",1,10);await rejected(()=>fixture.writeThenLoseReply(lowCycle),"low-cycle journal makes no authority write");expect(await fixture.reconcileLostReply(),"retryIdentical","low-cycle journal observes absent authority record");if(await pic.addCycles(fixtureId,2_000_000_000_000)<1_000_000_000_000)throw new Error("low-cycle proof failed to replenish disposable treasury fixture");await rejected(()=>fixture.retryJournaledWriteThenLoseReply(),"replenished journal loses reply");expect(await fixture.reconcileLostReply(),"acknowledge","replenished journal reconciles exact tuple");await rejected(()=>fixture.writeThenLoseReply(input),"first reply lost");await install(pic,installer,authorityId,authorityWasm,IDL.encode([Config],[config]),{upgrade:[{skip_pre_upgrade:[],wasm_memory_persistence:[{keep:null}]}]});await install(pic,installer,fixtureId,fixtureWasm,IDL.encode([P,P],[operator,authorityId]),{upgrade:[{skip_pre_upgrade:[],wasm_memory_persistence:[{keep:null}]}]});fixture.setPrincipal(operator);expect(await fixture.reconcileLostReply(),"acknowledge","exact recovery after upgrades");await rejected(()=>fixture.writeThenLoseReply(input),"duplicate delivery loses reply");expect(await fixture.reconcileLostReply(),"acknowledge","duplicate uses exact tuple");const interrupted=entry("treasury-journal:v1:interrupted",2,12);await rejected(()=>fixture.journalThenTrapBeforeAwait(interrupted),"interrupted after durable journal");await install(pic,installer,fixtureId,fixtureWasm,IDL.encode([P,P],[operator,authorityId]),{upgrade:[{skip_pre_upgrade:[],wasm_memory_persistence:[{keep:null}]}]});fixture.setPrincipal(operator);expect(await fixture.reconcileLostReply(),"retryIdentical","absent record permits only identical retry");await rejected(()=>fixture.retryJournaledWriteThenLoseReply(),"identical retry loses reply");expect(await fixture.reconcileLostReply(),"acknowledge","identical retry reconciles");const repair=entry("treasury-journal:v1:repair",3,13);await rejected(()=>fixture.journalThenTrapBeforeAwait(repair),"repair interrupted");fixture.setPrincipal(outsider);await rejected(()=>fixture.repairJournaledEntry(),"outsider repair denied");fixture.setPrincipal(operator);expect(await fixture.repairJournaledEntry(),"retryIdentical","operator repair uses retained tuple");expect(await fixture.reconcileLostReply(),"acknowledge","repair reconciles retained tuple");const debit=entry("treasury-journal:v1:balanced-debit",4,14),credit=entry("treasury-journal:v1:balanced-credit",5,15,{credit:null});await fixture.prepareBalancedSet({logicalId:"treasury-journal-set:v1:synthetic",entries:[debit,credit]});await rejected(()=>fixture.writeBalancedEntryThenLoseReply(0),"balanced debit reply lost");expect(await fixture.reconcileBalancedEntry(0),"acknowledge","balanced debit exact tuple acknowledged");expect(await fixture.balancedPhase(),"pending","partial balanced set stays pending");await install(pic,installer,fixtureId,fixtureWasm,IDL.encode([P,P],[operator,authorityId]),{upgrade:[{skip_pre_upgrade:[],wasm_memory_persistence:[{keep:null}]}]});fixture.setPrincipal(operator);expect(await fixture.balancedPhase(),"pending","partial balanced set survives upgrade pending");await rejected(()=>fixture.writeBalancedEntryThenLoseReply(1),"balanced credit reply lost");expect(await fixture.reconcileBalancedEntry(1),"acknowledge","balanced credit exact tuple acknowledged");expect(await fixture.balancedPhase(),"active","only full balanced set activates");} finally {await pic.tearDown();await server.stop();}}
-main().catch(error=>{console.error(error.stack||error.message);process.exitCode=1;});
+const fixtureInstallationCycles = 900_000_000_000n;
+function expect(value, tag, label) {
+  if (Object.keys(value).length !== 1 || !(tag in value))
+    throw new Error(`${label}: expected ${tag}`);
+}
+async function rejected(f, label) {
+  try {
+    await f();
+  } catch (_) {
+    return;
+  }
+  throw new Error(`${label}: expected rejected ingress`);
+}
+async function update(pic, sender, method, type, value) {
+  return pic.client.updateCall({
+    canisterId: management,
+    sender,
+    method,
+    payload: new Uint8Array(IDL.encode([type], [value])),
+  });
+}
+async function install(
+  pic,
+  sender,
+  id,
+  wasmPath,
+  arg,
+  mode = { install: null },
+) {
+  const wasm = fs.readFileSync(wasmPath),
+    hashes = [];
+  for (let offset = 0; offset < wasm.length; offset += 1_000_000) {
+    const chunk = new Uint8Array(
+      wasm.subarray(offset, Math.min(offset + 1_000_000, wasm.length)),
+    );
+    await update(pic, sender, "upload_chunk", Upload, {
+      canister_id: id,
+      chunk,
+    });
+    hashes.push({
+      hash: new Uint8Array(crypto.createHash("sha256").update(chunk).digest()),
+    });
+  }
+  await update(pic, sender, "install_chunked_code", Install, {
+    arg: new Uint8Array(arg),
+    chunk_hashes_list: hashes,
+    mode,
+    sender_canister_version: [],
+    store_canister: [],
+    canister_id: id,
+    target_canister: id,
+    wasm_module_hash: new Uint8Array(
+      crypto.createHash("sha256").update(wasm).digest(),
+    ),
+  });
+}
+async function main() {
+  const server = await PocketIcServer.start({
+      binPath: bin,
+      ttl: 60,
+      showRuntimeLogs: false,
+      showCanisterLogs: false,
+    }),
+    pic = await PocketIc.create(server.getUrl());
+  try {
+    const installer = Principal.fromUint8Array(Uint8Array.of(8, 1)),
+      operator = Principal.fromUint8Array(Uint8Array.of(8, 2)),
+      outsider = Principal.fromUint8Array(Uint8Array.of(8, 3));
+    const authorityId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
+      }),
+      fixtureId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
+        cycles: fixtureInstallationCycles,
+      });
+    const config = {
+      core: Principal.fromUint8Array(Uint8Array.of(8, 4)),
+      workflow: Principal.fromUint8Array(Uint8Array.of(8, 5)),
+      treasury: fixtureId,
+      archive: Principal.fromUint8Array(Uint8Array.of(8, 6)),
+      evidence: Principal.fromUint8Array(Uint8Array.of(8, 7)),
+      governance: Principal.fromUint8Array(Uint8Array.of(8, 8)),
+    };
+    await install(
+      pic,
+      installer,
+      authorityId,
+      authorityWasm,
+      IDL.encode([Config], [config]),
+    );
+    await install(
+      pic,
+      installer,
+      fixtureId,
+      fixtureWasm,
+      IDL.encode([P, P], [operator, authorityId]),
+    );
+    const authority = pic.createActor(authorityIdl, authorityId),
+      fixture = pic.createActor(fixtureIdl, fixtureId),
+      h = (n) => Uint8Array.from({ length: 32 }, () => n),
+      entry = (id, sequence, hash, direction = { debit: null }) => ({
+        logicalId: id,
+        journalSequence: BigInt(sequence),
+        operationId: "operation:synthetic",
+        accountId: "treasury:synthetic",
+        assetId: "ICP",
+        direction,
+        amountBaseUnits: 1n,
+        assetDecimals: 8,
+        desiredVersion: 1n,
+        contentHash: h(hash),
+      });
+    const input = entry("treasury-journal:v1:synthetic", 1, 11);
+    authority.setPrincipal(outsider);
+    expect(
+      await authority.writeTreasuryJournalEntry(input),
+      "blocked",
+      "direct write denied",
+    );
+    expect(
+      await authority.lookupTreasuryJournalEntry(input.logicalId),
+      "conflict",
+      "direct lookup denied",
+    );
+    fixture.setPrincipal(outsider);
+    await rejected(
+      () => fixture.reconcileLostReply(),
+      "outsider recovery denied",
+    );
+    await rejected(
+      () => fixture.prepareBalancedSet({ logicalId: "set", entries: [] }),
+      "outsider balanced preparation denied",
+    );
+    fixture.setPrincipal(operator);
+    const lowCycle = entry("treasury-journal:v1:synthetic-low-cycles", 1, 10);
+    await rejected(
+      () => fixture.writeThenLoseReply(lowCycle),
+      "low-cycle journal makes no authority write",
+    );
+    expect(
+      await fixture.reconcileLostReply(),
+      "retryIdentical",
+      "low-cycle journal observes absent authority record",
+    );
+    if ((await pic.addCycles(fixtureId, 2_000_000_000_000)) < 1_000_000_000_000)
+      throw new Error(
+        "low-cycle proof failed to replenish disposable treasury fixture",
+      );
+    await rejected(
+      () => fixture.retryJournaledWriteThenLoseReply(),
+      "replenished journal loses reply",
+    );
+    expect(
+      await fixture.reconcileLostReply(),
+      "acknowledge",
+      "replenished journal reconciles exact tuple",
+    );
+    await rejected(() => fixture.writeThenLoseReply(input), "first reply lost");
+    await install(
+      pic,
+      installer,
+      authorityId,
+      authorityWasm,
+      IDL.encode([Config], [config]),
+      {
+        upgrade: [
+          { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
+        ],
+      },
+    );
+    await install(
+      pic,
+      installer,
+      fixtureId,
+      fixtureWasm,
+      IDL.encode([P, P], [operator, authorityId]),
+      {
+        upgrade: [
+          { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
+        ],
+      },
+    );
+    fixture.setPrincipal(operator);
+    expect(
+      await fixture.reconcileLostReply(),
+      "acknowledge",
+      "exact recovery after upgrades",
+    );
+    await rejected(
+      () => fixture.writeThenLoseReply(input),
+      "duplicate delivery loses reply",
+    );
+    expect(
+      await fixture.reconcileLostReply(),
+      "acknowledge",
+      "duplicate uses exact tuple",
+    );
+    const interrupted = entry("treasury-journal:v1:interrupted", 2, 12);
+    await rejected(
+      () => fixture.journalThenTrapBeforeAwait(interrupted),
+      "interrupted after durable journal",
+    );
+    await install(
+      pic,
+      installer,
+      fixtureId,
+      fixtureWasm,
+      IDL.encode([P, P], [operator, authorityId]),
+      {
+        upgrade: [
+          { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
+        ],
+      },
+    );
+    fixture.setPrincipal(operator);
+    expect(
+      await fixture.reconcileLostReply(),
+      "retryIdentical",
+      "absent record permits only identical retry",
+    );
+    await rejected(
+      () => fixture.retryJournaledWriteThenLoseReply(),
+      "identical retry loses reply",
+    );
+    expect(
+      await fixture.reconcileLostReply(),
+      "acknowledge",
+      "identical retry reconciles",
+    );
+    const repair = entry("treasury-journal:v1:repair", 3, 13);
+    await rejected(
+      () => fixture.journalThenTrapBeforeAwait(repair),
+      "repair interrupted",
+    );
+    fixture.setPrincipal(outsider);
+    await rejected(
+      () => fixture.repairJournaledEntry(),
+      "outsider repair denied",
+    );
+    fixture.setPrincipal(operator);
+    expect(
+      await fixture.repairJournaledEntry(),
+      "retryIdentical",
+      "operator repair uses retained tuple",
+    );
+    expect(
+      await fixture.reconcileLostReply(),
+      "acknowledge",
+      "repair reconciles retained tuple",
+    );
+    const debit = entry("treasury-journal:v1:balanced-debit", 4, 14),
+      credit = entry("treasury-journal:v1:balanced-credit", 5, 15, {
+        credit: null,
+      });
+    await fixture.prepareBalancedSet({
+      logicalId: "treasury-journal-set:v1:synthetic",
+      entries: [debit, credit],
+    });
+    await rejected(
+      () => fixture.journalBalancedEntryThenTrapBeforeAwait(0),
+      "balanced debit interrupted after durable set journal",
+    );
+    await install(
+      pic,
+      installer,
+      fixtureId,
+      fixtureWasm,
+      IDL.encode([P, P], [operator, authorityId]),
+      {
+        upgrade: [
+          { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
+        ],
+      },
+    );
+    fixture.setPrincipal(operator);
+    expect(
+      await fixture.reconcileBalancedEntry(0),
+      "retryIdentical",
+      "interrupted balanced debit observes absent tuple",
+    );
+    fixture.setPrincipal(outsider);
+    await rejected(
+      () => fixture.repairBalancedEntry(0),
+      "outsider balanced repair denied",
+    );
+    fixture.setPrincipal(operator);
+    expect(
+      await fixture.repairBalancedEntry(0),
+      "retryIdentical",
+      "operator balanced repair resends retained debit only",
+    );
+    expect(
+      await fixture.reconcileBalancedEntry(0),
+      "acknowledge",
+      "repaired balanced debit exact tuple acknowledged",
+    );
+    expect(
+      await fixture.balancedPhase(),
+      "pending",
+      "partial repaired set stays pending",
+    );
+    await rejected(
+      () => fixture.writeBalancedEntryThenLoseReply(1),
+      "balanced credit reply lost",
+    );
+    expect(
+      await fixture.reconcileBalancedEntry(1),
+      "acknowledge",
+      "balanced credit exact tuple acknowledged",
+    );
+    expect(
+      await fixture.balancedPhase(),
+      "active",
+      "only full balanced set activates",
+    );
+  } finally {
+    await pic.tearDown();
+    await server.stop();
+  }
+}
+main().catch((error) => {
+  console.error(error.stack || error.message);
+  process.exitCode = 1;
+});

@@ -33,7 +33,7 @@ jobs:
         run: |
           mkdir -p .mops/m1-treasury-journal-lost-reply-proof
           scripts/icp/build-treasury-journal-lost-reply-proof.sh 2>&1 | tee .mops/m1-treasury-journal-lost-reply-proof/build.log
-      - name: Execute isolated synthetic recovery proof
+      - name: Execute isolated synthetic recovery and balanced-set low-cycle proof
         run: |
           timeout 15m scripts/icp/run-treasury-journal-lost-reply-proof.sh 2>&1 | tee .mops/m1-treasury-journal-lost-reply-proof/proof.log
       - name: Execute isolated synthetic capacity proof

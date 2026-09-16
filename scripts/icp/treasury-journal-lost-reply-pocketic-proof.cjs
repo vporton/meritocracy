@@ -197,6 +197,15 @@ async function main() {
         sender: installer,
         controllers: [installer],
         cycles: fixtureInstallationCycles,
+      }),
+      lowCycleAuthorityId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
+      }),
+      lowCycleFixtureId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
+        cycles: fixtureInstallationCycles,
       });
     const config = {
       core: Principal.fromUint8Array(Uint8Array.of(8, 4)),
@@ -206,6 +215,7 @@ async function main() {
       evidence: Principal.fromUint8Array(Uint8Array.of(8, 7)),
       governance: Principal.fromUint8Array(Uint8Array.of(8, 8)),
     };
+    const lowCycleConfig = { ...config, treasury: lowCycleFixtureId };
     await install(
       pic,
       installer,
@@ -220,8 +230,24 @@ async function main() {
       fixtureWasm,
       IDL.encode([P, P], [operator, authorityId]),
     );
+    await install(
+      pic,
+      installer,
+      lowCycleAuthorityId,
+      authorityWasm,
+      IDL.encode([Config], [lowCycleConfig]),
+    );
+    await install(
+      pic,
+      installer,
+      lowCycleFixtureId,
+      fixtureWasm,
+      IDL.encode([P, P], [operator, lowCycleAuthorityId]),
+    );
     const authority = pic.createActor(authorityIdl, authorityId),
       fixture = pic.createActor(fixtureIdl, fixtureId),
+      lowCycleAuthority = pic.createActor(authorityIdl, lowCycleAuthorityId),
+      lowCycleFixture = pic.createActor(fixtureIdl, lowCycleFixtureId),
       h = (n) => Uint8Array.from({ length: 32 }, () => n),
       entry = (id, sequence, hash, direction = { debit: null }) => ({
         logicalId: id,
@@ -247,6 +273,17 @@ async function main() {
       "conflict",
       "direct lookup denied",
     );
+    lowCycleAuthority.setPrincipal(outsider);
+    expect(
+      await lowCycleAuthority.writeTreasuryJournalEntry(input),
+      "blocked",
+      "low-cycle authority direct write denied",
+    );
+    expect(
+      await lowCycleAuthority.lookupTreasuryJournalEntry(input.logicalId),
+      "conflict",
+      "low-cycle authority direct lookup denied",
+    );
     fixture.setPrincipal(outsider);
     await rejected(
       () => fixture.reconcileLostReply(),
@@ -255,6 +292,74 @@ async function main() {
     await rejected(
       () => fixture.prepareBalancedSet({ logicalId: "set", entries: [] }),
       "outsider balanced preparation denied",
+    );
+    // This separate fixture remains below the synthetic reserve for the
+    // balanced-set branch. Its authority admits only this fixture, so neither
+    // the later ordinary-journal proof nor a caller can cross its boundary.
+    lowCycleFixture.setPrincipal(operator);
+    const lowCycleDebit = entry(
+        "treasury-journal:v1:balanced-low-cycle-debit",
+        1,
+        20,
+      ),
+      lowCycleCredit = entry(
+        "treasury-journal:v1:balanced-low-cycle-credit",
+        2,
+        21,
+        { credit: null },
+      );
+    await lowCycleFixture.prepareBalancedSet({
+      logicalId: "treasury-journal-set:v1:balanced-low-cycle",
+      entries: [lowCycleDebit, lowCycleCredit],
+    });
+    await rejected(
+      () => lowCycleFixture.writeBalancedEntryThenLoseReply(0),
+      "low-cycle balanced debit makes no authority write",
+    );
+    expect(
+      await lowCycleFixture.reconcileBalancedEntry(0),
+      "retryIdentical",
+      "low-cycle balanced debit observes absent tuple",
+    );
+    expect(
+      await lowCycleFixture.balancedPhase(),
+      "pending",
+      "low-cycle balanced set cannot activate",
+    );
+    if (
+      (await pic.addCycles(lowCycleFixtureId, 2_000_000_000_000)) <
+      1_000_000_000_000
+    )
+      throw new Error(
+        "low-cycle proof failed to replenish disposable balanced-set fixture",
+      );
+    await rejected(
+      () => lowCycleFixture.retryBalancedEntryThenLoseReply(0),
+      "replenished balanced debit loses reply",
+    );
+    expect(
+      await lowCycleFixture.reconcileBalancedEntry(0),
+      "acknowledge",
+      "replenished balanced debit reconciles exact tuple",
+    );
+    expect(
+      await lowCycleFixture.balancedPhase(),
+      "pending",
+      "one replenished balanced debit remains pending",
+    );
+    await rejected(
+      () => lowCycleFixture.writeBalancedEntryThenLoseReply(1),
+      "replenished balanced credit loses reply",
+    );
+    expect(
+      await lowCycleFixture.reconcileBalancedEntry(1),
+      "acknowledge",
+      "replenished balanced credit reconciles exact tuple",
+    );
+    expect(
+      await lowCycleFixture.balancedPhase(),
+      "active",
+      "only the replenished complete balanced set activates",
     );
     fixture.setPrincipal(operator);
     const lowCycle = entry("treasury-journal:v1:synthetic-low-cycles", 1, 10);

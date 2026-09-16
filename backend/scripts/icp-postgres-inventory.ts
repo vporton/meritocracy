@@ -247,8 +247,8 @@ export async function collectInventory(client: ReadonlySqlClient, schema = 'publ
       WHERE n.nspname = $1 AND c.relname = ANY($2::text[]) ORDER BY c.relname`, [schema, EXPECTED_TABLES]);
 
     const foreignKeys = await client.query<ForeignKey>(`SELECT con.conname AS constraint_name, src.relname AS table_name,
-      array_agg(src_attr.attname ORDER BY source_key.ordinality) AS columns, dst.relname AS foreign_table,
-      array_agg(dst_attr.attname ORDER BY source_key.ordinality) AS foreign_columns
+      array_agg(src_attr.attname ORDER BY source_key.ordinality)::text[] AS columns, dst.relname AS foreign_table,
+      array_agg(dst_attr.attname ORDER BY source_key.ordinality)::text[] AS foreign_columns
       FROM pg_constraint con JOIN pg_class src ON src.oid = con.conrelid JOIN pg_class dst ON dst.oid = con.confrelid
       JOIN pg_namespace n ON n.oid = src.relnamespace
       CROSS JOIN LATERAL unnest(con.conkey) WITH ORDINALITY source_key(attnum, ordinality)
@@ -257,7 +257,7 @@ export async function collectInventory(client: ReadonlySqlClient, schema = 'publ
       WHERE con.contype = 'f' AND n.nspname = $1 AND src.relname = ANY($2::text[])
       GROUP BY con.conname, src.relname, dst.relname ORDER BY con.conname`, [schema, EXPECTED_TABLES]);
     const uniqueIndexes = await client.query<UniqueIndex>(`SELECT i.relname AS index_name, c.relname AS table_name,
-      array_agg(a.attname ORDER BY keys.ordinality) AS columns, x.indisprimary AS is_primary
+      array_agg(a.attname ORDER BY keys.ordinality)::text[] AS columns, x.indisprimary AS is_primary
       FROM pg_index x JOIN pg_class c ON c.oid = x.indrelid JOIN pg_class i ON i.oid = x.indexrelid JOIN pg_namespace n ON n.oid = c.relnamespace
       CROSS JOIN LATERAL unnest(x.indkey) WITH ORDINALITY keys(attnum, ordinality)
       JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = keys.attnum

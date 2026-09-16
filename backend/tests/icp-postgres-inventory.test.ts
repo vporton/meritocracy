@@ -53,6 +53,13 @@ test('sequence inventory uses PostgreSQL pg_sequences column names', () => {
   assert.doesNotMatch(sql, /SELECT sequence_name,/);
 });
 
+test('foreign-key catalog aggregates use text arrays for stable pg decoding', async () => {
+  const source = await readFile(new URL('../scripts/icp-postgres-inventory.ts', import.meta.url), 'utf8');
+  assert.match(source, /array_agg\(src_attr\.attname ORDER BY source_key\.ordinality\)::text\[\] AS columns/);
+  assert.match(source, /array_agg\(dst_attr\.attname ORDER BY source_key\.ordinality\)::text\[\] AS foreign_columns/);
+  assert.match(source, /array_agg\(a\.attname ORDER BY keys\.ordinality\)::text\[\] AS columns/);
+});
+
 test('inventory connection failures retain only a safe operational category', () => {
   assert.equal(inventoryFailureCode(Object.assign(new Error('password authentication failed'), { code: '28P01' })), 'INVENTORY_DATABASE_AUTH_FAILED');
   assert.equal(inventoryFailureCode(Object.assign(new Error('permission denied'), { code: '42501' })), 'INVENTORY_DATABASE_PERMISSION_DENIED');

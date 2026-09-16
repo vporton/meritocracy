@@ -1,7 +1,9 @@
 // Disposable M1 proof fixture only. It owns one immutable journal intent,
 // never a balance, asset account, destination, signer, or chain operation.
 import Error "mo:base/Error";
+import Cycles "mo:base/ExperimentalCycles";
 import Principal "mo:base/Principal";
+import CycleReserve "../../canisters/shared/CycleReserve";
 import MutationRecovery "../../canisters/shared/MutationRecovery";
 import Embedded "../../canisters/storage_authority/EmbeddedTreasuryJournalStore";
 import Intent "../../canisters/treasury/TreasuryJournalIntent";
@@ -25,6 +27,19 @@ shared ({ caller = installer }) persistent actor class (
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
+  // The immutable tuple is retained before this proof-only reserve guard.
+  // A depleted fixture cannot start a write and can later retry only this
+  // exact tuple after test-only replenishment. It is not a capacity policy.
+  func requireCycleReserve() {
+    assert CycleReserve.decide(Cycles.balance()) == #allowed;
+  };
+
+  // Make the durable-journal-to-write boundary explicit. This fixed lookup
+  // cannot create a journal record while the reserve guard rejects a write.
+  func checkpointJournal(logicalId : Text) : async () {
+    ignore await authority.lookupTreasuryJournalEntry(logicalId);
+  };
+
   func observation(value : Embedded.Observation) : ?MutationRecovery.RemoteObservation {
     switch (value) {
       case (#absent) ?#absent;
@@ -37,6 +52,8 @@ shared ({ caller = installer }) persistent actor class (
     onlyOperator(caller);
     let ?prepared = Intent.prepare(input) else throw Error.reject("invalid synthetic treasury journal entry");
     journal := ?Intent.startRemoteWrite(prepared);
+    await checkpointJournal(input.logicalId);
+    requireCycleReserve();
     switch (await authority.writeTreasuryJournalEntry(input)) {
       case (#acknowledged) {};
       case (_) throw Error.reject("synthetic treasury journal write failed");
@@ -67,6 +84,8 @@ shared ({ caller = installer }) persistent actor class (
     onlyOperator(caller);
     let ?saved = journal else throw Error.reject("missing synthetic treasury journal");
     if (saved.phase != #remoteWriteStarted) throw Error.reject("journal is not eligible for identical retry");
+    await checkpointJournal(saved.input.logicalId);
+    requireCycleReserve();
     switch (await authority.writeTreasuryJournalEntry(saved.input)) {
       case (#acknowledged) {};
       case (_) throw Error.reject("synthetic treasury journal retry failed");
@@ -81,6 +100,8 @@ shared ({ caller = installer }) persistent actor class (
     let ?remote = observation(await authority.lookupTreasuryJournalEntry(saved.input.logicalId)) else return #blocked;
     switch (Intent.reconcile(Intent.lostReply(saved), remote)) {
       case (updated, #retryIdentical) {
+        await checkpointJournal(saved.input.logicalId);
+        requireCycleReserve();
         switch (await authority.writeTreasuryJournalEntry(saved.input)) {
           case (#acknowledged) { journal := ?Intent.lostReply(updated); #retryIdentical };
           case (_) #blocked;

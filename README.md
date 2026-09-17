@@ -10,7 +10,7 @@ See [the site](https://science-dao.org/meritocracy/) for more information.
 
 The app decides how much to pay each employee (registered user) simply by asking an AI (not by, for example, quadratic voting of users).
 
-Actually, this "meritocracy" is quite capitalistic, as it hinted to me (the author of the app) that I am probably worth ~$1B/year.
+Actually, this "meritocracy" is quite capitalistic: it sometimes assigns very high salaries.
 
 It is a full-stack application built with Node.js, React, and Prisma ORM.
 

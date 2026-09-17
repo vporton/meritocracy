@@ -211,3 +211,4 @@
 * ICP Alliance - applied 18 Jul 2026
 * Autodesk Foundation - Discovery Form 12 Sep 2026
 * OECD - mailed aroubd 10 Sep 2026
+* RoRI https://researchonresearch.org - mailed 17 Sep 2026

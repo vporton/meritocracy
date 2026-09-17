@@ -207,6 +207,7 @@
     * https://bluedot.org/programs/rapid-grants - applied 14 Jul 2026
     * AI Alignment Foundation (AIAF) aialignmentfoundation.org - applied 14 Jul 2026
   * AI Safety Research Fund - applied 14 Jul 2026
+* Coefficient Giving - applied for AI risks 17 Sep 2026
 * ICP Alliance - applied 18 Jul 2026
 * Autodesk Foundation - Discovery Form 12 Sep 2026
 * OECD - mailed aroubd 10 Sep 2026

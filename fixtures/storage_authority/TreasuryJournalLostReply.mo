@@ -16,6 +16,7 @@ shared ({ caller = installer }) persistent actor class (
   operator : Principal,
   authorityId : Principal,
   archiveId : Principal,
+  initialBalancedSet : ?BalancedSet.Input,
 ) = this {
   assert not Principal.isAnonymous(operator);
   assert installer != operator;
@@ -37,7 +38,31 @@ shared ({ caller = installer }) persistent actor class (
   // A separate bounded, durable double-entry journal.  This fixture is the
   // sole synthetic holder of it: after preparation no ingress can replace,
   // append, reorder, or supply a posting.  It is not a balance projection.
-  var balancedJournal : ?BalancedSaga.State = null;
+  // The archive-only low-cycle fixture supplies a constructor-fixed, already
+  // valid set.  It cannot accept posting bytes after installation; ordinary
+  // fixtures start empty and exercise the authority write path instead.
+  func activeInitialSet(input : BalancedSet.Input) : ?BalancedSaga.State {
+    let ?prepared = BalancedSaga.prepare(input) else return null;
+    var state = prepared;
+    var index = 0;
+    while (index < state.entries.size()) {
+      let retained = state.entries[index].input;
+      let (updated, decision) = BalancedSaga.reconcile(
+        state,
+        index,
+        #present({ version = retained.desiredVersion; contentHash = retained.contentHash }),
+      );
+      if (decision != #acknowledge) return null;
+      state := updated;
+      index += 1;
+    };
+    if (state.phase == #active) ?state else null;
+  };
+
+  var balancedJournal : ?BalancedSaga.State = switch (initialBalancedSet) {
+    case null null;
+    case (?input) activeInitialSet(input);
+  };
 
   // One tuple-only archive state is separate from the balanced-set state. It
   // cannot carry or replace posting data, and it can be prepared only after

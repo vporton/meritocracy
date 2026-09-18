@@ -81,6 +81,7 @@ const BalancedSet = IDL.Record({
     conflict: IDL.Null,
     blocked: IDL.Null,
   });
+const FixtureArgs = [P, P, P, IDL.Opt(BalancedSet)];
 const ArchiveTuple = IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash }),
   ArchiveDecision = IDL.Variant({ acknowledge: IDL.Null, remainPending: IDL.Null, blocked: IDL.Null }),
   ArchivePhase = IDL.Variant({ prepared: IDL.Null, archiveStarted: IDL.Null, pending: IDL.Null, acknowledged: IDL.Null, blocked: IDL.Null });
@@ -132,6 +133,19 @@ const Chunk = IDL.Record({ hash: Hash }),
 // Below CycleReserve.minimumReserve (one trillion), but sufficient to install
 // this disposable fixture. The proof replenishes only this synthetic canister.
 const fixtureInstallationCycles = 900_000_000_000n;
+const h = (n) => Uint8Array.from({ length: 32 }, () => n);
+const entry = (id, sequence, hash, direction = { debit: null }) => ({
+  logicalId: id,
+  journalSequence: BigInt(sequence),
+  operationId: "operation:synthetic",
+  accountId: "treasury:synthetic",
+  assetId: "ICP",
+  direction,
+  amountBaseUnits: 1n,
+  assetDecimals: 8,
+  desiredVersion: 1n,
+  contentHash: h(hash),
+});
 function expect(value, tag, label) {
   if (Object.keys(value).length !== 1 || !(tag in value))
     throw new Error(`${label}: expected ${tag}`);
@@ -217,7 +231,16 @@ async function main() {
         controllers: [installer],
         cycles: fixtureInstallationCycles,
       }),
+      archiveLowCycleFixtureId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
+        cycles: fixtureInstallationCycles,
+      }),
       archiveId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
+      }),
+      archiveLowCycleSinkId = await pic.createCanister({
         sender: installer,
         controllers: [installer],
       });
@@ -242,7 +265,7 @@ async function main() {
       installer,
       fixtureId,
       fixtureWasm,
-      IDL.encode([P, P, P], [operator, authorityId, archiveId]),
+      IDL.encode(FixtureArgs, [operator, authorityId, archiveId, []]),
     );
     await install(
       pic,
@@ -256,7 +279,21 @@ async function main() {
       installer,
       lowCycleFixtureId,
       fixtureWasm,
-      IDL.encode([P, P, P], [operator, lowCycleAuthorityId, archiveId]),
+      IDL.encode(FixtureArgs, [operator, lowCycleAuthorityId, archiveId, []]),
+    );
+    const archiveLowCycleSet = {
+      logicalId: "treasury-journal-set:v1:archive-low-cycle",
+      entries: [
+        entry("treasury-journal:v1:archive-low-cycle-debit", 1, 70),
+        entry("treasury-journal:v1:archive-low-cycle-credit", 2, 71, { credit: null }),
+      ],
+    };
+    await install(
+      pic,
+      installer,
+      archiveLowCycleFixtureId,
+      fixtureWasm,
+      IDL.encode(FixtureArgs, [operator, lowCycleAuthorityId, archiveLowCycleSinkId, [archiveLowCycleSet]]),
     );
     await install(
       pic,
@@ -265,24 +302,62 @@ async function main() {
       archiveWasm,
       IDL.encode([P, P, P], [fixtureId, lowCycleFixtureId, operator]),
     );
+    await install(
+      pic,
+      installer,
+      archiveLowCycleSinkId,
+      archiveWasm,
+      IDL.encode([P, P, P], [archiveLowCycleFixtureId, fixtureId, operator]),
+    );
     const authority = pic.createActor(authorityIdl, authorityId),
       fixture = pic.createActor(fixtureIdl, fixtureId),
       lowCycleAuthority = pic.createActor(authorityIdl, lowCycleAuthorityId),
       lowCycleFixture = pic.createActor(fixtureIdl, lowCycleFixtureId),
+      archiveLowCycleFixture = pic.createActor(fixtureIdl, archiveLowCycleFixtureId),
       archive = pic.createActor(archiveIdl, archiveId),
-      h = (n) => Uint8Array.from({ length: 32 }, () => n),
-      entry = (id, sequence, hash, direction = { debit: null }) => ({
-        logicalId: id,
-        journalSequence: BigInt(sequence),
-        operationId: "operation:synthetic",
-        accountId: "treasury:synthetic",
-        assetId: "ICP",
-        direction,
-        amountBaseUnits: 1n,
-        assetDecimals: 8,
-        desiredVersion: 1n,
-        contentHash: h(hash),
-      });
+      archiveLowCycleSink = pic.createActor(archiveIdl, archiveLowCycleSinkId);
+    // This archive-only fixture begins with a constructor-fixed valid active
+    // set, so it can prove archive dispatch below reserve without providing a
+    // bypass for journal creation. The archive tuple is retained first.
+    archiveLowCycleFixture.setPrincipal(operator);
+    await archiveLowCycleFixture.prepareBalancedArchive({
+      logicalId: "treasury-journal-set:v1:archive-low-cycle",
+      version: 1n,
+      contentHash: h(72),
+    });
+    await rejected(
+      () => archiveLowCycleFixture.archiveBalancedSetThenLoseReply(),
+      "low-cycle archive makes no archive dispatch",
+    );
+    expect(
+      await archiveLowCycleFixture.reconcileBalancedArchive(),
+      "remainPending",
+      "low-cycle archive retains only a pending tuple",
+    );
+    expect(
+      await archiveLowCycleFixture.balancedArchivePhase(),
+      "pending",
+      "low-cycle archive cannot acknowledge",
+    );
+    if ((await pic.addCycles(archiveLowCycleFixtureId, 2_000_000_000_000)) < 1_000_000_000_000)
+      throw new Error("archive low-cycle proof failed to replenish disposable fixture");
+    archiveLowCycleSink.setPrincipal(operator);
+    await archiveLowCycleSink.permit();
+    expect(
+      await archiveLowCycleFixture.repairBalancedArchiveResume(),
+      "remainPending",
+      "replenished archive repair resends only retained tuple",
+    );
+    expect(
+      await archiveLowCycleFixture.reconcileBalancedArchive(),
+      "acknowledge",
+      "replenished archive exact receipt reconciles",
+    );
+    expect(
+      await archiveLowCycleFixture.balancedArchivePhase(),
+      "acknowledged",
+      "only replenished exact archive receipt acknowledges",
+    );
     const input = entry("treasury-journal:v1:synthetic", 1, 11);
     authority.setPrincipal(outsider);
     expect(

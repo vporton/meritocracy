@@ -4,7 +4,7 @@
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 artifact_dir="${M1_TREASURY_JOURNAL_LOST_REPLY_PROOF_ARTIFACT_DIR:-$repo_root/.mops/m1-treasury-journal-lost-reply-proof}"
-for artifact in treasury_journal_authority.wasm treasury_journal_fixture.wasm SHA256SUMS; do
+for artifact in treasury_journal_authority.wasm treasury_journal_fixture.wasm treasury_journal_archive.wasm SHA256SUMS; do
   [[ -f "$artifact_dir/$artifact" ]] || { echo "Missing treasury-journal capacity proof artifact: $artifact" >&2; exit 1; }
 done
 (cd "$artifact_dir" && sha256sum -c SHA256SUMS)

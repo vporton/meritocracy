@@ -9,10 +9,13 @@ import Embedded "../../canisters/storage_authority/EmbeddedTreasuryJournalStore"
 import Intent "../../canisters/treasury/TreasuryJournalIntent";
 import BalancedSet "../../canisters/treasury/TreasuryJournalBalancedSet";
 import BalancedSaga "../../canisters/treasury/TreasuryJournalBalancedSetSaga";
+import Archive "../../canisters/treasury/TreasuryJournalArchiveRecovery";
+import ArchiveSaga "../../canisters/treasury/TreasuryJournalArchiveSaga";
 
 shared ({ caller = installer }) persistent actor class (
   operator : Principal,
   authorityId : Principal,
+  archiveId : Principal,
 ) = this {
   assert not Principal.isAnonymous(operator);
   assert installer != operator;
@@ -21,6 +24,10 @@ shared ({ caller = installer }) persistent actor class (
     writeTreasuryJournalEntry : shared Intent.Input -> async Embedded.WriteResult;
     lookupTreasuryJournalEntry : shared Text -> async Embedded.Observation;
   } = actor (Principal.toText(authorityId));
+  let archive : actor {
+    archive : shared Archive.ArchiveTuple -> async Archive.ArchiveTuple;
+    lookup : shared Text -> async ?Archive.ArchiveTuple;
+  } = actor (Principal.toText(archiveId));
 
   // One bounded durable pre-await journal slot. Recovery methods have no
   // posting input, so an unknown reply can never be repaired with a new debit,
@@ -31,6 +38,11 @@ shared ({ caller = installer }) persistent actor class (
   // sole synthetic holder of it: after preparation no ingress can replace,
   // append, reorder, or supply a posting.  It is not a balance projection.
   var balancedJournal : ?BalancedSaga.State = null;
+
+  // One tuple-only archive state is separate from the balanced-set state. It
+  // cannot carry or replace posting data, and it can be prepared only after
+  // the fixed journal set has become active through exact acknowledgements.
+  var balancedArchive : ?ArchiveSaga.State = null;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
 
@@ -214,5 +226,83 @@ shared ({ caller = installer }) persistent actor class (
   public shared ({ caller }) func balancedPhase() : async BalancedSaga.Phase {
     onlyOperator(caller);
     switch (balancedJournal) { case (?saved) saved.phase; case null #blocked };
+  };
+
+  public shared ({ caller }) func prepareBalancedArchive(tuple : Archive.ArchiveTuple) : async () {
+    onlyOperator(caller);
+    let ?saved = balancedJournal else throw Error.reject("missing synthetic balanced journal");
+    if (saved.phase != #active or tuple.logicalId != saved.set.logicalId) {
+      throw Error.reject("balanced journal is not eligible for archive");
+    };
+    let ?prepared = ArchiveSaga.prepare(tuple) else throw Error.reject("invalid synthetic treasury-journal archive tuple");
+    switch (balancedArchive) {
+      case null { balancedArchive := ?prepared };
+      case (?_) throw Error.reject("synthetic balanced archive already retained");
+    };
+  };
+
+  // The tuple is durable before this interruption; no archive call has been
+  // issued and later recovery can start only the exact retained tuple.
+  public shared ({ caller }) func balancedArchiveThenTrapBeforeAwait() : async () {
+    onlyOperator(caller);
+    let ?saved = balancedArchive else throw Error.reject("missing synthetic balanced archive");
+    let started = ArchiveSaga.startArchive(saved);
+    if (started == saved) throw Error.reject("balanced archive is not writable");
+    balancedArchive := ?started;
+    throw Error.reject("deliberately interrupted before balanced archive await");
+  };
+
+  public shared ({ caller }) func archiveBalancedSetThenLoseReply() : async () {
+    onlyOperator(caller);
+    let ?saved = balancedArchive else throw Error.reject("missing synthetic balanced archive");
+    let started = ArchiveSaga.startArchive(saved);
+    if (started == saved) throw Error.reject("balanced archive is not writable");
+    balancedArchive := ?started;
+    let receipt = await archive.archive(started.tuple);
+    if (Archive.decide(started.tuple, ?receipt) != #acknowledge) {
+      throw Error.reject("synthetic balanced archive receipt mismatch");
+    };
+    balancedArchive := ?ArchiveSaga.lostReply(started);
+    throw Error.reject("deliberately lost synthetic balanced archive reply");
+  };
+
+  public shared ({ caller }) func reconcileBalancedArchive() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?saved = balancedArchive else return #blocked;
+    let updated = ArchiveSaga.reconcile(saved, await archive.lookup(saved.tuple.logicalId));
+    balancedArchive := ?updated;
+    switch (updated.phase) {
+      case (#acknowledged) #acknowledge;
+      case (#blocked) #blocked;
+      case (_) #remainPending;
+    };
+  };
+
+  // Repair takes no tuple input. A missing receipt is restartable only with
+  // the archive tuple retained before the original await.
+  public shared ({ caller }) func repairBalancedArchiveResume() : async Archive.ArchiveDecision {
+    onlyOperator(caller);
+    let ?saved = balancedArchive else return #blocked;
+    let reconciled = ArchiveSaga.reconcile(saved, await archive.lookup(saved.tuple.logicalId));
+    balancedArchive := ?reconciled;
+    switch (reconciled.phase) {
+      case (#acknowledged) #acknowledge;
+      case (#blocked) #blocked;
+      case (#prepared or #pending or #archiveStarted) {
+        let started = ArchiveSaga.startArchive(reconciled);
+        balancedArchive := ?started;
+        let receipt = await archive.archive(started.tuple);
+        if (Archive.decide(started.tuple, ?receipt) != #acknowledge) {
+          throw Error.reject("synthetic balanced archive repair receipt mismatch");
+        };
+        balancedArchive := ?ArchiveSaga.lostReply(started);
+        #remainPending;
+      };
+    };
+  };
+
+  public shared ({ caller }) func balancedArchivePhase() : async ArchiveSaga.Phase {
+    onlyOperator(caller);
+    switch (balancedArchive) { case (?saved) saved.phase; case null #blocked };
   };
 };

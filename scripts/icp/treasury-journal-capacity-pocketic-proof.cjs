@@ -69,7 +69,7 @@ async function scenario(pic, installer, operator, name, count) {
   const treasuryId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 20_000_000_000_000n });
   const config = { core: Principal.fromUint8Array(Uint8Array.of(6, 1)), workflow: Principal.fromUint8Array(Uint8Array.of(6, 2)), treasury: treasuryId, archive: Principal.fromUint8Array(Uint8Array.of(6, 3)), evidence: Principal.fromUint8Array(Uint8Array.of(6, 4)), governance: Principal.fromUint8Array(Uint8Array.of(6, 5)) };
   await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]));
-  await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([P, P], [operator, authorityId]));
+  await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([P, P, P], [operator, authorityId, config.archive]));
   const before = { authority: await pic.getCyclesBalance(authorityId), treasury: await pic.getCyclesBalance(treasuryId) }, treasury = pic.createActor(treasuryIdl, treasuryId); treasury.setPrincipal(operator); let encodedInputBytes = 0;
   const invalid = { ...entry(name, 999), logicalId: "x".repeat(513) };
   await reject(() => treasury.writeThenLoseReply(invalid), `${name} over-limit input is rejected before storage`);

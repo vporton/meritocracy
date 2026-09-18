@@ -22,9 +22,9 @@ const { Principal } = require(
     "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/principal/index.js",
   ),
 );
-const [bin, authorityWasm, fixtureWasm] = process.argv.slice(2);
-if (!bin || !authorityWasm || !fixtureWasm)
-  throw new Error("Expected PocketIC binary, authority Wasm, and fixture Wasm");
+const [bin, authorityWasm, fixtureWasm, archiveWasm] = process.argv.slice(2);
+if (!bin || !authorityWasm || !fixtureWasm || !archiveWasm)
+  throw new Error("Expected PocketIC binary, authority Wasm, fixture Wasm, and archive Wasm");
 const P = IDL.Principal,
   Hash = IDL.Vec(IDL.Nat8),
   Direction = IDL.Variant({ debit: IDL.Null, credit: IDL.Null });
@@ -81,6 +81,9 @@ const BalancedSet = IDL.Record({
     conflict: IDL.Null,
     blocked: IDL.Null,
   });
+const ArchiveTuple = IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash }),
+  ArchiveDecision = IDL.Variant({ acknowledge: IDL.Null, remainPending: IDL.Null, blocked: IDL.Null }),
+  ArchivePhase = IDL.Variant({ prepared: IDL.Null, archiveStarted: IDL.Null, pending: IDL.Null, acknowledged: IDL.Null, blocked: IDL.Null });
 const fixtureIdl = ({ IDL: C }) =>
   C.Service({
     writeThenLoseReply: C.Func([Input], [], []),
@@ -95,7 +98,14 @@ const fixtureIdl = ({ IDL: C }) =>
     retryBalancedEntryThenLoseReply: C.Func([IDL.Nat], [], []),
     repairBalancedEntry: C.Func([IDL.Nat], [Recovery], []),
     balancedPhase: C.Func([], [Phase], []),
+    prepareBalancedArchive: C.Func([ArchiveTuple], [], []),
+    balancedArchiveThenTrapBeforeAwait: C.Func([], [], []),
+    archiveBalancedSetThenLoseReply: C.Func([], [], []),
+    reconcileBalancedArchive: C.Func([], [ArchiveDecision], []),
+    repairBalancedArchiveResume: C.Func([], [ArchiveDecision], []),
+    balancedArchivePhase: C.Func([], [ArchivePhase], []),
   });
+const archiveIdl = ({ IDL: C }) => C.Service({ permit: C.Func([], [], []), revoke: C.Func([], [], []) });
 const Chunk = IDL.Record({ hash: Hash }),
   Upload = IDL.Record({ canister_id: P, chunk: Hash }),
   Install = IDL.Record({
@@ -206,6 +216,10 @@ async function main() {
         sender: installer,
         controllers: [installer],
         cycles: fixtureInstallationCycles,
+      }),
+      archiveId = await pic.createCanister({
+        sender: installer,
+        controllers: [installer],
       });
     const config = {
       core: Principal.fromUint8Array(Uint8Array.of(8, 4)),
@@ -228,7 +242,7 @@ async function main() {
       installer,
       fixtureId,
       fixtureWasm,
-      IDL.encode([P, P], [operator, authorityId]),
+      IDL.encode([P, P, P], [operator, authorityId, archiveId]),
     );
     await install(
       pic,
@@ -242,12 +256,20 @@ async function main() {
       installer,
       lowCycleFixtureId,
       fixtureWasm,
-      IDL.encode([P, P], [operator, lowCycleAuthorityId]),
+      IDL.encode([P, P, P], [operator, lowCycleAuthorityId, archiveId]),
+    );
+    await install(
+      pic,
+      installer,
+      archiveId,
+      archiveWasm,
+      IDL.encode([P, P, P], [fixtureId, lowCycleFixtureId, operator]),
     );
     const authority = pic.createActor(authorityIdl, authorityId),
       fixture = pic.createActor(fixtureIdl, fixtureId),
       lowCycleAuthority = pic.createActor(authorityIdl, lowCycleAuthorityId),
       lowCycleFixture = pic.createActor(fixtureIdl, lowCycleFixtureId),
+      archive = pic.createActor(archiveIdl, archiveId),
       h = (n) => Uint8Array.from({ length: 32 }, () => n),
       entry = (id, sequence, hash, direction = { debit: null }) => ({
         logicalId: id,
@@ -361,6 +383,45 @@ async function main() {
       "active",
       "only the replenished complete balanced set activates",
     );
+    await lowCycleFixture.prepareBalancedArchive({
+      logicalId: "treasury-journal-set:v1:balanced-low-cycle",
+      version: 1n,
+      contentHash: h(22),
+    });
+    await rejected(
+      () => lowCycleFixture.balancedArchiveThenTrapBeforeAwait(),
+      "balanced archive interrupted after durable tuple",
+    );
+    await install(
+      pic,
+      installer,
+      lowCycleFixtureId,
+      fixtureWasm,
+      IDL.encode([P, P, P], [operator, lowCycleAuthorityId, archiveId]),
+      { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] },
+    );
+    lowCycleFixture.setPrincipal(operator);
+    await rejected(
+      () => lowCycleFixture.repairBalancedArchiveResume(),
+      "interrupted balanced archive repair remains unavailable",
+    );
+    archive.setPrincipal(operator);
+    await archive.permit();
+    expect(
+      await lowCycleFixture.repairBalancedArchiveResume(),
+      "remainPending",
+      "operator archive repair resends only retained tuple",
+    );
+    expect(
+      await lowCycleFixture.reconcileBalancedArchive(),
+      "acknowledge",
+      "interrupted balanced archive exact receipt reconciles",
+    );
+    expect(
+      await lowCycleFixture.balancedArchivePhase(),
+      "acknowledged",
+      "only an exact archive receipt acknowledges the retained tuple",
+    );
     fixture.setPrincipal(operator);
     const lowCycle = entry("treasury-journal:v1:synthetic-low-cycles", 1, 10);
     await rejected(
@@ -403,7 +464,7 @@ async function main() {
       installer,
       fixtureId,
       fixtureWasm,
-      IDL.encode([P, P], [operator, authorityId]),
+      IDL.encode([P, P, P], [operator, authorityId, archiveId]),
       {
         upgrade: [
           { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
@@ -435,7 +496,7 @@ async function main() {
       installer,
       fixtureId,
       fixtureWasm,
-      IDL.encode([P, P], [operator, authorityId]),
+      IDL.encode([P, P, P], [operator, authorityId, archiveId]),
       {
         upgrade: [
           { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
@@ -495,7 +556,7 @@ async function main() {
       installer,
       fixtureId,
       fixtureWasm,
-      IDL.encode([P, P], [operator, authorityId]),
+      IDL.encode([P, P, P], [operator, authorityId, archiveId]),
       {
         upgrade: [
           { skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] },
@@ -542,6 +603,60 @@ async function main() {
       await fixture.balancedPhase(),
       "active",
       "only full balanced set activates",
+    );
+    fixture.setPrincipal(outsider);
+    await rejected(
+      () => fixture.prepareBalancedArchive({ logicalId: "treasury-journal-set:v1:synthetic-archive", version: 1n, contentHash: h(16) }),
+      "outsider balanced archive preparation denied",
+    );
+    fixture.setPrincipal(operator);
+    await fixture.prepareBalancedArchive({
+      logicalId: "treasury-journal-set:v1:synthetic-archive",
+      version: 1n,
+      contentHash: h(16),
+    });
+    archive.setPrincipal(operator);
+    await archive.revoke();
+    await rejected(
+      () => fixture.archiveBalancedSetThenLoseReply(),
+      "unavailable balanced archive keeps tuple pending",
+    );
+    expect(
+      await fixture.reconcileBalancedArchive(),
+      "remainPending",
+      "missing balanced archive receipt remains pending",
+    );
+    await archive.permit();
+    await rejected(
+      () => fixture.archiveBalancedSetThenLoseReply(),
+      "balanced archive acknowledgement deliberately lost",
+    );
+    await install(
+      pic,
+      installer,
+      archiveId,
+      archiveWasm,
+      IDL.encode([P, P, P], [fixtureId, lowCycleFixtureId, operator]),
+      { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] },
+    );
+    await install(
+      pic,
+      installer,
+      fixtureId,
+      fixtureWasm,
+      IDL.encode([P, P, P], [operator, authorityId, archiveId]),
+      { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] },
+    );
+    fixture.setPrincipal(operator);
+    expect(
+      await fixture.reconcileBalancedArchive(),
+      "acknowledge",
+      "exact balanced archive receipt reconciles after upgrades",
+    );
+    expect(
+      await fixture.balancedArchivePhase(),
+      "acknowledged",
+      "archive acknowledgement cannot alter the active balanced set",
     );
   } finally {
     await pic.tearDown();

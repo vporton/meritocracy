@@ -258,6 +258,9 @@ shared ({ caller = installer }) persistent actor class (
     let started = ArchiveSaga.startArchive(saved);
     if (started == saved) throw Error.reject("balanced archive is not writable");
     balancedArchive := ?started;
+    // The tuple is already durable, so a low-cycle rejection can later retry
+    // or reconcile only this exact archive acknowledgement request.
+    requireCycleReserve();
     let receipt = await archive.archive(started.tuple);
     if (Archive.decide(started.tuple, ?receipt) != #acknowledge) {
       throw Error.reject("synthetic balanced archive receipt mismatch");
@@ -291,6 +294,7 @@ shared ({ caller = installer }) persistent actor class (
       case (#prepared or #pending or #archiveStarted) {
         let started = ArchiveSaga.startArchive(reconciled);
         balancedArchive := ?started;
+        requireCycleReserve();
         let receipt = await archive.archive(started.tuple);
         if (Archive.decide(started.tuple, ?receipt) != #acknowledge) {
           throw Error.reject("synthetic balanced archive repair receipt mismatch");

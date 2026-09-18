@@ -21,7 +21,9 @@ shared ({ caller = installer }) persistent actor class (treasury : Principal, se
   func onlyOperator(caller : Principal) { assert caller == operator };
   func allowed(logicalId : Text) : Bool {
     logicalId == "treasury-journal-set:v1:synthetic-archive" or
-    logicalId == "treasury-journal-set:v1:balanced-low-cycle";
+    logicalId == "treasury-journal-set:v1:balanced-low-cycle" or
+    logicalId == "treasury-journal-set:v1:capacity:expected:maximum" or
+    logicalId == "treasury-journal-set:v1:capacity:two_x:maximum";
   };
 
   public shared ({ caller }) func permit() : async () { onlyOperator(caller); permitted := true };

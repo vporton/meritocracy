@@ -12,8 +12,8 @@ const { PocketIc } = require(path.join(root, "pic-js-mops"));
 const { IDL } = require(path.join(root, "@icp-sdk/core/lib/cjs/candid/index.js"));
 const { Principal } = require(path.join(root, "@icp-sdk/core/lib/cjs/principal/index.js"));
 
-const [bin, authorityWasm, treasuryWasm, reportPath] = process.argv.slice(2);
-if (!bin || !authorityWasm || !treasuryWasm || !reportPath) throw new Error("Expected PocketIC binary, authority Wasm, treasury Wasm, and report path");
+const [bin, authorityWasm, treasuryWasm, archiveWasm, reportPath] = process.argv.slice(2);
+if (!bin || !authorityWasm || !treasuryWasm || !archiveWasm || !reportPath) throw new Error("Expected PocketIC binary, authority Wasm, treasury Wasm, archive Wasm, and report path");
 const Hash = IDL.Vec(IDL.Nat8), P = IDL.Principal;
 const Config = IDL.Record({ core: P, workflow: P, treasury: P, archive: P, evidence: P, governance: P });
 const Input = IDL.Record({ logicalId: IDL.Text, journalSequence: IDL.Nat64, operationId: IDL.Text, accountId: IDL.Text, assetId: IDL.Text, direction: IDL.Variant({ debit: IDL.Null, credit: IDL.Null }), amountBaseUnits: IDL.Nat, assetDecimals: IDL.Nat8, desiredVersion: IDL.Nat64, contentHash: Hash });
@@ -27,7 +27,11 @@ const treasuryIdl = ({ IDL: C }) => C.Service({
   writeBalancedEntryThenLoseReply: C.Func([C.Nat], [], []),
   reconcileBalancedEntry: C.Func([C.Nat], [Recovery], []),
   balancedPhase: C.Func([], [Phase], []),
+  prepareBalancedArchive: C.Func([IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash })], [], []),
+  archiveBalancedSetThenLoseReply: C.Func([], [], []),
+  reconcileBalancedArchive: C.Func([], [IDL.Variant({ acknowledge: IDL.Null, remainPending: IDL.Null, blocked: IDL.Null })], []),
 });
+const archiveIdl = ({ IDL: C }) => C.Service({ permit: C.Func([], [], []) });
 const Chunk = IDL.Record({ hash: Hash }), Upload = IDL.Record({ canister_id: P, chunk: Hash });
 const Install = IDL.Record({ arg: Hash, chunk_hashes_list: IDL.Vec(Chunk), mode: IDL.Variant({ install: IDL.Null }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(P), canister_id: P, target_canister: P, wasm_module_hash: Hash });
 const management = Principal.fromText("aaaaa-aa");
@@ -67,9 +71,11 @@ function balancedEntry(name, ordinal) {
 async function scenario(pic, installer, operator, name, count) {
   const authorityId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 20_000_000_000_000n });
   const treasuryId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 20_000_000_000_000n });
-  const config = { core: Principal.fromUint8Array(Uint8Array.of(6, 1)), workflow: Principal.fromUint8Array(Uint8Array.of(6, 2)), treasury: treasuryId, archive: Principal.fromUint8Array(Uint8Array.of(6, 3)), evidence: Principal.fromUint8Array(Uint8Array.of(6, 4)), governance: Principal.fromUint8Array(Uint8Array.of(6, 5)) };
+  const archiveId = await pic.createCanister({ sender: installer, controllers: [installer], cycles: 20_000_000_000_000n });
+  const config = { core: Principal.fromUint8Array(Uint8Array.of(6, 1)), workflow: Principal.fromUint8Array(Uint8Array.of(6, 2)), treasury: treasuryId, archive: archiveId, evidence: Principal.fromUint8Array(Uint8Array.of(6, 4)), governance: Principal.fromUint8Array(Uint8Array.of(6, 5)) };
   await install(pic, installer, authorityId, authorityWasm, IDL.encode([Config], [config]));
   await install(pic, installer, treasuryId, treasuryWasm, IDL.encode([P, P, P], [operator, authorityId, config.archive]));
+  await install(pic, installer, archiveId, archiveWasm, IDL.encode([P, P, P], [treasuryId, config.core, operator]));
   const before = { authority: await pic.getCyclesBalance(authorityId), treasury: await pic.getCyclesBalance(treasuryId) }, treasury = pic.createActor(treasuryIdl, treasuryId); treasury.setPrincipal(operator); let encodedInputBytes = 0;
   const invalid = { ...entry(name, 999), logicalId: "x".repeat(513) };
   await reject(() => treasury.writeThenLoseReply(invalid), `${name} over-limit input is rejected before storage`);
@@ -86,11 +92,19 @@ async function scenario(pic, installer, operator, name, count) {
     expect(await treasury.reconcileBalancedEntry(BigInt(ordinal)), "acknowledge", `${name} retained balanced entry ${ordinal} exact tuple reconciles`);
   }
   expect(await treasury.balancedPhase(), "active", `${name} complete maximum balanced set alone becomes active`);
+  const archiveTuple = { logicalId: set.logicalId, version: 1n, contentHash: hash(240) };
+  encodedInputBytes += IDL.encode([IDL.Record({ logicalId: IDL.Text, version: IDL.Nat64, contentHash: Hash })], [archiveTuple]).byteLength;
+  const archive = pic.createActor(archiveIdl, archiveId);
+  archive.setPrincipal(operator);
+  await archive.permit();
+  await treasury.prepareBalancedArchive(archiveTuple);
+  await reject(() => treasury.archiveBalancedSetThenLoseReply(), `${name} archive deliberately loses reply`);
+  expect(await treasury.reconcileBalancedArchive(), "acknowledge", `${name} archive exact tuple reconciles`);
   const after = { authority: await pic.getCyclesBalance(authorityId), treasury: await pic.getCyclesBalance(treasuryId) };
-  return { name, writes: count + 16, lookups: (count + 16) * 2, balancedSetEntries: 16, encodedInputBytes, authorityCycleDelta: (before.authority - after.authority).toString(), treasuryCycleDelta: (before.treasury - after.treasury).toString() };
+  return { name, writes: count + 16, lookups: (count + 16) * 2, balancedSetEntries: 16, archiveTuples: 1, archiveLookups: 1, encodedInputBytes, authorityCycleDelta: (before.authority - after.authority).toString(), treasuryCycleDelta: (before.treasury - after.treasury).toString() };
 }
 async function main() {
   const server = await startPocketIc(bin), pic = await PocketIc.create(server.url);
-  try { const installer = Principal.fromUint8Array(Uint8Array.of(6, 31)), operator = Principal.fromUint8Array(Uint8Array.of(6, 32)); const report = { schemaVersion: 1, component: "M1 fixed treasury-journal and bounded balanced-set capacity proof", emulator: "PocketIC synthetic-only", scenarios: [await scenario(pic, installer, operator, "expected", 16), await scenario(pic, installer, operator, "two_x", 32)], rejection: { logicalIdBytes: 513, balancedSetEntries: 17, result: "rejected before journal, set retention, or storage in each scenario" }, limitations: ["Cycle deltas are emulator measurements, not a mainnet instruction or production-cycle budget.", "Each scenario also writes and exactly reconciles one maximum 16-entry immutable balanced set; the 17-entry failure limit is enforced before durable set retention.", "This covers only the fixed treasury-journal adapter and its synthetic balanced-set fixture; other collection-specific capacity proofs remain required before G2."] }; fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600, flag: "wx" }); console.log(JSON.stringify(report)); } finally { await pic.tearDown(); await server.stop(); }
+  try { const installer = Principal.fromUint8Array(Uint8Array.of(6, 31)), operator = Principal.fromUint8Array(Uint8Array.of(6, 32)); const report = { schemaVersion: 1, component: "M1 fixed treasury-journal, bounded balanced-set, and tuple-only archive capacity proof", emulator: "PocketIC synthetic-only", scenarios: [await scenario(pic, installer, operator, "expected", 16), await scenario(pic, installer, operator, "two_x", 32)], rejection: { logicalIdBytes: 513, balancedSetEntries: 17, result: "rejected before journal, set retention, or storage in each scenario" }, limitations: ["Cycle deltas are emulator measurements, not a mainnet instruction or production-cycle budget.", "Each scenario also writes and exactly reconciles one maximum 16-entry immutable balanced set; the 17-entry failure limit is enforced before durable set retention.", "One fixed tuple-only archive acknowledgement follows each active maximum set; it contains no posting, balance, account, asset, amount, destination, signer, transaction, or chain data.", "This covers only the fixed treasury-journal adapter and its synthetic balanced-set/archive fixture; other collection-specific capacity proofs remain required before G2."] }; fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600, flag: "wx" }); console.log(JSON.stringify(report)); } finally { await pic.tearDown(); await server.stop(); }
 }
 main().catch(error => { console.error(error.stack || error.message); process.exitCode = 1; });

@@ -15,5 +15,5 @@ runtime_dir="$(mktemp -d "${TMPDIR:-/tmp}/m1-treasury-journal-capacity-pocketic.
 trap 'rm -rf -- "$runtime_dir"' EXIT
 cp -- "$pocket_ic_bin" "$runtime_dir/pocket-ic"
 chmod 700 "$runtime_dir/pocket-ic"
-node "$repo_root/scripts/icp/treasury-journal-capacity-pocketic-proof.cjs" "$runtime_dir/pocket-ic" "$artifact_dir/treasury_journal_authority.wasm" "$artifact_dir/treasury_journal_fixture.wasm" "$artifact_dir/capacity.json"
+node "$repo_root/scripts/icp/treasury-journal-capacity-pocketic-proof.cjs" "$runtime_dir/pocket-ic" "$artifact_dir/treasury_journal_authority.wasm" "$artifact_dir/treasury_journal_fixture.wasm" "$artifact_dir/treasury_journal_archive.wasm" "$artifact_dir/capacity.json"
 echo "Treasury-journal capacity PocketIC proof passed."

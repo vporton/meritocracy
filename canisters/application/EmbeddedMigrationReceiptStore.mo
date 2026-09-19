@@ -60,6 +60,19 @@ module {
       version = input.desiredVersion; contentHash = input.contentHash };
   };
 
+  // A receipt's logical ID is not a license to substitute the source chunk
+  // metadata. In particular, a changed payload hash must not be accepted as
+  // an idempotent retry merely because a caller repeats the old content hash.
+  func sameImmutableInput(existing : Record, input : Receipt.Input) : Bool {
+    existing.migrationId == input.migrationId and
+    existing.sourceTable == input.sourceTable and
+    existing.chunk == Nat64.toNat(input.chunk) and
+    existing.rowCount == input.rowCount and
+    Blob.equal(existing.payloadHash, input.payloadHash) and
+    existing.version == input.desiredVersion and
+    Blob.equal(existing.contentHash, input.contentHash);
+  };
+
   public func validEncoding(input : Receipt.Input) : Bool {
     // The receipt contract bounds text to 896 scalar values total. Even at
     // four UTF-8 bytes per scalar, with both 32-byte hashes, Nat64/Nat32
@@ -99,7 +112,7 @@ module {
           };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          decideIdempotentWrite(input, ?{ version = existing.version; contentHash = existing.contentHash });
+          if (sameImmutableInput(existing, input)) #acknowledged else #conflict;
         } else #conflict;
       };
     };
@@ -119,4 +132,3 @@ module {
     };
   };
 };
-

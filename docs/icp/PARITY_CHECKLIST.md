@@ -374,6 +374,18 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-018 | Mainnet production migration | Full sanitized rehearsal, signed reconciliation, rollback rehearsal, G4 approval, separate manual asset actions | BLOCKED_G4 |
 | OP-019 | Legacy retirement | Only after observation, parity, data/money reconciliation, key disposition, audit/retention approval | BLOCKED_G4/M10 |
 
+### M1 current-topology evidence update (DM-004/DM-005)
+
+The consolidated application-private identity/role adapter now has a dedicated
+synthetic EOP fixture and checksum-verified PocketIC CI route; see
+`M1_STORAGE_SCHEMA_AND_SAGAS.md`'s 2026-09-19 proof entry. It proves the
+current module's bounded immutable write/retry/conflict encoding and
+install/reopen shape, not an application Candid method, policy decision, or
+authoritative collection. The local PocketIC server cannot start in this
+workspace, so the proof has no claimed local execution result; the isolated CI
+workflow must produce and be reviewed for execution evidence. DM-004 and
+DM-005 therefore remain `IN_PROGRESS / BLOCKED_M1/G2`.
+
 ## Required evidence for status changes
 
 For a row to become `VERIFIED`, its acceptance behavior must have:

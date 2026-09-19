@@ -1,0 +1,54 @@
+name: M1 consolidated application identity/role PocketIC proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/application/EmbeddedIdentityRoleStore.mo'
+      - 'canisters/shared/IdentityRoleRecovery.mo'
+      - 'fixtures/application/EmbeddedIdentityRoleStoreProof.mo'
+      - 'scripts/icp/build-application-embedded-identity-role-proof.sh'
+      - 'scripts/icp/run-application-embedded-identity-role-proof.sh'
+      - 'scripts/icp/embedded-identity-role-pocketic-proof.cjs'
+      - '.github/workflows/m1-application-embedded-identity-role.yml'
+      - 'mops.toml'
+      - 'mops.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-application-identity-role-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build synthetic application fixture
+        run: |
+          mkdir -p .mops/m1-application-embedded-identity-role-proof
+          scripts/icp/build-application-embedded-identity-role-proof.sh 2>&1 | tee .mops/m1-application-embedded-identity-role-proof/build.log
+      - name: Run synthetic application fixture
+        run: |
+          timeout 15m scripts/icp/run-application-embedded-identity-role-proof.sh 2>&1 | tee .mops/m1-application-embedded-identity-role-proof/proof.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-application-embedded-identity-role-${{ github.run_id }}
+          path: .mops/m1-application-embedded-identity-role-proof
+          if-no-files-found: warn
+          retention-days: 14

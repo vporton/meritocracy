@@ -166,10 +166,11 @@ denials. It then upgrades that embedded artifact again and repeats the
 preservation checks. The run fails rather than accepting a replaced matrix,
 authorization reset, or bypass.
 
-### 2026-09-11 synthetic identity/role adapter execution
+### 2026-09-11 historical storage-authority identity/role adapter execution
 
-The private `EmbeddedIdentityRoleStore` adapter is exercised only through the
-disposable `EmbeddedIdentityRoleStoreProof` fixture. GitHub Actions
+The historical storage-authority copy of `EmbeddedIdentityRoleStore` is
+exercised only through the disposable `EmbeddedIdentityRoleStoreProof`
+fixture. GitHub Actions
 [run 34621917379](https://github.com/vporton/meritocracy/actions/runs/34621917379)
 passed on commit `8454e70d05e40d61e2ff7cc15b0af59fdff6b754`: it installs the
 hash-recorded fixture into synthetic PocketIC state using bounded 1,000,000-byte
@@ -183,6 +184,32 @@ This is bounded adapter execution evidence only. It does not prove core-domain
 durable intents, inter-canister lost-reply/duplicate recovery, record survival
 through interruption or upgrade, archive handling, low-cycle behavior, or
 repair/resume. No collection is authoritative as a result.
+
+### 2026-09-19 consolidated-application embedded identity/role proof
+
+`fixtures/application/EmbeddedIdentityRoleStoreProof.mo` imports the target
+application-owned private adapter, not the historical storage-authority copy.
+It mirrors the target actor's initialized-flag install/reopen discipline and
+exposes two write methods only in the disposable fixture. Its hash-verified
+build completed locally. `IdentityRoleRecovery` and `CallerAuthorization`
+vectors pass, as does `mops check application_canister`; shell and JavaScript
+syntax checks plus `git diff --check` pass.
+
+The fixture's PocketIC runner permits exactly one synthetic Internet Identity
+binding and one synthetic role assignment, exact retries, changed-version/hash
+conflicts, malformed-ID and anonymous-principal rejection, and a same-Wasm EOP
+upgrade before repeating the exact/conflict checks. It accepts no OAuth data,
+target user data, generic collection/action, DFX identity, wallet, network
+configuration, deployment, or public application storage interface.
+
+The local run could not start PocketIC before its bounded startup timeout in
+this workspace, so no local execution pass is claimed. The new isolated
+20-minute workflow
+`.github/workflows/m1-application-embedded-identity-role.yml` is the required
+execution route; its logs and checksum-recorded disposable artifact are
+retained for 14 days. This proves neither a target public method nor an
+authoritative collection, and it does not cover workflow/migration collections,
+archive/export, capacity, low-cycle, repair, or G2 authorization policy.
 
 To execute outside a short-lived workspace, run:
 

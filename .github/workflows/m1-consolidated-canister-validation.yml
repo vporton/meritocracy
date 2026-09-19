@@ -1,0 +1,56 @@
+name: M1 consolidated canister validation
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/application/**'
+      - 'canisters/treasury/**'
+      - 'canisters/core/**'
+      - 'canisters/workflow/**'
+      - 'canisters/archive_router/**'
+      - 'canisters/shared/**'
+      - 'packages/**'
+      - 'test/**'
+      - 'mops.toml'
+      - 'mops.lock'
+      - 'dfx.json'
+      - '.github/workflows/m1-consolidated-canister-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Cache pinned Motoko toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-consolidated-canisters-${{ runner.os }}-1.4.1-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Check stable and Candid compatibility
+        run: node node_modules/ic-mops/dist/bin/mops.js check application_canister treasury_canister
+      - name: Build consolidated target canisters
+        run: node node_modules/ic-mops/dist/bin/mops.js build application_canister treasury_canister
+      - name: Run Motoko contract vectors
+        run: node node_modules/ic-mops/dist/bin/mops.js test
+      - name: Retain validation artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-consolidated-canister-validation-${{ github.run_id }}
+          path: .mops/.build
+          if-no-files-found: warn
+          retention-days: 14

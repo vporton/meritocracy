@@ -38,19 +38,12 @@ pocket-ic = "12.0.0"
 # declaration provides reproducible compiler resolution.
 args = ["--actor-idl=canisters/shared/system_idl"]
 
-[canisters.core_canister]
-main = "canisters/core/main.mo"
-candid = "canisters/core/core_canister.did"
+[canisters.application_canister]
+main = "canisters/application/main.mo"
+candid = "canisters/application/application_canister.did"
 
-[canisters.core_canister.check-stable]
-path = "deployed/core_canister.most"
-
-[canisters.workflow_canister]
-main = "canisters/workflow/main.mo"
-candid = "canisters/workflow/workflow_canister.did"
-
-[canisters.workflow_canister.check-stable]
-path = "deployed/workflow_canister.most"
+[canisters.application_canister.check-stable]
+path = "deployed/application_canister.most"
 
 [canisters.treasury_canister]
 main = "canisters/treasury/main.mo"
@@ -58,24 +51,3 @@ candid = "canisters/treasury/treasury_canister.did"
 
 [canisters.treasury_canister.check-stable]
 path = "deployed/treasury_canister.most"
-
-[canisters.archive_router]
-main = "canisters/archive_router/main.mo"
-candid = "canisters/archive_router/archive_router.did"
-
-[canisters.archive_router.check-stable]
-path = "deployed/archive_router.most"
-
-[canisters.storage_authority]
-main = "canisters/storage_authority/main.mo"
-candid = "canisters/storage_authority/storage_authority.did"
-
-[canisters.storage_authority.check-stable]
-path = "deployed/storage_authority.most"
-
-[canisters.oauth_fixture]
-main = "canisters/oauth_fixture/main.mo"
-candid = "canisters/oauth_fixture/oauth_fixture.did"
-
-[canisters.oauth_fixture.check-stable]
-path = "deployed/oauth_fixture.most"

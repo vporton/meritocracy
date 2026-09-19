@@ -1,6 +1,6 @@
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
-import Store "../canisters/storage_authority/EmbeddedTreasuryJournalStore";
+import Store "../canisters/treasury/EmbeddedTreasuryJournalStore";
 import TreasuryJournal "../canisters/treasury/TreasuryJournalIntent";
 
 func hash(byte : Nat8) : Blob {

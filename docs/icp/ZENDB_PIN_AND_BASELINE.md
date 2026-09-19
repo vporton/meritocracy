@@ -51,13 +51,14 @@ Two clean local builds produced identical Candid and Wasm hashes. Their generate
 
 ## API and authorization findings
 
-**Superseded remote-RBAC topology (2026-08-07):** The project owner selected
-an in-process ZenDB library behind a Motoko storage-authority canister. ZenDB
-is therefore not an externally reachable authorization boundary in the target.
-The remote grant/self-grant findings below remain pin diagnostics only; they do
-not define target authorization or require a user to configure ZenDB grants.
-The binding target boundary and proof obligations are in
-`M1_OPERATOR_HANDOFF.md`.
+**Superseded remote-RBAC and storage-authority topologies (2026-09-19):** The
+owner approved a consolidated application/treasury design at G1. ZenDB, if M1 retains it, is a private in-process library in its
+owning actor; it is not an externally reachable authorization boundary or a
+storage microservice. The remote grant/self-grant findings and the former
+storage-authority Candid boundary below remain pin/scaffold diagnostics only.
+They do not define target authorization or require a user to configure ZenDB
+grants. The amended target boundary and proof obligations are in
+`ARCHITECTURE.md`.
 
 The candidate's generated Candid exposes `grant_collection_access` and `revoke_collection_access`, whose scope is `(database, collection)`. Its source also creates `reader`, `writer`, `observer`, and `admin` roles. A local initialization grants global `admin` to the initial owner and to the database canister principal itself.
 

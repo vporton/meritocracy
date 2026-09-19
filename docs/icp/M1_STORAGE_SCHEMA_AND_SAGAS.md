@@ -1,6 +1,6 @@
 # M1 storage schema and mutation-saga contract
 
-Status: **IN PROGRESS authorization scaffold / unproven** as of 2026-08-07. This document and the companion Motoko modules define the only candidate schemas for M1 task 4. The local-only storage-authority scaffold adds fixed authorization probes and a governance audit, but does not deploy ZenDB, persist target data, grant a principal, ingest data, enable OAuth, or make any collection authoritative. The required local fault, benchmark, and RBAC proof remains a G2 blocker.
+Status: **IN PROGRESS under the approved G1 consolidation amendment** as of 2026-09-19. This document and the companion Motoko modules preserve candidate schemas and local-only storage-authority evidence from the earlier topology. The production target is consolidated application and treasury actors; no storage-authority canister, remote ZenDB actor, or per-collection service is a target. The catalogue must be remapped to private in-process modules and re-proven for bounded mutation, upgrade, recovery, capacity, and repair. Nothing here deploys ZenDB, persists target data, grants a principal, ingests data, enables OAuth, or makes a collection authoritative.
 
 ## Contract boundary
 
@@ -61,7 +61,13 @@ The initial hard envelope, pending M1 inventory/benchmark replacement, is:
 
 Every list uses a versioned opaque cursor carrying the exact indexed sort key, logical ID, and query/filter hash. Offset pagination and an unindexed filter are rejected. The future implementation must record measured instruction/bytes/index multiplier and set a lower request-specific limit if the current envelope is unsafe.
 
-## Storage-authority authorization boundary
+## Historical storage-authority authorization boundary
+
+This section is retained as evidence for the superseded local-only scaffold.
+It is not an implementation instruction for the consolidated target. The
+target actor's typed public methods are its authorization boundary; private
+storage modules must have no Candid surface, generic CRUD, or runtime grant
+matrix.
 
 Per the 2026-08-07 M1 decision in `M1_OPERATOR_HANDOFF.md`, ZenDB is an
 in-process library in a persistent storage-authority canister. The library has

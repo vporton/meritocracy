@@ -62,13 +62,13 @@ ICP's current Chain Fusion model provides threshold ECDSA/Schnorr signatures, na
 
 ## Unified Chain Fusion treasury
 
-One SNS-controlled `treasury_canister` is the sole application authority for both accounting and custody. It is not blackholed and there is no separate vault canister. Its proposed pinned ZenDB canister is a treasury-role-restricted storage dependency, not an independently callable accounting authority. The treasury canister owns:
+One SNS-controlled `treasury_canister` is the sole application authority for both accounting and custody. It is not blackholed and there is no separate vault or storage canister. Its proposed persistence is a private in-process Motoko/ZenDB module, not an independently callable accounting authority. The treasury canister owns:
 
 - double-entry accounting journal, obligations and holds, payment-cycle/rounding/remainder policy, immutable payment intents/destination snapshots, reconciliation reports, and stable scheduler/cursors;
 - ICP/ICRC accounts/subaccounts, Chain Fusion key-derivation paths and signing requests, immutable operation receipts, and chain nonce/sequence/UTXO reservations;
 - asset/network allowlists, transaction and rolling-window caps, fee caps, destination encoding validation, and immediate pause state.
 
-Every payment method authenticates its caller and authorizes the exact action in the treasury canister before signing/sending. Because its ZenDB receipt collection is remote, “persists the operation receipt” means the treasury first commits a native durable intent, writes the receipt under the immutable application `operationId` logical key, and confirms the stored content hash before any signing call. The treasury canister alone has collection-scoped write/read capability; users, browsers, other application canisters, operators, and pause-only principals have no direct receipt-collection access, while ZenDB administration remains governance-only. The method binds:
+Every payment method authenticates its caller and authorizes the exact action in the treasury canister before signing/sending. “Persists the operation receipt” means the treasury first commits a native durable intent and writes the receipt under the immutable application `operationId` logical key in its private store before any signing call. The treasury canister alone can reach that collection; users, browsers, the application canister, operators, and pause-only principals have no direct receipt-collection access. The method binds:
 
 ```text
 operationId
@@ -224,7 +224,7 @@ Legacy addresses are neither current login authority nor automatically approved 
 
 ### Production direction
 
-- SNS is the sole controller of `frontend_assets`, `core`, `workflow`, `archive_router/shards`, and the unified `treasury`. No production canister is blackholed or has an empty controller list.
+- Under the approved G1 consolidation amendment, SNS is the sole controller of `frontend_assets`, `application_canister`, and the unified `treasury`. No production canister is blackholed or has an empty controller list.
 - Upgrade proposal contains source commit, reproducible Wasm/assets hashes, dependency lock, Candid/stable compatibility, state migration plan, tests, security diff, cycles/freezing impact, and rollback module hash.
 - Proposal delay allows public/security review. Deployed module hashes and controller lists are verified after execution.
 - G4 first authorizes an isolated mainnet SNS testflight, not a custodial deployment: its canister IDs, bounded approved cycle budget, test-only environment/derivation domain, controller recovery/abort procedure, and evidence retention are fixed in the signed runbook. It may use only valueless external test assets and must prove that no production data, production derivation path, payment authority, or custodial asset is present before it tests testflight-SNS-root-only control and recovery. Failure returns to the pre-production controller and blocks the separately reviewed production SNS handoff/deployment.
@@ -237,7 +237,7 @@ ICP's controller model gives controllers power to install/upgrade/delete caniste
 
 Assumed effects:
 
-- attacker can upgrade frontend/core/workflow/treasury/archive canisters, expose their data/API credentials, falsify non-certified application views, stop service, and request malicious-looking operations;
+- attacker can upgrade frontend/application/treasury canisters, expose their data/API credentials, falsify non-certified application views, stop service, and request malicious-looking operations;
 - attacker cannot extract a Chain Fusion private key because none exists, but upgraded treasury code can request signatures; the SNS proposal delay, safety pause, policy caps, monitoring, and recovery process are therefore release-blocking controls.
 
 Response:

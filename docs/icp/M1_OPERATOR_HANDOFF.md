@@ -1,12 +1,21 @@
 # M1 operator handoff and settled decisions
 
-Last updated: 2026-08-07.
+Last updated: 2026-09-19.
 
 This document records decisions already supplied by the project owner. A new
-session must treat them as established context and must not ask for the same
-RBAC design choice or `DATABASE_URL` location again.
+session must treat the PostgreSQL configuration as established context and
+must not ask for its location again. The storage decision below is historical:
+the owner requested a consolidated architecture on 2026-09-19 and the pending
+G1 amendment in `ARCHITECTURE.md` supersedes it for future implementation.
 
-## Storage authorization boundary
+## Historical storage-authority boundary (superseded by approved G1 amendment)
+
+The remainder of this section describes the local-only scaffold and proofs
+already created under the earlier architecture. It does not authorize a target
+canister and must not be extended. Under the approved amendment, storage is a
+private in-process module in the consolidated application or treasury actor;
+its method-body authorization and collection mutation/upgrade proofs replace
+this Candid-boundary design.
 
 **Decision:** ZenDB is an in-process library inside a persistent Motoko
 **storage-authority canister**. It is not a separately reachable remote ZenDB

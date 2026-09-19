@@ -1,6 +1,6 @@
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
-import Store "../canisters/storage_authority/EmbeddedPaymentOperationStore";
+import Store "../canisters/treasury/EmbeddedPaymentOperationStore";
 import PaymentOperation "../canisters/treasury/PaymentOperationIntent";
 
 func hash(byte : Nat8) : Blob {

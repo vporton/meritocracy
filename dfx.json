@@ -8,35 +8,15 @@
     }
   },
   "canisters": {
-    "core_canister": {
+    "application_canister": {
       "type": "motoko",
-      "main": "canisters/core/main.mo",
-      "candid": "canisters/core/core_canister.did"
-    },
-    "workflow_canister": {
-      "type": "motoko",
-      "main": "canisters/workflow/main.mo",
-      "candid": "canisters/workflow/workflow_canister.did"
+      "main": "canisters/application/main.mo",
+      "candid": "canisters/application/application_canister.did"
     },
     "treasury_canister": {
       "type": "motoko",
       "main": "canisters/treasury/main.mo",
       "candid": "canisters/treasury/treasury_canister.did"
-    },
-    "archive_router": {
-      "type": "motoko",
-      "main": "canisters/archive_router/main.mo",
-      "candid": "canisters/archive_router/archive_router.did"
-    },
-    "storage_authority": {
-      "type": "motoko",
-      "main": "canisters/storage_authority/main.mo",
-      "candid": "canisters/storage_authority/storage_authority.did"
-    },
-    "oauth_fixture": {
-      "type": "motoko",
-      "main": "canisters/oauth_fixture/main.mo",
-      "candid": "canisters/oauth_fixture/oauth_fixture.did"
     }
   }
 }

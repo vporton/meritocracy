@@ -1,0 +1,59 @@
+name: M1 treasury-journal canonical archive-export PocketIC proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/treasury/TreasuryJournalArchiveRecovery.mo'
+      - 'canisters/treasury/TreasuryJournalArchiveExport.mo'
+      - 'canisters/treasury/TreasuryJournalArchiveExportBinding.mo'
+      - 'canisters/treasury/TreasuryJournalArchiveExportSaga.mo'
+      - 'canisters/treasury/TreasuryJournalBalancedSet.mo'
+      - 'canisters/treasury/TreasuryJournalIntent.mo'
+      - 'fixtures/treasury/TreasuryJournalArchiveExportLostReply.mo'
+      - 'fixtures/treasury/TreasuryJournalArchiveExportSink.mo'
+      - 'scripts/icp/build-treasury-journal-archive-export-proof.sh'
+      - 'scripts/icp/run-treasury-journal-archive-export-proof.sh'
+      - 'scripts/icp/treasury-journal-archive-export-pocketic-proof.cjs'
+      - '.github/workflows/m1-treasury-journal-archive-export.yml'
+      - 'mops.toml'
+      - 'mops.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-treasury-journal-archive-export-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build canonical archive-export fixtures
+        run: |
+          mkdir -p .mops/m1-treasury-journal-archive-export-proof
+          scripts/icp/build-treasury-journal-archive-export-proof.sh 2>&1 | tee .mops/m1-treasury-journal-archive-export-proof/build.log
+      - name: Run canonical archive-export fixtures
+        run: |
+          timeout 15m scripts/icp/run-treasury-journal-archive-export-proof.sh 2>&1 | tee .mops/m1-treasury-journal-archive-export-proof/proof.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-treasury-journal-archive-export-${{ github.run_id }}
+          path: .mops/m1-treasury-journal-archive-export-proof
+          if-no-files-found: warn
+          retention-days: 14

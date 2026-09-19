@@ -10,6 +10,7 @@ import MigrationReceiptIntent "../archive_router/MigrationReceiptIntent";
 import IdentityRoleStore "EmbeddedIdentityRoleStore";
 import WorkflowReceiptStore "EmbeddedWorkflowCompletionReceiptStore";
 import MigrationReceiptStore "EmbeddedMigrationReceiptStore";
+import CallerAuthorization "CallerAuthorization";
 
 /// Consolidated application actor.
 ///
@@ -29,6 +30,7 @@ persistent actor Application {
   type _RoleIntent = RoleAssignmentIntent.RoleIntent;
   type _WorkflowReceiptIntent = CompletionReceiptIntent.Input;
   type _MigrationReceiptIntent = MigrationReceiptIntent.Input;
+  type _CallerAuthorizationDecision = CallerAuthorization.Decision;
 
   let _storageLimits = StorageCatalog.limits;
 

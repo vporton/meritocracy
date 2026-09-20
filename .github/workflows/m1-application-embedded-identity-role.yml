@@ -11,6 +11,8 @@ on:
       - 'scripts/icp/embedded-identity-role-pocketic-proof.cjs'
       - 'scripts/icp/application-embedded-identity-role-capacity-pocketic-proof.cjs'
       - 'scripts/icp/run-application-embedded-identity-role-capacity-proof.sh'
+      - 'scripts/icp/application-embedded-identity-role-low-cycle-pocketic-proof.cjs'
+      - 'scripts/icp/run-application-embedded-identity-role-low-cycle-proof.sh'
       - '.github/workflows/m1-application-embedded-identity-role.yml'
       - 'mops.toml'
       - 'mops.lock'
@@ -49,6 +51,9 @@ jobs:
       - name: Run bounded private-adapter capacity fixture
         run: |
           timeout 15m scripts/icp/run-application-embedded-identity-role-capacity-proof.sh 2>&1 | tee .mops/m1-application-embedded-identity-role-proof/capacity.log
+      - name: Run low-cycle private-adapter recovery fixture
+        run: |
+          timeout 15m scripts/icp/run-application-embedded-identity-role-low-cycle-proof.sh 2>&1 | tee .mops/m1-application-embedded-identity-role-proof/low-cycle.log
       - name: Retain proof artifacts and logs
         if: always()
         uses: actions/upload-artifact@v4

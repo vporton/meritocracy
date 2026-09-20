@@ -9,6 +9,7 @@ on:
       - 'canisters/treasury/TreasuryJournalArchiveExportSaga.mo'
       - 'canisters/treasury/TreasuryJournalBalancedSet.mo'
       - 'canisters/treasury/TreasuryJournalIntent.mo'
+      - 'canisters/shared/CycleReserve.mo'
       - 'fixtures/treasury/TreasuryJournalArchiveExportLostReply.mo'
       - 'fixtures/treasury/TreasuryJournalArchiveExportSink.mo'
       - 'scripts/icp/build-treasury-journal-archive-export-proof.sh'

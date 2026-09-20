@@ -2,7 +2,9 @@
 // Its journal set is fixed at installation. Public proof methods accept no
 // posting, tuple, byte, hash, or repair replacement input.
 import Error "mo:base/Error";
+import Cycles "mo:base/ExperimentalCycles";
 import Principal "mo:base/Principal";
+import CycleReserve "../../canisters/shared/CycleReserve";
 import Archive "../../canisters/treasury/TreasuryJournalArchiveRecovery";
 import Binding "../../canisters/treasury/TreasuryJournalArchiveExportBinding";
 import Saga "../../canisters/treasury/TreasuryJournalArchiveExportSaga";
@@ -28,6 +30,14 @@ shared ({ caller = installer }) persistent actor class (
   var exportState : ?Saga.State = null;
 
   func onlyOperator(caller : Principal) { assert caller == operator };
+
+  // The immutable bytes-plus-tuple binding is durable before this synthetic
+  // floor is checked. A depleted fixture therefore cannot dispatch an archive
+  // call, and can recover only the binding it already retained after the
+  // proof runner replenishes this disposable canister.
+  func requireCycleReserve() {
+    assert CycleReserve.decide(Cycles.balance()) == #allowed;
+  };
 
   public shared ({ caller }) func prepareArchiveExport() : async () {
     onlyOperator(caller);
@@ -62,6 +72,7 @@ shared ({ caller = installer }) persistent actor class (
     let started = Saga.startArchive(fixedSet, saved);
     if (started == saved) throw Error.reject("canonical archive export is not dispatchable");
     exportState := ?started;
+    requireCycleReserve();
     let receipt = await archive.archive(started.binding);
     if (Archive.decide(started.binding.tuple, ?receipt) != #acknowledge) {
       throw Error.reject("synthetic canonical archive receipt mismatch");
@@ -94,6 +105,7 @@ shared ({ caller = installer }) persistent actor class (
       case (#prepared or #archiveStarted or #pending) {
         let started = Saga.startArchive(fixedSet, reconciled);
         exportState := ?started;
+        requireCycleReserve();
         let receipt = await archive.archive(started.binding);
         if (Archive.decide(started.binding.tuple, ?receipt) != #acknowledge) {
           throw Error.reject("synthetic canonical archive repair receipt mismatch");

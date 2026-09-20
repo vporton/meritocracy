@@ -59,6 +59,9 @@ const sinkIdl = ({ IDL: C }) => C.Service({
   archive: C.Func([Binding], [Tuple], []),
 });
 const management = Principal.fromText("aaaaa-aa");
+// Below CycleReserve.minimumReserve (one trillion), while sufficient to
+// install this disposable fixture. Only the fixture is replenished below.
+const lowCycleFixtureInstallationCycles = 900_000_000_000n;
 const hash = (byte) => Uint8Array.from({ length: 32 }, () => byte);
 
 function expect(value, tag, label) {
@@ -93,8 +96,10 @@ function set(logicalId, ordinal) {
     ],
   };
 }
-async function installPair(pic, installer, operator, logicalId, ordinal) {
-  const fixtureId = await pic.createCanister({ sender: installer, controllers: [installer] });
+async function installPair(pic, installer, operator, logicalId, ordinal, fixtureCycles) {
+  const fixtureOptions = { sender: installer, controllers: [installer] };
+  if (fixtureCycles !== undefined) fixtureOptions.cycles = fixtureCycles;
+  const fixtureId = await pic.createCanister(fixtureOptions);
   const sinkId = await pic.createCanister({ sender: installer, controllers: [installer] });
   const fixedSet = set(logicalId, ordinal);
   await install(pic, installer, sinkId, sinkWasm, IDL.encode([P, P, IDL.Text], [fixtureId, operator, logicalId]));
@@ -147,6 +152,27 @@ async function main() {
     expect(await interrupted.fixture.repairArchiveExport(), "remainPending", "repair sends retained binding without replacement input");
     expect(await interrupted.fixture.reconcileArchiveExport(), "acknowledge", "repaired exact receipt acknowledges only retained binding");
     if (!(await interrupted.fixture.archiveRetainsExactExport())) throw new Error("repair path did not retain byte-identical canonical binding");
+
+    const lowCycles = await installPair(
+      pic,
+      installer,
+      operator,
+      "treasury-journal-set:v1:canonical-export:low-cycles",
+      31,
+      lowCycleFixtureInstallationCycles,
+    );
+    lowCycles.fixture.setPrincipal(operator);
+    await lowCycles.fixture.prepareArchiveExport();
+    lowCycles.sink.setPrincipal(operator);
+    await lowCycles.sink.permit();
+    await rejected(() => lowCycles.fixture.archiveThenLoseReply(), "low-cycle archive retains binding but makes no sink dispatch");
+    expect(await lowCycles.fixture.archivePhase(), "archiveStarted", "low-cycle archive retains durable dispatch state");
+    expect(await lowCycles.fixture.reconcileArchiveExport(), "remainPending", "low-cycle archive observes no receipt");
+    if ((await pic.addCycles(lowCycles.fixtureId, 2_000_000_000_000n)) < 1_000_000_000_000n)
+      throw new Error("canonical archive-export low-cycle proof failed to replenish disposable fixture");
+    expect(await lowCycles.fixture.repairArchiveExport(), "remainPending", "replenished repair dispatches only retained binding");
+    expect(await lowCycles.fixture.reconcileArchiveExport(), "acknowledge", "replenished exact receipt acknowledges retained binding");
+    if (!(await lowCycles.fixture.archiveRetainsExactExport())) throw new Error("replenished low-cycle repair did not retain byte-identical canonical binding");
   } finally {
     await pic.tearDown();
     await server.stop();

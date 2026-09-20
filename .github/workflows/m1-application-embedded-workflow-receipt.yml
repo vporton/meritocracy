@@ -10,6 +10,8 @@ on:
       - 'scripts/icp/build-application-embedded-workflow-receipt-proof.sh'
       - 'scripts/icp/run-application-embedded-workflow-receipt-proof.sh'
       - 'scripts/icp/embedded-workflow-receipt-pocketic-proof.cjs'
+      - 'scripts/icp/application-embedded-workflow-receipt-capacity-pocketic-proof.cjs'
+      - 'scripts/icp/run-application-embedded-workflow-receipt-capacity-proof.sh'
       - '.github/workflows/m1-application-embedded-workflow-receipt.yml'
       - 'mops.toml'
       - 'mops.lock'
@@ -45,6 +47,9 @@ jobs:
       - name: Run synthetic application fixture
         run: |
           timeout 15m scripts/icp/run-application-embedded-workflow-receipt-proof.sh 2>&1 | tee .mops/m1-application-embedded-workflow-receipt-proof/proof.log
+      - name: Run bounded private-adapter capacity fixture
+        run: |
+          timeout 15m scripts/icp/run-application-embedded-workflow-receipt-capacity-proof.sh 2>&1 | tee .mops/m1-application-embedded-workflow-receipt-proof/capacity.log
       - name: Retain proof artifacts and logs
         if: always()
         uses: actions/upload-artifact@v4

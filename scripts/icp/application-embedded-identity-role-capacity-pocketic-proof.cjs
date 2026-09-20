@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+// Synthetic-only capacity boundary for the consolidated application's two
+// private identity/role collections. It has no application Candid surface.
+const path = require("node:path"), fs = require("node:fs"), crypto = require("node:crypto");
+const { PocketIc, PocketIcServer } = require(path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/pic-js-mops"));
+const { IDL } = require(path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/candid/index.js"));
+const { Principal } = require(path.resolve(__dirname, "../../node_modules/ic-mops/node_modules/@icp-sdk/core/lib/cjs/principal/index.js"));
+const [bin, wasm, reportPath] = process.argv.slice(2);
+if (!bin || !wasm || !reportPath) throw new Error("Expected PocketIC binary, fixture Wasm, and report path");
+const Hash = IDL.Vec(IDL.Nat8), P = IDL.Principal, Factor = IDL.Variant({ internetIdentity: IDL.Null, oauth: IDL.Null });
+const Binding = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, userId: IDL.Nat64, principal: P, factor: Factor, provider: IDL.Opt(IDL.Text), subjectHash: IDL.Opt(Hash) });
+const Role = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, principal: P, role: IDL.Text });
+const Result = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
+const ChunkHash = IDL.Record({ hash: Hash }), Upload = IDL.Record({ canister_id: P, chunk: Hash });
+const Install = IDL.Record({ arg: Hash, chunk_hashes_list: IDL.Vec(ChunkHash), mode: IDL.Variant({ install: IDL.Null }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(P), canister_id: P, target_canister: P, wasm_module_hash: Hash });
+const management = Principal.fromText("aaaaa-aa");
+const idl = ({ IDL: C }) => C.Service({ writeBinding: C.Func([Binding], [Result], []), writeRole: C.Func([Role], [Result], []) });
+const hash = n => Uint8Array.from({ length: 32 }, (_, i) => (n + i) % 256);
+function expect(v, tag, label) { if (Object.keys(v).length !== 1 || !(tag in v)) throw new Error(`${label}: expected ${tag}, got ${JSON.stringify(v)}`); }
+async function mgmt(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
+async function install(pic, sender, id) { const bytes = fs.readFileSync(wasm), chunks = []; for (let i = 0; i < bytes.length; i += 1_000_000) { const chunk = new Uint8Array(bytes.subarray(i, Math.min(i + 1_000_000, bytes.length))); await mgmt(pic, sender, "upload_chunk", Upload, { canister_id: id, chunk }); chunks.push({ hash: new Uint8Array(crypto.createHash("sha256").update(chunk).digest()) }); } await mgmt(pic, sender, "install_chunked_code", Install, { arg: new Uint8Array(), chunk_hashes_list: chunks, mode: { install: null }, sender_canister_version: [], store_canister: [], canister_id: id, target_canister: id, wasm_module_hash: new Uint8Array(crypto.createHash("sha256").update(bytes).digest()) }); }
+async function scenario(pic, bootstrap, name, count) { const id = await pic.createCanister({ sender: bootstrap, controllers: [bootstrap] }); await install(pic, bootstrap, id); const actor = pic.createActor(idl, id); actor.setPrincipal(bootstrap); const subject = Principal.fromUint8Array(Uint8Array.of(4, 42)); let encodedInputBytes = 0;
+  const tooLong = { logicalId: "x".repeat(513), desiredVersion: 1n, contentHash: hash(250), userId: 1n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] };
+  expect(await actor.writeBinding(tooLong), "blocked", `${name} rejects over-limit binding`);
+  for (let n = 0; n < count; n += 1) { const binding = { logicalId: `principal-binding:v1:capacity:${name}:${n}`, desiredVersion: 1n, contentHash: hash(n), userId: BigInt(n + 1), principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] }; const role = { logicalId: `role-assignment:v1:capacity:${name}:${n}`, desiredVersion: 1n, contentHash: hash(n + count), principal: subject, role: "auditor" }; encodedInputBytes += IDL.encode([Binding], [binding]).byteLength + IDL.encode([Role], [role]).byteLength; expect(await actor.writeBinding(binding), "acknowledged", `${name} binding ${n}`); expect(await actor.writeBinding(binding), "acknowledged", `${name} binding retry ${n}`); expect(await actor.writeRole(role), "acknowledged", `${name} role ${n}`); expect(await actor.writeRole(role), "acknowledged", `${name} role retry ${n}`); }
+  return { name, bindingWrites: count, roleWrites: count, exactRetries: count * 2, encodedInputBytes };
+}
+async function main() { const server = await PocketIcServer.start({ binPath: bin, ttl: 60, showRuntimeLogs: false, showCanisterLogs: false }); const pic = await PocketIc.create(server.getUrl()); try { const bootstrap = Principal.fromUint8Array(Uint8Array.of(4, 1)); const scenarios = [await scenario(pic, bootstrap, "expected", 16), await scenario(pic, bootstrap, "two_x", 32)]; const report = { schemaVersion: 1, component: "M1 consolidated application embedded identity/role capacity proof", emulator: "PocketIC synthetic-only", scenarios, rejection: { logicalIdBytes: 513, result: "rejected before a private collection insert" }, limitations: ["This measures bounded synthetic collection ingress only; it is not a production instruction or cycle budget.", "No application public method, caller authorization policy, OAuth flow, target data, or deployment is involved."] }; fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600, flag: "wx" }); console.log(JSON.stringify(report)); } finally { await pic.tearDown(); await server.stop(); } }
+main().catch(error => { console.error(error.stack || error.message); process.exitCode = 1; });

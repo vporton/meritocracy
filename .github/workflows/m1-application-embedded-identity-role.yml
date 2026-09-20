@@ -9,6 +9,8 @@ on:
       - 'scripts/icp/build-application-embedded-identity-role-proof.sh'
       - 'scripts/icp/run-application-embedded-identity-role-proof.sh'
       - 'scripts/icp/embedded-identity-role-pocketic-proof.cjs'
+      - 'scripts/icp/application-embedded-identity-role-capacity-pocketic-proof.cjs'
+      - 'scripts/icp/run-application-embedded-identity-role-capacity-proof.sh'
       - '.github/workflows/m1-application-embedded-identity-role.yml'
       - 'mops.toml'
       - 'mops.lock'
@@ -44,6 +46,9 @@ jobs:
       - name: Run synthetic application fixture
         run: |
           timeout 15m scripts/icp/run-application-embedded-identity-role-proof.sh 2>&1 | tee .mops/m1-application-embedded-identity-role-proof/proof.log
+      - name: Run bounded private-adapter capacity fixture
+        run: |
+          timeout 15m scripts/icp/run-application-embedded-identity-role-capacity-proof.sh 2>&1 | tee .mops/m1-application-embedded-identity-role-proof/capacity.log
       - name: Retain proof artifacts and logs
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,6 +1,6 @@
 # PostgreSQL/Prisma to ICP schema mapping
 
-Status: complete source inventory and M1 design disposition. The concrete candidate Motoko records, ZenDB collection/index catalogue, limits, grant shape, mutation-recovery protocol, and collection-vN migration are in `M1_STORAGE_SCHEMA_AND_SAGAS.md`; their required fault/RBAC/benchmark proof and all approval decisions remain blocked at G2.
+Status: complete source inventory and M1 design disposition. The concrete candidate Motoko records, ZenDB collection/index catalogue, limits, grant shape, mutation-recovery protocol, and collection-vN migration are in `M1_STORAGE_SCHEMA_AND_SAGAS.md`; their required fault/RBAC/benchmark proof and all approval decisions remain blocked at G2. Owner-approved G2 policy input for PII, public fields, consent, controller succession, and DAO/upgrade authority is in `G2_PRIVACY_AND_GOVERNANCE_DECISION.md`; it does not itself approve G2 or a storage implementation.
 
 ## Completeness boundary
 
@@ -53,18 +53,18 @@ Each document carries a unique indexed application logical ID, version, and cont
 | `id` | `User.id : Nat64`, exact stable source ID |
 | `email`, `emailVerified` | Legacy mirror retained in `User.legacyPrimaryEmail`; authoritative rows come from `UserEmail`. Conflicts are reported; future core has no duplicate mirror |
 | `votingPleaUnsubscribed` | `User.notificationPreferences.votingPleaUnsubscribed` |
-| `name`, `onboarded`, `createdAt`, `updatedAt` | Bounded profile fields and timestamps |
+| `name`, `onboarded`, `createdAt`, `updatedAt` | Bounded profile fields and timestamps. Only the verified display legal name is permitted in the public projection; no username exists in the target product. See `G2_PRIVACY_AND_GOVERNANCE_DECISION.md`. |
 | `ethereumAddress` | Split into historical `IdentityEvidence(#Ethereum, legacy)` and `PayoutDestination`; neither is treated as verified after import without proof. EVM canonical uniqueness checked case-insensitively/by bytes |
 | `solanaAddress`, `bitcoinAddress`, `bitcoinCashAddress`, `polkadotAddress`, `cosmosAddress`, `stellarAddress`, `icpAddress` | One versioned `PayoutDestination` per chain/network, source text preserved, chain parser result and proof state explicit. Duplicate destinations are reported, not silently merged |
-| `orcidId`, `githubHandle`, `bitbucketHandle`, `gitlabHandle` | Historical identity-evidence records. Handles are display values; re-verification must add immutable provider subject ID before granting identity assurance. They are non-public by default: a G2-approved field/purpose/consent decision is required before a certified public projection exposes a social identifier together with another identity or wallet field. |
+| `orcidId`, `githubHandle`, `bitbucketHandle`, `gitlabHandle` | Historical identity-evidence records. Handles are display values; re-verification must add immutable provider subject ID before granting identity assurance. They remain non-public under the owner-approved G2 policy input; a later narrowly recorded decision and applicable-law review are required before a certified public projection exposes a social identifier together with another identity or wallet field. |
 | `bannedTill`, `evaluationBlockedTill`, `evaluationBlockReason`, `paymentHoldStartedAt`, `compensationDueAt` | Typed `Hold`/`CompensationEligibility` records with cause, epoch, timestamps, source ID, and immutable audit event |
 | `lastPaymentAmount` | Preserve legacy decimal exactly as non-authoritative historical field; no asset identity exists, so it cannot seed a balance |
 | `shareInGDP` | Preserve source IEEE bits and a separately validated deterministic fixed-point share used by the new calculation |
 | `isDeleted`, `deletedAt` | Tombstone/redaction state. Historical financial/evaluation/ban references remain |
-| `kycStatus`, `kycVerifiedAt`, `kycRejectedAt`, `kycRejectionReason`, `kycData` | Typed KYC state plus encrypted evidence blob/hash. Unknown string states preserved as legacy exceptions. AML/sanctions rejection has precedence in future transitions. Evidence carries a G2-approved purpose/legal-basis, retention/cryptographic-erasure deadline, backup disposition, access-audit policy, and financial/anti-evasion retention exception. |
+| `kycStatus`, `kycVerifiedAt`, `kycRejectedAt`, `kycRejectionReason`, `kycData` | Typed KYC state plus encrypted evidence blob/hash. Unknown string states preserved as legacy exceptions. AML/sanctions rejection has precedence in future transitions. Evidence carries a G2-approved purpose/legal-basis, retention/cryptographic-erasure deadline, backup disposition, access-audit policy, and financial/anti-evasion retention exception. Raw KYC documents, DOB, address, photo, ID number, biometrics, and raw provider responses are never public. |
 | `livelinessStatus`, `livelinessVerifiedAt`, `livelinessDueAt`, `livelinessRequestedAt` | Versioned liveliness attestation/state |
 | `kycVotingStatus`, `kycVotingVerifiedAt`, `kycVotingRejectedAt`, `kycVotingRejectionReason`, `kycVotingData` | Separate Level-1/voting attestation and encrypted evidence with the same lifecycle and access controls; its purpose does not implicitly authorize payout KYC. |
-| `issuingState`, `personalNumber`, `residenceCountry` | Encrypted identity attributes; uniqueness uses a keyed/canonical fingerprint only when both source fields are non-null; public queries never expose them. Retention/erasure and backup disposition follow the G2 evidence policy. |
+| `issuingState`, `personalNumber`, `residenceCountry` | Encrypted identity attributes; uniqueness uses a keyed/canonical fingerprint only when both source fields are non-null; public queries never expose them. Retention/erasure and backup disposition follow the G2 evidence policy; they are never public. |
 
 ### Identity/authentication models
 

@@ -174,7 +174,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | FE-004 | `/logs` global/admin log viewer | Capability-protected, redacted, cursor-paginated audit view | DESIGNED / BLOCKED_G2 |
 | FE-005 | `/logs/:userId` user audit log | Exact ZenDB owner index plus Motoko self/admin authorization; no JSON substring search | DESIGNED / BLOCKED_G2 |
 | FE-006 | `/admin` controls/status | Governance proposals or named capabilities; safety role can pause only | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| FE-007 | `/ban-voting` list/vote experience | Principal-authorized vote, deterministic epoch, Level-1 eligibility, ban/unban parity, and a default-deny public field allowlist. Raw social identifiers and wallet addresses are excluded unless the G2 product/privacy/consent decision permits each field/purpose | DESIGNED / BLOCKED_G2 |
+| FE-007 | `/ban-voting` list/vote experience | Principal-authorized vote, deterministic epoch, Level-1 eligibility, ban/unban parity, and a default-deny public field allowlist. The approved G2 input permits a certified public projection to expose only its allowlisted verified display legal name, principal, payout addresses, payment history, and evaluation history; raw social identifiers remain excluded, and ban-voting need not expose every permitted class | DESIGNED / BLOCKED_G2 |
 | FE-008 | `/ban-voting/timing-plan` | Preserve explanatory schedule derived from the same deterministic epoch rules | DESIGNED / BLOCKED_G2 |
 | FE-009 | `/treasury` reserve/distribution/funding interface | Certified public accounting projection plus wallet-driven deposits to a published asset/scope account; never expose signing secrets or treat a memo as donor authentication/entitlement | DESIGNED / BLOCKED_G3 |
 | FE-010 | Navigation/auth state/responsive layout | Preserve accessible routes, pending/error states, mobile layout, and caller identity semantics | DESIGNED / BLOCKED_G2 |
@@ -226,7 +226,7 @@ Parity means preserving intended user/business capability, authorization, histor
 
 | ID | Legacy feature/evidence | ICP target and acceptance | Migration status |
 | --- | --- | --- | --- |
-| US-001 | Public `GET /api/users` capped at 500 | Sanitized certified public projection with stable cursor pagination and size bounds | DESIGNED / BLOCKED_G2 |
+| US-001 | Public `GET /api/users` capped at 500 | Sanitized certified public projection with stable cursor pagination and size bounds. The owner-approved G2 policy input permits only the verified display legal name, principal, payout addresses, payment history, and evaluation history as public identity/activity classes; it does not make other profile or audit fields public. See `G2_PRIVACY_AND_GOVERNANCE_DECISION.md` | DESIGNED / BLOCKED_G2 |
 | US-002 | Public `GET /api/users/leaderboard` | Deterministic ranking/tie-break/cursor and privacy filtering | DESIGNED / BLOCKED_G2 |
 | US-003 | Public `GET /api/users/salary-stats` | Versioned deterministic stats snapshot with exact numeric derivation | DESIGNED / BLOCKED_G2 |
 | US-004 | Public `GET /api/users/:id` | Sanitized stable-ID profile; tombstone behavior and authorization tested | DESIGNED / BLOCKED_G2 |
@@ -236,7 +236,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | US-008 | Self `DELETE /api/users/:id` | PII erasure/tombstone workflow that retains obligations/audit; recovery/appeal policy | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | US-009 | Multi-email and primary-email behavior | Explicit verified email evidence, uniqueness, primary selection, notification eligibility | DESIGNED / BLOCKED_G2 |
 | US-010 | Onboarding flag and connected-provider requirements | Typed onboarding state; identity assurance policy separated from display fields | DESIGNED / BLOCKED_G2 |
-| US-011 | Country/personal-number/residence fields | Encrypted/restricted evidence; uniqueness fingerprint; never public/certified. G2 records purpose/data controller/legal basis, minimization, retention/cryptographic erasure, backup/restore, access audit, and permitted anti-evasion/accounting exceptions | DESIGNED / BLOCKED_G2 |
+| US-011 | Country/personal-number/residence fields | Encrypted/restricted evidence; uniqueness fingerprint; never public/certified. Owner-approved G2 policy input is recorded in `G2_PRIVACY_AND_GOVERNANCE_DECISION.md`: controller/contact and successor-representative rule, default ten-year evidence-only retention from the last financially/legal-material event, concrete-dispute legal holds, no blanket forever retention, and cryptographic erasure/redaction when required. Per-field lawful basis, minimization, backup/restore, access audit, and permitted anti-evasion/accounting exceptions remain G2 design/proof work | DESIGNED / BLOCKED_G2 |
 | US-012 | GDP share and last-payment public/profile values | Preserve source bits/history; new exact deterministic share and asset-qualified payment history | INTENTIONALLY_CHANGED / BLOCKED_G2/G3 |
 
 ## Evaluation, legacy task graph, AI results, and logs

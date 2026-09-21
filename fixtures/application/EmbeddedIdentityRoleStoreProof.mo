@@ -37,6 +37,12 @@ persistent actor this {
   // never turn a depleted attempt into a changed binding or role assignment.
   var pendingBinding : ?IdentityRole.PrincipalBindingInput = null;
   var pendingRole : ?IdentityRole.RoleAssignmentInput = null;
+  // This fixture-only principal is the disposable PocketIC installer.  It
+  // models a distinct operator-repair boundary and is neither an application
+  // role nor a target authorization policy.
+  let repairPrincipal = Principal.fromText("xs6im-qieam");
+  var bindingRepairRequired = false;
+  var roleRepairRequired = false;
 
   func writePendingBinding() : Embedded.WriteResult {
     let ?input = pendingBinding else return #blocked;
@@ -75,7 +81,27 @@ persistent actor this {
   };
 
   public func retryRetainedBinding() : async Embedded.WriteResult {
+    if (bindingRepairRequired) return #blocked;
     writePendingBinding();
+  };
+
+  // Models interruption after durable intent retention but before its private
+  // write. Repair has no tuple input, so it cannot substitute a binding.
+  public func retainBindingForOperatorRepair(input : IdentityRole.PrincipalBindingInput) : async Embedded.WriteResult {
+    if (pendingBinding != null or not IdentityRole.validPrincipalBinding(input)) return #blocked;
+    pendingBinding := ?input;
+    bindingRepairRequired := true;
+    #blocked;
+  };
+
+  public shared ({ caller }) func repairRetainedBinding() : async Embedded.WriteResult {
+    if (caller != repairPrincipal or not bindingRepairRequired) return #blocked;
+    let result = writePendingBinding();
+    switch (result) {
+      case (#acknowledged or #conflict or #storageError) { bindingRepairRequired := false };
+      case (#blocked) {};
+    };
+    result;
   };
 
   public func retainRoleThenWrite(input : IdentityRole.RoleAssignmentInput) : async Embedded.WriteResult {
@@ -85,6 +111,26 @@ persistent actor this {
   };
 
   public func retryRetainedRole() : async Embedded.WriteResult {
+    if (roleRepairRequired) return #blocked;
     writePendingRole();
+  };
+
+  // This is separate from binding repair: it can replay only the retained
+  // role-assignment tuple and never accepts a fresh role or principal.
+  public func retainRoleForOperatorRepair(input : IdentityRole.RoleAssignmentInput) : async Embedded.WriteResult {
+    if (pendingRole != null or not IdentityRole.validRoleAssignment(input)) return #blocked;
+    pendingRole := ?input;
+    roleRepairRequired := true;
+    #blocked;
+  };
+
+  public shared ({ caller }) func repairRetainedRole() : async Embedded.WriteResult {
+    if (caller != repairPrincipal or not roleRepairRequired) return #blocked;
+    let result = writePendingRole();
+    switch (result) {
+      case (#acknowledged or #conflict or #storageError) { roleRepairRequired := false };
+      case (#blocked) {};
+    };
+    result;
   };
 };

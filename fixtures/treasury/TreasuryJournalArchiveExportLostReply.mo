@@ -5,10 +5,13 @@ import Error "mo:base/Error";
 import Cycles "mo:base/ExperimentalCycles";
 import Principal "mo:base/Principal";
 import CycleReserve "../../canisters/shared/CycleReserve";
+import Runtime "mo:core@2.4/Runtime";
+import ZenDB "mo:zendb";
 import Archive "../../canisters/treasury/TreasuryJournalArchiveRecovery";
 import Binding "../../canisters/treasury/TreasuryJournalArchiveExportBinding";
 import Saga "../../canisters/treasury/TreasuryJournalArchiveExportSaga";
 import BalancedSet "../../canisters/treasury/TreasuryJournalBalancedSet";
+import Embedded "../../canisters/treasury/EmbeddedTreasuryJournalStore";
 
 shared ({ caller = installer }) persistent actor class (
   operator : Principal,
@@ -24,6 +27,23 @@ shared ({ caller = installer }) persistent actor class (
     lookup : shared Text -> async ?Archive.ArchiveTuple;
     retainsExact : shared Binding.Binding -> async Bool;
   } = actor (Principal.toText(archiveId));
+
+  // The archive fixture uses the same private treasury journal adapter as the
+  // consolidated actor. This remains a disposable proof collection: neither
+  // its contents nor a storage method are exposed through Candid.
+  let stableStore : ZenDB.Types.VersionedStableStore = ZenDB.newStableStore(
+    Principal.fromActor(this), null,
+  );
+  var collectionInitialized = false;
+  transient let journalStore = switch (if (collectionInitialized) {
+    Embedded.reopen(stableStore);
+  } else {
+    Embedded.create(stableStore);
+  }) {
+    case (?value) value;
+    case null Runtime.trap("unable to open fixed synthetic treasury journal collection");
+  };
+  collectionInitialized := true;
 
   // The complete canonical binding (tuple plus bytes) is durable before the
   // first archive await. It is never reconstructed from caller input.
@@ -44,6 +64,15 @@ shared ({ caller = installer }) persistent actor class (
     switch (exportState) {
       case (?_) throw Error.reject("synthetic canonical archive export already retained");
       case null {
+        // The entire validated immutable set is durably written through the
+        // current private adapter before its derived archive binding exists.
+        // Any failed/conflicting write leaves no archive dispatch route.
+        for (entry in fixedSet.entries.vals()) {
+          switch (Embedded.write(journalStore, entry)) {
+            case (#acknowledged) {};
+            case (_) throw Error.reject("synthetic private journal write failed");
+          };
+        };
         let ?prepared = Saga.prepare(fixedSet, 1) else {
           throw Error.reject("invalid synthetic canonical archive export");
         };

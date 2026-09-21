@@ -13,22 +13,44 @@ const Binding = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, con
 const Role = IDL.Record({ logicalId: IDL.Text, desiredVersion: IDL.Nat64, contentHash: Hash, principal: P, role: IDL.Text });
 const Result = IDL.Variant({ acknowledged: IDL.Null, blocked: IDL.Null, conflict: IDL.Null, storageError: IDL.Null });
 const ChunkHash = IDL.Record({ hash: Hash }), Upload = IDL.Record({ canister_id: P, chunk: Hash });
-const Install = IDL.Record({ arg: Hash, chunk_hashes_list: IDL.Vec(ChunkHash), mode: IDL.Variant({ install: IDL.Null }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(P), canister_id: P, target_canister: P, wasm_module_hash: Hash });
+const Install = IDL.Record({ arg: Hash, chunk_hashes_list: IDL.Vec(ChunkHash), mode: IDL.Variant({ install: IDL.Null, upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool), wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })) })) }), sender_canister_version: IDL.Opt(IDL.Nat64), store_canister: IDL.Opt(P), canister_id: P, target_canister: P, wasm_module_hash: Hash });
 const management = Principal.fromText("aaaaa-aa"), lowInstallationCycles = 900_000_000_000n;
-const idl = ({ IDL: C }) => C.Service({ retainBindingThenWrite: C.Func([Binding], [Result], []), retryRetainedBinding: C.Func([], [Result], []), retainRoleThenWrite: C.Func([Role], [Result], []), retryRetainedRole: C.Func([], [Result], []) });
+const idl = ({ IDL: C }) => C.Service({ retainBindingThenWrite: C.Func([Binding], [Result], []), retainBindingForOperatorRepair: C.Func([Binding], [Result], []), retryRetainedBinding: C.Func([], [Result], []), repairRetainedBinding: C.Func([], [Result], []), retainRoleThenWrite: C.Func([Role], [Result], []), retainRoleForOperatorRepair: C.Func([Role], [Result], []), retryRetainedRole: C.Func([], [Result], []), repairRetainedRole: C.Func([], [Result], []) });
 const hash = n => Uint8Array.from({ length: 32 }, (_, i) => (n + i) % 256);
 function expect(v, tag, label) { if (Object.keys(v).length !== 1 || !(tag in v)) throw new Error(`${label}: expected ${tag}, got ${JSON.stringify(v)}`); }
 async function mgmt(pic, sender, method, type, value) { return pic.client.updateCall({ canisterId: management, sender, method, payload: new Uint8Array(IDL.encode([type], [value])) }); }
-async function install(pic, sender, id) { const bytes = fs.readFileSync(wasm), chunks = []; for (let i = 0; i < bytes.length; i += 1_000_000) { const chunk = new Uint8Array(bytes.subarray(i, Math.min(i + 1_000_000, bytes.length))); await mgmt(pic, sender, "upload_chunk", Upload, { canister_id: id, chunk }); chunks.push({ hash: new Uint8Array(crypto.createHash("sha256").update(chunk).digest()) }); } await mgmt(pic, sender, "install_chunked_code", Install, { arg: new Uint8Array(), chunk_hashes_list: chunks, mode: { install: null }, sender_canister_version: [], store_canister: [], canister_id: id, target_canister: id, wasm_module_hash: new Uint8Array(crypto.createHash("sha256").update(bytes).digest()) }); }
+async function install(pic, sender, id, mode = { install: null }) { const bytes = fs.readFileSync(wasm), chunks = []; for (let i = 0; i < bytes.length; i += 1_000_000) { const chunk = new Uint8Array(bytes.subarray(i, Math.min(i + 1_000_000, bytes.length))); await mgmt(pic, sender, "upload_chunk", Upload, { canister_id: id, chunk }); chunks.push({ hash: new Uint8Array(crypto.createHash("sha256").update(chunk).digest()) }); } await mgmt(pic, sender, "install_chunked_code", Install, { arg: new Uint8Array(), chunk_hashes_list: chunks, mode, sender_canister_version: [], store_canister: [], canister_id: id, target_canister: id, wasm_module_hash: new Uint8Array(crypto.createHash("sha256").update(bytes).digest()) }); }
 async function main() { const server = await PocketIcServer.start({ binPath: bin, ttl: 60, showRuntimeLogs: false, showCanisterLogs: false }); const pic = await PocketIc.create(server.getUrl()); try { const installer = Principal.fromUint8Array(Uint8Array.of(4, 1)), subject = Principal.fromUint8Array(Uint8Array.of(4, 42)); const id = await pic.createCanister({ sender: installer, controllers: [installer], cycles: lowInstallationCycles }); await install(pic, installer, id); const actor = pic.createActor(idl, id); actor.setPrincipal(installer); const binding = { logicalId: "principal-binding:v1:low-cycles", desiredVersion: 1n, contentHash: hash(1), userId: 42n, principal: subject, factor: { internetIdentity: null }, provider: [], subjectHash: [] }; const role = { logicalId: "role-assignment:v1:low-cycles:auditor", desiredVersion: 1n, contentHash: hash(2), principal: subject, role: "auditor" };
   expect(await actor.retainBindingThenWrite(binding), "blocked", "low-cycle binding is retained but not written");
   expect(await actor.retainRoleThenWrite(role), "blocked", "low-cycle role is retained but not written");
   expect(await actor.retainBindingThenWrite({ ...binding, contentHash: hash(3) }), "blocked", "retained binding cannot be replaced");
   expect(await actor.retainRoleThenWrite({ ...role, contentHash: hash(4) }), "blocked", "retained role cannot be replaced");
+  // EOP upgrade must preserve both retained intents while the reserve still
+  // blocks writes; recovery stays tuple-free and cannot introduce a substitute.
+  await install(pic, installer, id, { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+  expect(await actor.retryRetainedBinding(), "blocked", "upgraded low-cycle binding retry retains intent but has no private write");
+  expect(await actor.retryRetainedRole(), "blocked", "upgraded low-cycle role retry retains intent but has no private write");
   if ((await pic.addCycles(id, 2_000_000_000_000n)) < 1_000_000_000_000n) throw new Error("low-cycle proof failed to replenish disposable application fixture");
   expect(await actor.retryRetainedBinding(), "acknowledged", "replenished binding writes only retained input");
   expect(await actor.retryRetainedRole(), "acknowledged", "replenished role writes only retained input");
   expect(await actor.retryRetainedBinding(), "blocked", "consumed binding intent cannot be replayed");
   expect(await actor.retryRetainedRole(), "blocked", "consumed role intent cannot be replayed");
+  // An interrupted intent is distinct from the low-cycle path. Ordinary
+  // retry must not bypass repair, and repair accepts no replacement tuple.
+  const interruptedBinding = { ...binding, logicalId: "principal-binding:v1:operator-repair", contentHash: hash(5) };
+  const interruptedRole = { ...role, logicalId: "role-assignment:v1:operator-repair:auditor", contentHash: hash(6) };
+  expect(await actor.retainBindingForOperatorRepair(interruptedBinding), "blocked", "binding interruption retains immutable tuple without private write");
+  expect(await actor.retainRoleForOperatorRepair(interruptedRole), "blocked", "role interruption retains immutable tuple without private write");
+  expect(await actor.retryRetainedBinding(), "blocked", "ordinary binding retry cannot bypass operator repair");
+  expect(await actor.retryRetainedRole(), "blocked", "ordinary role retry cannot bypass operator repair");
+  await install(pic, installer, id, { upgrade: [{ skip_pre_upgrade: [], wasm_memory_persistence: [{ keep: null }] }] });
+  actor.setPrincipal(subject);
+  expect(await actor.repairRetainedBinding(), "blocked", "outsider cannot repair retained binding after upgrade");
+  expect(await actor.repairRetainedRole(), "blocked", "outsider cannot repair retained role after upgrade");
+  actor.setPrincipal(installer);
+  expect(await actor.repairRetainedBinding(), "acknowledged", "authorized no-input repair writes retained binding after upgrade");
+  expect(await actor.repairRetainedRole(), "acknowledged", "authorized no-input repair writes retained role after upgrade");
+  expect(await actor.repairRetainedBinding(), "blocked", "consumed repaired binding cannot replay");
+  expect(await actor.repairRetainedRole(), "blocked", "consumed repaired role cannot replay");
 } finally { await pic.tearDown(); await server.stop(); } }
 main().catch(error => { console.error(error.stack || error.message); process.exitCode = 1; });

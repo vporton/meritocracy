@@ -8,6 +8,7 @@ on:
       - 'canisters/treasury/TreasuryJournalArchiveExportBinding.mo'
       - 'canisters/treasury/TreasuryJournalArchiveExportSaga.mo'
       - 'canisters/treasury/TreasuryJournalBalancedSet.mo'
+      - 'canisters/treasury/EmbeddedTreasuryJournalStore.mo'
       - 'canisters/treasury/TreasuryJournalIntent.mo'
       - 'canisters/shared/CycleReserve.mo'
       - 'fixtures/treasury/TreasuryJournalArchiveExportLostReply.mo'

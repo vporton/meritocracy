@@ -1,0 +1,39 @@
+name: M1 treasury payment-operation canonical archive export proof
+on:
+  pull_request:
+    paths:
+      - 'canisters/treasury/PaymentOperationArchive*.mo'
+      - 'canisters/treasury/PaymentOperationIntent.mo'
+      - 'fixtures/treasury/PaymentOperationArchiveExport*.mo'
+      - 'scripts/icp/*payment-operation-archive-export*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-treasury-payment-operation-archive-export.yml'
+  workflow_dispatch:
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26.5.0, cache: npm }
+      - run: npm ci
+      - run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Build and run isolated archive-binding proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-treasury-payment-operation-archive-export-proof.sh 2>&1 | tee .mops/m1-treasury-payment-operation-archive-export-proof/proof.log
+      - name: Run isolated archive-binding capacity boundary
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-treasury-payment-operation-archive-export-capacity-proof.sh 2>&1 | tee .mops/m1-treasury-payment-operation-archive-export-proof/capacity.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-treasury-payment-operation-archive-export-${{ github.run_id }}
+          path: .mops/m1-treasury-payment-operation-archive-export-proof
+          if-no-files-found: warn

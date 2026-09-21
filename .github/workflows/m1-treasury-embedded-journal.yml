@@ -1,0 +1,65 @@
+name: M1 treasury embedded journal PocketIC proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/treasury/EmbeddedTreasuryJournalStore.mo'
+      - 'canisters/treasury/TreasuryJournalIntent.mo'
+      - 'canisters/treasury/TreasuryJournalBalancedSet.mo'
+      - 'fixtures/treasury/EmbeddedTreasuryJournalStoreProof.mo'
+      - 'scripts/icp/build-treasury-embedded-journal-proof.sh'
+      - 'scripts/icp/run-treasury-embedded-journal-proof.sh'
+      - 'scripts/icp/treasury-embedded-journal-pocketic-proof.cjs'
+      - 'scripts/icp/run-treasury-embedded-journal-capacity-proof.sh'
+      - 'scripts/icp/treasury-embedded-journal-capacity-pocketic-proof.cjs'
+      - 'scripts/icp/run-treasury-embedded-journal-low-cycle-proof.sh'
+      - 'scripts/icp/treasury-embedded-journal-low-cycle-pocketic-proof.cjs'
+      - '.github/workflows/m1-treasury-embedded-journal.yml'
+      - 'mops.toml'
+      - 'mops.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Install locked Motoko dependencies
+        run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-treasury-embedded-journal-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build synthetic treasury fixture
+        run: |
+          mkdir -p .mops/m1-treasury-embedded-journal-proof
+          scripts/icp/build-treasury-embedded-journal-proof.sh 2>&1 | tee .mops/m1-treasury-embedded-journal-proof/build.log
+      - name: Run synthetic treasury fixture
+        run: |
+          timeout 15m scripts/icp/run-treasury-embedded-journal-proof.sh 2>&1 | tee .mops/m1-treasury-embedded-journal-proof/proof.log
+      - name: Run synthetic treasury capacity boundary
+        run: |
+          timeout 15m scripts/icp/run-treasury-embedded-journal-capacity-proof.sh 2>&1 | tee .mops/m1-treasury-embedded-journal-proof/capacity.log
+      - name: Run synthetic treasury EOP low-cycle boundary
+        run: |
+          timeout 15m scripts/icp/run-treasury-embedded-journal-low-cycle-proof.sh 2>&1 | tee .mops/m1-treasury-embedded-journal-proof/low-cycle.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-treasury-embedded-journal-${{ github.run_id }}
+          path: .mops/m1-treasury-embedded-journal-proof
+          if-no-files-found: warn
+          retention-days: 14

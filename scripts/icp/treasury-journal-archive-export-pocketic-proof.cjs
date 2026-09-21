@@ -168,6 +168,14 @@ async function main() {
     await rejected(() => lowCycles.fixture.archiveThenLoseReply(), "low-cycle archive retains binding but makes no sink dispatch");
     expect(await lowCycles.fixture.archivePhase(), "archiveStarted", "low-cycle archive retains durable dispatch state");
     expect(await lowCycles.fixture.reconcileArchiveExport(), "remainPending", "low-cycle archive observes no receipt");
+    // The durable canonical bytes-plus-tuple binding must also survive a
+    // same-Wasm EOP upgrade while the reserve still prevents dispatch.  This
+    // is deliberately before replenishment: upgrade must not turn a pending
+    // archive into an implicit send or permit replacement input.
+    await install(pic, installer, lowCycles.fixtureId, fixtureWasm, IDL.encode([P, P, BalancedSet], [operator, lowCycles.sinkId, lowCycles.fixedSet]), upgradeKeep);
+    lowCycles.fixture.setPrincipal(operator);
+    expect(await lowCycles.fixture.archivePhase(), "archiveStarted", "EOP upgrade retains low-cycle canonical archive state");
+    expect(await lowCycles.fixture.reconcileArchiveExport(), "remainPending", "upgraded low-cycle archive still has no receipt");
     if ((await pic.addCycles(lowCycles.fixtureId, 2_000_000_000_000n)) < 1_000_000_000_000n)
       throw new Error("canonical archive-export low-cycle proof failed to replenish disposable fixture");
     expect(await lowCycles.fixture.repairArchiveExport(), "remainPending", "replenished repair dispatches only retained binding");

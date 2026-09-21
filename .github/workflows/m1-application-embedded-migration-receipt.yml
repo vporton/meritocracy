@@ -10,6 +10,10 @@ on:
       - 'scripts/icp/build-application-embedded-migration-receipt-proof.sh'
       - 'scripts/icp/run-application-embedded-migration-receipt-proof.sh'
       - 'scripts/icp/embedded-migration-receipt-pocketic-proof.cjs'
+      - 'scripts/icp/run-application-embedded-migration-receipt-capacity-proof.sh'
+      - 'scripts/icp/application-embedded-migration-receipt-capacity-pocketic-proof.cjs'
+      - 'scripts/icp/run-application-embedded-migration-receipt-low-cycle-proof.sh'
+      - 'scripts/icp/application-embedded-migration-receipt-low-cycle-pocketic-proof.cjs'
       - '.github/workflows/m1-application-embedded-migration-receipt.yml'
       - 'mops.toml'
       - 'mops.lock'
@@ -45,6 +49,12 @@ jobs:
       - name: Run synthetic application fixture
         run: |
           timeout 15m scripts/icp/run-application-embedded-migration-receipt-proof.sh 2>&1 | tee .mops/m1-application-embedded-migration-receipt-proof/proof.log
+      - name: Run bounded private-adapter capacity fixture
+        run: |
+          timeout 15m scripts/icp/run-application-embedded-migration-receipt-capacity-proof.sh 2>&1 | tee .mops/m1-application-embedded-migration-receipt-proof/capacity.log
+      - name: Run private-adapter low-cycle recovery fixture
+        run: |
+          timeout 15m scripts/icp/run-application-embedded-migration-receipt-low-cycle-proof.sh 2>&1 | tee .mops/m1-application-embedded-migration-receipt-proof/low-cycle.log
       - name: Retain proof artifacts and logs
         if: always()
         uses: actions/upload-artifact@v4

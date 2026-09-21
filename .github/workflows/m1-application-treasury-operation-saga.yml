@@ -1,0 +1,25 @@
+name: M1 application treasury-operation saga proof
+on:
+  pull_request:
+    paths:
+      - 'canisters/application/TreasuryOperationSaga.mo'
+      - 'canisters/shared/MutationRecovery.mo'
+      - 'fixtures/application/TreasuryOperationSaga*.mo'
+      - 'scripts/icp/*application-treasury-operation-saga*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-application-treasury-operation-saga.yml'
+  workflow_dispatch:
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26.5.0, cache: npm }
+      - run: npm ci
+      - run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - run: timeout 15m scripts/icp/run-application-treasury-operation-saga-proof.sh
+      - run: timeout 15m scripts/icp/run-application-treasury-operation-saga-capacity-proof.sh
+      - run: timeout 15m scripts/icp/run-application-treasury-operation-saga-low-cycle-proof.sh

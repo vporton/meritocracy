@@ -1,7 +1,6 @@
-// Synthetic controller for the standalone ZenDB post-upgrade proof. The
-// runner deploys this actor and gives it sole controller authority over an
-// empty local CanisterDB before it installs the one exact, locally-built
-// pinned artifact. It is never part of the Meritocracy deployment.
+// Synthetic controller used only by the local ZenDB ownership-handoff proof.
+// Two separately installed instances play the former owner (A) and successor
+// owner (B). Neither is part of the Meritocracy deployment.
 
 import CanisterDB "../../src/RemoteInstance/CanisterDB";
 import ExactUpgradeArtifact "./M1ExactUpgradeArtifact";
@@ -37,6 +36,14 @@ persistent actor this {
       canister_id : Principal;
       sender_canister_version : ?Nat64;
     } -> async ();
+    // `controllers` is the only setting this local fixture can change. Its
+    // optional-record Candid shape is compatible with the management
+    // canister's larger settings record; no other setting is supplied.
+    update_settings : shared {
+      canister_id : Principal;
+      settings : { controllers : ?[Principal] };
+      sender_canister_version : ?Nat64;
+    } -> async ();
   };
 
   transient let management : ManagementCanister = actor ("aaaaa-aa");
@@ -53,7 +60,7 @@ persistent actor this {
   ]);
 
   func db() : CanisterDB.CanisterDB {
-    let ?principal = target else Runtime.trap("post-upgrade owner has no target");
+    let ?principal = target else Runtime.trap("ownership-handoff owner has no target");
     actor (Principal.toText(principal));
   };
 
@@ -69,9 +76,7 @@ persistent actor this {
     true;
   };
 
-  // The caller can supply only the generated digest-bound artifact. The
-  // target canister's controller is this actor, so the anonymous local runner
-  // has no direct install or upgrade authority over the database canister.
+  // The former owner can supply only the generated digest-bound artifact.
   public func installInitialExact(wasm : Blob) : async Bool {
     let ?databaseCanister = target else return false;
     if (phase != "configured" or not exact(wasm)) return false;
@@ -87,9 +92,8 @@ persistent actor this {
     true;
   };
 
-  // The owner is the bootstrap administrator created by the exact candidate
-  // module. It creates a bounded synthetic collection, then revokes itself
-  // before any upgrade. Nothing can re-grant it afterward.
+  // The former owner creates bounded synthetic data, then revokes its own
+  // candidate-level bootstrap role before giving up management control.
   public func prepareAndRevoke() : async Bool {
     if (phase != "installed") return false;
     let remote = db();
@@ -103,8 +107,8 @@ persistent actor this {
       ?{ is_unique = true },
     ) else return false;
     let record : Intent = {
-      logicalId = "intent:post-upgrade-retained";
-      contentHash = "post-upgrade-retained";
+      logicalId = "intent:ownership-handoff-retained";
+      contentHash = "ownership-handoff-retained";
       state = "pending";
       updatedAtNs = 100;
     };
@@ -117,13 +121,26 @@ persistent actor this {
     true;
   };
 
-  // This is deliberately a normal upgrade, with no replacement of stable
-  // Wasm memory. The exact v2.0.1 standalone actor-class artifact does not
-  // carry the EOP marker accepted by the local replica, so #keep is rejected;
-  // #replace would invalidate this state-preservation proof and is prohibited.
+  // A makes B the sole management controller. A cannot perform the later
+  // upgrade after this management-canister handoff.
+  public func handoffSoleController(successor : Principal) : async Bool {
+    let ?databaseCanister = target else return false;
+    if (phase != "revoked") return false;
+    phase := "handoffStarted";
+    await management.update_settings({
+      canister_id = databaseCanister;
+      settings = { controllers = ?[successor] };
+      sender_canister_version = null;
+    });
+    phase := "handedOff";
+    true;
+  };
+
+  // B is the actual management-canister caller for this normal state-keeping
+  // upgrade. The exact artifact is the only Wasm this fixture accepts.
   public func upgradeOwnedExact(wasm : Blob) : async Bool {
     let ?databaseCanister = target else return false;
-    if (phase != "revoked" or not exact(wasm)) return false;
+    if (phase != "configured" or not exact(wasm)) return false;
     phase := "upgradeStarted";
     await management.install_code({
       mode = #upgrade(null);
@@ -136,27 +153,46 @@ persistent actor this {
     true;
   };
 
-  // A successful result proves the candidate retained the revoked RBAC state:
-  // the original owner cannot read grants, write, or re-escalate after the
-  // exact candidate upgrade. The retained record is not read because this
-  // revoked principal intentionally lacks collection read authority.
-  public func verifyPostUpgradeRevocation() : async Bool {
+  // B must have intended admin capability after its own upgrade and be able to
+  // mutate the bounded synthetic collection.
+  public func verifySuccessorAdmin() : async Bool {
     if (phase != "upgraded") return false;
     let remote = db();
-    let #ok(grants) = await remote.get_my_access_details() else Runtime.trap("post-upgrade owner cannot read its RBAC state");
-    if (grants.size() != 0) Runtime.trap("post-upgrade upgrade restored the revoked bootstrap grant");
+    let #ok(grants) = await remote.get_my_access_details() else return false;
+    if (grants.size() == 0) return false;
     let probe : Intent = {
-      logicalId = "intent:post-upgrade-probe";
-      contentHash = "post-upgrade-probe";
+      logicalId = "intent:successor-admin-probe";
+      contentHash = "successor-admin-probe";
       state = "pending";
       updatedAtNs = 101;
     };
+    let #ok(_) = await remote.zendb_v1_collection_insert_document(database, collection, to_candid (probe)) else return false;
+    true;
+  };
+
+  // The script invokes this only after B has successfully upgraded. A must
+  // remain unable to read grants, write, or self-regrant.
+  public func verifyFormerOwnerDenied() : async Bool {
+    if (phase != "handedOff") return false;
+    let remote = db();
+    switch (await remote.get_my_access_details()) {
+      case (#ok(grants)) {
+        if (grants.size() != 0) Runtime.trap("former owner regained access details");
+      };
+      case (#err(_)) {};
+    };
+    let probe : Intent = {
+      logicalId = "intent:former-owner-denied";
+      contentHash = "former-owner-denied";
+      state = "pending";
+      updatedAtNs = 102;
+    };
     switch (await remote.zendb_v1_collection_insert_document(database, collection, to_candid (probe))) {
-      case (#ok(_)) Runtime.trap("post-upgrade revoked owner can still write");
+      case (#ok(_)) Runtime.trap("former owner can still write");
       case (#err(_)) {};
     };
     switch (await remote.grant_global_access(Principal.fromActor(this), "admin")) {
-      case (#ok(_)) Runtime.trap("post-upgrade revoked owner can restore its admin role");
+      case (#ok(_)) Runtime.trap("former owner can regrant admin");
       case (#err(_)) true;
     };
   };

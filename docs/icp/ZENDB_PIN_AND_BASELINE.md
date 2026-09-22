@@ -114,17 +114,17 @@ intent/lookup protocol, not evidence that ZenDB supplies idempotent insert,
 caller-selected document IDs, CAS, or a multi-document transaction.
 
 The runner includes an owning-canister lost-reply/duplicate-delivery fixture
-and a bounded collection-v1-to-v2 replay fixture. On 2026-08-07 it also ran a
-separate `M1UpgradeOwner` path: the local database child named that owner as
-its sole controller; the owner accepted only the SHA-256/length-bound exact
-candidate artifact, created one bounded synthetic collection, revoked its own
-bootstrap admin grant, and upgraded the child with that same artifact. The
-post-upgrade audit trapped because ZenDB restored the revoked bootstrap admin
-grant. This is a release-blocking M1 failure, not a retryable unknown result:
-ZenDB `v2.0.1` is not authoritative for any collection unless G2 records a
-collection-specific native-Motoko exception or a newly pinned candidate passes
-this proof. The older lost-reply, archive, and repair evidence does not waive
-that failure. A read-only upstream tag check on 2026-08-07 found `v2.0.1` is
+and a bounded collection-v1-to-v2 replay fixture. On 2026-09-22 the former
+revoke-only `M1UpgradeOwner` test was replaced with a synthetic local-only
+ownership-handoff test. Former owner A installs only the SHA-256/length-bound
+artifact, creates bounded data, revokes A's bootstrap role, and changes the
+management controller list to successor B alone. B is then the actual caller
+of the normal exact-artifact upgrade; B must have admin capability, while A
+must be denied grant read, write, and self-regrant. This is fixture evidence
+for the rejected remote-canister topology only. It neither authorizes that
+topology nor makes ZenDB `v2.0.1` authoritative for any collection. The older
+lost-reply, archive, and repair evidence does not waive the remaining M1/G2
+requirements. A read-only upstream tag check on 2026-08-07 found `v2.0.1` is
 the latest released tag; no released successor exists to evaluate under M1.
 Unmerged or future commits remain ineligible evidence.
 

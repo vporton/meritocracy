@@ -64,7 +64,7 @@ Each document carries a unique indexed application logical ID, version, and cont
 | `kycStatus`, `kycVerifiedAt`, `kycRejectedAt`, `kycRejectionReason`, `kycData` | No raw KYC value is imported or stored. Target is the minimum principal-bound Didit attestation: `approved`/`declined`/`review`, policy/workflow version, issuing country, time, expiry, and immutable audit event. Full report, session ID, document, DOB, address, photo, ID number, biometric, and provider response are excluded from canister state, export, and backup. |
 | `livelinessStatus`, `livelinessVerifiedAt`, `livelinessDueAt`, `livelinessRequestedAt` | Versioned liveliness attestation/state |
 | `kycVotingStatus`, `kycVotingVerifiedAt`, `kycVotingRejectedAt`, `kycVotingRejectionReason`, `kycVotingData` | Separate Level-1/voting minimum attestation only; raw evidence is not imported and its purpose does not implicitly authorize payout KYC. |
-| `issuingState`, `personalNumber`, `residenceCountry` | Personal-number and residence source values are excluded. Issuing country may appear only in the minimum private KYC attestation as the country-policy classifier; it is never public. |
+| `issuingState`, `personalNumber`, `residenceCountry` | Personal-number and residence source values are excluded. Issuing country may appear only in the minimum private KYC attestation as AML/audit context; it is never public and cannot be a country eligibility classifier. |
 
 ### Identity/authentication models
 

@@ -10,27 +10,48 @@ import, publish, deploy, or otherwise process data.
 This record fixes the owner decisions needed to finish the G2 design. It is a
 conservative product and data-governance baseline for a service with users in
 multiple jurisdictions; it is not a representation that one policy guarantees
-compliance in every jurisdiction. A country is disabled for KYC and payouts
-until a formal Foundation resolution enables it. The resolution must name the
-country, permitted operations, Didit workflow/version, legal basis and
-transfer posture, retention, review date, policy version, date, and Foundation
-signer. Document issuing country, returned by the approved KYC flow, is the
-product's country classifier; it is not a claim that this classifier alone
-settles every question of applicable law.
+compliance in every jurisdiction. The service has no country or regional
+eligibility allowlist for onboarding, KYC, or payouts. A contractor's
+citizenship, residence, nationality, or document-issuing country must not by
+itself enable or deny access to those functions. A provider-returned issuing
+country is private, minimal KYC/AML and audit context; it is not a product
+eligibility classifier and does not settle every question of applicable law.
 
-The first owner-approved scope for such a resolution is the United States of
-America (`USA`): the approved Didit workflow and payouts may be considered only
-for callers whose verified document issuing country is `USA`. All other
-countries, including every EEA country, remain disabled. This scope is not an
-executed Foundation resolution or an activation: it still requires the formal
-resolution fields above and acceptance of the reviewed Didit/Resend provider
-terms before any collection, processing, or payout.
+KYC and payout activation still require all ordinary identity-proof checks and
+a current, versioned positive AML/sanctions decision. A negative, ambiguous,
+missing, or stale AML/sanctions decision fails closed: the attestation cannot
+activate a payout and any existing liability remains held and auditable until a
+permitted resolution. This is not a static country list. Screening must use the
+then-current applicable sanctions programs and lists for relevant jurisdictions,
+persons, entities, ownership, and transactions; a North Korea-related
+restriction is an example of an AML/sanctions result, not a permanent
+hard-coded substitute for screening.
 
-Before a Didit session is created, the caller declares the document issuing
-country. That declaration exists only in the one-use seven-day session
-correlation, selects an already-enabled Foundation country policy, and is
-compared with Didit's issuing-country attestation. An unapproved declared
-country, an absent result, or a mismatch fails closed: it creates no active KYC
+## Cross-border contractor terms
+
+The Foundation will use one baseline independent-contractor agreement across
+jurisdictions. The authoritative agreement must contain this saving clause (or
+legal counsel's substantively equivalent wording):
+
+> **Mandatory local law.** Nothing in this Agreement excludes or limits a
+> non-waivable provision of law that applies to the Contractor in the country
+> where the Contractor provides the Services, or in another jurisdiction whose
+> law has mandatory application. To the extent of a conflict, that mandatory
+> provision prevails, and the remainder of this Agreement remains effective to
+> the maximum extent permitted by law.
+
+This repository does not contain the authoritative Terms of Use or contractor
+agreement, so this record is not itself a contract and does not amend the
+externally hosted terms. As activity grows, the Foundation will review the
+jurisdictions that become material and update the agreement or compliance
+operations where needed; that review does not create a country eligibility
+allowlist.
+
+Before a Didit session is created, a caller-supplied country must not select an
+eligibility policy. If a provider requires a country field, it may be retained
+only in the one-use seven-day session correlation and used for KYC/AML integrity
+handling, never as a geographic eligibility gate. An absent or inconsistent
+identity proof, or a non-positive AML/sanctions result, creates no active KYC
 attestation and never enables a payout.
 
 Until a legally capable DAO is recorded as its successor, the data controller
@@ -115,9 +136,9 @@ The selected notification provider is Resend's HTTPS Email API, not SMTP. A
 future implementation must use a send-only, domain-scoped, rotatable API key;
 send no sensitive content in a subject or log; disable open/link tracking and
 contact-list/marketing features; and pin the reviewed Resend API, terms, DPA,
-subprocessor list, retention/deletion behavior, and cross-border posture in
-the applicable Foundation country-policy resolution. Provisioning a Resend
-account or credential is not authorized by this record.
+subprocessor list, retention/deletion behavior, and cross-border posture in the
+global provider/compliance review record. Provisioning a Resend account or
+credential is not authorized by this record.
 
 Consent is not the basis for mandatory KYC, anti-fraud, payments, required
 notifications, or audit processing. A later optional purpose requires a new

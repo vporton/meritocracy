@@ -40,12 +40,20 @@ legal counsel's substantively equivalent wording):
 > provision prevails, and the remainder of this Agreement remains effective to
 > the maximum extent permitted by law.
 
-This repository does not contain the authoritative Terms of Use or contractor
-agreement, so this record is not itself a contract and does not amend the
-externally hosted terms. As activity grows, the Foundation will review the
-jurisdictions that become material and update the agreement or compliance
-operations where needed; that review does not create a country eligibility
-allowlist.
+The public Terms of Use source is the in-app `/terms-of-use` page. Publishing
+that page does not itself record an individual contractor's assent or replace a
+future contractor agreement: onboarding must present the applicable version and
+retain the required acceptance evidence. As activity grows, the Foundation will
+review the jurisdictions that become material and update the agreement or
+compliance operations where needed; that review does not create a country
+eligibility allowlist.
+
+For a security incident, suspected compromise, or system, data, calculation, or
+other operational error, the public terms reserve the Foundation's right to
+suspend, decline, reduce, or cancel an affected payout in whole or in part,
+including permanently. An already recorded payment obligation cannot be silently
+erased: any cancellation or adjustment requires an explicit auditable
+reconciliation record and remains subject to non-waivable law.
 
 Before a Didit session is created, a caller-supplied country must not select an
 eligibility policy. If a provider requires a country field, it may be retained

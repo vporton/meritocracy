@@ -3234,47 +3234,47 @@
         "faqs": [
           {
             "question": "Am I liable if something goes wrong while using the Service?",
-            "answer": "You use the Service at your own risk. The Service is free and the operators are not obliged to pay damages arising from your use or misuse of the Service. See the terms: https://science-dao.org/terms-of-use/"
+            "answer": "The Service is experimental. It may suspend, decline, reduce, or fully and permanently cancel a payout affected by a security incident or system, data, calculation, or other operational error; mandatory applicable law still applies. See the terms: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "Will the app pay me a salary and am I guaranteed a specific amount?",
-            "answer": "The app may pay salaries to people, but it is not obliged to pay any specific amount or guarantee a payment. For full details, see: https://science-dao.org/terms-of-use/"
+            "answer": "No. An evaluation or recommended salary does not promise a funding amount, schedule, or payment. For full details, see: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "How is my salary determined?",
-            "answer": "The Service may use external AI services to determine salaries. Any mistakes or miscalculations by those AI services are not guaranteed and the Service is not responsible for them. See the terms: https://science-dao.org/terms-of-use/"
+            "answer": "The Service may use automated and AI-assisted evaluations. They are heuristic assessments that can contain errors and do not promise a particular result or payment. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "Can my account be banned, and for how long?",
-            "answer": "In cases of severe misuse (for example, prompt injection), accounts can be banned for up to one year and bans may be extended. The Service states its ban decisions are final. See: https://science-dao.org/terms-of-use/"
+            "answer": "The Service may investigate suspected severe misuse and restrict an account, evaluation, or payout when needed for security, integrity, or compliance. The Terms do not state a fixed maximum ban or make every decision final. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "What is prompt injection and why is it a concern?",
-            "answer": "Prompt injection is a form of misuse where a user crafts input to manipulate or subvert an AI's behavior. The Service treats severe abuses (including prompt injection) seriously and may impose bans. For the policy, see: https://science-dao.org/terms-of-use/"
+            "answer": "Prompt injection is an attempt to manipulate or subvert an AI system. It is prohibited and may lead to an investigation or restriction needed to protect the Service. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "Can I donate to the Service and is my donation protected?",
-            "answer": "You can donate and the Service warrants donations will be used for the benefit of society, but it does not guarantee against theft or hacking and will not pay damages for stolen funds. See the terms: https://science-dao.org/terms-of-use/"
+            "answer": "Donations are handled separately from Service eligibility and do not create a right to funding or a return. Consult the donation page for the available options: https://science-dao.org/donation/"
           },
           {
             "question": "Am I an employee if I receive a salary from the Service?",
-            "answer": "No. Despite the term “salary,” your relationship with the Service is as an independent contractor, not an employee–employer relationship. The Service does not pay taxes on your behalf. See: https://science-dao.org/terms-of-use/"
+            "answer": "For services covered by a contractor agreement, the intended relationship is independent contractor rather than employment, to the extent permitted by applicable law. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "Who is responsible for taxes and business registration?",
-            "answer": "You are responsible for any tax or business-registration obligations required by the laws of your country; the Service does not pay taxes for you. See: https://science-dao.org/terms-of-use/"
+            "answer": "A contractor is responsible for applicable tax, reporting, registration, and similar obligations, except where non-waivable law provides otherwise. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "Can I link or use third‑party accounts (like ORCID or GitHub) with the Service?",
-            "answer": "Yes, but by using such external services in connection with the Service you warrant that you have full legal right to use those third‑party services. See: https://science-dao.org/terms-of-use/"
+            "answer": "You may connect only accounts and third-party services that you are entitled to use. Those services remain subject to their own terms. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "Is the Service available everywhere?",
-            "answer": "No. The Service is not available to users in countries or regions subject to U.S. or international sanctions. See details here: https://science-dao.org/terms-of-use/"
+            "answer": "The Service has no general country or regional eligibility list. KYC and payouts remain subject to current identity, AML, and sanctions controls, which can restrict a person, entity, ownership structure, transaction, or jurisdiction. See: https://merit.science-dao.org/terms-of-use"
           },
           {
             "question": "If I disagree with a decision (like a ban or salary calculation), can I appeal?",
-            "answer": "The posted terms state that ban decisions are final. The terms do not describe an appeals process. For the authoritative language, consult: https://science-dao.org/terms-of-use/"
+            "answer": "The Terms do not state that every ban decision is final or promise a particular appeal process. They allow protective restrictions where needed for security, integrity, or compliance. See: https://merit.science-dao.org/terms-of-use"
           }
         ]
       },

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Link, Routes, Route, Navigate } from 'react-router-dom'
 import { HelmetProvider } from "react-helmet-async";
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -14,6 +14,7 @@ import BanVoting from './pages/BanVoting'
 import BanVotingTimingPlan from './pages/BanVotingTimingPlan'
 import UserAuditLog from './pages/UserAuditLog'
 import Treasury from './pages/Treasury'
+import TermsOfUse from './pages/TermsOfUse'
 import SocialShareButtons from './components/SocialShareButtons'
 import './App.css'
 
@@ -45,6 +46,7 @@ function App() {
                       <Route path="/ban-voting" element={<BanVoting />} />
                       <Route path="/ban-voting/timing-plan" element={<BanVotingTimingPlan />} />
                       <Route path="/treasury" element={<Treasury />} />
+                      <Route path="/terms-of-use" element={<TermsOfUse />} />
                       {/* Redirect old login route to new connect route */}
                       <Route path="/login" element={<Navigate to="/connect" replace />} />
                     </Routes>
@@ -55,7 +57,7 @@ function App() {
                       text="Meritocracy funds scientists and open-source developers through transparent AI-assisted governance."
                     />
                     <p data-nosnippet="data-nosnippet">
-                      <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
+                      <Link to="/terms-of-use">Terms of Use</Link> |{"  "}
                       <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
                       <a href="https://science-dao.org/contact/">Contact</a> |{"  "}
                       <a href="https://github.com/vporton/meritocracy/issues/new" target="_blank" rel="noopener noreferrer">Report a bug</a> |{"  "}

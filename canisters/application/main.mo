@@ -10,6 +10,7 @@ import MigrationReceiptIntent "../archive_router/MigrationReceiptIntent";
 import IdentityRoleStore "EmbeddedIdentityRoleStore";
 import WorkflowReceiptStore "EmbeddedWorkflowCompletionReceiptStore";
 import MigrationReceiptStore "EmbeddedMigrationReceiptStore";
+import TreasuryOperationOutboxStore "EmbeddedTreasuryOperationOutboxStore";
 import CallerAuthorization "CallerAuthorization";
 
 /// Consolidated application actor.
@@ -81,4 +82,19 @@ persistent actor Application {
     case null Runtime.trap("unable to open private application migration receipt collection");
   };
   migrationReceiptCollectionInitialized := true;
+
+  // The sole cross-canister route has a private tuple-only outbox. It is not
+  // reachable from Candid and carries no payment or destination material.
+  var treasuryOperationOutboxCollectionInitialized = false;
+  transient let _treasuryOperationOutboxStore = switch (
+    if (treasuryOperationOutboxCollectionInitialized) {
+      TreasuryOperationOutboxStore.reopen(embeddedStore);
+    } else {
+      TreasuryOperationOutboxStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null Runtime.trap("unable to open private application treasury-operation outbox collection");
+  };
+  treasuryOperationOutboxCollectionInitialized := true;
 };

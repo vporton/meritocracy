@@ -29,6 +29,8 @@ The supplied records cover identity/principal bindings, destinations, holds and 
 | `core_hold_v1` | core | `user_kind`, `due` | eligibility / restricted |
 | `core_role_assignment_v1` | core | `principal_role_unique`, `role_principal` | authorization audit / restricted |
 | `core_ban_vote_v1` | core | `vote_epoch_unique`, `target_epoch` | voting / sanitized projection only |
+| `application_treasury_outbox_v1` | application | `logical_id_unique` | sole immutable application-to-treasury tuple; no payment material |
+| `treasury_application_inbox_v1` | treasury | `logical_id_unique` | sole immutable application-to-treasury acknowledgement tuple; no payment material |
 | `workflow_result_v1` | workflow | `cycle_unique`, `user_completed` | complete canonical result / restricted or sanitized projection |
 | `workflow_result_source_v1` | workflow | `result_ordinal_unique`, `result_url_unique` | result sources / projection policy applies |
 | `workflow_schedule_v1` | workflow | `schedule_unique`, `due` | stable non-AI schedules only |

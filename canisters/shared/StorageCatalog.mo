@@ -129,6 +129,22 @@ module {
         grants = ownerReadWrite;
       },
       {
+        name = "application_treasury_outbox_v1";
+        owner = #core;
+        schemaVersion = 1;
+        authoritativeCandidate = true;
+        indexes = Array.append(envelopeIndexes, [{ name = "logical_id_unique"; fields = ["logicalId"]; unique = true; purpose = "sole application-to-treasury immutable outbox" }]);
+        grants = ownerReadWrite;
+      },
+      {
+        name = "treasury_application_inbox_v1";
+        owner = #treasury;
+        schemaVersion = 1;
+        authoritativeCandidate = true;
+        indexes = Array.append(envelopeIndexes, [{ name = "logical_id_unique"; fields = ["logicalId"]; unique = true; purpose = "sole application-to-treasury immutable inbox" }]);
+        grants = ownerReadWrite;
+      },
+      {
         name = "workflow_result_v1";
         owner = #workflow;
         schemaVersion = 1;

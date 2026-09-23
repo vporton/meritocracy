@@ -3,6 +3,7 @@ import Runtime "mo:core@2.4/Runtime";
 import ZenDB "mo:zendb";
 import PaymentStore "EmbeddedPaymentOperationStore";
 import JournalStore "EmbeddedTreasuryJournalStore";
+import ApplicationInboxStore "EmbeddedApplicationOperationInboxStore";
 
 /// M1 unified treasury scaffold.
 ///
@@ -41,4 +42,19 @@ persistent actor Treasury {
     case null Runtime.trap("unable to open private treasury journal collection");
   };
   treasuryJournalCollectionInitialized := true;
+
+  // The sole cross-canister route is retained locally as a tuple-only inbox.
+  // It is not reachable from Candid and cannot contain payment material.
+  var applicationInboxCollectionInitialized = false;
+  transient let _applicationInboxStore = switch (
+    if (applicationInboxCollectionInitialized) {
+      ApplicationInboxStore.reopen(embeddedStore);
+    } else {
+      ApplicationInboxStore.create(embeddedStore);
+    }
+  ) {
+    case (?store) store;
+    case null Runtime.trap("unable to open private treasury application inbox collection");
+  };
+  applicationInboxCollectionInitialized := true;
 };

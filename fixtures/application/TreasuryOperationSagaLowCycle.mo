@@ -4,13 +4,31 @@ import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import Error "mo:base/Error";
 import Principal "mo:base/Principal";
+import Runtime "mo:core@2.4/Runtime";
+import ZenDB "mo:zendb";
 import CycleReserve "../../canisters/shared/CycleReserve";
 import Saga "../../canisters/application/TreasuryOperationSaga";
+import Outbox "../../canisters/application/EmbeddedTreasuryOperationOutboxStore";
 
 shared ({ caller = installer }) persistent actor class (operator : Principal, treasuryId : Principal) = this {
   type Receipt = { version : Nat64; contentHash : Blob };
   assert not Principal.isAnonymous(operator);
-  let treasury : actor { submit : shared Saga.Input -> async Receipt; count : shared () -> async Nat } = actor (Principal.toText(treasuryId));
+  let treasury : actor {
+    submit : shared Saga.Input -> async Receipt;
+    lookup : shared Text -> async ?Receipt;
+    count : shared () -> async Nat;
+  } = actor (Principal.toText(treasuryId));
+  let stableStore : ZenDB.Types.VersionedStableStore = ZenDB.newStableStore(Principal.fromActor(this), null);
+  var outboxCollectionInitialized = false;
+  transient let outboxStore = switch (if (outboxCollectionInitialized) {
+    Outbox.reopen(stableStore);
+  } else {
+    Outbox.create(stableStore);
+  }) {
+    case (?value) value;
+    case null Runtime.trap("unable to open fixed synthetic application treasury outbox collection");
+  };
+  outboxCollectionInitialized := true;
   var retained : ?Saga.Intent = null;
   // A fixed fixture-only principal keeps the interrupted repair route distinct
   // from the ordinary application operator. It is not a target role or grant.
@@ -33,7 +51,13 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, tr
     onlyOperator(caller);
     let ?prepared = Saga.prepare(input) else throw Error.reject("invalid synthetic application treasury tuple");
     switch (retained) {
-      case null { retained := ?prepared };
+      case null {
+        switch (Outbox.write(outboxStore, prepared.input)) {
+          case (#acknowledged) {};
+          case (_) throw Error.reject("synthetic private application outbox write failed");
+        };
+        retained := ?prepared;
+      };
       case (?saved) {
         if (saved.input != prepared.input and not saved.active) throw Error.reject("immutable synthetic outbox intent");
         if (saved.input != prepared.input) retained := ?prepared;
@@ -49,7 +73,13 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, tr
     onlyOperator(caller);
     let ?prepared = Saga.prepare(input) else throw Error.reject("invalid synthetic application treasury tuple");
     switch (retained) {
-      case null { retained := ?prepared };
+      case null {
+        switch (Outbox.write(outboxStore, prepared.input)) {
+          case (#acknowledged) {};
+          case (_) throw Error.reject("synthetic private application outbox write failed");
+        };
+        retained := ?prepared;
+      };
       case (?saved) {
         if (saved.input != prepared.input and not saved.active) throw Error.reject("immutable synthetic outbox intent");
         if (saved.input != prepared.input) retained := ?prepared;
@@ -63,6 +93,32 @@ shared ({ caller = installer }) persistent actor class (operator : Principal, tr
     let repaired = await dispatchRetained();
     if (repaired) repairRequired := false;
     repaired;
+  };
+  // A repair reply is no more authoritative than an ordinary delivery reply.
+  // Leave the retained tuple pending across the await and require the fixed
+  // inbox lookup to acknowledge it later.  This deliberately traps after a
+  // successful synthetic reply, modelling a reply that the caller cannot use.
+  public shared ({ caller }) func repairThenLoseReply() : async () {
+    if (caller != repairPrincipal or not repairRequired) throw Error.reject("synthetic operator repair denied");
+    let ?saved = retained else throw Error.reject("missing synthetic outbox intent");
+    if (Cycles.balance() < CycleReserve.minimumReserve) throw Error.reject("synthetic reserve unavailable");
+    retained := ?Saga.startTreasuryCall(saved);
+    let receipt = await treasury.submit(saved.input);
+    if (receipt.version != saved.input.version or receipt.contentHash != saved.input.contentHash) {
+      throw Error.reject("changed synthetic treasury receipt");
+    };
+    throw Error.reject("deliberately lost synthetic repair reply");
+  };
+  public shared ({ caller }) func reconcileRepair() : async Bool {
+    if (caller != repairPrincipal or not repairRequired) throw Error.reject("synthetic operator repair denied");
+    let ?saved = retained else throw Error.reject("missing synthetic outbox intent");
+    let (updated, decision) = Saga.reconcile(Saga.lostReply(saved), switch (await treasury.lookup(saved.input.logicalId)) {
+      case null #absent;
+      case (?receipt) #present(receipt);
+    });
+    retained := ?updated;
+    if (decision == #acknowledge) repairRequired := false;
+    decision == #acknowledge;
   };
   public shared ({ caller }) func retainedCount() : async Nat { onlyOperator(caller); await treasury.count() };
 };

@@ -25,7 +25,9 @@ func hasGrant(
   false;
 };
 
-assert (Array.size(catalog) == 20);
+// The private application-to-treasury outbox and treasury inbox are durable
+// saga collections, separate from imported legacy rows and payment operations.
+assert (Array.size(catalog) == 22);
 assert (StorageCatalog.limits.maxDocumentBytes == 262_144);
 assert (StorageCatalog.limits.maxBatchBytes == 1_048_576);
 assert (StorageCatalog.limits.maxPageSize == 500);

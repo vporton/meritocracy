@@ -128,6 +128,13 @@ requirements. A read-only upstream tag check on 2026-08-07 found `v2.0.1` is
 the latest released tag; no released successor exists to evaluate under M1.
 Unmerged or future commits remain ineligible evidence.
 
+The owner explicitly accepts ZenDB's out-of-box restoration of bootstrap/admin
+access for the principal that performs a ZenDB-canister upgrade. That principal
+is already an unrestricted controller and this behavior is not a revocation
+persistence requirement, a reason to replace state, or a reason to constrain
+the installer. The handoff proof therefore protects the meaningful boundary:
+the removed former controller and ordinary callers remain denied.
+
 **Supersession note:** The preceding remote-actor failure must not be read as a
 requirement for the user to repair ZenDB grants or supply a replacement pin.
 It rejects only the remote-RBAC topology. The binding M1 work is to implement
@@ -257,11 +264,20 @@ The complete machine-readable record is
 [`evidence/zendb/v2.0.1.benchmark-proof.json`](evidence/zendb/v2.0.1.benchmark-proof.json).
 
 ZenDB v2.0.1 does not return insert or index-create instruction counts, and
-this harness intentionally does not invent them. It also does not establish
-archive cross-canister byte costs, low-cycle behavior, or any
-durable-intent/RBAC/upgrade proof. Those omissions remain G2 blockers. DFX
-again reported that its Wasm optimization pass could not read the module; the
-existing release blocker remains unwaived.
+this harness intentionally does not invent them. Those unavailable counters
+are not an M1 acceptance condition: the owner approved **proven bounded
+execution and cycle budget at defined limits** instead. The updated fixture
+reads its own canister balance immediately before and after the bounded insert
+batch, query, replacement, rebuild, and delete operations; it traps on a
+balance increase or a delta above the predeclared synthetic ceiling. The local
+runner also bounds the complete synthetic operation to 180 seconds and saves
+the returned Candid deltas mode `0600` in its disposable work directory. This
+is harness capability, not execution evidence: the recorded 2026-08-02 run
+predates it, and no cycle delta has yet been accepted into the evidence file.
+The harness also does not establish archive cross-canister byte costs,
+low-cycle behavior, or any durable-intent/RBAC/upgrade proof. Those omissions
+remain G2 blockers. DFX again reported that its Wasm optimization pass could
+not read the module; the existing release blocker remains unwaived.
 
 The runner deliberately does not call `mops install`: Mops CLI `2.19.2`
 performs an unrelated compatibility request to the ICP API before that command
@@ -282,6 +298,6 @@ checkout through `M1_ZENDB_SOURCE_DIR`:
 scripts/icp/test-zendb-benchmark.sh
 ```
 
-Before task 3 can be marked implemented and before G2 can be requested, add and pass the remaining target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. It must measure insert/query/update/delete/reindex instructions, bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove documented indexes; and cover the owning application's durable intent across actual duplicate delivery/lost reply, bootstrap revocation, post-upgrade grant audit and self-grant ingress boundary, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
+Before task 3 can be marked implemented and before G2 can be requested, add and pass the remaining target benchmark/proof suite for generated expected, 2×, and rejection-limit distributions. For each public storage operation and permitted maintenance operation it must pin the Wasm/source/toolchain, state exact document/batch/page/index and timeout limits, prove successful completion at expected and 2×, and prove over-limit input is rejected before mutation or an outbound call. It must measure actual canister-cycle balance immediately before and after each operation in the same synthetic PocketIC/local run, publish the delta, and enforce a predeclared per-operation ceiling with headroom; a trap, timeout, rejected-limit mutation, or delta above that ceiling fails the run. G2 reviews the resulting operational budget/forecast but may not retroactively waive a failed M1 ceiling. Candidate-provided instruction figures may be retained where available but are not required. Runtime ingress may not create or rebuild an index: reindexing is only a separately authorized bounded maintenance or `collection_vN` migration, with a durable cursor/intent, pause-or-fail-closed behavior, recovery test, and its own measured cycle ceiling. The suite must also measure bytes/document, index multiplier, archive cross-canister bytes, and low-cycle behavior; prove documented indexes; and cover the owning application's durable intent across actual duplicate delivery/lost reply, explicit controller handoff, former-controller and ordinary-caller denial, post-upgrade grant/self-grant boundary, repair/resume, crash/upgrade recovery, and archive failure. All test records must be synthetic and stay local/PocketIC.
 
 Rollback: delete only the undeployed pin manifest, verifier, and this evidence file. The legacy Node/PostgreSQL service, production data, signing authority, and assets are unchanged.

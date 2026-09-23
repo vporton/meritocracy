@@ -14,9 +14,15 @@ let input : Receipt.Input = {
 };
 
 assert Store.validEncoding(input);
-assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(2) }) == #acknowledged;
-assert Store.decideIdempotentWrite(input, ?{ version = 2; contentHash = hash(2) }) == #conflict;
-assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(3) }) == #conflict;
+let observed : Store.ImmutableObservation = {
+  cycleId = input.cycleId; operationName = input.operationName;
+  version = 1; contentHash = hash(2);
+};
+assert Store.decideIdempotentWrite(input, ?observed) == #acknowledged;
+assert Store.decideIdempotentWrite(input, ?{ observed with version = 2 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with contentHash = hash(3) }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with cycleId = "cycle:substituted" }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with operationName = "substituted-operation" }) == #conflict;
 assert Store.decideIdempotentWrite(input, null) == #conflict;
 assert not Store.validEncoding({ input with contentHash = Blob.fromArray([1]) });
 assert not Store.validEncoding({ input with cycleId = "bad\ncycle" });

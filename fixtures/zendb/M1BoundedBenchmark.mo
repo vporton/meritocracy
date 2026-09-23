@@ -2,13 +2,14 @@
 // runner copies this actor into an ephemeral ZenDB checkout and deploys it to
 // a fresh local DFX replica; it is not part of any Meritocracy canister.
 //
-// This deliberately reports only measurements exposed by ZenDB v2.0.1. In
-// particular, create-index/reindex and insert do not return instruction
-// counters, so this harness records their data sizes and explicitly does not
-// manufacture instruction figures for them.
+// This retains only measurements exposed by ZenDB v2.0.1. In particular,
+// create-index/reindex and insert do not return instruction counters. The
+// fixture instead measures the caller canister's actual cycle-balance delta
+// around each bounded operation and never manufactures instruction figures.
 
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Cycles "mo:base/ExperimentalCycles";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import ZenDB "../../src";
@@ -22,6 +23,13 @@ persistent actor {
   transient let twiceExpectedDocuments = 32;
   transient let maxDocumentBytes = 262_144;
   transient let maxBatchBytes = 1_048_576;
+  // Declared before execution: conservative synthetic local-proof ceilings,
+  // not a production forecast or a G2-approved cycle allocation.
+  transient let maxInsertCycleDelta = 500_000_000_000;
+  transient let maxQueryCycleDelta = 100_000_000_000;
+  transient let maxReplaceCycleDelta = 100_000_000_000;
+  transient let maxReindexCycleDelta = 500_000_000_000;
+  transient let maxDeleteCycleDelta = 100_000_000_000;
 
   type SyntheticIntent = {
     logicalId : Text;
@@ -47,6 +55,11 @@ persistent actor {
     replaceInstructions : Nat;
     deleteInstructions : Nat;
     reindexEntries : Nat;
+    insertCycleDelta : Nat;
+    queryCycleDelta : Nat;
+    replaceCycleDelta : Nat;
+    reindexCycleDelta : Nat;
+    deleteCycleDelta : Nat;
   };
 
   let schema : ZenDB.Types.Schema = #Record([
@@ -88,6 +101,15 @@ persistent actor {
     assert (withinEnvelope(0, bytes));
   };
 
+  // An operation may only spend cycles. A balance increase is ambiguous, so
+  // the harness fails closed instead of reporting a made-up negative delta.
+  func boundedCycleDelta(before : Nat, after : Nat, ceiling : Nat) : Nat {
+    assert (before >= after);
+    let delta = before - after;
+    assert (delta <= ceiling);
+    delta;
+  };
+
   func createCollection(db : CanisterDB.CanisterDB, collection : Text) : async () {
     let #ok(_) = await db.zendb_v1_create_collection(database, collection, schema, null) else Runtime.trap("could not create synthetic benchmark collection");
     let #ok(_) = await db.zendb_v1_collection_create_index(
@@ -113,6 +135,7 @@ persistent actor {
     var remoteWriteBytes = 0;
     var ordinal = 0;
     var firstId : ?Blob = null;
+    let insertCyclesBefore = Cycles.balance();
     while (ordinal < documents) {
       let encoded = encode(syntheticIntent(scenario, ordinal, "pending"));
       assertBoundedDocument(encoded);
@@ -122,9 +145,12 @@ persistent actor {
       remoteWriteBytes += encoded.size();
       ordinal += 1;
     };
+    let insertCycleDelta = boundedCycleDelta(insertCyclesBefore, Cycles.balance(), maxInsertCycleDelta);
 
     let lookupQuery = ZenDB.QueryBuilder().Where("logicalId", #eq(#Text("intent:" # scenario # ":0"))).Limit(1).build();
+    let queryCyclesBefore = Cycles.balance();
     let #ok(found) = await db.zendb_v1_collection_search(database, collection, lookupQuery) else Runtime.trap("could not read synthetic benchmark document");
+    let queryCycleDelta = boundedCycleDelta(queryCyclesBefore, Cycles.balance(), maxQueryCycleDelta);
     assert (found.documents.size() == 1);
     let (_, recovered, _) = found.documents[0];
     assert (decode(recovered).logicalId == "intent:" # scenario # ":0");
@@ -132,11 +158,14 @@ persistent actor {
     let ?firstDocumentId = firstId else Runtime.trap("benchmark has no first document");
     let replacement = encode(syntheticIntent(scenario, 0, "reconciled"));
     assertBoundedDocument(replacement);
+    let replaceCyclesBefore = Cycles.balance();
     let #ok(replaced) = await db.zendb_v1_collection_replace_document(database, collection, firstDocumentId, replacement) else Runtime.trap("could not replace synthetic benchmark document");
+    let replaceCycleDelta = boundedCycleDelta(replaceCyclesBefore, Cycles.balance(), maxReplaceCycleDelta);
 
     // Rebuilding the explicit index is an operationally distinct action. The
     // pinned API returns no instruction count for it, so record only the
     // resulting index entries and leave budget approval blocked on that gap.
+    let reindexCyclesBefore = Cycles.balance();
     let #ok(_) = await db.zendb_v1_collection_delete_index(database, collection, "state_updated") else Runtime.trap("could not delete synthetic repair index");
     let #ok(_) = await db.zendb_v1_collection_create_index(
       database,
@@ -146,8 +175,11 @@ persistent actor {
       null,
     ) else Runtime.trap("could not rebuild synthetic repair index");
     let #ok(?rebuiltIndex) = await db.zendb_v1_collection_get_index(database, collection, "state_updated_rebuilt") else Runtime.trap("could not inspect rebuilt synthetic repair index");
+    let reindexCycleDelta = boundedCycleDelta(reindexCyclesBefore, Cycles.balance(), maxReindexCycleDelta);
 
+    let deleteCyclesBefore = Cycles.balance();
     let #ok(deleted) = await db.zendb_v1_collection_delete_document_by_id(database, collection, firstDocumentId) else Runtime.trap("could not delete synthetic benchmark document");
+    let deleteCycleDelta = boundedCycleDelta(deleteCyclesBefore, Cycles.balance(), maxDeleteCycleDelta);
     assert (decode(deleted.deleted_document).logicalId == "intent:" # scenario # ":0");
 
     let stats = await db.zendb_v1_collection_stats(database, collection);
@@ -168,6 +200,11 @@ persistent actor {
       replaceInstructions = replaced.instructions;
       deleteInstructions = deleted.instructions;
       reindexEntries = rebuiltIndex.entries;
+      insertCycleDelta;
+      queryCycleDelta;
+      replaceCycleDelta;
+      reindexCycleDelta;
+      deleteCycleDelta;
     };
   };
 

@@ -52,13 +52,17 @@ module {
   /// the caller must use the retained intent's bounded write/recovery route.
   public func decideIdempotentWrite(
     input : Saga.Input,
-    observed : ?{ version : Nat64; contentHash : Blob },
+    observed : ?Saga.Input,
   ) : WriteResult {
     if (not validEncoding(input)) return #blocked;
     switch (observed) {
       case null #conflict;
       case (?existing) {
-        if (existing.version == input.version and existing.contentHash == input.contentHash) #acknowledged else #conflict;
+        if (
+          existing.logicalId == input.logicalId and
+          existing.version == input.version and
+          existing.contentHash == input.contentHash
+        ) #acknowledged else #conflict;
       };
     };
   };
@@ -76,7 +80,11 @@ module {
           };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          decideIdempotentWrite(input, ?{ version = existing.version; contentHash = existing.contentHash });
+          decideIdempotentWrite(input, ?{
+            logicalId = existing.logicalId;
+            version = existing.version;
+            contentHash = existing.contentHash;
+          });
         } else #conflict;
       };
     };

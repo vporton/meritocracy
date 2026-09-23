@@ -13,6 +13,19 @@ module {
     #conflict;
     #storageError;
   };
+  /// Every immutable journal field is bound on a duplicate logical ID.
+  /// Version/content hash alone must not acknowledge a substituted posting.
+  public type ImmutableObservation = {
+    journalSequence : Nat64;
+    operationId : Text;
+    accountId : Text;
+    assetId : Text;
+    direction : TreasuryJournal.Direction;
+    amountBaseUnits : Nat;
+    assetDecimals : Nat8;
+    version : Nat64;
+    contentHash : Blob;
+  };
   type Record = {
     logicalId : Text; journalSequence : Nat64; operationId : Text;
     accountId : Text; assetId : Text; direction : TreasuryJournal.Direction;
@@ -53,17 +66,40 @@ module {
       contentHash = input.contentHash;
     };
   };
+  func immutableObservation(record : Record) : ImmutableObservation {
+    {
+      journalSequence = record.journalSequence;
+      operationId = record.operationId;
+      accountId = record.accountId;
+      assetId = record.assetId;
+      direction = record.direction;
+      amountBaseUnits = record.amountBaseUnits;
+      assetDecimals = record.assetDecimals;
+      version = record.version;
+      contentHash = record.contentHash;
+    };
+  };
   public func validEncoding(input : TreasuryJournal.Input) : Bool {
     TreasuryJournal.valid(input) and Nat.toText(input.amountBaseUnits).size() <= 1_024;
   };
   public func decideIdempotentWrite(
     input : TreasuryJournal.Input,
-    observed : ?{ version : Nat64; contentHash : Blob },
+    observed : ?ImmutableObservation,
   ) : WriteResult {
     if (not validEncoding(input)) return #blocked;
     switch (observed) {
       case (?(existing)) {
-        if (existing.version == input.desiredVersion and existing.contentHash == input.contentHash) #acknowledged else #conflict;
+        if (
+          existing.journalSequence == input.journalSequence and
+          existing.operationId == input.operationId and
+          existing.accountId == input.accountId and
+          existing.assetId == input.assetId and
+          existing.direction == input.direction and
+          existing.amountBaseUnits == input.amountBaseUnits and
+          existing.assetDecimals == input.assetDecimals and
+          existing.version == input.desiredVersion and
+          Blob.equal(existing.contentHash, input.contentHash)
+        ) #acknowledged else #conflict;
       };
       case null #conflict;
     };
@@ -85,7 +121,7 @@ module {
           };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          decideIdempotentWrite(input, ?{ version = existing.version; contentHash = existing.contentHash });
+          decideIdempotentWrite(input, ?immutableObservation(existing));
         } else #conflict;
       };
     };

@@ -11,11 +11,12 @@ readonly source_mops_toml_sha256="09f5e7cd4281ca46953419cdad9fa1a1b376d211288a66
 readonly source_mops_lock_sha256="79b2a699c484e57ee5bbaa20e50d1da7c556c4e3a132ff7a655523eeffced267"
 readonly test_canister="m1-bounded-benchmark"
 readonly test_canister_cycles="20000000000000"
+readonly operation_timeout_seconds="${M1_ZENDB_BENCHMARK_TIMEOUT_SECONDS:-180}"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1BoundedBenchmark.mo"
 
-for command in git mops dfx sha256sum install tar node; do
+for command in git mops dfx sha256sum install tar node timeout; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
     exit 1
@@ -23,6 +24,10 @@ for command in git mops dfx sha256sum install tar node; do
 done
 
 export DFX_MOC_PATH="moc-wrapper"
+[[ "$operation_timeout_seconds" =~ ^[0-9]+$ ]] && (( operation_timeout_seconds >= 30 && operation_timeout_seconds <= 180 )) || {
+  echo "M1_ZENDB_BENCHMARK_TIMEOUT_SECONDS must be an integer from 30 through 180" >&2
+  exit 1
+}
 [[ "$(mops --version | head -n 1)" == "CLI 2.19.2" ]] || { echo "Expected Mops CLI 2.19.2" >&2; exit 1; }
 [[ "$(dfx --version)" == "dfx 0.32.0" ]] || { echo "Expected dfx 0.32.0" >&2; exit 1; }
 [[ -f "$proof_test" ]] || { echo "Missing proof test: $proof_test" >&2; exit 1; }
@@ -89,9 +94,16 @@ local_replica_started=true
 dfx ping local
 dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
 dfx build "$test_canister" --network local
-dfx deploy "$test_canister" --network local --mode reinstall --yes
-dfx canister call "$test_canister" --network local runTests
+dfx deploy "$test_canister" --network local --no-wallet --mode reinstall --yes
+# The fixture records actual caller-canister cycle-balance deltas immediately
+# around insert, query, replace, rebuild, and delete, and traps if a
+# predeclared ceiling is exceeded. Preserve the Candid result in the isolated
+# checkout so a reviewer can transcribe only an executed result into the
+# tracked evidence manifest; do not overwrite historical evidence here.
+result_file="$workdir/benchmark-result.did"
+timeout --foreground "$operation_timeout_seconds" dfx canister call "$test_canister" --network local runTests | tee "$result_file"
+chmod 600 "$result_file"
 dfx stop
 local_replica_started=false
 
-echo "ZenDB v2.0.1 M1 bounded synthetic benchmark passed on the pinned local DFX replica. Source checkout: $source_dir"
+echo "ZenDB v2.0.1 M1 bounded synthetic benchmark passed on the pinned local DFX replica. Source checkout: $source_dir; cycle-delta result: $result_file"

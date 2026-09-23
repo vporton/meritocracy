@@ -347,7 +347,7 @@ Immediately pause and preserve evidence if any of the following occurs:
 - source identity/schema/tool/module/manifest hash differs;
 - a supposedly read-only export attempts a write;
 - the base snapshot is not the capture slot's exported snapshot, a commit-LSN/transaction-root coverage gap or duplicate appears, a replica identity is unusable, a slot becomes invalid/falls behind its retention budget, or a source schema/publication/redaction-projection hash changes;
-- the exact ZenDB source/dependency/Candid/Wasm pin or approved RBAC grant matrix differs, a revoked bootstrap/deployer/importer role reappears, or a direct unauthorized ZenDB call succeeds;
+- the exact ZenDB source/dependency/Candid/Wasm pin or approved RBAC grant matrix differs; a removed former controller regains controller-list membership; an ordinary unauthorized caller succeeds; or a ZenDB upgrade is performed by a principal outside the approved controller/governance authority. ZenDB's own restored bootstrap/admin access for the authorized upgrading controller is accepted;
 - a sensitive projection lacks its approved lifecycle/access/backup exception record, an unapproved raw social/wallet correlation enters a public projection, or a legacy sender is neither paused nor covered by the signed temporary exception inventory;
 - unexpected writer, cron, or payment sender is active during freeze;
 - count, row/table/Merkle hash, relation, unique key, sequence, index, or financial equation differs;

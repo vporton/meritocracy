@@ -157,12 +157,15 @@ stops the future processing without waiving data-subject rights.
 
 The DAO is the intended active authority with full canister-upgrade power. The
 controller/governance design must make that authority explicit and auditable; a
-controller list is not a multisig. A bootstrap/deployer grant is a distinct
-authority: once revoked, it must never reappear after an upgrade. No future DAO
-authority, controller handoff, ZenDB migration, or upgrade may revive a revoked
-bootstrap grant. The required G2/M2 proof must exercise revoke → upgrade →
-post-upgrade authorization checks and show both that the DAO authority remains
-present when intended and that the revoked bootstrap grant remains absent.
+controller list is not a multisig. A principal that can upgrade a ZenDB
+canister is intentionally unrestricted for that canister: it can replace code
+and ZenDB may restore its out-of-box bootstrap/admin access on upgrade. That
+restoration is accepted owner policy, not an RBAC failure to be worked around.
+The required G2/M2 proof instead exercises a controller handoff: the successor
+controller upgrades and has the intended administrative capability, while a
+former controller that was removed from the controller list cannot read grants,
+write, or self-regrant. This does not weaken the separate requirement that
+ordinary callers have no authorization path.
 
 The treasury is DAO-governed custody, not non-custodial merely because it is a
 canister. Until DAO handoff, the owner's local `icp identity` is a bootstrap
@@ -171,8 +174,8 @@ mainnet signer, or reason to bypass the revoke proof.
 
 ## Non-authorization and outstanding work
 
-This record does not approve the unresolved ZenDB v2.0.1 RBAC upgrade failure,
-a native-Motoko exception, application behavior, Candid, storage types, import,
-backup execution, deployment, or any production change. G2 remains blocked
-until its complete evidence set in `PLANS.md` is satisfied, including the
+This record does not approve ZenDB v2.0.1 as target storage, a native-Motoko
+exception, application behavior, Candid, storage types, import, backup
+execution, deployment, or any production change. G2 remains blocked until its
+complete evidence set in `PLANS.md` is satisfied, including the applicable
 collection-specific storage decision and the required legal/technical proofs.

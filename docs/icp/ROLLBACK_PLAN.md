@@ -38,7 +38,7 @@ Before any production freeze, independently verify:
 - G2-approved sensitive-data lifecycle/disclosure record: purpose/data controller/legal basis, retention/deletion, backup/restore, access audit, accounting/anti-evasion exceptions, and public field allowlist decisions; raw KYC PII is excluded from target state/export/backup;
 - every canister ID, subnet, controller/governance principal, module hash, Candid interface, stable signature, certified-asset root, and sufficient cycle balance;
 - the recorded SNS launch/ownership decision, local/PocketIC controller evidence, and the G4 testflight's isolated canister IDs, test-only derivation/environment, cycle budget, root-controller transition, and recovery/abort proof; testflight artifacts are distinct from production artifacts;
-- the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, bootstrap/deployer/import grant revocation evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
+- the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, controller-handoff/ordinary-caller-denial evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
 - current and previous stable-compatible Wasm artifacts and tested upgrade/downgrade/forward-repair procedures;
 - DNS/CDN/custom-domain configuration, TTLs, asset routing, monitoring, and reversible traffic-switch commands;
 - chain/ledger evidence for every payment operation active near cutover and a hard proof that legacy cron/payment workers are stopped;

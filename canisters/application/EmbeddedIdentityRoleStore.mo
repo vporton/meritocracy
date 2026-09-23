@@ -34,6 +34,29 @@ module {
     #storageError;
   };
 
+  /// Full immutable binding tuple used for duplicate reconciliation.  A
+  /// matching logical ID/version/hash alone is insufficient: it could conceal
+  /// a substituted identity factor or OAuth subject.
+  public type ImmutableBindingObservation = {
+    version : Nat64;
+    contentHash : Blob;
+    userId : Nat64;
+    principal : Principal;
+    factor : { #internetIdentity; #oauth };
+    provider : ?Text;
+    subjectHash : ?Blob;
+  };
+
+  /// Full immutable role tuple used for duplicate reconciliation.  The role
+  /// label and subject principal are part of the assignment, not metadata a
+  /// retry may replace under a coincident version/hash.
+  public type ImmutableRoleObservation = {
+    version : Nat64;
+    contentHash : Blob;
+    principal : Principal;
+    role : Text;
+  };
+
   type BindingRecord = {
     logicalId : Text;
     version : Nat64;
@@ -138,6 +161,75 @@ module {
     };
   };
 
+  func bindingObservation(record : BindingRecord) : ImmutableBindingObservation {
+    {
+      version = record.version;
+      contentHash = record.contentHash;
+      userId = record.userId;
+      principal = record.principal;
+      factor = switch (record.factor) {
+        case ("internetIdentity") #internetIdentity;
+        case (_) #oauth;
+      };
+      provider = record.provider;
+      subjectHash = record.subjectHash;
+    };
+  };
+
+  func roleObservation(record : RoleRecord) : ImmutableRoleObservation {
+    {
+      version = record.version;
+      contentHash = record.contentHash;
+      principal = record.principal;
+      role = record.role;
+    };
+  };
+
+  /// One complete-tuple decision is shared by focused vectors and the
+  /// durable binding duplicate branch.  All identity evidence remains bound
+  /// to the logical ID after a lost reply.
+  public func decideBindingIdempotentWrite(
+    input : IdentityRole.PrincipalBindingInput,
+    observed : ?ImmutableBindingObservation,
+  ) : WriteResult {
+    if (not IdentityRole.validPrincipalBinding(input)) return #blocked;
+    switch (observed) {
+      case null #conflict;
+      case (?(existing)) {
+        if (
+          existing.version == input.desiredVersion and
+          Blob.equal(existing.contentHash, input.contentHash) and
+          existing.userId == input.userId and
+          existing.principal == input.principal and
+          existing.factor == input.factor and
+          existing.provider == input.provider and
+          existing.subjectHash == input.subjectHash
+        ) #acknowledged else #conflict;
+      };
+    };
+  };
+
+  /// One complete-tuple decision is shared by focused vectors and the
+  /// durable role duplicate branch.  Role changes require a new immutable
+  /// transition rather than an overwritten logical ID.
+  public func decideRoleIdempotentWrite(
+    input : IdentityRole.RoleAssignmentInput,
+    observed : ?ImmutableRoleObservation,
+  ) : WriteResult {
+    if (not IdentityRole.validRoleAssignment(input)) return #blocked;
+    switch (observed) {
+      case null #conflict;
+      case (?(existing)) {
+        if (
+          existing.version == input.desiredVersion and
+          Blob.equal(existing.contentHash, input.contentHash) and
+          existing.principal == input.principal and
+          existing.role == input.role
+        ) #acknowledged else #conflict;
+      };
+    };
+  };
+
   public func writeBinding(store : Store, input : IdentityRole.PrincipalBindingInput) : WriteResult {
     if (not IdentityRole.validPrincipalBinding(input)) return #blocked;
     let record = bindingFor(input);
@@ -150,16 +242,7 @@ module {
           switch (store.bindings.insert(record)) { case (#ok(_)) #acknowledged; case (#err(_)) #storageError };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          switch (IdentityRole.decideIdempotentWrite(
-            true,
-            input.desiredVersion,
-            input.contentHash,
-            ?{ version = existing.version; contentHash = existing.contentHash },
-          )) {
-            case (#accept) #acknowledged;
-            case (#conflict) #conflict;
-            case (#blocked) #blocked;
-          };
+          decideBindingIdempotentWrite(input, ?bindingObservation(existing));
         } else {
           #conflict;
         };
@@ -203,16 +286,7 @@ module {
           switch (store.roles.insert(record)) { case (#ok(_)) #acknowledged; case (#err(_)) #storageError };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          switch (IdentityRole.decideIdempotentWrite(
-            true,
-            input.desiredVersion,
-            input.contentHash,
-            ?{ version = existing.version; contentHash = existing.contentHash },
-          )) {
-            case (#accept) #acknowledged;
-            case (#conflict) #conflict;
-            case (#blocked) #blocked;
-          };
+          decideRoleIdempotentWrite(input, ?roleObservation(existing));
         } else {
           #conflict;
         };
@@ -244,4 +318,3 @@ module {
     };
   };
 };
-

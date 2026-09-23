@@ -23,9 +23,25 @@ let input : PaymentOperation.Input = {
 // destination material remains hash-only and the record is within the M1
 // document limit. Invalid candidates cannot be encoded for a future write.
 assert Store.validEncoding(input);
-assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(2) }) == #acknowledged;
-assert Store.decideIdempotentWrite(input, ?{ version = 2; contentHash = hash(2) }) == #conflict;
-assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(3) }) == #conflict;
+let exact : Store.ImmutableObservation = {
+  operationId = input.operationId;
+  obligationId = input.obligationId;
+  assetId = input.assetId;
+  amountBaseUnits = input.amountBaseUnits;
+  assetDecimals = input.assetDecimals;
+  destinationHash = input.destinationHash;
+  version = input.desiredVersion;
+  contentHash = input.contentHash;
+};
+assert Store.decideIdempotentWrite(input, ?exact) == #acknowledged;
+assert Store.decideIdempotentWrite(input, ?{ exact with operationId = "op:substituted" }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with obligationId = "obligation:substituted" }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with assetId = "icrc1:ledger:OTHER" }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with amountBaseUnits = 18 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with assetDecimals = 9 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with destinationHash = hash(3) }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with version = 2 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ exact with contentHash = hash(3) }) == #conflict;
 assert Store.decideIdempotentWrite(input, null) == #conflict;
 assert not Store.validEncoding({ input with amountBaseUnits = 0 });
 assert not Store.validEncoding({

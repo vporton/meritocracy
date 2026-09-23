@@ -15,6 +15,19 @@ module {
     #storageError;
   };
 
+  /// All immutable operation fields must match on a duplicate logical ID.
+  /// Version/content hash alone must not acknowledge substituted payment data.
+  public type ImmutableObservation = {
+    operationId : Text;
+    obligationId : Text;
+    assetId : Text;
+    amountBaseUnits : Nat;
+    assetDecimals : Nat8;
+    destinationHash : Blob;
+    version : Nat64;
+    contentHash : Blob;
+  };
+
   type Record = {
     logicalId : Text;
     operationId : Text;
@@ -63,19 +76,41 @@ module {
     };
   };
 
+  func immutableObservation(record : Record) : ImmutableObservation {
+    {
+      operationId = record.operationId;
+      obligationId = record.obligationId;
+      assetId = record.assetId;
+      amountBaseUnits = record.amountBaseUnits;
+      assetDecimals = record.assetDecimals;
+      destinationHash = record.destinationHash;
+      version = record.version;
+      contentHash = record.contentHash;
+    };
+  };
+
   public func validEncoding(input : PaymentOperation.Input) : Bool {
     PaymentOperation.valid(input) and Nat.toText(input.amountBaseUnits).size() <= 1_024;
   };
 
   public func decideIdempotentWrite(
     input : PaymentOperation.Input,
-    observed : ?{ version : Nat64; contentHash : Blob },
+    observed : ?ImmutableObservation,
   ) : WriteResult {
     if (not validEncoding(input)) return #blocked;
     switch (observed) {
       case null #conflict;
       case (?existing) {
-        if (existing.version == input.desiredVersion and existing.contentHash == input.contentHash) #acknowledged else #conflict;
+        if (
+          existing.operationId == input.operationId and
+          existing.obligationId == input.obligationId and
+          existing.assetId == input.assetId and
+          existing.amountBaseUnits == input.amountBaseUnits and
+          existing.assetDecimals == input.assetDecimals and
+          Blob.equal(existing.destinationHash, input.destinationHash) and
+          existing.version == input.desiredVersion and
+          Blob.equal(existing.contentHash, input.contentHash)
+        ) #acknowledged else #conflict;
       };
     };
   };
@@ -91,7 +126,7 @@ module {
           switch (store.insert(recordFor(input))) { case (#ok(_)) #acknowledged; case (#err(_)) #storageError };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          decideIdempotentWrite(input, ?{ version = existing.version; contentHash = existing.contentHash });
+          decideIdempotentWrite(input, ?immutableObservation(existing));
         } else #conflict;
       };
     };

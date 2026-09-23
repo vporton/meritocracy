@@ -16,6 +16,17 @@ module {
     #storageError;
   };
 
+  /// Every immutable field carried by a workflow completion receipt. A
+  /// logical-ID retry must bind the workflow identity as well as its recovery
+  /// version/hash; matching only the latter could acknowledge a substituted
+  /// cycle or operation name.
+  public type ImmutableObservation = {
+    cycleId : Text;
+    operationName : Text;
+    version : Nat64;
+    contentHash : Blob;
+  };
+
   type Record = {
     logicalId : Text;
     cycleId : Text;
@@ -54,17 +65,34 @@ module {
       version = input.desiredVersion; contentHash = input.contentHash };
   };
 
+  func immutableObservation(record : Record) : ImmutableObservation {
+    {
+      cycleId = record.cycleId;
+      operationName = record.operationName;
+      version = record.version;
+      contentHash = record.contentHash;
+    };
+  };
+
   public func validEncoding(input : Receipt.Input) : Bool {
     // Receipt text is bounded to 896 scalar values; even the maximum UTF-8
     // envelope plus its hash and Candid framing is below the fixed document cap.
     Receipt.valid(input) and 4_096 <= StorageCatalog.limits.maxDocumentBytes;
   };
 
-  public func decideIdempotentWrite(input : Receipt.Input, observed : ?{ version : Nat64; contentHash : Blob }) : WriteResult {
+  /// One exact-tuple decision is shared by unit vectors and the durable
+  /// duplicate branch. A logical ID is never permission to substitute a
+  /// workflow cycle or operation, even when version/content hash match.
+  public func decideIdempotentWrite(input : Receipt.Input, observed : ?ImmutableObservation) : WriteResult {
     if (not validEncoding(input)) return #blocked;
     switch (observed) {
       case (?(existing)) {
-        if (existing.version == input.desiredVersion and existing.contentHash == input.contentHash) #acknowledged else #conflict;
+        if (
+          existing.cycleId == input.cycleId and
+          existing.operationName == input.operationName and
+          existing.version == input.desiredVersion and
+          Blob.equal(existing.contentHash, input.contentHash)
+        ) #acknowledged else #conflict;
       };
       case null #conflict;
     };
@@ -89,7 +117,7 @@ module {
           };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          decideIdempotentWrite(input, ?{ version = existing.version; contentHash = existing.contentHash });
+          decideIdempotentWrite(input, ?immutableObservation(existing));
         } else #conflict;
       };
     };
@@ -111,4 +139,3 @@ module {
     };
   };
 };
-

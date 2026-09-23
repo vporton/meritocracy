@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 bounded synthetic benchmark",
-  "status": "EXECUTED 2026-08-02: the exact pinned harness passed on a fresh ephemeral local DFX replica. This is bounded synthetic evidence only, not a production capacity or instruction-budget approval.",
+  "status": "EXECUTED 2026-08-02: the prior exact pinned harness passed on a fresh ephemeral local DFX replica. It remains bounded synthetic diagnostic evidence only and does not satisfy the owner-approved bounded-execution/cycle-budget acceptance. The harness was updated on 2026-09-23 to measure cycle-balance deltas and fail closed at predeclared synthetic ceilings, but that updated harness has not yet been executed; no new result is claimed here.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -20,6 +20,22 @@
     "bounded caller-to-ZenDB write bytes and one-document recovery-read bytes",
     "index delete/create rebuild result entries"
   ],
+  "updatedHarnessPendingExecution": {
+    "date": "2026-09-23",
+    "fixture": "fixtures/zendb/M1BoundedBenchmark.mo",
+    "runner": "scripts/icp/test-zendb-benchmark.sh",
+    "boundary": "fresh ephemeral project-local DFX replica; synthetic data only; no wallet or remote network",
+    "timeoutSeconds": 180,
+    "cycleMeasurement": "The fixture reads its own canister cycle balance immediately before and after each insert batch, logical-ID query, replacement, delete/recreate repair-index operation, and deletion. A balance increase or a delta above the declared ceiling traps the run.",
+    "predeclaredCycleCeilings": {
+      "insertBatch": 500000000000,
+      "query": 100000000000,
+      "replace": 100000000000,
+      "reindex": 500000000000,
+      "delete": 100000000000
+    },
+    "resultHandling": "The runner writes the returned Candid metrics, including every cycle delta, to a mode-0600 benchmark-result.did file in its isolated work directory. A reviewed, successful execution must replace this pending entry with exact results; it must not reuse the 2026-08-02 figures."
+  },
   "execution": {
     "date": "2026-08-02",
     "toolchain": {
@@ -69,6 +85,8 @@
   },
   "doesNotProve": [
     "insert or index-create instruction counts, because the pinned API does not report them",
+    "the owner-approved bounded-execution/cycle-budget acceptance: actual canister-cycle deltas, declared per-operation ceilings, timeout assertions, or fail-closed rejection-before-mutation evidence for every public and maintenance operation",
+    "the required runtime reindex policy: ordinary ingress prohibition plus a bounded durable maintenance/collection-vN recovery procedure",
     "archive cross-canister bytes, low-cycle behavior, crash/upgrade recovery, lost replies, duplicate delivery, RBAC bootstrap revocation, or post-upgrade grant audit",
     "a production capacity or instruction budget"
   ]

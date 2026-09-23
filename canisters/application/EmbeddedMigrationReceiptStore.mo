@@ -16,6 +16,19 @@ module {
     #storageError;
   };
 
+  /// All immutable fields used to identify a canonical imported chunk.  Keep
+  /// this separate from ZenDB's internal document ID: a matching logical ID
+  /// or version/hash alone must never acknowledge substituted chunk metadata.
+  public type ImmutableObservation = {
+    migrationId : Text;
+    sourceTable : Text;
+    chunk : Nat;
+    rowCount : Nat32;
+    payloadHash : Blob;
+    version : Nat64;
+    contentHash : Blob;
+  };
+
   type Record = {
     logicalId : Text;
     migrationId : Text;
@@ -60,17 +73,16 @@ module {
       version = input.desiredVersion; contentHash = input.contentHash };
   };
 
-  // A receipt's logical ID is not a license to substitute the source chunk
-  // metadata. In particular, a changed payload hash must not be accepted as
-  // an idempotent retry merely because a caller repeats the old content hash.
-  func sameImmutableInput(existing : Record, input : Receipt.Input) : Bool {
-    existing.migrationId == input.migrationId and
-    existing.sourceTable == input.sourceTable and
-    existing.chunk == Nat64.toNat(input.chunk) and
-    existing.rowCount == input.rowCount and
-    Blob.equal(existing.payloadHash, input.payloadHash) and
-    existing.version == input.desiredVersion and
-    Blob.equal(existing.contentHash, input.contentHash);
+  func immutableObservation(record : Record) : ImmutableObservation {
+    {
+      migrationId = record.migrationId;
+      sourceTable = record.sourceTable;
+      chunk = record.chunk;
+      rowCount = record.rowCount;
+      payloadHash = record.payloadHash;
+      version = record.version;
+      contentHash = record.contentHash;
+    };
   };
 
   public func validEncoding(input : Receipt.Input) : Bool {
@@ -83,11 +95,22 @@ module {
     Receipt.valid(input) and 4_096 <= StorageCatalog.limits.maxDocumentBytes;
   };
 
-  public func decideIdempotentWrite(input : Receipt.Input, observed : ?{ version : Nat64; contentHash : Blob }) : WriteResult {
+  /// One exact-tuple decision is shared by unit vectors and the durable
+  /// duplicate branch. A receipt's logical ID is not permission to substitute
+  /// a source chunk, including when its version/content hash is unchanged.
+  public func decideIdempotentWrite(input : Receipt.Input, observed : ?ImmutableObservation) : WriteResult {
     if (not validEncoding(input)) return #blocked;
     switch (observed) {
       case (?(existing)) {
-        if (existing.version == input.desiredVersion and existing.contentHash == input.contentHash) #acknowledged else #conflict;
+        if (
+          existing.migrationId == input.migrationId and
+          existing.sourceTable == input.sourceTable and
+          existing.chunk == Nat64.toNat(input.chunk) and
+          existing.rowCount == input.rowCount and
+          Blob.equal(existing.payloadHash, input.payloadHash) and
+          existing.version == input.desiredVersion and
+          Blob.equal(existing.contentHash, input.contentHash)
+        ) #acknowledged else #conflict;
       };
       case null #conflict;
     };
@@ -112,7 +135,7 @@ module {
           };
         } else if (records.size() == 1) {
           let (_, existing, _) = records[0];
-          if (sameImmutableInput(existing, input)) #acknowledged else #conflict;
+          decideIdempotentWrite(input, ?immutableObservation(existing));
         } else #conflict;
       };
     };

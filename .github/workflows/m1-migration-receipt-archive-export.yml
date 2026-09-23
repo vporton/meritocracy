@@ -1,0 +1,40 @@
+name: M1 migration-receipt canonical archive export proof
+on:
+  pull_request:
+    paths:
+      - 'canisters/archive_router/MigrationReceipt*.mo'
+      - 'fixtures/application/MigrationReceiptArchiveExport*.mo'
+      - 'scripts/icp/*migration-receipt-archive-export*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-migration-receipt-archive-export.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pocketic-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26.5.0, cache: npm }
+      - run: npm ci
+      - run: node node_modules/ic-mops/dist/bin/mops.js install --lock check
+      - name: Build and run isolated EOP archive-binding proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-migration-receipt-archive-export-proof.sh 2>&1 | tee .mops/m1-migration-receipt-archive-proof/proof.log
+      - name: Build and run isolated archive-binding capacity proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-migration-receipt-archive-export-capacity-proof.sh 2>&1 | tee .mops/m1-migration-receipt-archive-proof/capacity.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-migration-receipt-archive-${{ github.run_id }}
+          path: .mops/m1-migration-receipt-archive-proof
+          if-no-files-found: warn

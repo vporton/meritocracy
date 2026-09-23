@@ -144,7 +144,7 @@ Before each `await`, the state transition and attempt ID are committed. After re
 
 - `operationId = SHA-256(domain || obligationId || userId || scopeId || assetId || cycleId || destinationVersion || policyVersion)` over canonical length-delimited bytes, not JSON or current time.
 - Payment intent creation is unique by obligation and asset. Attempt IDs are monotonic children of one operation.
-- The unified treasury stores `operationId -> operationHash/state/result` forever in its receipt collection and reconciliation journal. It signs only after its native intent and remote logical-key/content-hash receipt are acknowledged; collection RBAC and post-upgrade grant audits ensure no other principal can create or alter that receipt.
+- The unified treasury stores `operationId -> operationHash/state/result` forever in its receipt collection and reconciliation journal. It signs only after its native intent and remote logical-key/content-hash receipt are acknowledged; typed actor authorization and post-upgrade controller-handoff/ordinary-caller-denial audits protect the receipt. An authorized controller can replace code, so it is deliberately treated as unrestricted rather than as a constrained ZenDB role.
 - The canonical hash preserves address case/bytes according to the chain. It never lowercases a Base58/case-sensitive address.
 - Manual recovery can only advance the existing operation with evidence; it cannot mint a replacement obligation.
 

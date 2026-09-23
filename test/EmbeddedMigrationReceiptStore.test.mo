@@ -12,12 +12,20 @@ let input : Receipt.Input = {
 };
 
 assert Store.validEncoding(input);
-assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(9) }) == #acknowledged;
-assert Store.decideIdempotentWrite(input, ?{ version = 2; contentHash = hash(9) }) == #conflict;
-assert Store.decideIdempotentWrite(input, ?{ version = 1; contentHash = hash(10) }) == #conflict;
+let observed : Store.ImmutableObservation = {
+  migrationId = input.migrationId; sourceTable = input.sourceTable;
+  chunk = 7; rowCount = input.rowCount; payloadHash = input.payloadHash;
+  version = 1; contentHash = hash(9);
+};
+assert Store.decideIdempotentWrite(input, ?observed) == #acknowledged;
+assert Store.decideIdempotentWrite(input, ?{ observed with version = 2 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with contentHash = hash(10) }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with migrationId = "other-migration" }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with sourceTable = "Role" }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with chunk = 8 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with rowCount = 499 }) == #conflict;
+assert Store.decideIdempotentWrite(input, ?{ observed with payloadHash = hash(5) }) == #conflict;
 assert Store.decideIdempotentWrite(input, null) == #conflict;
-// The actual embedded-store fixture separately verifies that an existing
-// logical ID cannot substitute this immutable chunk payload hash.
 assert not Store.validEncoding({ input with rowCount = 0 });
 assert not Store.validEncoding({ input with payloadHash = Blob.fromArray([4]) });
 assert not Store.validEncoding({ input with logicalId = "bad\nlogical-id" });

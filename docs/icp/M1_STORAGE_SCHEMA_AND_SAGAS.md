@@ -40,13 +40,22 @@ The supplied records cover identity/principal bindings, destinations, holds and 
 | `treasury_journal_v1` | treasury | `entry_unique`, `account_asset_sequence`, `operation` | append-only accounting / no public reader |
 | `treasury_chain_receipt_v1` | treasury | `chain_tx_unique`, `operation_attempt_unique` | chain reconciliation / no public reader |
 | `migration_receipt_v1` | archive | `chunk_unique`, `table_chunk` | bounded import resume / restricted |
-| `migration_evidence_v1` | archive | `source_row_unique` | conflict/exception evidence / restricted |
-| `ai_artifact_v1` | archive | `payload_hash_unique`, `retention` | hash-addressed payload archive / restricted |
-| `evidence_kyc_v1` | evidence | `attestation_unique`, `erasure_due` | encrypted evidence / no public reader |
+| `migration_evidence_v1` | archive | `migration_source_row_unique`, `migration_observed` | minimal conflict/exception evidence / restricted |
+| `ai_artifact_v1` | archive | `redacted_result_hash_unique`, `retention_due` | redacted canonical-result archive / restricted |
+| `evidence_kyc_v1` | evidence | `audit_event_unique`, `principal_expiry`, `retention_due` | minimum KYC attestation / no public reader |
 
 The existing detailed mapping in `SCHEMA_MAPPING.md` remains the source-to-collection field and relation disposition for all 22 physical PostgreSQL tables. It now resolves each target collection to this catalogue rather than creating ad-hoc collection names.
 
 No `Task`, task dependency, lease, provider batch/item, or intermediate evaluation collection exists. Legacy equivalents are restricted archive records only. No collection stores a legacy bearer/session value, raw verification token, `SystemSecret.value`, private key, or OAuth code/verifier/token.
+
+`migration_evidence_v1`, `ai_artifact_v1`, and `evidence_kyc_v1` are
+catalogue-only candidates: no Motoko record, adapter, ingress, or import path
+exists yet. Their owner-selected field allowlists, retention, and prohibited
+fields are fixed in `G2_PRIVACY_AND_GOVERNANCE_DECISION.md`; an implementation
+must use those fields exactly and prove bounds before it can add a type or a
+private adapter. In particular, `evidence_kyc_v1` is not an encrypted raw
+evidence store and its `audit_event_unique` key is an internal immutable audit
+event ID, never a Didit report or session ID.
 
 ## Limits and query protocol
 

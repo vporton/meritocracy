@@ -221,7 +221,7 @@ module {
         owner = #archive;
         schemaVersion = 1;
         authoritativeCandidate = false;
-        indexes = Array.append(envelopeIndexes, [{ name = "source_row_unique"; fields = ["sourceTable", "sourceRowId"]; unique = true; purpose = "exception evidence" }]);
+        indexes = Array.append(envelopeIndexes, [{ name = "migration_source_row_unique"; fields = ["migrationId", "sourceTable", "sourceRowId"]; unique = true; purpose = "one exception disposition per source row and migration" }, { name = "migration_observed"; fields = ["migrationId", "observedAtNs", "logicalId"]; unique = false; purpose = "bounded reconciliation cursor" }]);
         grants = ownerReadWrite;
       },
       {
@@ -229,7 +229,7 @@ module {
         owner = #archive;
         schemaVersion = 1;
         authoritativeCandidate = false;
-        indexes = Array.append(envelopeIndexes, [{ name = "payload_hash_unique"; fields = ["payloadHash"]; unique = true; purpose = "content-addressed payload" }, { name = "retention"; fields = ["retentionClass", "createdAtNs", "logicalId"]; unique = false; purpose = "bounded retention cursor" }]);
+        indexes = Array.append(envelopeIndexes, [{ name = "redacted_result_hash_unique"; fields = ["redactedResultHash"]; unique = true; purpose = "content-addressed redacted canonical result" }, { name = "retention_due"; fields = ["retentionDeadlineNs", "logicalId"]; unique = false; purpose = "bounded retention/redaction cursor" }]);
         grants = ownerReadWrite;
       },
       {
@@ -237,7 +237,7 @@ module {
         owner = #evidence;
         schemaVersion = 1;
         authoritativeCandidate = false;
-        indexes = Array.append(envelopeIndexes, [{ name = "attestation_unique"; fields = ["attestationId"]; unique = true; purpose = "provider event deduplication" }, { name = "erasure_due"; fields = ["erasureDueAtNs", "logicalId"]; unique = false; purpose = "restricted retention cursor" }]);
+        indexes = Array.append(envelopeIndexes, [{ name = "audit_event_unique"; fields = ["auditEventId"]; unique = true; purpose = "immutable attestation audit event" }, { name = "principal_expiry"; fields = ["principal", "expiresAtNs", "logicalId"]; unique = false; purpose = "principal attestation and expiry cursor" }, { name = "retention_due"; fields = ["retentionDeadlineNs", "logicalId"]; unique = false; purpose = "restricted retention/redaction cursor" }]);
         grants = ownerReadWrite;
       },
     ];

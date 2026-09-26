@@ -1,7 +1,7 @@
 # G2 privacy, public-disclosure, consent, and governance decision record
 
 Decision date: 2026-09-21
-Amended: 2026-09-22
+Amended: 2026-09-26
 Status: owner-approved G2 input; **not G2 approval** and not authorization to collect,
 import, publish, deploy, or otherwise process data.
 
@@ -130,6 +130,36 @@ audit records. Those records are moved or retained in a restricted evidence-only
 mode, with access limited to the approved legal, reconciliation, security, and
 data-subject-request functions. This does not authorize a public projection of
 those restricted records.
+
+### Selected catalogue-only evidence subsets
+
+The following are owner-selected field allowlists for the three catalogue-only
+candidate collections. They narrow the future G2 design; they neither approve a
+collection implementation nor authorize an import or provider integration. All
+three collections are private/restricted, have no public projection, and are
+subject to the default evidence-only ten-year period unless a more specific
+deadline below applies. Backups and restores must preserve the same access
+boundary and redaction/deletion schedule; they must not become a route for a
+prohibited raw value.
+
+| Candidate collection | Allowed fields and purpose | Retention and removal | Prohibited fields |
+| --- | --- | --- | --- |
+| `migration_evidence_v1` | Migration ID; source-table and source-row identifiers; bounded closed reason and conflict codes; observation timestamp; source canonical-row SHA-256 hash; and optional related target logical ID and content hash. It explains a reconciliation exception without retaining the source row. | Retain as restricted evidence for ten years after the last financially or legally material event, then redact/delete non-required evidence while preserving the minimum immutable accounting/audit record. | Raw source row, source JSON/text fragment, secret, credential, bearer/token, raw KYC/email value, or any unreviewed source payload. |
+| `ai_artifact_v1` | Bounded metadata (logical/evaluation ownership reference, creation time, size, type, model/provider label, SHA-256 hash, retention deadline) and a bounded redacted canonical result. A sanitized historical request/response payload is permitted only for a specifically documented migration-reconciliation exception that names its redaction profile and retention deadline. | The redacted result follows the default evidence-only period. An exceptional sanitized historical payload must be redacted/deleted at its recorded deadline and may not inherit open-ended retention. | Raw prompt/request/response, provider credentials/tokens, unredacted personal data, or a historical payload without the documented reconciliation need, redaction profile, and deadline. |
+| `evidence_kyc_v1` | Principal; `approved`/`declined`/`review` status; policy/workflow version; issuing country; attestation time and expiry; immutable internal audit-event ID; and, only if needed, a bounded closed rejection code. Its sole purpose is minimum private KYC/AML/audit attestation. | Keep the live attestation only through its expiry. After expiry, redact/delete the status fields unless the minimum immutable audit evidence is required under the default evidence-only period. | Provider report or session ID, raw provider response, document/media, DOB, address, ID/personal number, biometric data, or provider fraud/blocklist material. |
+
+An opaque, caller-bound callback/session correlation is separate transient state,
+not attestation evidence. It may contain only an opaque generated correlation
+value, its bound principal, purpose, creation/expiry, and one-use state; it is
+deleted no later than seven days after creation. It must not store a provider
+report/session ID or raw callback payload. The later G2 implementation must
+choose and prove its bounded private storage and deletion path before adding it
+to the catalogue.
+
+The exact purpose/access-audit roles are as stated above. The data controller
+is the Foundation under this record. The applicable per-field lawful basis and
+any concrete legal-hold exception remain G2 legal/compliance evidence to be
+recorded before sensitive data is processed.
 
 ## Email, consent, and providers
 

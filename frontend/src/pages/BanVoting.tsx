@@ -163,6 +163,11 @@ export default function BanVoting() {
                     <p className="subtitle plan-link-row">
                         <a href="/ban-voting/timing-plan">View payout and ban/unban timing plan</a>
                     </p>
+                    <p className="subtitle defense-panel-link-row">
+                        <a href="/defense-panel">
+                            Open the Human-Governance Defense Panel
+                        </a>
+                    </p>
                 </header>
 
                 {!isKycApproved && authUser && (

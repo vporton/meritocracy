@@ -1,0 +1,22 @@
+.defense-panel-page { min-height: 80vh; padding: 2rem 0; background: var(--bg-color, #f5f7fa); }
+.defense-panel-container { max-width: 880px; margin: 0 auto; padding: 0 1rem 2rem; }
+.defense-panel-container header { text-align: center; margin-bottom: 1.25rem; }
+.defense-panel-container header p, .defense-panel-container form p { color: #4a5568; }
+.defense-panel-container aside { margin-bottom: 1rem; padding: 1rem; border: 1px solid #d69e2e; border-radius: 8px; background: #fffbeb; color: #744210; }
+.defense-panel-container form, .defense-panel-container .report { padding: 1.25rem; border: 1px solid #d6dde7; border-radius: 10px; background: #fff; box-shadow: 0 2px 5px rgb(0 0 0 / 5%); }
+.defense-panel-container fieldset { margin: 0 0 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; }
+.defense-panel-container legend { padding: 0 .35rem; font-weight: 700; }
+.defense-panel-container label { display: block; margin-bottom: .75rem; font-weight: 600; color: #2d3748; }
+.defense-panel-container input:not([type='checkbox']), .defense-panel-container select { box-sizing: border-box; display: block; width: 100%; margin-top: .35rem; padding: .65rem; border: 1px solid #cbd5e0; border-radius: 6px; font: inherit; }
+.defense-panel-container .checkbox { display: flex; align-items: center; gap: .5rem; font-weight: 400; }
+.defense-panel-container .user-reference { display: flex; align-items: end; gap: .75rem; }
+.defense-panel-container .user-reference label { flex: 1; }
+.defense-panel-container button { padding: .7rem 1rem; border: 0; border-radius: 6px; background: #2b6cb0; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.defense-panel-container button:disabled { cursor: wait; opacity: .65; }
+.defense-panel-container .submit { width: 100%; background: #2d3748; }
+.defense-panel-container .error { color: #c53030; font-weight: 600; }
+.defense-panel-container .resolved { overflow-wrap: anywhere; color: #276749; }
+.defense-panel-container .report { margin-top: 1.5rem; }
+.defense-panel-container pre { overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.5; }
+.defense-panel-container .links { margin-top: 1.5rem; text-align: center; }
+@media (max-width: 600px) { .defense-panel-container .user-reference { align-items: stretch; flex-direction: column; } }

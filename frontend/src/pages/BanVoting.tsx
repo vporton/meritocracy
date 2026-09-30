@@ -293,6 +293,10 @@ export default function BanVoting() {
                                                 </button>
                                             </div>
                                         )}
+                                        <a href={`/defense-panel?userId=${encodeURIComponent(String(user.id))}`} className="profile-link defense-panel" title="Open Defense Panel for this user">
+                                            <span className="profile-icon">🛡️</span>
+                                            Defense Panel
+                                        </a>
                                         <a href={`/logs/${user.id}`} target="_blank" rel="noopener noreferrer" className="profile-link audit-logs" title="Audit Logs">
                                             <span className="profile-icon">📋</span>
                                             Audit Logs

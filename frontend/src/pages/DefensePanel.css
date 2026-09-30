@@ -14,7 +14,7 @@
 .defense-panel-container button { padding: .7rem 1rem; border: 0; border-radius: 6px; background: #2b6cb0; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 .defense-panel-container button:disabled { cursor: wait; opacity: .65; }
 .defense-panel-container .submit { width: 100%; background: #2d3748; }
-.defense-panel-container .error { color: #c53030; font-weight: 600; }
+.defense-panel-container .error { margin: 1rem 0; padding: .85rem 1rem; border: 1px solid #c53030; border-radius: 6px; background: #fff5f5; color: #c53030; font-weight: 600; }
 .defense-panel-container .resolved { overflow-wrap: anywhere; color: #276749; }
 .defense-panel-container .report { margin-top: 1.5rem; }
 .defense-panel-container pre { overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.5; }

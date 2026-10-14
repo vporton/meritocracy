@@ -1,0 +1,51 @@
+name: M1 storage-authority PocketIC upgrade proof
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/storage_authority/**'
+      - 'canisters/shared/**'
+      - 'fixtures/storage_authority/**'
+      - 'scripts/icp/*storage-authority*'
+      - 'mops.toml'
+      - 'mops.lock'
+      - '.github/workflows/m1-storage-authority-upgrade.yml'
+  workflow_dispatch:
+
+jobs:
+  pocketic-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - run: npm ci
+      - name: Cache pinned PocketIC toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: m1-pocketic-${{ runner.os }}-12.0.0-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Build isolated upgrade-proof artifacts
+        shell: bash
+        run: |
+          set -o pipefail
+          scripts/icp/build-storage-authority-upgrade-proof.sh 2>&1 | tee .mops/m1-storage-authority-upgrade-proof/build.log
+      - name: Run real PocketIC old-to-new-to-new upgrade proof
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 15m scripts/icp/run-storage-authority-upgrade-proof.sh 2>&1 | tee .mops/m1-storage-authority-upgrade-proof/proof.log
+      - name: Retain proof artifacts and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-storage-authority-upgrade-proof-${{ github.run_id }}
+          path: .mops/m1-storage-authority-upgrade-proof
+          if-no-files-found: warn

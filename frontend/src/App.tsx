@@ -12,6 +12,7 @@ import VerifyEmail from './pages/VerifyEmail'
 import Admin from './pages/Admin'
 import BanVoting from './pages/BanVoting'
 import BanVotingTimingPlan from './pages/BanVotingTimingPlan'
+import DefensePanel from './pages/DefensePanel'
 import UserAuditLog from './pages/UserAuditLog'
 import Treasury from './pages/Treasury'
 import SocialShareButtons from './components/SocialShareButtons'
@@ -44,6 +45,7 @@ function App() {
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/ban-voting" element={<BanVoting />} />
                       <Route path="/ban-voting/timing-plan" element={<BanVotingTimingPlan />} />
+                      <Route path="/defense-panel" element={<DefensePanel />} />
                       <Route path="/treasury" element={<Treasury />} />
                       {/* Redirect old login route to new connect route */}
                       <Route path="/login" element={<Navigate to="/connect" replace />} />

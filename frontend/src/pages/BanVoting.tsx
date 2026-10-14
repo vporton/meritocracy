@@ -163,6 +163,11 @@ export default function BanVoting() {
                     <p className="subtitle plan-link-row">
                         <a href="/ban-voting/timing-plan">View payout and ban/unban timing plan</a>
                     </p>
+                    <p className="subtitle defense-panel-link-row">
+                        <a href="/defense-panel">
+                            Open the Human-Governance Defense Panel
+                        </a>
+                    </p>
                 </header>
 
                 {!isKycApproved && authUser && (
@@ -288,6 +293,10 @@ export default function BanVoting() {
                                                 </button>
                                             </div>
                                         )}
+                                        <a href={`/defense-panel?userId=${encodeURIComponent(String(user.id))}`} className="profile-link defense-panel" title="Open Defense Panel for this user">
+                                            <span className="profile-icon">🛡️</span>
+                                            Defense Panel
+                                        </a>
                                         <a href={`/logs/${user.id}`} target="_blank" rel="noopener noreferrer" className="profile-link audit-logs" title="Audit Logs">
                                             <span className="profile-icon">📋</span>
                                             Audit Logs

@@ -213,3 +213,4 @@
 * OECD - mailed aroubd 10 Sep 2026
 * RoRI https://researchonresearch.org - mailed 17 Sep 2026
 * MIT http://solve.mit.edu - submitted 28 Sep 2026
+* Fortis https://fortissociety.org/fellowship - applied 17 Oct 2026

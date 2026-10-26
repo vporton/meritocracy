@@ -13,7 +13,7 @@
         <mxCell id="tDPhRY8hEL3OmALvMrwS-87" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-32" target="tDPhRY8hEL3OmALvMrwS-64">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="tDPhRY8hEL3OmALvMrwS-32" value="gpt-5-mini:&lt;br&gt;Is this user an active scientist or FOSS dev?&lt;div&gt;Answer no, if he is an obvious science crackpot.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+        <mxCell id="tDPhRY8hEL3OmALvMrwS-32" value="gpt-6-luna:&lt;br&gt;Is this user an active scientist or FOSS dev?&lt;div&gt;Answer no, if he is an obvious science crackpot.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="105" y="10" width="120" height="110" as="geometry" />
         </mxCell>
         <mxCell id="tDPhRY8hEL3OmALvMrwS-33" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="tDPhRY8hEL3OmALvMrwS-30" target="tDPhRY8hEL3OmALvMrwS-32">

@@ -26,7 +26,7 @@ export class UserEvaluationFlow {
    * Returns the root task ID that can be used to start the evaluation
    * 
    * Flow according to new diagram:
-   * 1. Actor → gpt-5-mini Assessment (scientist check)
+   * 1. Actor → gpt-6-luna Assessment (scientist check)
    * 2. Bi-monthly trigger → Sequential randomization and assessment pairs
    * 3. Each pair: Randomize → Randomized (can lead to ban or median)
    */

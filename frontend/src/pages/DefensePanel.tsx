@@ -19,7 +19,7 @@ const KEY_PREFIX = 'aiim-defense-panel-key:';
 type Provider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'groq' | 'mistral' | 'xai';
 type Depth = 'page' | 'low' | 'medium' | 'high' | 'custom';
 const providers: Record<Provider, { label: string; model: string }> = {
-  openai: { label: 'OpenAI', model: 'gpt-5-mini' }, anthropic: { label: 'Anthropic', model: 'claude-sonnet-4-6' }, google: { label: 'Google Gemini', model: 'gemini-2.5-flash' }, deepseek: { label: 'DeepSeek', model: 'deepseek-chat' }, groq: { label: 'Groq', model: 'llama-3.3-70b-versatile' }, mistral: { label: 'Mistral', model: 'mistral-small-latest' }, xai: { label: 'xAI Grok', model: 'grok-3-mini' },
+  openai: { label: 'OpenAI', model: 'gpt-6-luna' }, anthropic: { label: 'Anthropic', model: 'claude-sonnet-4-6' }, google: { label: 'Google Gemini', model: 'gemini-2.5-flash' }, deepseek: { label: 'DeepSeek', model: 'deepseek-chat' }, groq: { label: 'Groq', model: 'llama-3.3-70b-versatile' }, mistral: { label: 'Mistral', model: 'mistral-small-latest' }, xai: { label: 'xAI Grok', model: 'grok-3-mini' },
 };
 type VotingUser = { id: number; name: string | null; githubHandle?: string; gitlabHandle?: string; bitbucketHandle?: string; orcidId?: string };
 

@@ -40,7 +40,7 @@ function generateUserPrompt(userData: any): string {
   const accountInfo: string[] = [];
 
   // I provide full URLs for all accounts, not just account names, because
-  /// gpt-5-mini once said:
+  /// gpt-6-luna once said:
   // "Only a GitHub username (vporton) was provided. Without reviewing the user's profile, repositories, contributions, or any publication/affiliation information I cannot verify that they are an active scientist or FOSS developer. Please provide a profile link or additional details (repo list, affiliation, publications) so I can re-check."
 
   // Add ORCID if connected
@@ -291,7 +291,7 @@ export abstract class BaseOpenAIRunner extends BaseRunner {
       instructions: prompt, // system/developer message.
       input: input, // user's message - use the prompt as input
       model: options?.model ?? DEFAULT_MODEL,
-      ...(/gpt-5-mini/.test(options?.model ?? DEFAULT_MODEL)
+      ...(/gpt-6-luna/.test(options?.model ?? DEFAULT_MODEL)
         ? {/* temperature not supported */ } : { temperature: options?.temperature ?? DEFAULT_TEMPERATURE }),
       // include: ['web_search_call.action.sources'], // TODO@P3: doesn't work due to https://github.com/openai/openai-node/issues/1645
       reasoning: NO_REASONING ? null : options?.reasoning === null ? null : {
@@ -588,7 +588,7 @@ abstract class RunnerWithRandomizedPrompt extends BaseOpenAIRunner {
 export class ScientistOnboardingRunner extends BaseOpenAIRunner {
   protected getModelOptions(): ResponseCreateParams | undefined { // https://github.com/openai/openai-node/issues/1572
     return {
-      model: 'gpt-5-mini', // Don't use gpt-5-nano: it tends to enter infinite loop with Web search.
+      model: 'gpt-6-luna', // Don't use gpt-5-nano: it tends to enter infinite loop with Web search.
       // temperature: 0.0, // Cursor says, it's unsupported.
       prompt_cache_key: 'scientist-onboarding',
       reasoning: {

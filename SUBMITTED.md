@@ -214,3 +214,4 @@
 * RoRI https://researchonresearch.org - mailed 17 Sep 2026
 * MIT http://solve.mit.edu - submitted 28 Sep 2026
 * Fortis https://fortissociety.org/fellowship - applied 17 Oct 2026
+* 2027 SMU Cox FinTech Accelerator - submitted 29 Oct 2026

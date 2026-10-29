@@ -191,10 +191,11 @@ controller list is not a multisig. A principal that can upgrade a ZenDB
 canister is intentionally unrestricted for that canister: it can replace code
 and ZenDB may restore its out-of-box bootstrap/admin access on upgrade. That
 restoration is accepted owner policy, not an RBAC failure to be worked around.
-The required G2/M2 proof instead exercises a controller handoff: the successor
-controller upgrades and has the intended administrative capability, while a
-former controller that was removed from the controller list cannot read grants,
-write, or self-regrant. This does not weaken the separate requirement that
+The required G2/M2 proof instead exercises a controller-only handoff: the
+successor controller performs the exact state-preserving upgrade without a
+ZenDB role, while a former controller that was removed from the controller
+list cannot perform a management upgrade, read grants, write, or self-regrant.
+This does not weaken the separate requirement that
 ordinary callers have no authorization path.
 
 The treasury is DAO-governed custody, not non-custodial merely because it is a

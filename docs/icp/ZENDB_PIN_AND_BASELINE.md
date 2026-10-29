@@ -119,8 +119,9 @@ revoke-only `M1UpgradeOwner` test was replaced with a synthetic local-only
 ownership-handoff test. Former owner A installs only the SHA-256/length-bound
 artifact, creates bounded data, revokes A's bootstrap role, and changes the
 management controller list to successor B alone. B is then the actual caller
-of the normal exact-artifact upgrade; B must have admin capability, while A
-must be denied grant read, write, and self-regrant. This is fixture evidence
+of the normal exact-artifact upgrade as a controller-only successor: it need
+not receive a ZenDB role. A must be denied a further management upgrade as
+well as ZenDB grant read, write, and self-regrant. This is fixture evidence
 for the rejected remote-canister topology only. It neither authorizes that
 topology nor makes ZenDB `v2.0.1` authoritative for any collection. The older
 lost-reply, archive, and repair evidence does not waive the remaining M1/G2
@@ -133,7 +134,19 @@ access for the principal that performs a ZenDB-canister upgrade. That principal
 is already an unrestricted controller and this behavior is not a revocation
 persistence requirement, a reason to replace state, or a reason to constrain
 the installer. The handoff proof therefore protects the meaningful boundary:
-the removed former controller and ordinary callers remain denied.
+the removed former controller and ordinary callers remain denied. The
+controller-only result does not assert that ZenDB grants constrain a
+controller: a controller can replace the module and is therefore unrestricted.
+
+On 2026-10-28, the same fresh disposable local-DFX runner additionally passed
+a low-cycle fixture. A persistent owning canister starts below its declared
+three-trillion-cycle proof reserve, commits its fixed logical-ID/hash intent,
+and returns `blocked` before any ZenDB write. The parent proof actor supplies
+only a two-trillion attached local-replica top-up; the owner accepts it and its
+no-input retry writes and verifies exactly one retained tuple. The reserve and
+allocation are fixture-only rather than a production budget. This narrows the
+remaining remote diagnostic gaps but does not make the remote topology or
+ZenDB authoritative.
 
 **Supersession note:** The preceding remote-actor failure must not be read as a
 requirement for the user to repair ZenDB grants or supply a replacement pin.
@@ -251,7 +264,7 @@ byte figures. It also deletes and recreates the repair index to record rebuild
 entries. Its exact planned coverage and API gaps are recorded in
 [`evidence/zendb/v2.0.1.benchmark-proof.json`](evidence/zendb/v2.0.1.benchmark-proof.json).
 
-The `2026-08-02` execution passed on a fresh ephemeral project-local DFX
+The updated `2026-10-28` execution passed on a fresh ephemeral project-local DFX
 loopback replica with the exact pinned source archive, DFX `0.32.0`, Mops CLI
 `2.19.2`, and moc `1.4.1`. The expected/2x results, respectively, were: 16/32
 input documents; 181/174 average document bytes; 2,982/5,878 bounded remote
@@ -260,7 +273,13 @@ query instructions; 3,087,405/3,064,034 replace instructions; 1,310,724/
 1,310,369 delete instructions; 854/1,545 logical-ID index bytes; and 16/32
 rebuilt repair-index entries. The owner-side 262,145-byte-document and
 1,048,577-byte-batch rejection assertions also passed before any remote call.
-The complete machine-readable record is
+The corresponding expected/2× actual cycle deltas for insert were
+91,444,842/182,727,252; query 6,265,430/6,263,818; replace
+5,803,940/5,805,610; repair-index rebuild 16,787,396/16,769,478; and delete
+5,785,734/5,779,428. The separate bounded archive deliveries transferred and
+were acknowledged as exactly 2,048/4,096-byte payloads, with caller deltas of
+8,351,796/11,316,340 cycles. Each was below its predeclared fixture ceiling. The
+complete machine-readable record is
 [`evidence/zendb/v2.0.1.benchmark-proof.json`](evidence/zendb/v2.0.1.benchmark-proof.json).
 
 ZenDB v2.0.1 does not return insert or index-create instruction counts, and
@@ -272,10 +291,14 @@ batch, query, replacement, rebuild, and delete operations; it traps on a
 balance increase or a delta above the predeclared synthetic ceiling. The local
 runner also bounds the complete synthetic operation to 180 seconds and saves
 the returned Candid deltas mode `0600` in its disposable work directory. This
-is harness capability, not execution evidence: the recorded 2026-08-02 run
-predates it, and no cycle delta has yet been accepted into the evidence file.
-The harness also does not establish archive cross-canister byte costs,
-low-cycle behavior, or any durable-intent/RBAC/upgrade proof. Those omissions
+is executed harness evidence for its defined fixture: the recorded 2026-10-28
+run includes every cycle delta and passes its declared ceilings. It remains
+insufficient for operations and recovery paths outside that fixture.
+The harness now measures bounded synthetic archive cross-canister delivery
+for 2,048-byte and 4,096-byte payloads, verifies receiver byte-count
+acknowledgement, and records the caller deltas under its predeclared ceiling.
+It does not establish archive failure/recovery behavior or any
+durable-intent/RBAC/upgrade proof. Those omissions
 remain G2 blockers. DFX again reported that its Wasm optimization pass could
 not read the module; the existing release blocker remains unwaived.
 

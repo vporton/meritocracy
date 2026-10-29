@@ -14,6 +14,7 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import ZenDB "../../src";
 import CanisterDB "../../src/RemoteInstance/CanisterDB";
+import ArchiveBenchmarkSink "./M1ArchiveBenchmarkSink";
 import Runtime "mo:core@2.4/Runtime";
 
 persistent actor {
@@ -30,6 +31,13 @@ persistent actor {
   transient let maxReplaceCycleDelta = 100_000_000_000;
   transient let maxReindexCycleDelta = 500_000_000_000;
   transient let maxDeleteCycleDelta = 100_000_000_000;
+  // Archive is a separate cross-canister operation.  These fixture-only
+  // envelopes and ceilings are declared before execution and are not a
+  // production archive capacity or cycle allocation.
+  transient let expectedArchiveBytes = 2_048;
+  transient let twiceExpectedArchiveBytes = 4_096;
+  transient let maxArchiveBytes = 8_192;
+  transient let maxArchiveCycleDelta = 100_000_000_000;
 
   type SyntheticIntent = {
     logicalId : Text;
@@ -60,6 +68,31 @@ persistent actor {
     replaceCycleDelta : Nat;
     reindexCycleDelta : Nat;
     deleteCycleDelta : Nat;
+    archivePayloadBytes : Nat;
+    archiveCycleDelta : Nat;
+  };
+
+  func archivePayload(bytes : Nat) : Blob {
+    assert (bytes <= maxArchiveBytes);
+    Blob.fromArray(Array.tabulate<Nat8>(bytes, func(index) = Nat8.fromNat(index % 251)));
+  };
+
+  func runArchiveScenario(scenario : Text, bytes : Nat) : async (Nat, Nat) {
+    assert (bytes > 0 and bytes <= maxArchiveBytes);
+    // A fresh local replica charges a little over 1T cycles to install the
+    // receiver. Supply a fixed 2T setup allocation outside the measured
+    // delivery interval so receiver creation cannot make the bounded archive
+    // delivery result depend on an installation-cycle threshold.
+    let sink = await (with cycles = 2 * TRILLION) ArchiveBenchmarkSink.ArchiveBenchmarkSink();
+    let payload = archivePayload(bytes);
+    // The measured byte count is exactly the bounded blob passed to the
+    // archive actor.  The sink confirms the same byte count after delivery.
+    let before = Cycles.balance();
+    let received = await sink.archive(payload);
+    let delta = boundedCycleDelta(before, Cycles.balance(), maxArchiveCycleDelta);
+    assert (received == bytes);
+    assert ((await sink.retainedBytes()) == bytes);
+    (bytes, delta);
   };
 
   let schema : ZenDB.Types.Schema = #Record([
@@ -128,7 +161,7 @@ persistent actor {
     ) else Runtime.trap("could not create synthetic repair index");
   };
 
-  func runScenario(db : CanisterDB.CanisterDB, scenario : Text, documents : Nat) : async Metrics {
+  func runScenario(db : CanisterDB.CanisterDB, scenario : Text, documents : Nat, archiveBytes : Nat) : async Metrics {
     let collection = "intents_" # scenario;
     await createCollection(db, collection);
 
@@ -186,6 +219,7 @@ persistent actor {
     assert (stats.entries == documents - 1);
     let #ok(?logicalIdIndex) = await db.zendb_v1_collection_get_index(database, collection, "logical_id_unique") else Runtime.trap("could not inspect synthetic logical-ID index");
     assert (logicalIdIndex.entries == documents - 1);
+    let (archivePayloadBytes, archiveCycleDelta) = await runArchiveScenario(scenario, archiveBytes);
 
     {
       scenario;
@@ -205,6 +239,8 @@ persistent actor {
       replaceCycleDelta;
       reindexCycleDelta;
       deleteCycleDelta;
+      archivePayloadBytes;
+      archiveCycleDelta;
     };
   };
 
@@ -220,8 +256,8 @@ persistent actor {
     let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
     let #ok(_) = await db.zendb_v1_create_database(database) else Runtime.trap("could not create synthetic benchmark database");
     [
-      await runScenario(db, "expected", expectedDocuments),
-      await runScenario(db, "two_x", twiceExpectedDocuments),
+      await runScenario(db, "expected", expectedDocuments, expectedArchiveBytes),
+      await runScenario(db, "two_x", twiceExpectedDocuments, twiceExpectedArchiveBytes),
     ];
   };
 };

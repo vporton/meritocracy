@@ -18,6 +18,7 @@ import { test } "mo:test/async";
 import IntentOwner "./M1IntentOwner";
 import ArchiveSink "./M1ArchiveSink";
 import ArchiveIntentOwner "./M1ArchiveIntentOwner";
+import LowCycleIntentOwner "./M1LowCycleIntentOwner";
 import ExactUpgradeArtifact "./M1ExactUpgradeArtifact";
 
 persistent actor this_test {
@@ -30,6 +31,19 @@ persistent actor this_test {
   // upgrade mode. It is never a production identifier or a persisted
   // application grant.
   var upgradeTargetPrincipal : ?Principal = null;
+
+  // Unlike the other short-lived actor-class children, this target is created
+  // empty by the runner and initially receives the exact candidate Wasm.
+  // That makes its persistence mode identical before and after the recovery
+  // upgrade; an actor-class child would instead begin with the compiler's EOP
+  // mode and cannot honestly be upgraded with this pinned non-EOP artifact.
+  var recoveryTargetPrincipal : ?Principal = null;
+
+  // The crash/upgrade fixture commits this owner principal before the local
+  // runner upgrades the *remote* ZenDB canister.  It is deliberately a
+  // principal rather than an actor reference so recovery re-derives its
+  // capability after the upgrade boundary.
+  var recoveryOwnerPrincipal : ?Principal = null;
 
   type Intent = {
     logicalId : Text;
@@ -308,6 +322,55 @@ persistent actor this_test {
     );
 
     await test(
+      "a remote mutation survives a ZenDB upgrade and reconciles without a second write",
+      func() : async () {
+        let recoveryDatabase = "m1_upgrade_recovery";
+        let ?recoveryTarget = recoveryTargetPrincipal else return assert false;
+        let db : CanisterDB.CanisterDB = actor (Principal.toText(recoveryTarget));
+        let #ok(_) = await db.zendb_v1_create_database(recoveryDatabase) else return assert false;
+        let #ok(_) = await db.zendb_v1_create_collection(recoveryDatabase, collection, intentSchema, null) else return assert false;
+        let #ok(_) = await db.zendb_v1_collection_create_index(
+          recoveryDatabase,
+          collection,
+          "logical_id_unique",
+          [("logicalId", #Ascending)],
+          ?{ is_unique = true },
+        ) else return assert false;
+
+        // The durable owner journals before its remote write and deliberately
+        // loses the successful reply.  The runner upgrades this exact remote
+        // canister only after this test returns, modelling an interruption at
+        // the committed-before-reply boundary.
+        let owner = await (with cycles = 2 * TRILLION) IntentOwner.IntentOwner(
+          Principal.fromActor(db),
+          recoveryDatabase,
+          collection,
+        );
+        let ownerPrincipal = await owner.whoami();
+        let #ok(_) = await db.grant_collection_access(ownerPrincipal, "writer", recoveryDatabase, collection) else return assert false;
+        var rejected = false;
+        try {
+          await owner.submitAndLoseReply();
+        } catch (_) {
+          rejected := true;
+        };
+        assert (rejected);
+        assert ((await owner.currentPhase()) == "remoteWriteStarted");
+        let #ok(rows) = await db.zendb_v1_collection_search(
+          recoveryDatabase,
+          collection,
+          ZenDB.QueryBuilder().Where("logicalId", #eq(#Text("intent:lost-reply"))).Limit(1).build(),
+        ) else return assert false;
+        assert (rows.documents.size() == 1);
+
+        // These persistent principals are the complete bounded recovery
+        // checkpoint.  The runner can submit only the exact generated Wasm;
+        // recovery itself supplies no new logical ID, bytes, or grant.
+        recoveryOwnerPrincipal := ?ownerPrincipal;
+      },
+    );
+
+    await test(
       "archive rejection leaves staged data non-authoritative until acknowledgement",
       func() : async () {
         let archiveDatabase = "m1_archive_failure";
@@ -373,6 +436,60 @@ persistent actor this_test {
         let ?(finalLogicalId, finalHash) = await archive.receipt() else return assert false;
         assert (finalLogicalId == receiptLogicalId);
         assert (finalHash == receiptHash);
+      },
+    );
+
+    await test(
+      "low cycles retain an immutable intent before local-only replenishment",
+      func() : async () {
+        let lowCycleDatabase = "m1_low_cycle";
+        let db = await (with cycles = 5 * TRILLION) CanisterDB.CanisterDB();
+        let #ok(_) = await db.zendb_v1_create_database(lowCycleDatabase) else return assert false;
+        let #ok(_) = await db.zendb_v1_create_collection(lowCycleDatabase, collection, intentSchema, null) else return assert false;
+        let #ok(_) = await db.zendb_v1_collection_create_index(
+          lowCycleDatabase,
+          collection,
+          "logical_id_unique",
+          [("logicalId", #Ascending)],
+          ?{ is_unique = true },
+        ) else return assert false;
+
+        // The owner starts below its explicit three-trillion proof reserve,
+        // but with enough local-replica cycles to install its bounded actor.
+        let owner = await (with cycles = 2 * TRILLION) LowCycleIntentOwner.LowCycleIntentOwner(
+          Principal.fromActor(db),
+          lowCycleDatabase,
+          collection,
+        );
+        let ownerPrincipal = await owner.whoami();
+        let #ok(_) = await db.grant_collection_access(ownerPrincipal, "writer", lowCycleDatabase, collection) else return assert false;
+
+        assert ((await owner.retainThenTry()) == "blocked");
+        assert ((await owner.currentPhase()) == "retained");
+        let #ok(beforeRetry) = await db.zendb_v1_collection_search(
+          lowCycleDatabase,
+          collection,
+          ZenDB.QueryBuilder().Where("logicalId", #eq(#Text("intent:low-cycle-retained"))).Limit(1).build(),
+        ) else return assert false;
+        assert (beforeRetry.documents.size() == 0);
+
+        // Only the parent fixture transfers disposable synthetic cycles. The
+        // receiver accepts them explicitly, and retry supplies no new tuple.
+        let accepted = await (with cycles = 2 * TRILLION) owner.acceptSyntheticTopUp();
+        assert (accepted >= 1 * TRILLION);
+        assert ((await owner.retainThenTry()) == "acknowledged");
+        assert ((await owner.currentPhase()) == "acknowledged");
+        assert ((await owner.retainThenTry()) == "blocked");
+        let #ok(afterRetry) = await db.zendb_v1_collection_search(
+          lowCycleDatabase,
+          collection,
+          ZenDB.QueryBuilder().Where("logicalId", #eq(#Text("intent:low-cycle-retained"))).Limit(1).build(),
+        ) else return assert false;
+        assert (afterRetry.documents.size() == 1);
+        let (_, retainedBlob, _) = afterRetry.documents[0];
+        let retained = decode(retainedBlob);
+        assert (retained.logicalId == "intent:low-cycle-retained");
+        assert (retained.contentHash == "low-cycle-content-hash");
       },
     );
 
@@ -469,6 +586,31 @@ persistent actor this_test {
   // authority surface.
   public query func upgradeTarget() : async ?Principal { upgradeTargetPrincipal };
 
+  // The anonymous runner can bind only the synthetic canister it created with
+  // this proof actor as sole controller. It cannot select a target later.
+  public func configureRecoveryTarget(target : Principal) : async Bool {
+    if (recoveryTargetPrincipal != null) return false;
+    recoveryTargetPrincipal := ?target;
+    true;
+  };
+
+  // Initial installation is constrained to the same digest/length-bound
+  // exact artifact used for the later state-preserving upgrade. No
+  // replacement-memory path exists in this fixture.
+  public func installInitialRecoveryExact(wasm : Blob) : async Bool {
+    let ?target = recoveryTargetPrincipal else return false;
+    if (wasm.size() != ExactUpgradeArtifact.byteLength) return false;
+    if (Sha256.fromBlob(#sha256, wasm) != ExactUpgradeArtifact.sha256) return false;
+    await management.install_code({
+      mode = #install;
+      canister_id = target;
+      wasm_module = wasm;
+      arg = "";
+      sender_canister_version = null;
+    });
+    true;
+  };
+
   // The child CanisterDB is controlled by this proof actor, not by the
   // anonymous runner. The runner may supply only the one artifact whose
   // byte-length and SHA-256 were generated from the just-built pinned source;
@@ -476,18 +618,17 @@ persistent actor this_test {
   // canister. This proves the controller path without turning the runner into
   // an installer (directly or through an arbitrary-Wasm forwarding method).
   public func upgradeOwnedExact(wasm : Blob) : async Bool {
-    let ?target = upgradeTargetPrincipal else return false;
+    let ?target = recoveryTargetPrincipal else return false;
     if (wasm.size() != ExactUpgradeArtifact.byteLength) return false;
     if (Sha256.fromBlob(#sha256, wasm) != ExactUpgradeArtifact.sha256) return false;
-    // DFX 0.32.0's local replica implements the current management
-    // interface: `upgrade` carries optional upgrade options rather than being
-    // a nullary variant tag. A typed actor reference makes Motoko encode the
-    // complete management record, including the optional sender version.
+    // The pinned candidate is non-EOP both before and after this upgrade.
+    // Supplying `wasm_memory_persistence = #keep` would itself require the
+    // new module to support EOP, so retain the normal state-preserving
+    // upgrade mode instead. `#replace` is never encoded by this fixture.
+    // A typed actor reference makes Motoko encode the complete management
+    // record, including the optional sender version.
     await management.install_code({
-      mode = #upgrade(?{
-        skip_pre_upgrade = null;
-        wasm_memory_persistence = ?#keep;
-      });
+      mode = #upgrade(null);
       canister_id = target;
       wasm_module = wasm;
       arg = "";
@@ -519,5 +660,20 @@ persistent actor this_test {
       case (#ok(_)) false;
       case (#err(_)) true;
     };
+  };
+
+  // Invoked only after `upgradeOwnedExact` completed on the stored remote
+  // target.  It proves that a post-upgrade duplicate is reconciled by the
+  // precommitted logical ID/hash rather than inserted anew, and that no
+  // caller-controlled replacement tuple can participate in recovery.
+  public func recoverMutationAfterUpgrade() : async Bool {
+    let ?ownerPrincipal = recoveryOwnerPrincipal else return false;
+    let owner : actor {
+      redeliverAndReconcile : shared () -> async ();
+      currentPhase : query () -> async Text;
+    } = actor (Principal.toText(ownerPrincipal));
+    if ((await owner.currentPhase()) != "remoteWriteStarted") return false;
+    await owner.redeliverAndReconcile();
+    (await owner.currentPhase()) == "acknowledged";
   };
 };

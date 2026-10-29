@@ -29,11 +29,21 @@ persistent actor class IntentOwner(
   func encode(intent : Intent) : Blob { to_candid (intent) };
 
   func lookup() : async Intent {
-    let #ok(result) = await db.zendb_v1_collection_search(
+    let grants = await db.get_my_access_details();
+    let #ok(activeGrants) = grants else {
+      let #err(reason) = grants else Runtime.trap("unreachable grant result");
+      Runtime.trap("synthetic owner cannot read its recovery grant: " # reason);
+    };
+    if (activeGrants.size() == 0) Runtime.trap("synthetic owner lost its recovery grant");
+    let searchResult = await db.zendb_v1_collection_search(
       database,
       collection,
       ZenDB.QueryBuilder().Where("logicalId", #eq(#Text(logicalId))).Limit(1).build(),
-    ) else Runtime.trap("synthetic owner could not reconcile the lost reply");
+    );
+    let #ok(result) = searchResult else {
+      let #err(reason) = searchResult else Runtime.trap("unreachable search result");
+      Runtime.trap("synthetic owner could not reconcile the lost reply: " # reason);
+    };
     assert (result.documents.size() == 1);
     let (_, blob, _) = result.documents[0];
     let ?intent : ?Intent = from_candid (blob) else Runtime.trap("synthetic owner recovered malformed intent");

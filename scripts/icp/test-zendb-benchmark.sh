@@ -15,6 +15,7 @@ readonly operation_timeout_seconds="${M1_ZENDB_BENCHMARK_TIMEOUT_SECONDS:-180}"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_test="$repo_root/fixtures/zendb/M1BoundedBenchmark.mo"
+proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveBenchmarkSink.mo"
 
 for command in git mops dfx sha256sum install tar node timeout; do
   command -v "$command" >/dev/null || {
@@ -31,6 +32,7 @@ export DFX_MOC_PATH="moc-wrapper"
 [[ "$(mops --version | head -n 1)" == "CLI 2.19.2" ]] || { echo "Expected Mops CLI 2.19.2" >&2; exit 1; }
 [[ "$(dfx --version)" == "dfx 0.32.0" ]] || { echo "Expected dfx 0.32.0" >&2; exit 1; }
 [[ -f "$proof_test" ]] || { echo "Missing proof test: $proof_test" >&2; exit 1; }
+[[ -f "$proof_archive_sink" ]] || { echo "Missing archive benchmark sink: $proof_archive_sink" >&2; exit 1; }
 
 workdir="${M1_ZENDB_BENCHMARK_WORKDIR:-$(mktemp -d /tmp/meritocracy-zendb-benchmark.XXXXXXXX)}"
 source_dir="$workdir/zendb"
@@ -61,6 +63,7 @@ fi
 [[ "$(sha256sum "$source_dir/mops.toml" | awk '{print $1}')" == "$source_mops_toml_sha256" ]]
 [[ "$(sha256sum "$source_dir/mops.lock" | awk '{print $1}')" == "$source_mops_lock_sha256" ]]
 install -m 0644 "$proof_test" "$source_dir/tests/cluster-tests/M1BoundedBenchmark.Test.mo"
+install -m 0644 "$proof_archive_sink" "$source_dir/tests/cluster-tests/M1ArchiveBenchmarkSink.mo"
 
 cd "$source_dir"
 # Do not invoke `mops install` here. Mops 2.19.2 performs an unrelated

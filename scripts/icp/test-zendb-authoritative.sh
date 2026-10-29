@@ -14,7 +14,12 @@ readonly test_canister="m1-authoritative-proof"
 readonly former_owner_canister="m1-former-owner"
 readonly successor_owner_canister="m1-successor-owner"
 readonly upgrade_canister="zendb-canister"
-readonly test_canister_cycles="30000000000000"
+readonly recovery_canister="m1-recovery-zendb"
+# The fixture creates isolated synthetic ZenDB/owner/archive canisters for
+# each saga. Its bounded low-cycle case additionally attaches a disposable
+# two-trillion-cycle top-up, so the parent needs enough local-only cycles to
+# fund every child without itself crossing a freezing threshold.
+readonly test_canister_cycles="50000000000000"
 readonly upgrade_canister_cycles="10000000000000"
 readonly dfx_operation_timeout_seconds="180"
 readonly dfx_build_timeout_seconds="360"
@@ -40,6 +45,7 @@ proof_test="$repo_root/fixtures/zendb/M1AuthoritativeProof.mo"
 proof_owner="$repo_root/fixtures/zendb/M1IntentOwner.mo"
 proof_archive_owner="$repo_root/fixtures/zendb/M1ArchiveIntentOwner.mo"
 proof_archive_sink="$repo_root/fixtures/zendb/M1ArchiveSink.mo"
+proof_low_cycle_owner="$repo_root/fixtures/zendb/M1LowCycleIntentOwner.mo"
 proof_upgrade_owner="$repo_root/fixtures/zendb/M1UpgradeOwner.mo"
 
 for command in git mops dfx didc sha256sum gzip install tar node timeout openssl; do
@@ -76,6 +82,10 @@ export DFX_MOC_PATH="moc-wrapper"
 }
 [[ -f "$proof_archive_sink" ]] || {
   echo "Missing proof archive receiver: $proof_archive_sink" >&2
+  exit 1
+}
+[[ -f "$proof_low_cycle_owner" ]] || {
+  echo "Missing low-cycle proof owner: $proof_low_cycle_owner" >&2
   exit 1
 }
 [[ -f "$proof_upgrade_owner" ]] || {
@@ -180,12 +190,14 @@ test_target="$source_dir/tests/cluster-tests/M1AuthoritativeProof.Test.mo"
 owner_target="$source_dir/tests/cluster-tests/M1IntentOwner.mo"
 archive_owner_target="$source_dir/tests/cluster-tests/M1ArchiveIntentOwner.mo"
 archive_sink_target="$source_dir/tests/cluster-tests/M1ArchiveSink.mo"
+low_cycle_owner_target="$source_dir/tests/cluster-tests/M1LowCycleIntentOwner.mo"
 upgrade_owner_target="$source_dir/tests/cluster-tests/M1UpgradeOwner.mo"
 exact_upgrade_artifact_target="$source_dir/tests/cluster-tests/M1ExactUpgradeArtifact.mo"
 install -m 0644 "$proof_test" "$test_target"
 install -m 0644 "$proof_owner" "$owner_target"
 install -m 0644 "$proof_archive_owner" "$archive_owner_target"
 install -m 0644 "$proof_archive_sink" "$archive_sink_target"
+install -m 0644 "$proof_low_cycle_owner" "$low_cycle_owner_target"
 install -m 0644 "$proof_upgrade_owner" "$upgrade_owner_target"
 
 cd "$source_dir"
@@ -231,6 +243,15 @@ node -e '
     shrink: true,
     metadata: [{ name: "candid:service" }]
   };
+  // This target is deliberately created empty and installed only through the
+  // proof actor digest-bound method. A minimal local Candid file is enough
+  // for DFX to allocate it; it is never used to build or install a module.
+  fs.writeFileSync("tests/cluster-tests/M1RecoveryTarget.did", "service : {}\n");
+  config.canisters["m1-recovery-zendb"] = {
+    type: "custom",
+    candid: "tests/cluster-tests/M1RecoveryTarget.did",
+    wasm: "tests/cluster-tests/M1RecoveryTarget.unused.wasm"
+  };
   // Build the upstream actor-class source itself for the exact candidate
   // artifact. The standalone post-upgrade owner installs this same artifact
   // initially and on upgrade; it does not claim compatibility with the
@@ -254,9 +275,11 @@ run_dfx ping local
 run_dfx canister create "$test_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
 run_dfx canister create "$former_owner_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
 run_dfx canister create "$successor_owner_canister" --network local --no-wallet --with-cycles "$test_canister_cycles"
+test_canister_principal="$(run_dfx canister id "$test_canister" --network local)"
 former_owner_principal="$(run_dfx canister id "$former_owner_canister" --network local)"
 successor_owner_principal="$(run_dfx canister id "$successor_owner_canister" --network local)"
 run_dfx canister create "$upgrade_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles" --controller "$former_owner_principal"
+run_dfx canister create "$recovery_canister" --network local --no-wallet --with-cycles "$upgrade_canister_cycles" --controller "$test_canister_principal"
 upgrade_canister_principal="$(run_dfx canister id "$upgrade_canister" --network local)"
 echo "Building the disposable proof actor with $M1_ZENDB_AUTHORITATIVE_PROOF_OPTIMIZATION; the upgrade artifact remains O3."
 run_dfx build "$upgrade_canister" --network local
@@ -308,6 +331,27 @@ successor_owner_wasm="$(find "$source_dir/.dfx/local/canisters/$successor_owner_
 # artifact just produced above so the bounded runner does not spend a second
 # full compiler pass before exercising its synthetic sagas.
 run_dfx canister install "$test_canister" --network local --mode reinstall --wasm "$test_wasm" --yes
+# DFX's textual Candid representation would expand this compressed 2.66 MiB
+# candidate beyond the local HTTP boundary. Encode the one digest-bound
+# transport artifact before either initial installation or the later upgrade.
+upgrade_argument_text="$workdir/exact-upgrade-argument.did"
+upgrade_argument_hex="$workdir/exact-upgrade-argument.hex"
+node -e '
+  const fs = require("node:fs");
+  const wasm = fs.readFileSync(process.argv[1]);
+  const literal = [...wasm].map((byte) => `\\${byte.toString(16).padStart(2, "0")}`).join("");
+  fs.writeFileSync(process.argv[2], `(blob "${literal}")\n`);
+' "$upgrade_wasm_transport" "$upgrade_argument_text"
+didc encode --format hex < "$upgrade_argument_text" | tr -d '\n' > "$upgrade_argument_hex"
+recovery_canister_principal="$(run_dfx canister id "$recovery_canister" --network local)"
+[[ "$(run_dfx canister call "$test_canister" --network local configureRecoveryTarget "(principal \"$recovery_canister_principal\")")" == *true* ]] || {
+  echo "Synthetic proof actor did not bind its exact non-EOP recovery target" >&2
+  exit 1
+}
+[[ "$(run_dfx canister call "$test_canister" --network local installInitialRecoveryExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
+  echo "Synthetic proof actor did not install the exact initial recovery artifact" >&2
+  exit 1
+}
 run_dfx canister call "$test_canister" --network local runTests
 run_dfx canister install "$former_owner_canister" --network local --mode reinstall --wasm "$former_owner_wasm" --yes
 run_dfx canister install "$successor_owner_canister" --network local --mode reinstall --wasm "$successor_owner_wasm" --yes
@@ -319,23 +363,19 @@ run_dfx canister install "$successor_owner_canister" --network local --mode rein
   echo "Successor owner did not bind its future database target" >&2
   exit 1
 }
-# DFX accepts a Candid argument file, avoiding shell argument limits while
-# preserving the Wasm's exact bytes. The call is anonymous, but the target
-# database has only the synthetic owner as controller; that owner accepts one
-# digest-bound candidate artifact and invokes management-canister install.
-upgrade_argument_text="$workdir/exact-upgrade-argument.did"
-upgrade_argument_hex="$workdir/exact-upgrade-argument.hex"
-node -e '
-  const fs = require("node:fs");
-  const wasm = fs.readFileSync(process.argv[1]);
-  const literal = [...wasm].map((byte) => `\\${byte.toString(16).padStart(2, "0")}`).join("");
-  fs.writeFileSync(process.argv[2], `(blob "${literal}")\n`);
-' "$upgrade_wasm_transport" "$upgrade_argument_text"
-# `--argument-file` defaults to textual Candid, whose escaped 2.66 MiB Wasm
-# exceeds the replica HTTP boundary. Encode it locally, then hand DFX the
-# binary Candid argument so the ingress body is the bounded Wasm plus a small
-# Candid envelope rather than its three-byte-per-byte text representation.
-didc encode --format hex < "$upgrade_argument_text" | tr -d '\n' > "$upgrade_argument_hex"
+# `runTests` left one synthetic owner at the committed-before-reply mutation
+# boundary. Upgrade exactly that remote ZenDB canister, then let the durable
+# owner reconcile its existing logical ID/hash with no replacement input. This
+# is the crash/upgrade recovery boundary; it is separate from the later
+# controller-only handoff fixture.
+[[ "$(run_dfx canister call "$test_canister" --network local upgradeOwnedExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
+  echo "Synthetic proof owner could not perform the exact remote upgrade for mutation recovery" >&2
+  exit 1
+}
+[[ "$(run_dfx canister call "$test_canister" --network local recoverMutationAfterUpgrade)" == *true* ]] || {
+  echo "Committed remote mutation did not recover through the exact post-upgrade logical-ID/hash reconciliation" >&2
+  exit 1
+}
 [[ "$(run_dfx canister call "$former_owner_canister" --network local installInitialExact --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
   echo "Owning proof canister did not install the exact pinned initial Wasm" >&2
   exit 1
@@ -352,8 +392,12 @@ didc encode --format hex < "$upgrade_argument_text" | tr -d '\n' > "$upgrade_arg
   echo "Successor owner did not upgrade the exact pinned Wasm" >&2
   exit 1
 }
-[[ "$(run_dfx canister call "$successor_owner_canister" --network local verifySuccessorAdmin)" == *true* ]] || {
-  echo "Successor owner lacks intended post-upgrade admin capability" >&2
+[[ "$(run_dfx canister call "$former_owner_canister" --network local verifyFormerOwnerControllerDenied --type raw --argument-file "$upgrade_argument_hex")" == *true* ]] || {
+  echo "Former owner retained management-controller authority after handoff" >&2
+  exit 1
+}
+[[ "$(run_dfx canister call "$successor_owner_canister" --network local verifySuccessorController)" == *true* ]] || {
+  echo "Successor owner did not retain sole controller authority through the exact upgrade" >&2
   exit 1
 }
 [[ "$(run_dfx canister call "$former_owner_canister" --network local verifyFormerOwnerDenied)" == *true* ]] || {

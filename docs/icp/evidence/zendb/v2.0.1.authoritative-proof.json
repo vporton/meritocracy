@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 synthetic authoritative-data proof",
-  "status": "SUPERSEDED REMOTE-TOPOLOGY DIAGNOSTIC 2026-09-22: the former revoke-only upgrade test was removed. The local-only synthetic runner now tests controller handoff from A to B: A installs the digest/length-bound artifact, creates bounded data, revokes A's bootstrap role, and makes B sole controller; B performs the exact upgrade, proves its intended admin capability, and A is denied grant read, write, and self-regrant. This does not approve ZenDB v2.0.1 as an authoritative collection store or as a target topology.",
+  "status": "SUPERSEDED REMOTE-TOPOLOGY DIAGNOSTIC; controller-only successor decision 2026-10-28: the former revoke-only upgrade test was removed. The local-only synthetic runner tests controller handoff from A to B: A installs the digest/length-bound artifact, creates bounded data, revokes A's bootstrap role, and makes B sole controller; B performs the exact state-preserving upgrade without receiving a ZenDB role, while A is denied a management upgrade plus ZenDB grant read, write, and self-regrant. This does not approve ZenDB v2.0.1 as an authoritative collection store or as a target topology.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -15,11 +15,11 @@
     "network": "fresh project-local ephemeral loopback DFX local network",
     "networkBoundary": "The corrected runner configures local as 127.0.0.1:0, pings it before creation, uses --network local for every DFX operation, creates with --no-wallet, and uses an isolated disposable DFX config for replica lifecycle plus DFX's built-in anonymous identity for every ingress-capable command. It therefore selects no developer PEM/keyring, wallet, or signing authority. Ingress/lifecycle operations are bounded to 180 seconds and exact O3 builds to 360 seconds, each with a 10-second kill grace and cleanup trap. It does not invoke mops install because Mops 2.19.2 makes an unrelated compatibility request before resolving the pinned lock.",
     "installer": "dfx canister install --mode reinstall --wasm",
-    "initialSyntheticCycles": 20000000000000,
+    "initialSyntheticCycles": 50000000000000,
     "testCanister": "m1-authoritative-proof, m1-former-owner, and m1-successor-owner",
-    "entrypoint": "runTests plus the synthetic A-to-B ownership-handoff audit",
+    "entrypoint": "runTests (including retained-intent low-cycle/replenishment retry) plus the synthetic A-to-B ownership-handoff audit",
     "upgradeArtifact": "the exact pinned src/RemoteInstance/CanisterDB/lib.mo compiled as zendb-canister with matching default persistence flags",
-    "upgradeEntryPoint": "verifySuccessorAdmin followed by verifyFormerOwnerDenied"
+    "upgradeEntryPoint": "verifyFormerOwnerControllerDenied, then B's exact upgrade and verifySuccessorController, followed by verifyFormerOwnerDenied"
   },
   "replacedRunnerBoundary": {
     "component": "pic-js-mops setupCanister used by Mops 2.19.2",
@@ -29,14 +29,14 @@
     "resolution": "the runner now uses the exact pinned DFX 0.32.0 local installer; a passing assertion requires successful installation and every local audit to return normally"
   },
   "execution": {
-    "date": "2026-08-07",
+    "date": "2026-10-28",
     "toolchain": {
       "dfx": "0.32.0",
       "mopsCli": "2.19.2",
       "moc": "1.4.1"
     },
     "network": "fresh DFX ephemeral project-local loopback replica",
-    "result": "Historical revoke-only result superseded: it was diagnostic for a rejected remote topology. The current fixture must be executed afresh; no prior execution result is represented as a pass for the A-to-B controller-handoff scenario.",
+    "result": "PASS: the fresh exact pinned local-DFX controller-only A-to-B handoff completed. A revoked its ZenDB role, transferred sole controller authority to B, and was rejected when attempting a further management upgrade. B performed the exact state-preserving upgrade without a ZenDB role; A then remained denied ZenDB grant read, write, and self-regrant. The same run retained a fixed low-cycle owner intent without a ZenDB write, accepted only an attached synthetic top-up, and retried that tuple exactly once. This is synthetic diagnostic evidence only for the rejected remote topology.",
     "warning": "DFX reported that its Wasm optimization pass could not read the module. This existing release blocker was not waived."
   },
   "executedCoverage": [
@@ -47,13 +47,14 @@
     "a persistent owning canister journals a lost reply, rejects duplicate delivery, and reconciles the existing logical ID/content hash",
     "an archive failure keeps a staged record non-authoritative until the identical archive receipt succeeds",
     "the former owner revokes its bootstrap role before handing sole management control to the successor",
-    "the successor, as actual management-canister caller, upgrades the exact artifact and proves intended admin capability while the former owner is denied grant read, write, and self-regrant",
+    "the successor, as actual management-canister caller, upgrades the exact artifact as sole controller without a ZenDB grant; the former owner is denied a management upgrade and ZenDB grant read, write, and self-regrant",
+    "a persistent owner below a declared proof-only reserve retains its fixed logical-ID/hash intent and makes no ZenDB write, then accepts only attached disposable local-replica cycles and retries without new input to write exactly that tuple once",
     "a bounded collection-v1-to-v2 copy replays an unacknowledged source page, reconciles matching duplicate writes, retains v1, and verifies v2 logical IDs/hashes"
   ],
   "failedCoverage": [],
   "doesNotProve": [
     "any authoritative use of ZenDB v2.0.1 or adoption of the rejected remote-canister topology",
-    "low-cycle behavior, production-sized instruction and byte benchmarks, actual collection-vN execution, or an application visibility-manifest upgrade",
+    "production-sized instruction and byte benchmarks, actual collection-vN execution, or an application visibility-manifest upgrade",
     "an atomic multi-document operation or a ZenDB compare-and-set API"
   ]
 }

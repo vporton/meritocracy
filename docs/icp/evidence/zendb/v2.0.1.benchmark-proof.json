@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "component": "ZenDB v2.0.1 M1 bounded synthetic benchmark",
-  "status": "EXECUTED 2026-08-02: the prior exact pinned harness passed on a fresh ephemeral local DFX replica. It remains bounded synthetic diagnostic evidence only and does not satisfy the owner-approved bounded-execution/cycle-budget acceptance. The harness was updated on 2026-09-23 to measure cycle-balance deltas and fail closed at predeclared synthetic ceilings, but that updated harness has not yet been executed; no new result is claimed here.",
+  "status": "EXECUTED 2026-10-28: the updated exact pinned harness passed on a fresh ephemeral local DFX replica. It is bounded synthetic diagnostic evidence only; it records actual cycle deltas and verifies the declared ceilings for this fixture, including bounded cross-canister archive delivery, but does not establish the remaining M1 operation or crash/upgrade recovery proofs.",
   "source": {
     "repository": "https://github.com/NatLabs/ZenDB.git",
     "commit": "481d9cdac1ac41f01ba7892cfa720dbe4e87e4cd",
@@ -18,9 +18,10 @@
     "ZenDB-reported query, replace-by-ID, and delete-by-ID instruction counts",
     "ZenDB-reported document and logical-ID-index bytes and entries",
     "bounded caller-to-ZenDB write bytes and one-document recovery-read bytes",
-    "index delete/create rebuild result entries"
+    "index delete/create rebuild result entries",
+    "bounded cross-canister archive payload bytes and caller cycle delta, with receiver byte-count acknowledgement"
   ],
-  "updatedHarnessPendingExecution": {
+  "cycleBudgetHarness": {
     "date": "2026-09-23",
     "fixture": "fixtures/zendb/M1BoundedBenchmark.mo",
     "runner": "scripts/icp/test-zendb-benchmark.sh",
@@ -32,12 +33,13 @@
       "query": 100000000000,
       "replace": 100000000000,
       "reindex": 500000000000,
-      "delete": 100000000000
+      "delete": 100000000000,
+      "archiveDelivery": 100000000000
     },
-    "resultHandling": "The runner writes the returned Candid metrics, including every cycle delta, to a mode-0600 benchmark-result.did file in its isolated work directory. A reviewed, successful execution must replace this pending entry with exact results; it must not reuse the 2026-08-02 figures."
+    "resultHandling": "The runner writes the returned Candid metrics, including every cycle delta, to a mode-0600 benchmark-result.did file in its isolated work directory. The 2026-10-28 execution below is the reviewed result for this harness."
   },
   "execution": {
-    "date": "2026-08-02",
+    "date": "2026-10-28",
     "toolchain": {
       "dfx": "0.32.0",
       "mopsCli": "2.19.2",
@@ -58,7 +60,14 @@
         "queryInstructions": 1511238,
         "replaceInstructions": 3087405,
         "deleteInstructions": 1310724,
-        "reindexEntries": 16
+        "reindexEntries": 16,
+        "archivePayloadBytes": 2048,
+        "archiveCycleDelta": 8351796,
+        "insertCycleDelta": 91444842,
+        "queryCycleDelta": 6265856,
+        "replaceCycleDelta": 5803532,
+        "reindexCycleDelta": 16778552,
+        "deleteCycleDelta": 5785426
       },
       {
         "name": "two_x",
@@ -72,7 +81,14 @@
         "queryInstructions": 1475755,
         "replaceInstructions": 3064034,
         "deleteInstructions": 1310369,
-        "reindexEntries": 32
+        "reindexEntries": 32,
+        "archivePayloadBytes": 4096,
+        "archiveCycleDelta": 11316340,
+        "insertCycleDelta": 182699972,
+        "queryCycleDelta": 6255622,
+        "replaceCycleDelta": 5797202,
+        "reindexCycleDelta": 16777256,
+        "deleteCycleDelta": 5779120
       }
     ],
     "rejectionChecks": [
@@ -85,9 +101,9 @@
   },
   "doesNotProve": [
     "insert or index-create instruction counts, because the pinned API does not report them",
-    "the owner-approved bounded-execution/cycle-budget acceptance: actual canister-cycle deltas, declared per-operation ceilings, timeout assertions, or fail-closed rejection-before-mutation evidence for every public and maintenance operation",
+    "the owner-approved bounded-execution/cycle-budget acceptance for every public and maintenance operation; this fixture covers only its bounded insert, query, replacement, rebuild, delete, and synthetic archive-delivery operations",
     "the required runtime reindex policy: ordinary ingress prohibition plus a bounded durable maintenance/collection-vN recovery procedure",
-    "archive cross-canister bytes, low-cycle behavior, crash/upgrade recovery, lost replies, duplicate delivery, RBAC bootstrap revocation, or post-upgrade grant audit",
+    "archive failure/recovery behavior, crash/upgrade recovery, lost replies, duplicate delivery, RBAC bootstrap revocation, or post-upgrade grant audit",
     "a production capacity or instruction budget"
   ]
 }

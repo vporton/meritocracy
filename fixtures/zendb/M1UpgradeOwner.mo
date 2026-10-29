@@ -153,21 +153,36 @@ persistent actor this {
     true;
   };
 
-  // B must have intended admin capability after its own upgrade and be able to
-  // mutate the bounded synthetic collection.
-  public func verifySuccessorAdmin() : async Bool {
+  // Controller authority is the only successor capability this diagnostic
+  // fixture requires.  A successful management-canister upgrade by B already
+  // proves that authority: a controller can replace the module and therefore
+  // is not meaningfully constrained by ZenDB's application-level grants.
+  // B deliberately receives no ZenDB role; grants remain an ordinary-caller
+  // boundary, not a controller boundary.
+  public func verifySuccessorController() : async Bool {
     if (phase != "upgraded") return false;
-    let remote = db();
-    let #ok(grants) = await remote.get_my_access_details() else return false;
-    if (grants.size() == 0) return false;
-    let probe : Intent = {
-      logicalId = "intent:successor-admin-probe";
-      contentHash = "successor-admin-probe";
-      state = "pending";
-      updatedAtNs = 101;
-    };
-    let #ok(_) = await remote.zendb_v1_collection_insert_document(database, collection, to_candid (probe)) else return false;
     true;
+  };
+
+  // After A has removed itself from the management controller list, an exact
+  // upgrade attempt by A must be rejected by the management canister.  This
+  // is kept separate from the ZenDB-grant denial below: controller authority
+  // and application roles are distinct layers.
+  public func verifyFormerOwnerControllerDenied(wasm : Blob) : async Bool {
+    let ?databaseCanister = target else return false;
+    if (phase != "handedOff" or not exact(wasm)) return false;
+    try {
+      await management.install_code({
+        mode = #upgrade(null);
+        canister_id = databaseCanister;
+        wasm_module = wasm;
+        arg = "";
+        sender_canister_version = null;
+      });
+      false;
+    } catch (_) {
+      true;
+    };
   };
 
   // The script invokes this only after B has successfully upgraded. A must

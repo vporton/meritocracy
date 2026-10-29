@@ -222,7 +222,7 @@ export async function testOpenAIConnection(): Promise<{ success: boolean; messag
     const response = await openai.chat.completions.create({
       model: DEFAULT_CONFIG.model || 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: 'Say "Hello" to test the connection.' }],
-      max_tokens: 10,
+      max_completion_tokens: 10,
       temperature: 0
     });
 

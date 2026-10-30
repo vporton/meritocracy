@@ -1,0 +1,10 @@
+type PutResult = variant { inserted; duplicate };
+type Result = variant { ok : PutResult; err : text };
+type HashResult = variant { ok : opt blob; err : text };
+type CountResult = variant { ok : nat; err : text };
+
+service : (principal) -> {
+  putBounded : (text, blob) -> (Result);
+  lookupHash : (text) -> (HashResult) query;
+  entryCount : () -> (CountResult) query;
+};

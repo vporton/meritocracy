@@ -34,6 +34,13 @@ handling and makes no provider request or identity binding. Its package/API
 pin and all-provider-disabled capability matrix are in
 `IDENTIFY_PIN_AND_PROVIDER_MATRIX.md`.
 
+The local-only `backend/scripts/inventory-postgres.cjs` M1 command produces a
+bounded catalog/aggregate and column-redaction inventory only after an operator
+sets the explicit read-only approval environment flag. It opens a verified
+serializable read-only transaction, rolls it back, and has no DDL, replication,
+or row-export path. No production report exists yet; live cardinalities remain
+unknown. See `POSTGRES_INVENTORY.md`.
+
 ## Global parity rule
 
 Parity means preserving intended user/business capability, authorization, history, and financial obligations. It does **not** mean reproducing insecure endpoint shapes, plaintext custody, floating-point accounting, non-idempotent sends, bearer/cron secrets, in-memory locks, ambiguous ownership, destructive cascades, or known routing/UI defects. Each intentional change requires tests and, where data/money is involved, a reconciliation record.
@@ -291,7 +298,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |
 | OP-014 | Controllers and deploy credentials | Recorded human SNS launch/ownership decision; local/PocketIC SNS controller proof; least controllers, emergency pause-only role, module transparency; G4-only isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort evidence before the separately reviewed production handoff | DESIGNED / BLOCKED_G1/G3/G4 |
 | OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, private-store state recovery and drained-intent collection-vN switch, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
-| OP-016 | ZenDB dependency | Proposed private in-process authoritative/archive store; pin exact source/dependency/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, bounded private-store upgrade/recovery, export/reindex/collection-vN tests, and owning-actor direct-ingress denial; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_G1/G2 |
+| OP-016 | ZenDB dependency | `v2.0.1` is rejected M1 evidence: its exact Motoko `1.4.1` closure fails and cannot be combined with the application/OAuth `0.16.3` build in one owning actor. `ZENDB_TOOLCHAIN_ISOLATION.md` pins and reproduces the rejection. The owner selected the native private store foundation in `VersionedPrivateStore.mo`; it has no Candid surface and has bounded logical-ID/hash duplicate/conflict vectors. M1 still requires exact upgrade/recovery, export/index/cursor/collection-vN, low-cycle, and direct-ingress-denial proof before G2. | IMPLEMENTED / BLOCKED_M1/G2 |
 | OP-016a | Repository licensing | `AGPL_RELICENSING_INVENTORY.md` records the owner-confirmed contributor/disposition authority, current AGPL-3.0-only text, retained historical notices, package/lockfile metadata, and no-tracked-artifact finding as of 2026-10-30. Third-party dependencies remain under their own notices. The G1 gate accepted this evidence; later target implementation remains gated separately. | VERIFIED |
 | OP-016b | Retained React frontend build chain and legacy Node retirement | React/Vite/TypeScript is retained as a pinned reproducible build that deploys only certified static frontend-canister assets; no Node runtime is in a canister. The legacy Node backend/REST deployment remains runnable through the rollback window, then is retired at M10 without removing the target frontend build chain | DESIGNED / BLOCKED_G1/M10 |
 | OP-016c | Production dependency advisories | Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters; run a production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | DESIGNED / BLOCKED_G1/G2 |

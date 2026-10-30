@@ -4,21 +4,22 @@ Status: G1 approved 2026-10-30. This remains a design document; no ICP
 application code has been changed.
 
 > **Owner-approved G1 amendment, 2026-10-30 — private in-process
-> storage.** The prior remote ZenDB-canister/RBAC design is rejected. If ZenDB
-> survives M1 evaluation, it is a library linked privately into each owning
-> application or treasury actor. There is no storage Candid boundary, no
-> ZenDB role/grant API, and no remote collection caller. Public actor methods
+> storage.** The prior remote ZenDB-canister/RBAC design is rejected. ZenDB
+> `v2.0.1` was rejected as an in-process candidate after its exact dependency
+> closure failed. The owner selected native Motoko private storage on
+> 2026-10-30. There is no storage Candid boundary, role/grant API, or remote
+> collection caller. Public actor methods
 > authenticate and authorize callers before private storage access. This is the
 > recorded G1 decision; it authorizes M1 work only and does not select a
 > storage candidate or approve later gates.
 
 ## Decision summary
 
-The proposed target is a set of Motoko application canisters, the retained React/Vite/TypeScript frontend built into certified ICP frontend-canister assets, ZenDB only as a proposed private in-process library for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
+The proposed target is a set of Motoko application canisters, the retained React/Vite/TypeScript frontend built into certified ICP frontend-canister assets, native Motoko private storage for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
 
 AI evaluation is deliberately not a durable workflow queue: because the Motoko `llm` package has no OpenAI batch facility, versioned Motoko code issues each fixed, bounded sequence of calls directly, retains dependencies only in local values, and persists only completed canonical results/sources plus redacted audit evidence. Legacy task, dependency, and provider-batch records are migrated as restricted read-only history, never as executable target state.
 
-ZenDB may store Candid-encoded identity, balance, payment-operation, replay-journal, and migration-receipt documents privately inside their owning actor. Whether it can do so safely is an M1 proof obligation, not an assumption: authorization and financial constraints stay in Motoko application code, while durable actor state journals every cross-canister or external `await`. A storage candidate that cannot preserve records, indexes, logical-ID/hash receipts, and durable recovery checkpoints through an exact state-preserving upgrade is rejected; replacement-memory upgrades are not evidence.
+The native store holds Candid-encoded identity, balance, payment-operation, replay-journal, and migration-receipt records privately inside their owning actor. Its suitability remains an M1 proof obligation: authorization and financial constraints stay in Motoko application code, while durable actor state journals every cross-canister or external `await`. A storage candidate that cannot preserve records, indexes, logical-ID/hash receipts, and durable recovery checkpoints through an exact state-preserving upgrade is rejected; replacement-memory upgrades are not evidence.
 
 The architecture intentionally does **not** reproduce unsafe legacy behavior. Existing ambiguous payments, mutable-handle identities, exact-timestamp “daily” uniqueness, destructive KYC backlog handling, process-local locks, persisted AI task graphs, OpenAI batch bookkeeping, and textual user-ID searches become migration exceptions or explicitly corrected behavior.
 
@@ -60,7 +61,7 @@ The architecture intentionally does **not** reproduce unsafe legacy behavior. Ex
           |                |   v                v
           |                | private storage  treasury_canister
           |                |   |                 +--> ICP/ICRC ledgers
-          |                | (ZenDB library)  +--> ckBTC/ckETH/ckERC20
+          |                | (native Motoko)  +--> ckBTC/ckETH/ckERC20
           |                +--> OpenAI/Didit/    +--> BTC API / EVM RPC /
           |                     OAuth/email/          SOL RPC / HTTPS RPC
           |                     GDP/prices
@@ -250,7 +251,7 @@ ICP Chain Fusion supports threshold ECDSA/Schnorr addresses, native Bitcoin inte
 The owner approved these six architecture choices on 2026-10-30:
 
 1. Retain the React/Vite/TypeScript frontend and deploy its pinned reproducible static bundle to the certified frontend canister. Remove the legacy Node backend/REST bearer-token deployment only at M10 after the rollback window closes; Node.js remains a build-time dependency, never a canister runtime.
-2. Use ZenDB only as a proposed private in-process library for the PostgreSQL/Prisma destination, including candidate authoritative core/workflow/financial/replay/migration collections. The owning actor's typed methods are the authorization boundary; M1 must prove bounded persistence, exact state-preserving upgrade, and recovery, while G2 records any collection-specific alternative.
+2. Use a native Motoko private store for the PostgreSQL/Prisma destination, including candidate authoritative core/workflow/financial/replay/migration collections. ZenDB `v2.0.1` is rejected by the recorded exact compatibility probe. The owning actor's typed methods are the authorization boundary; M1 must prove bounded persistence, exact state-preserving upgrade, and recovery, while G2 records any collection-specific alternative.
 3. Enforce authorization, relationship, uniqueness, money, and replay invariants in Motoko method bodies and durable sagas; ZenDB schemas, constraints, and indexes never replace those controls.
 4. Treat Internet Identity and OAuth through `indentify` as peer authentication methods, while binding every authorization decision to the authenticated Candid caller and separating payout destinations from login identities.
 5. Replace server-held keys with a unified treasury's Chain Fusion authority for approved native networks, retaining ICRC/ck assets only where their ledger/minter path is selected; every adapter still requires testnet approval.

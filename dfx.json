@@ -31,6 +31,11 @@
       "type": "motoko",
       "main": "canisters/oauth_attempt_fixture/main.mo",
       "candid": "canisters/oauth_attempt_fixture/oauth_attempt_fixture.did"
+    },
+    "private_store_recovery_fixture": {
+      "type": "motoko",
+      "main": "fixtures/private_store_recovery/main.mo",
+      "candid": "fixtures/private_store_recovery/private_store_recovery_fixture.did"
     }
   }
 }

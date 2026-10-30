@@ -1,12 +1,12 @@
 # PostgreSQL/Prisma to ICP schema mapping
 
-Status: complete source inventory and G1-level proposed disposition; concrete Motoko/ZenDB collection schemas, mutation-recovery protocols, indexes, and measured limits require G2 approval.
+Status: complete source inventory and G1-level proposed disposition; concrete Motoko private-store collection schemas, mutation-recovery protocols, indexes, and measured limits require G2 approval.
 
 > **Proposed G1 amendment, owner-selected 2026-10-30.** This mapping no
 > longer proposes remote ZenDB collections or ZenDB RBAC as a target boundary.
-> A candidate ZenDB implementation is private in-process storage owned by the
-> relevant application/treasury actor. All earlier references to a remote
-> collection grant, direct ZenDB caller, or remote-write saga are superseded:
+> The owner selected native Motoko private storage inside the relevant
+> application/treasury actor after rejecting ZenDB `v2.0.1` compatibility.
+> All earlier references to a remote collection grant, direct ZenDB caller, or remote-write saga are superseded:
 > the actor's typed caller/resource/action checks and its durable intents are
 > authoritative. This remains a G1 proposal, not implementation approval.
 
@@ -43,7 +43,7 @@ Canonical encoding details are in `MIGRATION_RUNBOOK.md`.
 - `archive/private-storage`: versioned, replaceable document collections for large AI/audit/raw legacy payloads.
 - `historical-only`: imported for audit/reconciliation but never accepted as a live credential or secret.
 
-ZenDB is proposed only as a private in-process PostgreSQL/Prisma destination library, including the collections above. M1 must prove each collection's mutation/recovery behavior under duplicate delivery, upgrades, low cycles, and every external/cross-canister interruption. Application code—not library constraints, indexes, or UI behavior—authenticates callers and enforces authorization, referential integrity, uniqueness, money, and replay rules. There is no direct ZenDB caller, role/grant, or separate administration path: browsers, users, import operators, and unrelated canisters are denied by the owning actor's public methods. A failed persistence, mutation, or recovery proof rejects that candidate or requires a G2-approved, collection-specific alternative.
+The native private store is the proposed PostgreSQL/Prisma destination implementation for the collections above. M1 must prove each collection's mutation/recovery behavior under duplicate delivery, upgrades, low cycles, and every external/cross-canister interruption. Application code—not storage mechanics, indexes, or UI behavior—authenticates callers and enforces authorization, referential integrity, uniqueness, money, and replay rules. There is no direct storage caller, role/grant, or separate administration path: browsers, users, import operators, and unrelated canisters are denied by the owning actor's public methods. A failed persistence, mutation, or recovery proof requires a G2-approved, collection-specific alternative.
 
 Each document carries a unique indexed application logical ID, version, and content hash. That key, not a ZenDB-generated internal document ID, is the stable source/migration/idempotency identity unless the exact G2-pinned API proves caller-supplied IDs. The canonical audit map records `source ID -> application logical ID` and may record an observed ZenDB document ID only as non-authoritative storage metadata. An unknown insert/update is looked up by logical ID: the desired version/hash means acknowledged success; an absent insert or unchanged expected prior version/hash permits retry of the identical insert/CAS; any other version/hash is a blocking conflict.
 

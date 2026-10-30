@@ -12,8 +12,10 @@
     "db:push": "prisma db push --config prisma/prisma.config.js",
     "db:migrate": "prisma migrate dev --config prisma/prisma.config.js",
     "db:studio": "prisma studio --config prisma/prisma.config.js",
+    "inventory:postgres": "node scripts/inventory-postgres.cjs",
     "test": "npm run test:security && npm run test:integration",
     "test:security": "node --import tsx --test tests/security.test.ts",
+    "test:inventory": "node --test scripts/inventory-postgres.test.cjs",
     "test:integration": "node scripts/run-integration-tests.js"
   },
   "dependencies": {

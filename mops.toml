@@ -7,6 +7,7 @@ license = "AGPL-3.0-only"
 [dependencies]
 base = "0.16.0"
 identify = "0.0.2"
+sha2 = "0.1.6"
 
 [toolchain]
 moc = "0.16.3"
@@ -45,3 +46,9 @@ main = "canisters/oauth_attempt_fixture/main.mo"
 
 [canisters.oauth_attempt_fixture.check-stable]
 path = "canisters/oauth_attempt_fixture/oauth_attempt_fixture.most"
+
+[canisters.private_store_recovery_fixture]
+main = "fixtures/private_store_recovery/main.mo"
+
+[canisters.private_store_recovery_fixture.check-stable]
+path = "fixtures/private_store_recovery/private_store_recovery_fixture.most"

@@ -17,6 +17,7 @@ yarn-error.log*
 *.db
 *.db-journal
 dev.db*
+*-inventory.json
 
 # Logs
 logs

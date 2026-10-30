@@ -26,8 +26,27 @@ duplicate acknowledgement, conflicting replacement rejection, incorrect hash,
 and payload limit rejection. `mops check-stable` validates the core actor's
 stable signature against its committed baseline.
 
+`fixtures/private_store_recovery` is a separate local-only actor, never a
+target service. Its exact-Wasm PocketIC 12.0.0 proof is run with:
+
+```sh
+mops build private_store_recovery_fixture
+npm run test:m1-private-store-upgrade
+```
+
+The runner resolves the Mops-pinned PocketIC binary, copies it to a
+disposable temporary path because the cache is read-only, and uses only
+deterministic synthetic principals. It verifies owner-only update/query access
+and denies anonymous, browser/user, import-operator, and unrelated-service
+direct ingress before and after the upgrade. It then inserts a bounded
+hash-bound record, upgrades with the same Wasm and explicit
+enhanced-orthogonal-persistence `#keep`, and verifies the identical hash, one
+stable record, and a duplicate no-op. It never uses reinstall or replacement
+memory, returns no raw payload, starts no external network service, and removes
+its temporary binary copy.
+
 This is not a G2 schema: the collection catalogue, index/cursor design,
-collection-vN migration, external-call intent journal, exact old-to-new
-PocketIC upgrade, crash recovery, low-cycle behavior, capacity benchmarks,
-canonical export, and direct-ingress authorization proof remain mandatory M1
-work.
+collection-vN migration, external-call intent journal, old-to-new compatibility
+upgrade, crash recovery, low-cycle behavior, capacity benchmarks, canonical
+export, and an actual inter-canister authorization-denial proof remain mandatory
+M1 work.

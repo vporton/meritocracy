@@ -41,6 +41,16 @@ serializable read-only transaction, rolls it back, and has no DDL, replication,
 or row-export path. No production report exists yet; live cardinalities remain
 unknown. See `POSTGRES_INVENTORY.md`.
 
+The native private-store M1 fixture has passed its isolated PocketIC 12.0.0
+same-Wasm, enhanced-orthogonal-persistence `#keep` upgrade proof. It preserves
+a bounded logical-ID/content-hash record, accepts only the fixed synthetic
+owner, rejects anonymous, browser/user, import-operator, and unrelated-service
+direct ingress before and after the upgrade, and treats an identical retry as a
+no-op. The fixture returns hash/count only, not raw payload; `core_canister`
+itself retains no storage Candid API. This is foundation evidence only and does
+not verify actual inter-canister denial, the later schema, cursor,
+collection-vN, saga, crash, or low-cycle obligations.
+
 ## Global parity rule
 
 Parity means preserving intended user/business capability, authorization, history, and financial obligations. It does **not** mean reproducing insecure endpoint shapes, plaintext custody, floating-point accounting, non-idempotent sends, bearer/cron secrets, in-memory locks, ambiguous ownership, destructive cascades, or known routing/UI defects. Each intentional change requires tests and, where data/money is involved, a reconciliation record.

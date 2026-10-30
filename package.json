@@ -55,6 +55,6 @@
   },
   "packageManager": "npm@11.10.1",
   "devDependencies": {
-    "@dfinity/pic": "^0.25.0"
+    "@dfinity/pic": "0.25.0"
   }
 }

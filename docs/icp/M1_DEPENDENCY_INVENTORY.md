@@ -32,14 +32,25 @@ that is a separate approved compatibility change.
 
 ## Advisory boundary
 
-An online `npm audit --omit=dev --json` was attempted only to obtain current
-advisory metadata. The sandbox could not resolve the npm registry. A request
-to transmit the manifest/lock metadata to the registry was denied because the
-user had not explicitly authorized that disclosure. Therefore no current
-advisory result is claimed. Before G2, an authorized audit must record each
-high/critical finding's affected bundle, reachability, owner, containment, and
-upgrade/removal or accepted-risk decision. A high/critical finding without
-that disposition blocks shipment.
+With owner authorization, `npm audit --omit=dev --json` ran on 2026-10-30
+against the root lockfile. It reported 53 production-tree findings: 3 critical,
+39 high, 10 moderate, and 1 low. The critical chains are
+`concurrently -> shell-quote` and a `proxy-addr` chain; the remaining critical
+finding is `shell-quote` itself. High findings include direct runtime/build
+dependencies `@reown/appkit`, `@reown/appkit-adapter-bitcoin`,
+`@reown/appkit-adapter-solana`, `@reown/appkit-adapter-wagmi`,
+`@stellar/stellar-sdk`, `axios`, `nodemailer`, `prisma`, `serve`, `viem`, and
+`vite`, plus their transitive closures. The Reown/Sats-connect/Solana chain has
+no offered automatic fix. The audit also reports fixes for some chains,
+including `concurrently`, `prisma`, `nodemailer`, `viem`, and `vite`; applying
+one is deliberately out of scope for this M1 evidence change.
+
+Every high/critical advisory is currently **untriaged**: affected production
+bundle, actual reachability, owner, containment, and upgrade/removal or
+accepted-risk decision remain unrecorded. Consequently neither the legacy
+rollback bundle nor the target frontend/toolchain bundle is eligible for
+shipment. This audit is an evidence snapshot, not a remediation or risk
+acceptance.
 
 ## M1 consequence
 

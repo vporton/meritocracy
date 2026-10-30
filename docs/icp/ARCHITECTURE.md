@@ -1,14 +1,24 @@
 # Target ICP architecture
 
-Status: G1 approval candidate, 2026-08-01. This is a design document; no application code has been changed.
+Status: G1 approved 2026-10-30. This remains a design document; no ICP
+application code has been changed.
+
+> **Owner-approved G1 amendment, 2026-10-30 — private in-process
+> storage.** The prior remote ZenDB-canister/RBAC design is rejected. If ZenDB
+> survives M1 evaluation, it is a library linked privately into each owning
+> application or treasury actor. There is no storage Candid boundary, no
+> ZenDB role/grant API, and no remote collection caller. Public actor methods
+> authenticate and authorize callers before private storage access. This is the
+> recorded G1 decision; it authorizes M1 work only and does not select a
+> storage candidate or approve later gates.
 
 ## Decision summary
 
-The proposed target is a set of Motoko application canisters, the retained React/Vite/TypeScript frontend built into certified ICP frontend-canister assets, ZenDB as the proposed persistent store for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
+The proposed target is a set of Motoko application canisters, the retained React/Vite/TypeScript frontend built into certified ICP frontend-canister assets, ZenDB only as a proposed private in-process library for PostgreSQL/Prisma data and target collections, and one explicitly journaled Chain Fusion treasury canister controlled by an SNS. The legacy Node/PostgreSQL application remains the production authority until parity and migration reconciliation pass.
 
 AI evaluation is deliberately not a durable workflow queue: because the Motoko `llm` package has no OpenAI batch facility, versioned Motoko code issues each fixed, bounded sequence of calls directly, retains dependencies only in local values, and persists only completed canonical results/sources plus redacted audit evidence. Legacy task, dependency, and provider-batch records are migrated as restricted read-only history, never as executable target state.
 
-ZenDB is capable of storing Candid-encoded identity, balance, payment-operation, replay-journal, and migration-receipt documents. Whether each such collection can be authoritative is an M1 proof obligation, not an assumption: authorization and financial constraints stay in Motoko application code, and remote ZenDB calls require durable idempotent sagas around every `await`. A collection that cannot meet that proof must have a G2-approved, narrowly scoped native-Motoko exception.
+ZenDB may store Candid-encoded identity, balance, payment-operation, replay-journal, and migration-receipt documents privately inside their owning actor. Whether it can do so safely is an M1 proof obligation, not an assumption: authorization and financial constraints stay in Motoko application code, while durable actor state journals every cross-canister or external `await`. A storage candidate that cannot preserve records, indexes, logical-ID/hash receipts, and durable recovery checkpoints through an exact state-preserving upgrade is rejected; replacement-memory upgrades are not evidence.
 
 The architecture intentionally does **not** reproduce unsafe legacy behavior. Existing ambiguous payments, mutable-handle identities, exact-timestamp “daily” uniqueness, destructive KYC backlog handling, process-local locks, persisted AI task graphs, OpenAI batch bookkeeping, and textual user-ID searches become migration exceptions or explicitly corrected behavior.
 
@@ -48,9 +58,9 @@ The architecture intentionally does **not** reproduce unsafe legacy behavior. Ex
           |                |   |                |
           |        HTTPS outcalls |        journaled operation
           |                |   v                v
-          |                | archive_router  treasury_canister
+          |                | private storage  treasury_canister
           |                |   |                 +--> ICP/ICRC ledgers
-          |                | ZenDB collections +--> ckBTC/ckETH/ckERC20
+          |                | (ZenDB library)  +--> ckBTC/ckETH/ckERC20
           |                +--> OpenAI/Didit/    +--> BTC API / EVM RPC /
           |                     OAuth/email/          SOL RPC / HTTPS RPC
           |                     GDP/prices
@@ -72,7 +82,7 @@ The architecture intentionally does **not** reproduce unsafe legacy behavior. Ex
 - Never stores an application bearer in browser storage. The legacy REST bearer client is rollback-only, not part of target authentication. If retained Internet-facing before M10, it needs a separately approved compatibility hardening with a strict no-`unsafe-inline` CSP and XSS/session-theft test.
 - The ICP asset canister provides certified HTTP responses and configurable security policy/SPA aliasing; see the [official asset-canister guide](https://docs.internetcomputer.org/guides/frontends/asset-canister/).
 
-### `core_canister` — Motoko enforcement with ZenDB collections
+### `core_canister` — Motoko enforcement with private storage
 
 Authoritative state:
 
@@ -83,11 +93,11 @@ Authoritative state:
 - GDP/configuration and deterministic salary/share snapshots;
 - role assignments, incident pause state, durable outbox/inbox, migration receipts for core collections, and append-only audit metadata.
 
-The core method body authenticates the caller and authorizes the exact resource/action before it mutates a ZenDB collection. Native Motoko saga state records each remote database intent, response, retry receipt, and reconciliation result. This preserves multi-record invariants across remote calls without treating ZenDB indexes or constraints as authorization. High-volume payloads and wallet execution are separated. Sharding is introduced only through a versioned router after measured thresholds, not prematurely.
+The core method body authenticates the caller and authorizes the exact resource/action before it mutates its private storage. Native Motoko saga state records every external or cross-canister intent, response, retry receipt, and reconciliation result. This preserves multi-record invariants without treating library indexes or constraints as authorization. High-volume payloads and wallet execution are separated. Sharding is introduced only through a versioned router after measured thresholds, not prematurely.
 
 KYC and identity evidence cannot be activated merely because encryption exists. Before collection/import, G2 records its purpose, data controller/legal basis, minimization, retention and cryptographic-erasure schedule, backup/restore behavior, access-audit roles, and financial/anti-evasion retention exceptions. Certified user-profile and ban-voting projections default to excluding raw social identities and user wallet addresses; a G2 product/privacy decision must permit each disclosed field and purpose. Published treasury receiving addresses remain separately governed asset/scope configuration.
 
-### `workflow_canister` — Motoko enforcement with ZenDB collections
+### `workflow_canister` — Motoko enforcement with private storage
 
 - Versioned first, repeat, and quarterly evaluator functions execute the fixed 14/6/5-operation workflows through direct `llm` calls. Dependencies pass as typed local values within the invocation; no live task, DAG edge, claim/lease, provider-batch/item, or intermediate-operation record is written to stable memory or ZenDB.
 - Canonical AI result/status/source metadata and exact user/evaluation-operation indexes. Only a complete validated result/source set is published under its deterministic cycle/result key; an interrupted or failed invocation publishes no partial result and may restart whole.
@@ -97,20 +107,20 @@ KYC and identity evidence cannot be activated merely because encryption exists. 
 
 The webhook HTTP interface may be implemented here or as a small same-controller ingress canister. Conventional webhooks use `http_request` followed by `http_request_update`; the update method re-verifies method/path/body limit, HMAC/signature, freshness, provider event ID, session binding, and monotonic state before forwarding an idempotent event. OAuth does not use an unauthenticated HTTP update callback to establish login: the provider redirect goes to the allowlisted certified frontend and only the bound Candid caller can complete the M2 exchange. If a provider requires a server callback, it may only stage data against the pre-existing caller-bound attempt; it cannot bind or recover an account until that caller completes the exchange. The protocol supports this update upgrade path; see the [HTTP gateway specification](https://docs.internetcomputer.org/references/http-gateway-protocol-spec/).
 
-### `archive_router` and ZenDB collections
+### Private archive/storage modules
 
-- Routes versioned core, workflow, treasury, `ai_artifact_vN`, audit-view, and migration-evidence collections to pinned ZenDB canisters. Collection data may be authoritative only after the M1 proof for its mutation/recovery protocol succeeds.
-- A ZenDB failure cannot authorize, complete, delete, or duplicate a canonical evaluation result or payment. The native final-publication saga record holds the expected hash, idempotency key, and pending/available/reconciled state; it is not execution-task storage.
+- Private modules hold versioned core, workflow, treasury, `ai_artifact_vN`, audit-view, and migration-evidence collections inside their owning actors. Collection data may be authoritative only after the M1 proof for its mutation/recovery protocol succeeds.
+- A storage-library failure cannot authorize, complete, delete, or duplicate a canonical evaluation result or payment. The native final-publication saga record holds the expected hash, idempotency key, and pending/available/reconciled state; it is not execution-task storage.
 - Every document has an application logical ID/idempotency key, schema version, content hash, created epoch, typed ownership references, and size cap. That logical ID is a unique indexed document field unless the exact pinned ZenDB API proves caller-supplied document IDs; ZenDB's generated internal document ID is otherwise non-authoritative storage metadata. Every query uses a suitable index and stable cursor.
-- Shards are replaceable: canonical export is the portability boundary. Schema changes create a new `collection_vN`, migrate in bounded batches, compare hashes/counts, switch the router, and retain the old collection read-only through rollback.
+- Shards are replaceable: canonical export is the portability boundary. Schema changes create a new `collection_vN`, migrate in bounded batches, compare hashes/counts, switch the private router, and retain the old collection read-only through rollback.
 
 ### `treasury_canister` — unified Chain Fusion treasury
 
-- Is the sole application authority for the double-entry liability/reserve/accounting journal, payment cycles, immutable payment intents, destination snapshots, attempts, confirmation/reorg state, and reconciliation reports. Its pinned ZenDB canister is a storage dependency with treasury-only application roles and governance-only administration, not a second business authority or vault.
+- Is the sole application authority for the double-entry liability/reserve/accounting journal, payment cycles, immutable payment intents, destination snapshots, attempts, confirmation/reorg state, and reconciliation reports. Its private storage module is an implementation detail, not a separately callable authority or vault.
 - Receives idempotent obligations from an allowlisted `core_canister`, validates policy version/eligibility snapshot, and creates exactly one stable `operationId` per user/scope/asset/obligation epoch.
 - Uses integer base units. USD/GDP presentation values never drive token conservation through floating point.
 - Before any cross-canister/chain call, records a prepared attempt. After `await`, it reloads and validates current state/epoch rather than assuming pre-call state still holds. ICP explicitly warns that inter-canister calls are non-atomic and recommends journaling; see [inter-canister call security](https://docs.internetcomputer.org/guides/security/inter-canister-calls/).
-- Owns ICRC accounts/subaccounts and Chain Fusion key-derivation paths in the treasury canister, and controls immutable operation receipts plus chain nonce/sequence/UTXO reservations in treasury-only ZenDB collections. Before signing/sending it persists a native intent, obtains logical-ID/content-hash acknowledgement for the remote receipt, rejects a conflicting replay, and enforces allowlisted assets/networks, caps, fee bounds, destination encoding validation, and pause state in its own method body.
+- Owns ICRC accounts/subaccounts and Chain Fusion key-derivation paths in the treasury canister, and controls immutable operation receipts plus chain nonce/sequence/UTXO reservations in private treasury storage. Before signing/sending it persists a native intent, confirms the stored logical-ID/content hash, rejects a conflicting replay, and enforces allowlisted assets/networks, caps, fee bounds, destination encoding validation, and pause state in its own method body.
 - Has no endpoint to expose a seed/private key because Chain Fusion threshold private keys never exist in the canister. It is never blackholed: SNS is the production controller, so security relies on reviewed governance, delay, reproducible upgrade evidence, a pause-only role, caps, monitoring, and recovery drills.
 
 ### Governance and operations
@@ -119,7 +129,7 @@ The webhook HTTP interface may be implemented here or as a small same-controller
 - Pre-production: one reviewed governance canister is the sole controller. Listing multiple human controllers is not multisig; any controller can upgrade. An `icp-cli` account may operate the approved governance workflow but is not a controller of an application canister.
 - Production: SNS is the sole controller of every canister, including `treasury_canister`, with proposal quorum, delay, reproducible Wasm hash, stable/Candid compatibility evidence, and post-deploy controller/module verification. No production canister has an empty controller list.
 - SNS control is a G3-blocking product/governance decision, not an implicit property of a test deployment: an SNS is per application and requires the recorded launch/ownership model, applicable `sns_init`/tokenomics or existing-SNS configuration, quorum/delay, cycle-management, root-handoff, and recovery policy. Local SNS tooling or PocketIC proves the controller contract before G3. The signed G4 runbook then authorizes one isolated, non-custodial mainnet testflight to prove testflight-SNS-root handoff/recovery mechanics before the separately reviewed production handoff/deployment; it uses separate canister IDs and test-only derivation/environment, has a bounded approved cycle budget, and contains no production data or custodial assets.
-- ZenDB controller authority and ZenDB application roles are audited separately. For every collection, only its owning application canister receives the minimum read/write capability; sensitive evidence and financial collections have no public reader. Where the pinned API cannot express a per-collection role, separate ZenDB deployments enforce each distinct grant boundary. ZenDB administration belongs only to the approved governance/SNS principal. Bootstrap owners/deployers and temporary migration roles are revoked before authority or finalization, and post-deploy/post-upgrade grant audits must exactly match the approved matrix. Any built-in ZenDB self-grant is inventoried, justified as an internal implementation requirement, and tested to expose no unauthorized ingress path.
+- A controller remains unrestricted because it can replace code; it is not a multisig. There is no ZenDB controller authority or application-role matrix. Every owning actor instead exposes a fixed, typed Candid surface and verifies `caller`, resource, and action in each state-changing method. Post-deploy and post-upgrade tests audit that surface for direct-ingress, unrelated-canister, former-bootstrap, and caller/resource/action negatives, and prove that private storage is not reachable through Candid.
 - Incident role: named principals can only pause integrations/payments and request evidence; they cannot resume, send, change caps, install code, or change controllers.
 - Cycles: per-canister alarms, public health, automated top-up with capped allowance, at least 90-day production freezing threshold, and a tested low-cycle mode that stops optional archive/outcalls before core/treasury work.
 - ICP warns that controllers can replace code and steal canister-held assets; governance or immutability must be verified, not merely documented. See [canister control](https://docs.internetcomputer.org/guides/security/canister-control/) and [trust in canisters](https://docs.internetcomputer.org/guides/canister-management/trust-in-canisters/).
@@ -164,20 +174,20 @@ As of this document date, current ZenDB main describes:
 
 Primary project evidence: [ZenDB repository/readme](https://github.com/NatLabs/ZenDB), [current documentation](https://github.com/NatLabs/ZenDB/blob/main/zendb-doc.md), and the maintainer's [architecture/31-million-transaction report](https://forum.dfinity.org/t/introducing-zendb-embedded-database-with-mongodb-style-queries-for-motoko/61569).
 
-License direction: G1 evidence must first inventory every license/notice, package/distribution artifact, third-party obligation, and contributor/licensor-rights record, and resolve every authority exception. This plan makes no legal conclusion: missing authority blocks G1 rather than permitting a silent relicensing. Once G1 records sufficient authority and approves the disposition, relicensing the repository to AGPL-3.0 is the first M1 implementation change. That one reviewable commit updates the applicable license/notice/metadata and distribution artifacts together while preserving required third-party notices; no toolchain, canister, or application change precedes it.
+License direction: G1 evidence inventories every license/notice, package/distribution artifact, third-party obligation, and contributor/licensor-rights record, and resolves every authority exception. The completed 2026-10-30 record is `AGPL_RELICENSING_INVENTORY.md`: it records the owner-confirmed authority and the AGPL-3.0-only license/notice/metadata disposition while preserving historical notices. The same day the owner approved the complete G1 architecture decision. Relicensing itself did not authorize work before that approval, and G1 approval authorizes M1 only.
 
 ### Structure choice
 
 | Data class | Chosen structure | Reason |
 | --- | --- | --- |
-| Users, principal/identity bindings, roles, emails, KYC state, payout destinations, bans/holds | Versioned ZenDB collections with Motoko mutation-saga records and explicit unique/sorted indexes | ZenDB can store Candid/Blob/Text records; Motoko enforces caller authorization and relation/uniqueness policy across remote writes |
-| Canonical AI results/sources, redacted audit, stable schedules, completion receipts, outbox/inbox | Versioned ZenDB collections with Motoko final-publication/idempotency saga | Direct evaluators keep dependencies local and create no task/DAG/lease/provider-batch records; durable records remain queryable without unbounded scans |
-| Liabilities, reserves, journal, operation/attempt receipts, finality/reorg state | ZenDB journal/receipt collections with Motoko operation protocol and bounded lookup indexes | Money/replay authority only after M1 proves failure-safe intent/write/acknowledgement recovery, exact base units, and an independently auditable state machine |
-| Large AI/provider request/response payloads and derived audit documents | Versioned ZenDB collections | Document-shaped, append-heavy, varied nested payloads, multiple metadata filters, high growth; replaceable and hash-addressed |
-| KYC raw evidence | Encrypted, access-logged ZenDB collection with Motoko access/hash indexes | G2-approved purpose/legal basis, minimization, retention/cryptographic erasure, backup, access audit, and accounting/anti-evasion exception policy; minimize indexed sensitive fields |
+| Users, principal/identity bindings, roles, emails, KYC state, payout destinations, bans/holds | Versioned private ZenDB-backed storage with Motoko mutation-saga records and explicit unique/sorted indexes | ZenDB is linked in-process; Motoko method bodies enforce caller authorization and relation/uniqueness policy |
+| Canonical AI results/sources, redacted audit, stable schedules, completion receipts, outbox/inbox | Versioned private ZenDB-backed storage with Motoko final-publication/idempotency saga | Direct evaluators keep dependencies local and create no task/DAG/lease/provider-batch records; durable records remain queryable without unbounded scans |
+| Liabilities, reserves, journal, operation/attempt receipts, finality/reorg state | Private ZenDB-backed journal/receipt storage with Motoko operation protocol and bounded lookup indexes | Money/replay authority only after M1 proves failure-safe durable-intent/recovery behavior, exact base units, and an independently auditable state machine |
+| Large AI/provider request/response payloads and derived audit documents | Versioned private ZenDB-backed storage | Document-shaped, append-heavy, varied nested payloads, multiple metadata filters, high growth; replaceable and hash-addressed |
+| KYC raw evidence | Encrypted, access-logged private storage with Motoko access/hash indexes | G2-approved purpose/legal basis, minimization, retention/cryptographic erasure, backup, access audit, and accounting/anti-evasion exception policy; minimize indexed sensitive fields |
 | Frontend assets | ICP asset canister | Certified static hosting, compression, SPA routing, security headers |
 
-ZenDB storage still requires explicit indexes and bounded pagination. Before each remote mutation, Motoko enhanced orthogonal persistence records a bounded durable intent containing collection, application logical ID, desired content hash, expected prior version/hash for a CAS update, operation/attempt ID, and phase. After `await`, it reloads the intent and looks up that logical key: the desired version/hash is acknowledged success; an absent insert or unchanged expected prior version/hash permits an identical insert/CAS retry; any other result is a conflict that fails closed. Pending records do not become application-visible until acknowledgement. A multi-document invariant is either staged and activated through a separately acknowledged manifest/version pointer or performed by one bounded ZenDB-side method whose atomic behavior is proven against the exact pin; it is never described as atomic across the inter-canister call. Completed intent detail may be compacted only into the immutable remote receipt plus a native hash checkpoint without deleting required audit history. This bounded saga/configuration state rejects incompatible stable changes and avoids large `preupgrade` serialization. See [Motoko persistence and upgrade compatibility](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/data-persistence/) and [enhanced orthogonal persistence](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/orthogonal-persistence/enhanced/).
+ZenDB storage still requires explicit indexes and bounded pagination. Private in-process mutations do not create an extra storage-canister `await`; nevertheless, before every external or cross-canister `await`, Motoko enhanced orthogonal persistence records a bounded durable intent containing the storage collection, application logical ID, desired content hash, expected prior version/hash for a CAS update, operation/attempt ID, and phase. Recovery reloads that intent and private storage by logical key: the desired version/hash is acknowledged success; an absent insert or unchanged expected prior version/hash permits an identical retry; any other result is a conflict that fails closed. Pending records do not become application-visible until acknowledgement. A multi-document invariant is either completed within one bounded actor update or staged and activated through a separately acknowledged manifest/version pointer; it is never described as atomic across an external `await`. Completed intent detail may be compacted only into an immutable receipt plus a native hash checkpoint without deleting required audit history. This bounded saga/configuration state rejects incompatible stable changes and avoids large `preupgrade` serialization. See [Motoko persistence and upgrade compatibility](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/data-persistence/) and [enhanced orthogonal persistence](https://docs.internetcomputer.org/languages/motoko/fundamentals/actors/orthogonal-persistence/enhanced/).
 
 ### Capacity and cost envelopes
 
@@ -189,7 +199,7 @@ These are design targets to make limits testable; they are not production-count 
 | Voting/holds | 100 million events per epoch shard | Seal old epoch and create next shard | `(target,epoch,id)` and `(voter,epoch,id)` cursors |
 | Workflow results/audit | 10 million retained result/audit metadata records per shard | Archive payload/metadata by retention policy; route by result ID/epoch | Exact owner/kind/time cursor; no AI task queue index |
 | ZenDB collection shard | 25 million documents or 50 GiB, whichever first | Create a new collection/shard; never approach theoretical 500 GiB | Fully covered composite/text index; cursor only; max 256 KiB document, max 1 MiB batch |
-| Financial journal | 100 million immutable entries per treasury | Add a read-only archive/index collection while authoritative balances/receipts remain in the pinned ZenDB authority collection | operation ID point lookup; account/asset/sequence cursor |
+| Financial journal | 100 million immutable entries per treasury | Add a read-only archive/index collection while authoritative balances/receipts remain in the pinned private treasury store | operation ID point lookup; account/asset/sequence cursor |
 | Migration import | max 500 ordinary records and <1 MiB encoded payload per call; large record fragments bounded separately | Split before encoding; reject over-limit | `(migration,table,chunk)` receipt point lookup |
 
 ICP currently charges storage for heap and stable memory alike; on a 13-node subnet the published reference is about 329B cycles per GiB per 30 days, with 34-node costs about 2.6×, plus execution/messaging/outcall costs. The exact cycle counts, not approximate USD, are budget authority. See [current cycle costs](https://docs.internetcomputer.org/references/cycle-costs/). Each benchmark must report bytes/document, index multiplier, instructions/insert/query/update/delete, reindex cost, archive cross-canister bytes, and monthly storage at the then-current cycle table.
@@ -209,7 +219,7 @@ ICP currently charges storage for heap and stable memory alike; on a 13-node sub
 - Require Candid subtype and stable-compatibility checks in CI for every canister.
 - Use additive versioned records and explicit bounded migrations. Never use production `reinstall`.
 - Re-register timers and resume durable jobs after upgrade; run old->new->rollback upgrade tests with near-limit data.
-- For ZenDB, pin exact source/dependency/Candid/Wasm hashes and approved RBAC matrix; test the old stable store with the proposed version. Schema changes use a shared migration epoch, bounded collection-vN copy with logical-ID/hash reconciliation, read-only old collections, and a router switch only after pending intents are drained, counts/hashes match, and grants on the new collection pass audit. Retain the old collection and its prior grant record until rollback closes.
+- For ZenDB, pin exact source/dependency/Wasm hashes and test the old private stable store with the proposed version. Schema changes use a shared migration epoch, bounded collection-vN copy with logical-ID/hash reconciliation, read-only old collections, and a router switch only after pending intents are drained and counts/hashes match. Retain the old collection through the rollback window; no ZenDB grant is an authorization contract.
 - Exportable canonical state is the disaster-recovery and dependency-exit boundary; a canister snapshot alone is not the only backup.
 
 ## Chain Fusion placement
@@ -229,18 +239,18 @@ ICP Chain Fusion supports threshold ECDSA/Schnorr addresses, native Bitcoin inte
 - PocketIC/local replica: Candid calls, caller auth, timers, awaits/reentrancy, upgrades, cycle depletion, archive failures, migration interruption.
 - Differential fixtures: run legacy and ICP transformations over the same sanitized records and explain every intended difference.
 - Chain simulators/testnets: local ICRC ledgers, Bitcoin regtest/testnet, EVM Sepolia, Solana devnet, and equivalent valueless networks. Mainnet paths are configuration-disabled in ordinary test builds. Local/PocketIC SNS tests prove controller behavior; the only planned mainnet exception before production is the G4-approved, isolated non-custodial SNS testflight, which uses a separately reviewed signed configuration, a bounded approved cycle budget, and test-only derivation/environment to prevent access to production data, payment authority, or custodial assets.
-- Migration: deterministic byte/hash golden tests; a PostgreSQL logical-slot/exported-snapshot rehearsal that proves contiguous complete transactions through a final barrier under decoder restart, replica-identity failure, WAL pressure, and redaction-leak injection; fault injection before, during, and after every local-intent/remote-write/acknowledgement transition; logical-ID conflict and unknown-result reconciliation; direct-ZenDB authorization negatives and post-upgrade grant audits; and independent record/relation/financial reconciliation. No unmerged or future ZenDB change is assumed.
+- Migration: deterministic byte/hash golden tests; a PostgreSQL logical-slot/exported-snapshot rehearsal that proves contiguous complete transactions through a final barrier under decoder restart, replica-identity failure, WAL pressure, and redaction-leak injection; fault injection before, during, and after every local-intent/external-call/acknowledgement transition; logical-ID conflict and unknown-result reconciliation; direct-ingress authorization negatives and post-upgrade state recovery audits; and independent record/relation/financial reconciliation. No unmerged or future ZenDB change is assumed.
 - Security: authorization matrix, malicious SNS/governance, frontend supply chain, `join-proxy` reuse/fallback/privacy, webhook replay/order, ambiguous sends, reorg/finality, treasury caps/pause/recovery path.
 - Supply chain: inventory actual legacy rollback and target frontend dependencies; remove unused wallet/browser adapters, run production advisory scans, and document exploitability/containment for every remaining high/critical advisory before shipping an affected bundle.
 - Privacy: test the default-deny public field allowlist, PII retention/cryptographic-erasure and backup-restore behavior, access-audit queries, and every approved social/wallet disclosure.
 - Reproducibility: rebuild Wasm/assets in clean CI and compare hashes before governance proposal.
 
-## G1 decision requested
+## Recorded G1 decision
 
-Approve or amend these six architecture choices:
+The owner approved these six architecture choices on 2026-10-30:
 
 1. Retain the React/Vite/TypeScript frontend and deploy its pinned reproducible static bundle to the certified frontend canister. Remove the legacy Node backend/REST bearer-token deployment only at M10 after the rollback window closes; Node.js remains a build-time dependency, never a canister runtime.
-2. Use ZenDB collections as the proposed PostgreSQL/Prisma destination, including candidate authoritative core/workflow/financial/replay/migration collections, subject to the M1 atomicity/recovery proof and collection-specific G2 exceptions.
+2. Use ZenDB only as a proposed private in-process library for the PostgreSQL/Prisma destination, including candidate authoritative core/workflow/financial/replay/migration collections. The owning actor's typed methods are the authorization boundary; M1 must prove bounded persistence, exact state-preserving upgrade, and recovery, while G2 records any collection-specific alternative.
 3. Enforce authorization, relationship, uniqueness, money, and replay invariants in Motoko method bodies and durable sagas; ZenDB schemas, constraints, and indexes never replace those controls.
 4. Treat Internet Identity and OAuth through `indentify` as peer authentication methods, while binding every authorization decision to the authenticated Candid caller and separating payout destinations from login identities.
 5. Replace server-held keys with a unified treasury's Chain Fusion authority for approved native networks, retaining ICRC/ck assets only where their ledger/minter path is selected; every adapter still requires testnet approval.

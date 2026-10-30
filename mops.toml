@@ -1,0 +1,47 @@
+[package]
+name = "meritocracy-icp"
+version = "0.0.1"
+description = "Pinned local-only ICP migration fixtures."
+license = "AGPL-3.0-only"
+
+[dependencies]
+base = "0.16.0"
+identify = "0.0.2"
+
+[toolchain]
+moc = "0.16.3"
+pocket-ic = "12.0.0"
+wasmtime = "43.0.0"
+
+[moc]
+args = ["--default-persistent-actors"]
+
+[canisters.core_canister]
+main = "canisters/core/main.mo"
+
+[canisters.core_canister.check-stable]
+path = "canisters/core/core.most"
+
+[canisters.workflow_canister]
+main = "canisters/workflow/main.mo"
+
+[canisters.workflow_canister.check-stable]
+path = "canisters/workflow/workflow.most"
+
+[canisters.treasury_canister]
+main = "canisters/treasury/main.mo"
+
+[canisters.treasury_canister.check-stable]
+path = "canisters/treasury/treasury.most"
+
+[canisters.frontend_canister]
+main = "canisters/frontend/main.mo"
+
+[canisters.frontend_canister.check-stable]
+path = "canisters/frontend/frontend.most"
+
+[canisters.oauth_attempt_fixture]
+main = "canisters/oauth_attempt_fixture/main.mo"
+
+[canisters.oauth_attempt_fixture.check-stable]
+path = "canisters/oauth_attempt_fixture/oauth_attempt_fixture.most"

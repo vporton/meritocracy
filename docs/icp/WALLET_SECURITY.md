@@ -2,6 +2,12 @@
 
 Status: G1 architectural direction and G3 design draft. No wallet code, canister, key migration, or asset transfer has been performed.
 
+> **Proposed G1 amendment, owner-selected 2026-10-30.** Treasury storage is
+> private in-process state, optionally using ZenDB as a library; it is not a
+> remote ZenDB canister and has no role/grant or direct-caller surface. The
+> treasury's typed methods enforce all authorization. This is not G1/G3
+> approval and does not authorize custody implementation.
+
 ## Security objective and terminology
 
 The target eliminates server-held signing keys. It does **not** claim that automated treasury custody is “non-custodial” to recipients: assets held by a canister are controlled by the canister's code and whoever can change that code. Chain Fusion removes a single stored private key/custodian, but governance and code remain part of the custody trust model.
@@ -62,13 +68,13 @@ ICP's current Chain Fusion model provides threshold ECDSA/Schnorr signatures, na
 
 ## Unified Chain Fusion treasury
 
-One SNS-controlled `treasury_canister` is the sole application authority for both accounting and custody. It is not blackholed and there is no separate vault canister. Its proposed pinned ZenDB canister is a treasury-role-restricted storage dependency, not an independently callable accounting authority. The treasury canister owns:
+One SNS-controlled `treasury_canister` is the sole application authority for both accounting and custody. It is not blackholed and there is no separate vault canister. Its proposed private in-process storage library is not independently callable accounting authority. The treasury canister owns:
 
 - double-entry accounting journal, obligations and holds, payment-cycle/rounding/remainder policy, immutable payment intents/destination snapshots, reconciliation reports, and stable scheduler/cursors;
 - ICP/ICRC accounts/subaccounts, Chain Fusion key-derivation paths and signing requests, immutable operation receipts, and chain nonce/sequence/UTXO reservations;
 - asset/network allowlists, transaction and rolling-window caps, fee caps, destination encoding validation, and immediate pause state.
 
-Every payment method authenticates its caller and authorizes the exact action in the treasury canister before signing/sending. Because its ZenDB receipt collection is remote, “persists the operation receipt” means the treasury first commits a native durable intent, writes the receipt under the immutable application `operationId` logical key, and confirms the stored content hash before any signing call. The treasury canister alone has collection-scoped write/read capability; users, browsers, other application canisters, operators, and pause-only principals have no direct receipt-collection access, while ZenDB administration remains governance-only. The method binds:
+Every payment method authenticates its caller and authorizes the exact action in the treasury canister before signing/sending. “Persists the operation receipt” means the treasury first commits a native durable intent, writes the receipt under the immutable application `operationId` logical key in private storage, and confirms the stored content hash before any signing call. Users, browsers, other application canisters, operators, and pause-only principals have no direct receipt-collection access because no receipt-storage Candid endpoint exists. The method binds:
 
 ```text
 operationId

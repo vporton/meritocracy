@@ -1,0 +1,20 @@
+Meritocracy
+Copyright 2025-2026 Victor Porton and contributors.
+
+The repository work is licensed under GNU Affero General Public License v3.0
+only; see LICENSE.txt.
+
+Historical license texts preserved for provenance
+-----------------------------------------------
+Earlier repository revisions carried an Apache-2.0 text and a Victor Porton
+MIT notice. They are retained verbatim at:
+
+* licenses/Apache-2.0-historical.txt
+* licenses/MIT-historical.txt
+
+They describe earlier licensing notices and do not license the current
+repository work under Apache-2.0 or MIT.
+
+Third-party dependencies are not relicensed by this repository notice. Their
+license obligations remain those supplied with the dependency artifacts and
+are recorded by the package-manager lockfiles.

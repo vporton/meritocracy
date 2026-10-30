@@ -313,7 +313,9 @@ POST /api/users
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GNU Affero General Public License v3.0 only;
+see [LICENSE.txt](LICENSE.txt). Historical Apache-2.0 and MIT texts retained
+from earlier repository releases are identified in [NOTICE](NOTICE).
 
 ## 🔍 Troubleshooting
 

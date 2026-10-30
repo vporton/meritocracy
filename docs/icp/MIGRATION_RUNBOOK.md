@@ -2,6 +2,12 @@
 
 Status: G1 design draft. This document specifies the protocol; it does not authorize access to production, creation of a replication slot/trigger, a production import, DNS changes, or asset movement. Concrete types, limits, operator identities, and timing are finalized at G2. Production execution requires G4.
 
+> **Proposed G1 amendment, owner-selected 2026-10-30.** Import staging,
+> receipts, and archive state are private in-process storage of the owning
+> actor, not remote ZenDB canisters. The importer obtains only a bounded
+> application capability; no direct ZenDB role or Candid method exists. This
+> proposal does not approve G1/G2/G4 or authorize an import.
+
 ## Safety contract
 
 - PostgreSQL remains authoritative until the recorded G4 cutover step. The legacy application stays runnable and is not retired by an export.
@@ -158,7 +164,7 @@ Import mode is disabled by default. Governance enables exactly one import sessio
 - `dryRun` versus `stageOnly` mode;
 - explicit denial of ledger, signing, asset activation, and normal user-write capabilities.
 
-Canister caller authentication and governance approval bind the session. The approved importer calls only the application import API and receives no direct ZenDB role. The import capability in that application is time/session-bounded. Its ZenDB role remains limited to the approved owning-application collection matrix; if separate staging deployments/collections require an additional temporary writer grant, governance records its expiry and revokes or downgrades it at abort/finalization. Browsers, users, unrelated canisters, and the importer principal cannot call ZenDB directly. A copied chunk submitted by another principal or to another module/migration is rejected. The unified treasury exposes no migration import method.
+Canister caller authentication and governance approval bind the session. The approved importer calls only the application import API; its capability is time/session-bounded. Browsers, users, unrelated canisters, and the importer principal cannot call raw storage because no storage Candid method exists. A copied chunk submitted by another principal or to another module/migration is rejected. The unified treasury exposes no migration import method.
 
 ### State machine
 
@@ -174,19 +180,19 @@ PENDING -> IMPORTING -> SEALED -> VALIDATED -> FINALIZED
 - Identical duplicate: return the original receipt and make no writes.
 - Same ordinal/key range with another hash: reject and pause the table.
 - Out-of-order chunk: reject unless its dependency-safe parallel lane was declared in the manifest.
-- A bounded application message validates the chunk and persists a native durable intent before calling ZenDB. The intent records migration/table/chunk logical key, payload/content hashes, target collection/schema, operation/attempt ID, and phase. It does not claim that application state, remote staging records, indexes, and a receipt commit atomically across an inter-canister `await`.
-- Staged records and the authoritative ZenDB chunk receipt use unique indexed application logical keys, including `(migration,table,chunk)` for the receipt. Unless the exact G2-pinned ZenDB API proves caller-supplied document IDs, generated ZenDB document IDs are non-authoritative metadata. After the remote call, application code reloads the intent and acknowledges success only when lookup by logical key returns the expected content hash. An absent key may be retried with the identical key and bytes; a different hash pauses the table as a conflict. No retry creates a new key or blind duplicate.
-- If a chunk requires staging records and its receipt to be atomically committed inside ZenDB, the pinned deployment must expose one bounded ZenDB-side method that performs and tests that operation without an intervening `await`. Otherwise the importer stages each record as pending, acknowledges all hashes, writes and acknowledges the receipt, and only then advances a separately acknowledged manifest/visibility pointer; partial work remains invisible and resumable.
+- A bounded application message validates the chunk and persists a native durable intent before any external/cross-canister work. The intent records migration/table/chunk logical key, payload/content hashes, target collection/schema, operation/attempt ID, and phase. Private staging records, indexes, and receipt updates are one actor-state transition; they must still be bounded, idempotent, and proven to survive exact state-preserving upgrades.
+- Staged records and the authoritative chunk receipt use unique indexed application logical keys, including `(migration,table,chunk)` for the receipt. Library-generated document IDs, if any, are non-authoritative metadata. Application code acknowledges success only when its logical key returns the expected content hash. A different hash pauses the table as a conflict. No retry creates a new key or blind duplicate.
+- If a chunk needs an external archive or another canister, it stages private pending state, journals before the call, acknowledges the same logical ID/hash afterward, and only then advances a separately acknowledged manifest/visibility pointer; partial work remains invisible and resumable.
 - `SEALED`: expected last chunk/count/roots match; no more chunks accepted.
 - `VALIDATED`: uniqueness, references, type rules, source/target hashes, derived indexes, and exception counts pass.
-- `FINALIZED`: historical import is immutable and import methods are disabled. Any separate staging-only application writer grant is revoked or downgraded; a normal owning-application role remains only where required by the approved live collection matrix, and the approved read-only audit path remains. Controller governance can technically upgrade mutable application canisters, which is why module/controller/RBAC verification remains part of G4.
+- `FINALIZED`: historical import is immutable and import methods are disabled. Any temporary application import capability is revoked; only explicitly designed bounded audit methods remain. Controller governance can technically upgrade mutable application canisters, which is why module/controller and method-surface verification remains part of G4.
 
 Every confirmed receipt includes caller, time, migration/table/chunk logical IDs, any observed ZenDB document IDs as non-authoritative metadata, previous/new state, row/byte counts, hashes, application and ZenDB module/API hashes, and operation/attempt ID. `status(migrationId, table)` reconciles native intents with bounded ZenDB logical-key/hash lookups, and paginated receipt queries allow safe resume without trusting the operator's local state.
 
 ### Partial batches and duplicates
 
 - Staged row fragments, pending records, and their indexes are excluded by application visibility/version predicates until the whole chunk is acknowledged and its manifest pointer is active.
-- A trap may leave only the local intent, some remote pending records, or a remote write whose reply was lost. The sender queries application status; the application reconciles each logical key and hash before resuming or retrying the exact bytes. It never infers absence from a missing callback.
+- A trap may leave only the local intent, private pending records, or an external call whose reply was lost. The sender queries application status; the application reconciles each logical key and hash before resuming or retrying the exact bytes. It never infers absence from a missing callback.
 - A source primary-key duplicate is preserved with a duplicate exception if the table lacks enforceable uniqueness. A target unique-key collision never chooses a winner implicitly.
 - Referential indexes are built/checked deterministically. A table cannot reach `VALIDATED` while an unresolved blocking orphan remains.
 - Derived/rebuildable indexes carry their own count/hash and can be dropped and rebuilt without changing authoritative records.
@@ -347,7 +353,7 @@ Immediately pause and preserve evidence if any of the following occurs:
 - source identity/schema/tool/module/manifest hash differs;
 - a supposedly read-only export attempts a write;
 - the base snapshot is not the capture slot's exported snapshot, a commit-LSN/transaction-root coverage gap or duplicate appears, a replica identity is unusable, a slot becomes invalid/falls behind its retention budget, or a source schema/publication/redaction-projection hash changes;
-- the exact ZenDB source/dependency/Candid/Wasm pin or approved RBAC grant matrix differs, a revoked bootstrap/deployer/importer role reappears, or a direct unauthorized ZenDB call succeeds;
+- the exact ZenDB source/dependency/Wasm pin differs, an unapproved public storage method appears, or direct ingress succeeds without the owning actor's exact caller/resource/action authorization;
 - a sensitive projection lacks its approved lifecycle/access/backup exception record, an unapproved raw social/wallet correlation enters a public projection, or a legacy sender is neither paused nor covered by the signed temporary exception inventory;
 - unexpected writer, cron, or payment sender is active during freeze;
 - count, row/table/Merkle hash, relation, unique key, sequence, index, or financial equation differs;
@@ -367,9 +373,9 @@ Migration is complete only when:
 - the signed capture chain proves the exported base snapshot, contiguous complete transactions from its slot consistent point through the final barrier LSN, acknowledged target transaction root, replica-identity coverage, and no manual slot advance/recreation;
 - destination projection roots independently match;
 - financial equations have zero unexplained difference and every ambiguous operation remains held/resolved with evidence;
-- importer, application, unified treasury, assets, governance, and ZenDB canister IDs/module/API hashes/controllers match the approved record; the ZenDB source/dependency/Candid/Wasm pin is reproduced;
-- every native intent is acknowledged or explicitly blocked, no pending record is visible, and the approved ZenDB collection grant matrix passes direct-ingress and post-upgrade negative tests;
-- import mode and legacy writers/payment workers are disabled; bootstrap/deployer/importer roles and any staging-only application writer grant are revoked or downgraded as planned; normal owning-application roles exactly match the approved live collection matrix;
+- importer, application, unified treasury, assets, and governance canister IDs/module/API hashes/controllers match the approved record; the private ZenDB source/dependency/Wasm pin is reproduced;
+- every native intent is acknowledged or explicitly blocked, no pending record is visible, and owning-actor direct-ingress and post-upgrade authorization tests pass;
+- import mode and legacy writers/payment workers are disabled; temporary application import capability is revoked or downgraded as planned, while normal owning-actor methods remain limited to the approved caller/resource/action matrix;
 - base/delta artifacts, CDC payloads, redacted outbox rows, and reports pass the no-secret/bearer/raw-token scan; the retained capture slot/publication/redaction artifacts and their cleanup/rollback owner are recorded;
 - the signed machine report and rollback decision are archived;
 - parity and observation criteria in `PARITY_CHECKLIST.md` and `ROLLBACK_PLAN.md` pass.

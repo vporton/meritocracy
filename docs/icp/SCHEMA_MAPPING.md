@@ -2,6 +2,14 @@
 
 Status: complete source inventory and G1-level proposed disposition; concrete Motoko/ZenDB collection schemas, mutation-recovery protocols, indexes, and measured limits require G2 approval.
 
+> **Proposed G1 amendment, owner-selected 2026-10-30.** This mapping no
+> longer proposes remote ZenDB collections or ZenDB RBAC as a target boundary.
+> A candidate ZenDB implementation is private in-process storage owned by the
+> relevant application/treasury actor. All earlier references to a remote
+> collection grant, direct ZenDB caller, or remote-write saga are superseded:
+> the actor's typed caller/resource/action checks and its durable intents are
+> authoritative. This remains a G1 proposal, not implementation approval.
+
 ## Completeness boundary
 
 The source schema contains 21 Prisma models and 18 SQL migrations. Migration `20260711000000_compact_ai_results` also creates physical table `ai_result_migration_exceptions`, which is absent from Prisma. The migration therefore covers 22 physical tables. All are mapped below.
@@ -28,14 +36,14 @@ Canonical encoding details are in `MIGRATION_RUNBOOK.md`.
 
 ## Target stores
 
-- `core/ZenDB`: versioned identity/role/profile/KYC/hold collections with explicit unique/sorted indexes and Motoko-authenticated mutation/recovery sagas in `core_canister`.
-- `workflow/ZenDB`: canonical AI result/source, redacted audit, stable schedule/cursor, completion-receipt, and final-publication collections in `workflow_canister`. New AI execution has no task/DAG/lease/provider-batch collections; fixed bounded `llm` operations execute directly in versioned Motoko code.
-- `treasury/ZenDB`: append-only accounting, payment obligations/operations/attempts, and replay/finality collections with Motoko operation/reconciliation protocol in the unified treasury.
-- `evidence/ZenDB`: encrypted PII evidence plus Motoko access/hash indexes; no public document query.
-- `archive/ZenDB`: versioned, replaceable document collections for large AI/audit/raw legacy payloads.
+- `core/private-storage`: versioned identity/role/profile/KYC/hold collections with explicit unique/sorted indexes and Motoko-authenticated mutation/recovery state in `core_canister`.
+- `workflow/private-storage`: canonical AI result/source, redacted audit, stable schedule/cursor, completion-receipt, and final-publication collections in `workflow_canister`. New AI execution has no task/DAG/lease/provider-batch collections; fixed bounded `llm` operations execute directly in versioned Motoko code.
+- `treasury/private-storage`: append-only accounting, payment obligations/operations/attempts, and replay/finality collections with Motoko operation/reconciliation protocol in the unified treasury.
+- `evidence/private-storage`: encrypted PII evidence plus Motoko access/hash indexes; no public document query.
+- `archive/private-storage`: versioned, replaceable document collections for large AI/audit/raw legacy payloads.
 - `historical-only`: imported for audit/reconciliation but never accepted as a live credential or secret.
 
-ZenDB is the proposed PostgreSQL/Prisma destination, including the collections above. M1 must prove each collection's mutation/recovery behavior under remote-call interruption, duplicate delivery, upgrades, and low cycles. Application code—not ZenDB constraints, indexes, or UI behavior—authenticates callers and enforces authorization, referential integrity, uniqueness, money, and replay rules. Independently, each ZenDB collection grants minimum read/write capability only to its owning application canister, grants administration only to approved governance/SNS, denies browsers/users/import operators/unrelated canisters, and has bootstrap/deployer roles revoked before authority. If the pinned API has only instance-wide roles, separate ZenDB deployments enforce distinct collection grant boundaries. A failed mutation or RBAC proof requires a G2-approved, collection-specific native-Motoko exception.
+ZenDB is proposed only as a private in-process PostgreSQL/Prisma destination library, including the collections above. M1 must prove each collection's mutation/recovery behavior under duplicate delivery, upgrades, low cycles, and every external/cross-canister interruption. Application code—not library constraints, indexes, or UI behavior—authenticates callers and enforces authorization, referential integrity, uniqueness, money, and replay rules. There is no direct ZenDB caller, role/grant, or separate administration path: browsers, users, import operators, and unrelated canisters are denied by the owning actor's public methods. A failed persistence, mutation, or recovery proof rejects that candidate or requires a G2-approved, collection-specific alternative.
 
 Each document carries a unique indexed application logical ID, version, and content hash. That key, not a ZenDB-generated internal document ID, is the stable source/migration/idempotency identity unless the exact G2-pinned API proves caller-supplied IDs. The canonical audit map records `source ID -> application logical ID` and may record an observed ZenDB document ID only as non-authoritative storage metadata. An unknown insert/update is looked up by logical ID: the desired version/hash means acknowledged success; an absent insert or unchanged expected prior version/hash permits retry of the identical insert/CAS; any other version/hash is a blocking conflict.
 
@@ -179,7 +187,7 @@ ZenDB indexes are never relied on to enforce a cross-collection FK or financial 
 | 16 | Two-stage preparation failure | Append failure, no executable orphan operation |
 | 17 | Compensation marks failed/deferred processed and creates pending | One per-user/per-asset compensation operation. Due flag clears only after confirmed/reconciled terminal result; unrelated assets cannot match |
 
-Every ZenDB-backed row above uses the same boundary: the application first persists a durable intent with collection, logical ID, desired hash, expected prior version/hash for CAS, operation/attempt ID, and phase; the remote write uses that immutable key; the callback reloads state and confirms the key/version/hash before activation. Unknown results are reconciled before retry without overwriting a concurrent result. Multi-record transitions use pending versions plus a manifest/visibility pointer, or one bounded ZenDB-side atomic method proven against the exact G2 pin. Cross-canister stages use durable outbox/inbox IDs and never assume atomicity across `await`; duplicate callbacks are idempotent and conflicting hashes fail closed.
+Every private-storage-backed row above uses the same boundary: the application first persists a durable intent with collection, logical ID, desired hash, expected prior version/hash for CAS, operation/attempt ID, and phase before any external or cross-canister `await`. Private writes use that immutable key; recovery reloads state and confirms the key/version/hash before activation. Unknown external results are reconciled before retry without overwriting a concurrent result. Multi-record transitions use pending versions plus a manifest/visibility pointer, or one bounded in-actor update proven against the exact G2 pin. Cross-canister stages use durable outbox/inbox IDs and never assume atomicity across `await`; duplicate callbacks are idempotent and conflicting hashes fail closed.
 
 ## Non-transactional legacy sequences requiring explicit correction
 

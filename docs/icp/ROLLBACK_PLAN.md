@@ -2,6 +2,13 @@
 
 Status: G1 design draft. Recovery objectives, named owners, canister IDs, module hashes, and commands are finalized at G2–G4. This plan does not authorize a production change or asset movement.
 
+> **Proposed G1 amendment, owner-selected 2026-10-30.** Storage is private
+> in-process state of its owning actor, optionally backed by a ZenDB library;
+> remote ZenDB deployments, grant matrices, and direct storage callers are
+> rejected. Recovery evidence therefore verifies actor method authorization,
+> private-state hashes/receipts, and exact state-preserving upgrades. This is
+> a planning amendment only, not G1 approval.
+
 ## Non-negotiable rules
 
 - PostgreSQL and the legacy application remain recoverable and runnable until parity, data reconciliation, financial reconciliation, and the post-cutover observation window have passed.
@@ -38,7 +45,7 @@ Before any production freeze, independently verify:
 - G2-approved sensitive-data lifecycle/disclosure record: purpose/data controller/legal basis, retention/cryptographic-erasure, backup/restore, access audit, accounting/anti-evasion exceptions, and public field allowlist/consent decisions;
 - every canister ID, subnet, controller/governance principal, module hash, Candid interface, stable signature, certified-asset root, and sufficient cycle balance;
 - the recorded SNS launch/ownership decision, local/PocketIC controller evidence, and the G4 testflight's isolated canister IDs, test-only derivation/environment, cycle budget, root-controller transition, and recovery/abort proof; testflight artifacts are distinct from production artifacts;
-- the exact ZenDB source/dependency/Candid/Wasm hashes, canister and collection routing, approved per-collection RBAC grant matrix, bootstrap/deployer/import grant revocation evidence, logical-ID/content-hash checkpoints, and native-intent/remote-receipt reconciliation root;
+- the exact storage-library source/dependency/build hashes, private collection routing, actor authorization-policy hash, logical-ID/content-hash checkpoints, and native-intent/receipt reconciliation root;
 - current and previous stable-compatible Wasm artifacts and tested upgrade/downgrade/forward-repair procedures;
 - DNS/CDN/custom-domain configuration, TTLs, asset routing, monitoring, and reversible traffic-switch commands;
 - chain/ledger evidence for every payment operation active near cutover and a hard proof that legacy cron/payment workers are stopped;
@@ -155,21 +162,21 @@ Legacy secrets/keys, PostgreSQL, replication artifacts, and deployments are reti
 
 Before each upgrade:
 
-1. record current/proposed module hashes, Candid interface, stable signature, migration function/version, controllers, cycles, certified roots, exact ZenDB source/dependency/Candid/Wasm pin, and approved collection RBAC matrix;
+1. record current/proposed module hashes, Candid interface, stable signature, migration function/version, controllers, cycles, certified roots, exact private ZenDB source/dependency/Wasm pin, and the owning actor's approved method authorization matrix;
 2. test upgrade from a production-shaped snapshot at expected and 2× capacity, including interruption and timer restoration;
 3. export authoritative state/hash checkpoints and verify backups/rebuildable indexes;
 4. pause high-risk writes and payment construction if the canister participates in finance;
 5. upgrade one shadow/test canister, then staged production canisters where topology permits;
-6. verify state/count/hash/index/certification/timers, reconcile all native intents by logical ID/hash, and audit exact ZenDB grants before resuming.
+6. verify state/count/hash/index/certification/timers, reconcile all native intents by logical ID/hash, and audit the owning actor's exact method authorization boundary before resuming.
 
-If a stable-compatible previous Wasm can read the evolved state, governance may downgrade after rehearsal. Otherwise deploy a forward repair. Never use reinstall on an authoritative production canister. ZenDB schema changes use a shared migration epoch and new `collection_vN`; copy pending records in bounded batches with logical-ID/hash reconciliation, drain intents, verify counts/hashes and the new collection's RBAC, then switch the router through one acknowledged visibility update. Retain the old collection read-only, with its prior grant record, through the rollback window; a router switch is not described as atomic with the preceding cross-canister copies.
+If a stable-compatible previous Wasm can read the evolved state, governance may downgrade after rehearsal. Otherwise deploy a forward repair. Never use reinstall on an authoritative production canister. ZenDB schema changes use a shared migration epoch and new `collection_vN`; copy pending records in bounded batches with logical-ID/hash reconciliation, drain intents, verify counts/hashes, then switch the router through one acknowledged visibility update. Retain the old collection read-only through the rollback window; a router switch is not described as atomic with the preceding cross-canister copies.
 
 ## Controller or credential compromise
 
 Assume a malicious controller of a mutable canister can install arbitrary code and read/use secrets available to that canister.
 
 - Safety responders pause through a capability that cannot upgrade, resume, change destinations, or raise caps.
-- Governance removes compromised mutable controllers/keys and unauthorized ZenDB roles, verifies module hashes and the exact collection grant matrix, rotates API/OAuth/webhook/email credentials, invalidates importer sessions and temporary DB grants, and deploys clean canisters from reproducible artifacts. Bootstrap/deployer roles must not be restored as a side effect.
+- Governance removes compromised mutable controllers/keys, verifies module hashes and the owning actor's exact authorization matrix, rotates API/OAuth/webhook/email credentials, invalidates importer sessions and temporary application capabilities, and deploys clean canisters from reproducible artifacts. A storage-library role is never restored or treated as an authorization control.
 - The unified treasury has no exportable signing secret. An SNS-controlled upgrade can request signatures, so proposal delay, safety pause, caps, reproducible artifacts, controller/module verification, and reconciliation bound and detect damage; the controller cannot be treated as a multisig merely because several principals are listed.
 - Chain-key master material is not exportable as a legacy backup. Recovery relies on the approved canister/subnet/governance architecture and any predesigned successor mechanism.
 - Internet Identity or user-principal compromise is handled as an account recovery/hold event; it does not authorize governance or arbitrary payout changes.

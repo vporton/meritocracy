@@ -1,6 +1,15 @@
 # Legacy-to-ICP feature parity checklist
 
-Last updated: 2026-07-31. This is the exhaustive G1 audit baseline. It records legacy behavior and proposed target disposition; it is not implementation evidence.
+Last updated: 2026-10-30. This is the exhaustive G1 audit baseline plus
+scoped M1 evidence. It records legacy behavior and approved target disposition;
+only rows explicitly linked to M1 evidence are implementation evidence.
+
+> **Approved G1 amendment, owner-selected 2026-10-30.** All target
+> dispositions use private in-process storage inside their owning Motoko actor.
+> The previous remote ZenDB/RBAC topology is rejected: no checklist item may
+> treat a ZenDB grant, controller list, or remote collection endpoint as an
+> authorization boundary. G1 approval authorizes M1 only; every item remains
+> blocked at its stated later gate until its own evidence and approval exist.
 
 ## Status vocabulary
 
@@ -12,7 +21,18 @@ Last updated: 2026-07-31. This is the exhaustive G1 audit baseline. It records l
 - `INTENTIONALLY_CHANGED`: unsafe/incorrect legacy semantics will not be reproduced; the approved replacement must still preserve legitimate state, money, and history.
 - `RETIRED`: the approved architecture makes the feature unnecessary and its removal has acceptance evidence.
 
-Unless a row says otherwise, source status is `AUDITED`, target design is `DESIGNED`, and implementation is `BLOCKED_G1`. No row is currently implemented or verified on ICP.
+Unless a row says otherwise, source status is `AUDITED`, target design is `DESIGNED`, and implementation remains blocked at its stated later gate. The M1 toolchain/Candid/stable baseline and local OAuth-attempt vector are not a deployed ICP feature.
+
+## M1 baseline evidence
+
+`dfx.json` pins DFX 0.32.0; `mops.toml`/`mops.lock` pin Motoko 0.16.3,
+PocketIC 12.0.0, Wasmtime 43.0.0 and the exact `identify@0.0.2` dependency
+closure. Empty Candid and `.most` baselines exist for the core, workflow,
+treasury, frontend, and local OAuth-vector fixture actors. The local vector in
+`test/OAuthAttempt.test.mo` proves only caller/state/expiry/provider negative
+handling and makes no provider request or identity binding. Its package/API
+pin and all-provider-disabled capability matrix are in
+`IDENTIFY_PIN_AND_PROVIDER_MATRIX.md`.
 
 ## Global parity rule
 
@@ -232,8 +252,8 @@ Parity means preserving intended user/business capability, authorization, histor
 | DM-001 | 21 Prisma models | Every model/field maps in `SCHEMA_MAPPING.md`; count/hash/type golden tests | DESIGNED / BLOCKED_G2 |
 | DM-002 | Unmanaged `ai_result_migration_exceptions` physical table | Explicit 22nd table export/import/count/hash and restricted payload handling | DESIGNED / BLOCKED_G2 |
 | DM-003 | 18 SQL migrations and Prisma migration history | Hash/record migration SQL, physical schema, sequence state, data-rewrite exceptions | DESIGNED / BLOCKED_G2 |
-| DM-004 | All PKs, uniques, indexes, relations, delete rules | Explicit ZenDB representation, unique application logical IDs/content hashes, Motoko enforcement, least-privilege collection RBAC, collection-vN rebuild, and mutation-recovery tests | DESIGNED / BLOCKED_G2 |
-| DM-005 | 17 explicit Prisma transaction call sites | Motoko-authorized durable intent/write/acknowledgement saga mapping over ZenDB collections; no cross-canister atomicity claim; failure injection at every phase | DESIGNED / BLOCKED_G2 |
+| DM-004 | All PKs, uniques, indexes, relations, delete rules | Explicit private-store representation, unique application logical IDs/content hashes, Motoko enforcement, collection-vN rebuild, and mutation-recovery tests | DESIGNED / BLOCKED_G2 |
+| DM-005 | 17 explicit Prisma transaction call sites | Motoko-authorized durable intent/write/acknowledgement saga mapping over private storage; no cross-canister atomicity claim; failure injection at every phase | DESIGNED / BLOCKED_G2 |
 | DM-006 | Non-transactional financial/task/KYC/AI sequences | Correct target semantics, preserve resulting legacy history/exceptions | INTENTIONALLY_CHANGED / BLOCKED_G2/G3 |
 | DM-007 | PostgreSQL `SERIAL` IDs | Exact stable `legacyId` maps to a unique application logical ID with no reuse and disjoint new allocation; generated ZenDB document ID is non-authoritative metadata unless caller-supplied IDs are proven against the pin | DESIGNED / BLOCKED_G2 |
 | DM-008 | `TIMESTAMP(3)` without timezone | Recorded timezone assumption/source form; ambiguity report blocks activation | DESIGNED / BLOCKED_G2 |
@@ -270,9 +290,9 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/schedule/index/archive/provider/ledger health and alerts; no AI-task queue metric | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |
 | OP-014 | Controllers and deploy credentials | Recorded human SNS launch/ownership decision; local/PocketIC SNS controller proof; least controllers, emergency pause-only role, module transparency; G4-only isolated non-custodial mainnet testflight with a bounded approved cycle budget and recovery/abort evidence before the separately reviewed production handoff | DESIGNED / BLOCKED_G1/G3/G4 |
-| OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, ZenDB RBAC preservation/audit and drained-intent collection-vN switch, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
-| OP-016 | ZenDB dependency | Proposed authoritative and archive store; pin exact source/dependency/Candid/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, least-privilege collection RBAC and bootstrap revocation; run export/reindex/collection-vN/mutation-recovery tests; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_G1/G2 |
-| OP-016a | Repository licensing | G1 evidence inventories contributor/licensor authority, existing licenses/notices, package metadata, distributed artifacts, and third-party notices; any unresolved authority blocks G1. The first M1 implementation commit then relicenses the repository to AGPL-3.0 together with all required notice/metadata/distribution changes, preserves third-party notices, and records the reviewed artifact list | DESIGNED / BLOCKED_G1 |
+| OP-015 | Canister upgrades | Stable/Candid signature gates, production-shaped snapshot tests, private-store state recovery and drained-intent collection-vN switch, no authoritative reinstall | DESIGNED / BLOCKED_G2 |
+| OP-016 | ZenDB dependency | Proposed private in-process authoritative/archive store; pin exact source/dependency/Wasm hashes and AGPL-3.0 relicensing evidence; prove logical-ID/hash reconciliation, bounded private-store upgrade/recovery, export/reindex/collection-vN tests, and owning-actor direct-ingress denial; approve collection-specific fallback where proof fails; never assume an unmerged/future PR | DESIGNED / BLOCKED_G1/G2 |
+| OP-016a | Repository licensing | `AGPL_RELICENSING_INVENTORY.md` records the owner-confirmed contributor/disposition authority, current AGPL-3.0-only text, retained historical notices, package/lockfile metadata, and no-tracked-artifact finding as of 2026-10-30. Third-party dependencies remain under their own notices. The G1 gate accepted this evidence; later target implementation remains gated separately. | VERIFIED |
 | OP-016b | Retained React frontend build chain and legacy Node retirement | React/Vite/TypeScript is retained as a pinned reproducible build that deploys only certified static frontend-canister assets; no Node runtime is in a canister. The legacy Node backend/REST deployment remains runnable through the rollback window, then is retired at M10 without removing the target frontend build chain | DESIGNED / BLOCKED_G1/M10 |
 | OP-016c | Production dependency advisories | Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters; run a production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | DESIGNED / BLOCKED_G1/G2 |
 | OP-016d | PII lifecycle and public identifier disclosure | Before sensitive collection/import or public projection, record purpose/data controller/legal basis, minimization, encryption/key access, retention/cryptographic erasure, backup/restore, access audit, accounting/anti-evasion exceptions, and per-field public disclosure/consent; default deny raw social/wallet correlation | DESIGNED / BLOCKED_G2 |

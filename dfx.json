@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "dfx": "0.32.0",
+  "defaults": {
+    "build": {
+      "packtool": "mops sources"
+    }
+  },
+  "canisters": {
+    "core_canister": {
+      "type": "motoko",
+      "main": "canisters/core/main.mo",
+      "candid": "canisters/core/core.did"
+    },
+    "workflow_canister": {
+      "type": "motoko",
+      "main": "canisters/workflow/main.mo",
+      "candid": "canisters/workflow/workflow.did"
+    },
+    "treasury_canister": {
+      "type": "motoko",
+      "main": "canisters/treasury/main.mo",
+      "candid": "canisters/treasury/treasury.did"
+    },
+    "frontend_canister": {
+      "type": "motoko",
+      "main": "canisters/frontend/main.mo",
+      "candid": "canisters/frontend/frontend.did"
+    },
+    "oauth_attempt_fixture": {
+      "type": "motoko",
+      "main": "canisters/oauth_attempt_fixture/main.mo",
+      "candid": "canisters/oauth_attempt_fixture/oauth_attempt_fixture.did"
+    }
+  }
+}

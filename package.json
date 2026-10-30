@@ -25,7 +25,8 @@
     "deploy:staging": "./deploy/deploy-staging.sh",
     "prereqs": "docker build -t vporton/fly -f deploy/Dockerfile.fly . && docker image push vporton/fly",
     "test": "cd backend && npm run test",
-    "test:m1-private-store-upgrade": "node scripts/icp/private-store-upgrade-pocketic-proof.cjs"
+    "test:m1-private-store-upgrade": "node scripts/icp/private-store-upgrade-pocketic-proof.cjs",
+    "test:m1-canonical-vectors": "node --test scripts/icp/canonical-migration-vectors.test.cjs && node scripts/icp/canonical-migration-vectors.cjs fixtures/migration_canonical_v1.json"
   },
   "keywords": [
     "nodejs",

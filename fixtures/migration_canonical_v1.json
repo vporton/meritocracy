@@ -1,0 +1,28 @@
+{
+  "format": "meritocracy-migration-canonical-v1",
+  "row": {
+    "table": "users",
+    "pk": { "id": { "$int": "42" } },
+    "row": {
+      "createdAt": { "$timestamp": { "assumedZone": "UTC", "precision": { "$int": "3" }, "value": "2026-07-31T12:34:56.789Z" } },
+      "email": "alice@example.invalid",
+      "gdpShare": { "$decimal": { "coefficient": "1200", "scale": { "$int": "3" } } },
+      "id": { "$int": "42" },
+      "isOnboarded": true,
+      "name": "Alice"
+    }
+  },
+  "receipt": {
+    "migrationId": "m1-synthetic",
+    "table": "users",
+    "ordinal": 0,
+    "chunkHash": "72a8dd38a80f0a2c7152b24c981260ce5f5bb0d586f5d233268bf63ecf2a59cb"
+  },
+  "expected": {
+    "rowBytes": "{\"format\":\"meritocracy-migration-canonical-v1\",\"logicalId\":\"legacy/users/bb6b0d8b8e37897734ca77ca219888f66ec8b9b0558791976b5241bfafb8c2cd\",\"pk\":{\"id\":{\"$int\":\"42\"}},\"row\":{\"createdAt\":{\"$timestamp\":{\"assumedZone\":\"UTC\",\"precision\":{\"$int\":\"3\"},\"value\":\"2026-07-31T12:34:56.789Z\"}},\"email\":\"alice@example.invalid\",\"gdpShare\":{\"$decimal\":{\"coefficient\":\"1200\",\"scale\":{\"$int\":\"3\"}}},\"id\":{\"$int\":\"42\"},\"isOnboarded\":true,\"name\":\"Alice\"},\"sourceRowHash\":\"a4f1ffbbac28ba182c28d625d0f5a4b41ed371077ff0920f7f4b62c5528f1ab7\",\"table\":\"users\"}",
+    "rowHash": "a4f1ffbbac28ba182c28d625d0f5a4b41ed371077ff0920f7f4b62c5528f1ab7",
+    "repeatBytes": "{\"format\":\"meritocracy-migration-canonical-v1\",\"logicalId\":\"legacy/users/bb6b0d8b8e37897734ca77ca219888f66ec8b9b0558791976b5241bfafb8c2cd\",\"pk\":{\"id\":{\"$int\":\"42\"}},\"row\":{\"createdAt\":{\"$timestamp\":{\"assumedZone\":\"UTC\",\"precision\":{\"$int\":\"3\"},\"value\":\"2026-07-31T12:34:56.789Z\"}},\"email\":\"alice@example.invalid\",\"gdpShare\":{\"$decimal\":{\"coefficient\":\"1200\",\"scale\":{\"$int\":\"3\"}}},\"id\":{\"$int\":\"42\"},\"isOnboarded\":true,\"name\":\"Alice\"},\"sourceRowHash\":\"a4f1ffbbac28ba182c28d625d0f5a4b41ed371077ff0920f7f4b62c5528f1ab7\",\"table\":\"users\"}",
+    "receiptBytes": "{\"chunkHash\":\"72a8dd38a80f0a2c7152b24c981260ce5f5bb0d586f5d233268bf63ecf2a59cb\",\"format\":\"meritocracy-migration-canonical-v1\",\"logicalId\":\"receipt/m1-synthetic/users/0\",\"migrationId\":\"m1-synthetic\",\"ordinal\":{\"$int\":\"0\"},\"receiptHash\":\"d705aa3fdff70dba2a2bd82d08a1c170e34e27c401dbfeb91307e4a1d7506fb7\",\"table\":\"users\"}",
+    "receiptHash": "d705aa3fdff70dba2a2bd82d08a1c170e34e27c401dbfeb91307e4a1d7506fb7"
+  }
+}

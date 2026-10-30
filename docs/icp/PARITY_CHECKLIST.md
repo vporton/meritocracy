@@ -51,6 +51,17 @@ itself retains no storage Candid API. This is foundation evidence only and does
 not verify actual inter-canister denial, the later schema, cursor,
 collection-vN, saga, crash, or low-cycle obligations.
 
+`scripts/icp/canonical-migration-vectors.cjs` plus
+`fixtures/migration_canonical_v1.json` provide an offline M1 golden vector for
+the versioned canonical codec. It rejects ordinary JavaScript numbers and
+prohibited raw secret/token fields, derives a logical ID from the source table
+and canonical primary key, and locks canonical row/receipt bytes and SHA-256
+hashes across repeated runs. The source slot/exported-snapshot/consistent-point
+delta contract is specified in `MIGRATION_RUNBOOK.md`; it is not a production
+slot or rehearsal. `M1_DEPENDENCY_INVENTORY.md` records that the local
+production closure check currently fails and that current online advisory
+metadata was not authorized, so dependency acceptance remains blocked.
+
 ## Global parity rule
 
 Parity means preserving intended user/business capability, authorization, history, and financial obligations. It does **not** mean reproducing insecure endpoint shapes, plaintext custody, floating-point accounting, non-idempotent sends, bearer/cron secrets, in-memory locks, ambiguous ownership, destructive cascades, or known routing/UI defects. Each intentional change requires tests and, where data/money is involved, a reconciliation record.
@@ -311,7 +322,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-016 | ZenDB dependency | `v2.0.1` is rejected M1 evidence: its exact Motoko `1.4.1` closure fails and cannot be combined with the application/OAuth `0.16.3` build in one owning actor. `ZENDB_TOOLCHAIN_ISOLATION.md` pins and reproduces the rejection. The owner selected the native private store foundation in `VersionedPrivateStore.mo`; it has no Candid surface and has bounded logical-ID/hash duplicate/conflict vectors. M1 still requires exact upgrade/recovery, export/index/cursor/collection-vN, low-cycle, and direct-ingress-denial proof before G2. | IMPLEMENTED / BLOCKED_M1/G2 |
 | OP-016a | Repository licensing | `AGPL_RELICENSING_INVENTORY.md` records the owner-confirmed contributor/disposition authority, current AGPL-3.0-only text, retained historical notices, package/lockfile metadata, and no-tracked-artifact finding as of 2026-10-30. Third-party dependencies remain under their own notices. The G1 gate accepted this evidence; later target implementation remains gated separately. | VERIFIED |
 | OP-016b | Retained React frontend build chain and legacy Node retirement | React/Vite/TypeScript is retained as a pinned reproducible build that deploys only certified static frontend-canister assets; no Node runtime is in a canister. The legacy Node backend/REST deployment remains runnable through the rollback window, then is retired at M10 without removing the target frontend build chain | DESIGNED / BLOCKED_G1/M10 |
-| OP-016c | Production dependency advisories | Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters; run a production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | DESIGNED / BLOCKED_G1/G2 |
+| OP-016c | Production dependency advisories | `M1_DEPENDENCY_INVENTORY.md` scopes the root lock/workspaces and records the current failed local closure validation (invalid/missing installed dependencies); no online advisory result is claimed because registry disclosure was not authorized. Inventory actual legacy rollback and target frontend dependency use; remove unused wallet/browser adapters only in a separately approved compatibility change; run an authorized production advisory scan; upgrade only through compatibility tests; document exploitability/containment for every remaining high/critical advisory and block shipment of an unaccepted affected bundle | IMPLEMENTED / BLOCKED_M1/G2 |
 | OP-016d | PII lifecycle and public identifier disclosure | Before sensitive collection/import or public projection, record purpose/data controller/legal basis, minimization, encryption/key access, retention/cryptographic erasure, backup/restore, access audit, accounting/anti-evasion exceptions, and per-field public disclosure/consent; default deny raw social/wallet correlation | DESIGNED / BLOCKED_G2 |
 | OP-017 | Custom domain/TLS/assets | ICP boundary/custom-domain setup, certificate/certification/deep-link/cache/CSP verification | DESIGNED / BLOCKED_G4 |
 | OP-018 | Mainnet production migration | Full sanitized rehearsal, signed reconciliation, rollback rehearsal, G4 approval, separate manual asset actions | BLOCKED_G4 |

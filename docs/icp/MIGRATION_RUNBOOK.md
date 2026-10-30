@@ -76,13 +76,13 @@ The codec is versioned as `meritocracy-migration-canonical-v1` and has golden ve
 
 ```json
 {"$int":"-42"}
-{"$decimal":{"coefficient":"1200","scale":3}}
+{"$decimal":{"coefficient":"1200","scale":{"$int":"3"}}}
 {"$f64":"3ff0000000000000"}
-{"$timestamp":{"assumedZone":"UTC","precision":3,"value":"2026-07-31T12:34:56.789Z"}}
+{"$timestamp":{"assumedZone":"UTC","precision":{"$int":"3"},"value":"2026-07-31T12:34:56.789Z"}}
 {"$bytes":"base64url-without-padding"}
 ```
 
-5. `null` and booleans remain JSON primitives. JSON/JSONB is recursively canonicalized, but every numeric token is tagged without passing through a JavaScript `number`. Duplicate JSON object keys are impossible in JSONB; raw JSON inputs, if any, must be parsed by a loss-detecting parser.
+5. `null` and booleans remain JSON primitives. JSON/JSONB is recursively canonicalized, but every numeric token, including structural precision/scale/ordinal values, is tagged without passing through a JavaScript `number`. Duplicate JSON object keys are impossible in JSONB; raw JSON inputs, if any, must be parsed by a loss-detecting parser.
 6. `Decimal(65,30)` preserves coefficient and scale. Conversion to ledger base units is a separately hashed target projection and fails rather than rounds.
 7. `Float` preserves the exact IEEE-754 64-bit pattern. Deterministic fixed-point/rational derivatives are separate values.
 8. `TIMESTAMP(3)` has no source timezone. The export session fixes UTC and records server, database, and session timezone. Any evidence that source writers used another interpretation is an exception that blocks G2.

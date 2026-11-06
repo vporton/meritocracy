@@ -25,6 +25,7 @@
     "deploy:staging": "./deploy/deploy-staging.sh",
     "prereqs": "docker build -t vporton/fly -f deploy/Dockerfile.fly . && docker image push vporton/fly",
     "test": "cd backend && npm run test",
+    "install:m1-pocketic-tooling": "npm ci --prefix tools/m1-pocketic",
     "test:m1-private-store-upgrade": "node scripts/icp/private-store-upgrade-pocketic-proof.cjs",
     "test:m1-canonical-vectors": "node --test scripts/icp/canonical-migration-vectors.test.cjs && node scripts/icp/canonical-migration-vectors.cjs fixtures/migration_canonical_v1.json"
   },
@@ -42,9 +43,11 @@
   "overrides": {
     "flexible-batches": {
       "openai": "6.22.0"
-    }
+    },
+    "utf-8-validate": "5.0.10"
   },
   "dependencies": {
+    "@icp-sdk/core": "5.4.0",
     "@reown/appkit-adapter-bitcoin": "^1.8.20",
     "@reown/appkit-adapter-solana": "^1.8.20",
     "@types/node": "^25.3.0",
@@ -55,7 +58,5 @@
     "typescript": "^5.9.3"
   },
   "packageManager": "npm@11.10.1",
-  "devDependencies": {
-    "@dfinity/pic": "0.25.0"
-  }
+  "devDependencies": {}
 }

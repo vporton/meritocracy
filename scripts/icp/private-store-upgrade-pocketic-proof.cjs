@@ -6,12 +6,27 @@
 const { chmodSync, copyFileSync, existsSync, mkdtempSync, rmSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
+const { createRequire } = require("node:module");
 const { execFileSync } = require("node:child_process");
-const { IDL } = require("@icp-sdk/core/candid");
-const { AnonymousIdentity } = require("@icp-sdk/core/agent");
-const { PocketIc, PocketIcServer, createIdentity } = require("@dfinity/pic");
 
 const root = join(__dirname, "..", "..");
+const pocketIcPackage = join(root, "tools", "m1-pocketic", "package.json");
+if (!existsSync(pocketIcPackage)) {
+  throw new Error("missing local PocketIC tooling manifest; restore tools/m1-pocketic/package.json");
+}
+const pocketIcRequire = createRequire(pocketIcPackage);
+let IDL;
+let AnonymousIdentity;
+let PocketIc;
+let PocketIcServer;
+let createIdentity;
+try {
+  ({ IDL } = pocketIcRequire("@icp-sdk/core/candid"));
+  ({ AnonymousIdentity } = pocketIcRequire("@icp-sdk/core/agent"));
+  ({ PocketIc, PocketIcServer, createIdentity } = pocketIcRequire("@dfinity/pic"));
+} catch (error) {
+  throw new Error("M1 PocketIC tooling is not installed; run npm run install:m1-pocketic-tooling", { cause: error });
+}
 const wasm = join(root, ".mops", ".build", "private_store_recovery_fixture.wasm");
 function pinnedPocketIcPath() {
   if (process.env.M1_POCKETIC_BIN) return process.env.M1_POCKETIC_BIN;

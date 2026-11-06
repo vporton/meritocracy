@@ -51,6 +51,21 @@ owner authorized a separate, reviewable compatibility change to remediate or
 remove dependencies. It must preserve the legacy rollback path until its
 compatibility tests pass and must not silently remove a wallet capability.
 
+### 2026-11-06 closure repair
+
+The repair retains every affected capability. Root `@icp-sdk/core` is pinned to
+5.4.0 for the legacy backend's v5 peer contracts; the core-v6
+`@dfinity/pic@0.25.0` local test dependency moved to the separately locked,
+non-production `tools/m1-pocketic` installation. `npm run
+install:m1-pocketic-tooling` installs it before the local proof. The frontend
+explicitly pins `@base-org/account@2.5.1`; the backend explicitly pins the
+Polkadot light-client's `smoldot@2.0.26` and
+`@polkadot-api/substrate-client@0.1.4`; and the root lock forces the compatible
+`utf-8-validate@5.0.10` line. A fresh root `npm ci` followed by `npm ls
+--omit=dev --all --json` exits successfully. The isolated PocketIC installation
+has its own committed lockfile and `npm run test:m1-private-store-upgrade`
+passes after it is installed.
+
 ## Advisory boundary
 
 With owner authorization, `npm audit --omit=dev --json` ran on 2026-10-30

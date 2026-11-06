@@ -514,7 +514,7 @@
           },
           {
             "question": "Which blockchain technology will the project use?",
-            "answer": "The project plans to implement its system using the DFINITY Internet Computer blockchain technology. Implementation details and discussion links are provided on the project page: https://science-dao.org/salaries-science/"
+            "answer": "The project does not currently designate a single blockchain technology for implementation. Implementation details and discussion links are provided on the project page: https://science-dao.org/salaries-science/"
           },
           {
             "question": "Is Grants Science recruiting volunteers or developers?",
@@ -1704,15 +1704,15 @@
           },
           {
             "question": "What is the current implementation and what will change?",
-            "answer": "Currently implemented as a Node.js app with a custodial wallet (ready for deployment but pending security review). The plan is to rewrite it as a fully on-chain ICP dapp with non-custodial multi-blockchain wallet support using Chain Fusion and ZenDB. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The project is currently implemented as a Node.js app with a custodial wallet and is pending a security review. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Which blockchains will be supported?",
-            "answer": "The roadmap targets the Internet Computer (ICP) as the on-chain platform and intends to support non-custodial wallets from multiple blockchains via Chain Fusion; Avalanche token support is mentioned to enhance adoption. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The application supports multiple blockchain networks for token distributions. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the role of the proxy server?",
-            "answer": "A secure multiuser proxy server is being developed to handle OpenAI API requests safely for multiple users; it is a separate commercial deliverable and will be deployed before or alongside the ICP dapp. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "A secure multiuser proxy server is being developed to handle OpenAI API requests safely for multiple users. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What security and compliance measures are planned?",
@@ -1720,7 +1720,7 @@
           },
           {
             "question": "What is the expected technical timeline?",
-            "answer": "The proxy server deployment is expected in 1–2 months and the ICP blockchain dapp in another 1–3 months (the Node.js version was developed quickly, informing the estimate). More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "No technical-release timeline is currently committed. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What are the key KPIs and budget considerations?",
@@ -3042,7 +3042,7 @@
         "faqs": [
           {
             "question": "What is the current status of the product?",
-            "answer": "The first version (with a custodial wallet, not yet on the ICP blockchain) is nearly ready but not released. Two main blockers are a pending security review and lack of funds to pay for OpenAI tokens used during user registration. See the product status page: https://science-dao.org/product-status/"
+            "answer": "The first version with a custodial wallet is nearly ready but not released. Two main blockers are a pending security review and lack of funds to pay for OpenAI tokens used during user registration. See the product status page: https://science-dao.org/product-status/"
           },
           {
             "question": "Why hasn't the product been released yet?",
@@ -3050,7 +3050,7 @@
           },
           {
             "question": "Is the wallet custodial or non-custodial?",
-            "answer": "The current, near-ready version uses a custodial wallet. Deployment to the ICP blockchain (and any move toward non-custodial operation) has not yet occurred. More information: https://science-dao.org/product-status/"
+            "answer": "The current, near-ready version uses a custodial wallet. More information: https://science-dao.org/product-status/"
           },
           {
             "question": "Has the product passed a security audit?",
@@ -3067,10 +3067,6 @@
           {
             "question": "Where can I see how the AI component works?",
             "answer": "The product status page includes an informal diagram showing the AI workflow and how the system components interact. View it here: https://science-dao.org/product-status/"
-          },
-          {
-            "question": "When will the product be deployed on the ICP blockchain?",
-            "answer": "There is a plan to deploy to the ICP blockchain, but no public release timeline is given. Deployment depends on completing the security review and securing funding for operational costs. Check for updates at: https://science-dao.org/product-status/"
           },
           {
             "question": "Who should I contact to volunteer for testing or help?",
@@ -3350,11 +3346,11 @@
           },
           {
             "question": "Which identity services are used to verify users?",
-            "answer": "The proposal suggests secure OAuth logins via services like ORCID and GitHub (and similar), linking those verified identities to users' crypto accounts; the write-up discusses PKCE for non-custodial ICP integration. See https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ for more."
+            "answer": "The proposal suggests secure OAuth logins via services like ORCID and GitHub (and similar), linking those verified identities to users' crypto accounts. See https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ for more."
           },
           {
             "question": "What blockchain/backend is proposed for implementation?",
-            "answer": "The author prototyped the idea as an ICP blockchain application (to enable a non-custodial wallet) and notes using PKCE for secure OAuth flows; see the implementation notes at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The application uses a Node.js backend and secure OAuth flows; see the implementation notes at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "How often would payments be made?",
@@ -3378,7 +3374,7 @@
           },
           {
             "question": "How can developers or contributors get involved?",
-            "answer": "The author published prototype code (e.g., an ICP/Vibe-coded repo) and invites others to take the project; see the article and linked GitHub repositories for code and collaboration pointers at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The author published prototype code and invites others to take the project; see the article and linked GitHub repositories for code and collaboration pointers at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
           },
           {
             "question": "What funds the treasury?",
@@ -3428,11 +3424,11 @@
           },
           {
             "question": "What is 'Salaries Science' and how would it work?",
-            "answer": "Salaries Science is the author's planned software project to distribute funds automatically to scientists based on citation counts and predictive metrics of future performance, without requiring formal credentials. It aims to be fair and non-discriminatory, using blockchain tokens (ICP) for distribution. More: https://science-dao.org/need-to-shift-science-financing-from-government-to-people/"
+            "answer": "Salaries Science is the author's planned software project to distribute funds automatically to scientists based on citation counts and predictive metrics of future performance, without requiring formal credentials. It aims to be fair and non-discriminatory. More: https://science-dao.org/need-to-shift-science-financing-from-government-to-people/"
           },
           {
-            "question": "Why use blockchain (ICP) in the proposed funding system?",
-            "answer": "The author proposes using ICP (a modern blockchain) for token-based automatic distribution of funds to enable transparent, programmable, and decentralized payments tied to measurable metrics like citations and performance predictions. More: https://science-dao.org/need-to-shift-science-financing-from-government-to-people/"
+            "question": "Why use blockchain in the proposed funding system?",
+            "answer": "The author proposes blockchain-based token distribution to enable transparent, programmable, and decentralized payments tied to measurable metrics like citations and performance predictions. More: https://science-dao.org/need-to-shift-science-financing-from-government-to-people/"
           },
           {
             "question": "How much funding does the author request to build a prototype?",

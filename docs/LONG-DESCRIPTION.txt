@@ -2,11 +2,11 @@ The problem to be solved: Many scientists don't receive adequate funding for the
 
 AI Internet-Meritocracy (AIIM) is a Web app, that asks an AI, how big portion of world GDP a registered user is worth, and gives him the proportional share of donated funds.
 
-Now it is written in Node.js and has a custodial wallet, but I am going to rewrite it as an ICP blockchain fully-onchain dapp (with multiple other blockchains connected), with a non-custodial wallet. I did Node.js app in 23 days, and hope to do the ICP version quickly, too.
+It is written in Node.js and has a custodial wallet.
 
 The Node.js misses only security review to become of production-quality.
 
-Currently, it supports donations in gas token of several EVM networks. I am going to add more networks, including Bitcoin, Solana, ICP, etc.
+Currently, it supports donations in gas token of several blockchain networks.
 
 To validate user's heritage, he/she connects several his/her accounts (GitHub, ORCID, etc.) where are his/her products listed, and passes mandatory KYC. If accounts override with accounts of another user, two accounts are automatically merged.
 

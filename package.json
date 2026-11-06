@@ -24,12 +24,7 @@
     "dev:stop": "pkill -f 'npm run dev' || true && pkill -f nodemon || true && pkill -f vite || true && pkill -f 'node src/index.js' || true",
     "deploy:staging": "./deploy/deploy-staging.sh",
     "prereqs": "docker build -t vporton/fly -f deploy/Dockerfile.fly . && docker image push vporton/fly",
-    "test": "cd backend && npm run test",
-    "install:m1-pocketic-tooling": "npm ci --prefix tools/m1-pocketic",
-    "test:m1-private-store-upgrade": "node scripts/icp/private-store-upgrade-pocketic-proof.cjs",
-    "test:m1-durable-journal-crash": "node scripts/icp/durable-journal-crash-pocketic-proof.cjs",
-    "test:m1-local-replica-rehearsal": "node scripts/icp/m1-local-replica-rehearsal.cjs",
-    "test:m1-canonical-vectors": "node --test scripts/icp/canonical-migration-vectors.test.cjs && node scripts/icp/canonical-migration-vectors.cjs fixtures/migration_canonical_v1.json"
+    "test": "cd backend && npm run test"
   },
   "keywords": [
     "nodejs",

@@ -50,8 +50,11 @@ owner, rejects anonymous, browser/user, import-operator, and unrelated-service
 direct ingress before and after the upgrade, and treats an identical retry as a
 no-op. The fixture returns hash/count only, not raw payload; `core_canister`
 itself retains no storage Candid API. This is foundation evidence only and does
-not verify the later schema, cursor, collection-vN, saga, or low-cycle
-obligations.
+not verify a later domain schema, saga, or low-cycle obligation. The local
+module vector `PrivateStoreIndex.mo` and `test/PrivateStoreIndex.test.mo` now
+prove bounded hash-bound unique index entries, query-hash/version-bound opaque
+cursor paging, and idempotent bounded collection-v1-to-v2 copy with conflict
+rejection. It exposes no Candid surface and is not a G2 collection catalogue.
 
 `DurableMutationJournal.mo` and `test/DurableMutationJournal.test.mo` add a
 bounded local intent/write/acknowledgement vector. It persists an operation
@@ -61,8 +64,8 @@ hash, and rejects divergent operation/result hashes. A separate PocketIC
 fixture now makes an actual inter-canister write, deliberately traps after its
 remote commit and before local acknowledgement, then reconciles the same
 operation-ID/hash without another write. Direct callers are denied at both
-fixture boundaries and repeated reconciliation is idempotent. Cursor,
-collection-migration, low-cycle, benchmark, and canonical-export proof are
+fixture boundaries and repeated reconciliation is idempotent. Low-cycle,
+benchmark, Motoko canonical-export, and local-replica rehearsal proof are
 still required before M1 is complete.
 
 `scripts/icp/canonical-migration-vectors.cjs` plus
@@ -74,9 +77,9 @@ hashes across repeated runs. The source maintenance-window/write-freeze and
 single-read-snapshot contract is specified in `MIGRATION_RUNBOOK.md`; it is
 not a production rehearsal. `M1_DEPENDENCY_INVENTORY.md` records that a clean
 root production closure check now passes, while the separately pinned local
-PocketIC proof tool remains outside that production closure. The authorized online audit
-has 3 critical and 39 high, untriaged findings, so dependency acceptance
-remains blocked.
+PocketIC proof tool remains outside that production closure. The refreshed
+online audit reports zero critical and zero high findings (four moderate and
+one low), so the high/critical dependency boundary is satisfied.
 
 ## Global parity rule
 

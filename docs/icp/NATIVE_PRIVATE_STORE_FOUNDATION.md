@@ -56,9 +56,21 @@ denied. It never uses reinstall or replacement
 memory, returns no raw payload, starts no external network service, and removes
 its temporary binary copy.
 
-This is not a G2 schema: the collection catalogue, index/cursor design,
-collection-vN migration, low-cycle
-behavior, capacity benchmarks, and canonical export remain mandatory M1 work.
+`canisters/shared/PrivateStoreIndex.mo` adds the local bounded index and
+collection-vN vector. It keeps a non-authoritative, hash-bound unique index;
+the owning actor must re-check every primary record before use. Its cursor is
+bound to a format version and query hash, never an offset, and pages are capped
+at 32 entries. A collection migration records its source/target names and
+versions, copies at most 16 immutable logical records per invocation, and
+rejects any divergent target record. `test/PrivateStoreIndex.test.mo` proves
+duplicate-index acknowledgement, index conflict rejection, cursor query
+binding, bounded paging, deterministic v1-to-v2 copying, and replay-safe
+completion. This remains a module-level proof: no domain collection or public
+query surface exists before G2.
+
+This is not a G2 schema. Low-cycle behavior, capacity benchmarks, Motoko
+canonical-export parity, and the full local-replica writer-freeze/import/
+rollback rehearsal remain mandatory M1 work.
 
 `canisters/shared/DurableMutationJournal.mo` adds the corresponding local
 state-machine vector for a mutation that crosses an `await`. An owning actor
@@ -84,6 +96,6 @@ mops build durable_journal_remote_fixture durable_journal_recovery_fixture
 npm run test:m1-durable-journal-crash
 ```
 
-It uses only synthetic principals and exposes no payload. Indexes,
-collection-vN migration, low-cycle behavior, capacity benchmarks, and
-canonical export remain required M1 evidence.
+It uses only synthetic principals and exposes no payload. Low-cycle behavior,
+capacity benchmarks, Motoko canonical-export parity, and the full
+local-replica rehearsal remain required M1 evidence.

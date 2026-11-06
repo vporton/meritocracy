@@ -21,9 +21,16 @@ payload. It calculates SHA-256 of every payload, acknowledges an identical
 rejects every replacement tuple as a conflict. It persists only plain stable
 values, not iterators, timers, maps, or capabilities.
 
-`test/VersionedPrivateStore.test.mo` covers initial insertion, identical
-duplicate acknowledgement, conflicting replacement rejection, incorrect hash,
-and payload limit rejection. `mops check-stable` validates the core actor's
+Its explicit v1-to-v2 stable-layout checkpoint preserves entry bytes, is
+idempotent at v2, and rejects unknown future layouts. `put` refuses an
+unmigrated state, so an owning actor must complete this checkpoint before a
+post-upgrade mutation. This is a generic M1 layout proof, not a G2 collection
+catalogue or domain-schema decision.
+
+`test/VersionedPrivateStore.test.mo` covers v1-to-v2 migration, idempotence,
+unknown-version rejection, initial insertion, identical duplicate
+acknowledgement, conflicting replacement rejection, incorrect hash, and
+payload limit rejection. `mops check-stable` validates the core actor's
 stable signature against its committed baseline.
 
 `fixtures/private_store_recovery` is a separate local-only actor, never a

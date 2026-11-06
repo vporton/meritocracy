@@ -15,6 +15,16 @@ func entry(collection : Text, logicalId : Text, version : Nat, payload : Blob) :
 };
 
 let first = entry("identity_v1", "principal:aaaaa-aa", 1, "synthetic-payload");
+let legacyState : Store.State = { schemaVersion = 1; entries = [first] };
+let migrated = switch (Store.migrateToCurrent(legacyState)) {
+  case (#ok(state)) state;
+  case (#err(_)) { assert false; Store.empty };
+};
+assert migrated.schemaVersion == Store.currentSchemaVersion;
+assert Store.get(migrated, "identity_v1", "principal:aaaaa-aa") == ?first;
+assert Store.migrateToCurrent(migrated) == #ok(migrated);
+assert Store.migrateToCurrent({ schemaVersion = Store.currentSchemaVersion + 1; entries = [] }) == #err(#unsupportedSchemaVersion);
+assert Store.put(legacyState, first) == #err(#unsupportedSchemaVersion);
 let inserted = switch (Store.put(Store.empty, first)) {
   case (#ok(value)) value;
   case (#err(_)) { assert false; (Store.empty, #duplicate) };

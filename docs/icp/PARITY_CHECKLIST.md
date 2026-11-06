@@ -41,7 +41,9 @@ serializable read-only transaction, rolls it back, and has no DDL, replication,
 or row-export path. No production report exists yet; live cardinalities remain
 unknown. See `POSTGRES_INVENTORY.md`.
 
-The native private-store M1 fixture has passed its isolated PocketIC 12.0.0
+The native private-store M1 foundation includes a local v1-to-v2 stable-layout
+vector that preserves entries, is idempotent, and rejects an unknown future
+layout before mutation. Its fixture has passed its isolated PocketIC 12.0.0
 same-Wasm, enhanced-orthogonal-persistence `#keep` upgrade proof. It preserves
 a bounded logical-ID/content-hash record, accepts only the fixed synthetic
 owner, rejects anonymous, browser/user, import-operator, and unrelated-service

@@ -14,6 +14,7 @@ module {
   public let maxCollectionChars : Nat = 64;
   public let maxLogicalIdChars : Nat = 256;
   public let maxPayloadBytes : Nat = 4_096;
+  public let currentSchemaVersion : Nat = 2;
 
   public type Entry = {
     collection : Text;
@@ -39,9 +40,10 @@ module {
     #contentHashMismatch;
     #capacityExceeded;
     #conflict;
+    #unsupportedSchemaVersion;
   };
 
-  public let empty : State = { schemaVersion = 1; entries = [] };
+  public let empty : State = { schemaVersion = currentSchemaVersion; entries = [] };
 
   func nonEmptyBounded(value : Text, maximum : Nat) : Bool {
     value.size() > 0 and value.size() <= maximum;
@@ -62,9 +64,21 @@ module {
     null;
   };
 
+  /// Version 1 and version 2 use the same stable entry layout.  Version 2
+  /// records that an owning actor checked it before activating post-upgrade
+  /// mutations; unknown layouts are never guessed at.
+  public func migrateToCurrent(state : State) : Result.Result<State, Error> {
+    if (state.schemaVersion == currentSchemaVersion) return #ok(state);
+    if (state.schemaVersion == 1) {
+      return #ok({ schemaVersion = currentSchemaVersion; entries = state.entries });
+    };
+    #err(#unsupportedSchemaVersion);
+  };
+
   /// Insert one immutable logical record.  A repeated identical request is a
   /// no-op; any replacement tuple is a conflict and cannot overwrite history.
   public func put(state : State, entry : Entry) : Result.Result<(State, PutResult), Error> {
+    if (state.schemaVersion != currentSchemaVersion) return #err(#unsupportedSchemaVersion);
     if (not nonEmptyBounded(entry.collection, maxCollectionChars)) return #err(#invalidCollection);
     if (not nonEmptyBounded(entry.logicalId, maxLogicalIdChars)) return #err(#invalidLogicalId);
     if (entry.version == 0) return #err(#invalidVersion);

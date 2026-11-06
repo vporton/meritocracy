@@ -15,7 +15,7 @@ written with mode `0600` to `/tmp/meritocracy-m1-fixture-inventory.json` and
 contains no row values.
 
 This proves the inventory command can inspect the complete migrated fixture
-schema. It does not satisfy M1's remaining per-table count/size/length/status/
+schema. It does not satisfy M1's remaining per-table size/length/status/
 relation/decimal/sequence evidence, nor is it a production inventory.
 
 An operator-supplied local PostgreSQL inventory was also run on 2026-11-06.
@@ -24,6 +24,15 @@ plus Prisma's `_prisma_migrations` metadata table, and 215 columns. It found
 zero prepared transactions, logical slots, and publications. The report is
 stored only at `/tmp/meritocracy-m1-local-inventory.json`; no connection
 details, row values, or raw secret/token values are recorded here.
+
+The same local report was then regenerated after the aggregate profile was
+extended. It records table bytes; exact row counts; non-sensitive text/JSON
+null and maximum-byte aggregates; decimal null/min/max/sum aggregates; status histograms;
+sequence state; and bounded uniqueness and foreign-key checks. Its local
+results were 46 unique-index checks with zero duplicate groups, 18
+foreign-key checks with zero orphans, and 17 sequences. This is local evidence
+only: the report's remaining gaps (including explicit unmanaged-row content
+handling and production sizing) remain M1/G2 work as stated in the plan.
 
 The operator runs this only with a DBA-approved, read-only PostgreSQL
 connection. The command does not load an environment file, print a connection
@@ -39,7 +48,8 @@ npm run inventory:postgres --workspace backend -- \
 
 The process starts `SERIALIZABLE READ ONLY DEFERRABLE`, checks
 `transaction_read_only`, applies statement/lock timeouts, performs bounded
-catalog and aggregate queries, rolls back, and creates the report with mode
+catalog and aggregate queries, including an exact bounded row count for each
+catalogued table, rolls back, and creates the report with mode
 `0600` only if its requested output path does not already exist. It contains
 no table rows or connection details. Secret-like column names receive an
 `EXCLUDE_RAW_VALUE` disposition; all other fields remain explicitly pending

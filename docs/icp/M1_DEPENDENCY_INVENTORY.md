@@ -88,6 +88,16 @@ rollback bundle nor the target frontend/toolchain bundle is eligible for
 shipment. This audit is an evidence snapshot, not a remediation or risk
 acceptance.
 
+### Refreshed 2026-11-06 advisory snapshot
+
+A second authorized `npm audit --omit=dev --json` against the current root
+lockfile reported 42 high-or-critical package findings: 3 critical and 39
+high. The three critical package findings remain `concurrently`, `proxy-addr`,
+and `shell-quote`. The report was retained only in `/tmp/m1-audit.json` and is
+not a risk disposition. All 42 findings remain unaccepted pending a
+bundle-by-bundle reachability, owner, containment, and remediation/removal or
+explicit risk-acceptance record.
+
 ## M1 consequence
 
 This document establishes the exact local evidence command and reports the

@@ -52,3 +52,15 @@ main = "fixtures/private_store_recovery/main.mo"
 
 [canisters.private_store_recovery_fixture.check-stable]
 path = "fixtures/private_store_recovery/private_store_recovery_fixture.most"
+
+[canisters.private_store_recovery_v1_fixture]
+main = "fixtures/private_store_recovery_v1/main.mo"
+
+[canisters.private_store_recovery_v1_fixture.check-stable]
+path = "fixtures/private_store_recovery_v1/private_store_recovery_v1_fixture.most"
+
+[canisters.private_store_attacker_fixture]
+main = "fixtures/private_store_attacker/main.mo"
+
+[canisters.private_store_attacker_fixture.check-stable]
+path = "fixtures/private_store_attacker/private_store_attacker_fixture.most"

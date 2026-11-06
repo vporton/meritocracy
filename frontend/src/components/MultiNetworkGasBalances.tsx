@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
-import type { BitcoinConnector } from '@reown/appkit-adapter-bitcoin'
-import { useSendTransaction, useWriteContract } from 'wagmi'
+import { useAppKit, useAppKitAccount, useAppKitProvider } from '../lib/walletModal'
+import { useSendTransaction, useWriteContract } from '../lib/retiredWallet'
 import { parseEther, parseUnits, type Address } from 'viem'
 import api from '../services/api'
 import { hasReownWalletModal } from '../config/wagmi'
@@ -189,7 +188,7 @@ function MultiNetworkGasBalances() {
   const [selectedCountry, setSelectedCountry] = useState<string>('DE'); // Default to Germany or commonly used
   const { open: openAppKit } = useAppKit()
   const { isConnected } = useAppKitAccount()
-  const { walletProvider: bitcoinWalletProvider } = useAppKitProvider<BitcoinConnector>('bip122')
+  const { walletProvider: bitcoinWalletProvider } = useAppKitProvider<{ sendTransfer: (request: unknown) => Promise<string> }>('bip122')
   const bitcoinAccount = useAppKitAccount({ namespace: 'bip122' }) as {
     address?: string;
     isConnected?: boolean;

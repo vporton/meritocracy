@@ -48,15 +48,12 @@
   },
   "dependencies": {
     "@icp-sdk/core": "5.4.0",
-    "@reown/appkit-adapter-bitcoin": "^1.8.20",
-    "@reown/appkit-adapter-solana": "^1.8.20",
     "@types/node": "^25.3.0",
     "concurrently": "^10.0.3",
-    "eslint": "^10.0.1",
+    "eslint": "^9.39.5",
     "prisma": "^7.9.0",
-    "serve": "^14.2.6",
+    "serve": "^10.0.2",
     "typescript": "^5.9.3"
   },
-  "packageManager": "npm@11.10.1",
-  "devDependencies": {}
+  "packageManager": "npm@11.10.1"
 }

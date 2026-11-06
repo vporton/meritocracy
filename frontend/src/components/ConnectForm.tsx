@@ -1,8 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAppKit, useAppKitAccount, useAppKitEvents, useAppKitState } from '@reown/appkit/react';
-import { AlertController } from '@reown/appkit-controllers';
-import { useConnection, useDisconnect, useSignMessage } from 'wagmi';
+import { AlertController, useAppKit, useAppKitAccount, useAppKitEvents, useAppKitState } from '../lib/walletModal';
+import { useConnection, useDisconnect, useSignMessage } from '../lib/retiredWallet';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';

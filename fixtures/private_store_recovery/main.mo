@@ -19,6 +19,10 @@ persistent actor class PrivateStoreRecoveryFixture(owner : Principal) = this {
 
   public shared ({ caller }) func putBounded(logicalId : Text, payload : Blob) : async Result.Result<PrivateStore.PutResult, Text> {
     if (not authorized(caller)) return #err("unauthorized");
+    switch (PrivateStore.migrateToCurrent(store)) {
+      case (#ok(next)) { store := next };
+      case (#err(error)) return #err(debug_show (error));
+    };
     let entry : PrivateStore.Entry = {
       collection;
       logicalId;

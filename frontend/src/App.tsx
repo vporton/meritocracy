@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { HelmetProvider } from "react-helmet-async";
-import { WagmiProvider } from 'wagmi'
+import { WagmiProvider } from './lib/retiredWallet'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { config } from './config/wagmi'
 import { AuthProvider } from './contexts/AuthContext'
 import Navigation from './components/Navigation'
 import Home from './pages/Home'
@@ -25,7 +24,7 @@ function App() {
   const isTest = testVar === 'true';
   return (
     <HelmetProvider>
-      <WagmiProvider config={config}>
+      <WagmiProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <BrowserRouter>

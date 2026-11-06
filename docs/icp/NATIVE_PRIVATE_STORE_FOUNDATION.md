@@ -41,19 +41,23 @@ mops build private_store_recovery_fixture
 npm run test:m1-private-store-upgrade
 ```
 
+The runner builds and installs a separate historical v1 fixture Wasm, inserts
+a record, then upgrades it to the current v2 fixture Wasm with
+enhanced-orthogonal-persistence `#keep`. The first post-upgrade owner mutation
+runs the explicit v1-to-v2 checkpoint and must acknowledge the original
+logical ID as a duplicate; the proof then verifies its hash and entry count.
 The runner resolves the Mops-pinned PocketIC binary, copies it to a
 disposable temporary path because the cache is read-only, and uses only
 deterministic synthetic principals. It verifies owner-only update/query access
 and denies anonymous, browser/user, import-operator, and unrelated-service
-direct ingress before and after the upgrade. It then inserts a bounded
-hash-bound record, upgrades with the same Wasm and explicit
-enhanced-orthogonal-persistence `#keep`, and verifies the identical hash, one
-stable record, and a duplicate no-op. It never uses reinstall or replacement
+direct ingress before and after the upgrade. It also installs an unrelated
+local attacker canister and proves its inter-canister mutation attempt is
+denied. It never uses reinstall or replacement
 memory, returns no raw payload, starts no external network service, and removes
 its temporary binary copy.
 
 This is not a G2 schema: the collection catalogue, index/cursor design,
-collection-vN migration, external-call intent journal, old-to-new compatibility
-upgrade, crash recovery, low-cycle behavior, capacity benchmarks, canonical
+collection-vN migration, external-call intent journal, crash recovery,
+low-cycle behavior, capacity benchmarks, canonical
 export, and an actual inter-canister authorization-denial proof remain mandatory
 M1 work.

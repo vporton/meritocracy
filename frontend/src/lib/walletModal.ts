@@ -57,6 +57,8 @@ export const useAppKitAccount = (_options: { namespace: WalletNamespace }): AppK
   allAccounts: [],
 });
 
+export const useAppKitProvider = <T,>(_namespace: WalletNamespace) => ({ walletProvider: undefined as T | undefined });
+
 export const AlertController = {
   state: {
     open: false,

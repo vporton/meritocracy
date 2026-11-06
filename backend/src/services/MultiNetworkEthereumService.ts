@@ -58,7 +58,7 @@ export const mezoTestnetChainConfig = {
     // fees,
 } as const;
 
-export const mezoTestnet = /*#__PURE__*/ defineChain({
+export const mezoTestnet: Chain = /*#__PURE__*/ defineChain({
     ...mezoTestnetChainConfig,
     id: 31611,
     name: 'Mezo Testnet',
@@ -82,7 +82,7 @@ export const mezoTestnet = /*#__PURE__*/ defineChain({
     testnet: true,
 });
 
-export const mezo = /*#__PURE__*/ defineChain({
+export const mezo: Chain = /*#__PURE__*/ defineChain({
     ...mezoChainConfig,
     id: 31612,
     name: 'Mezo',

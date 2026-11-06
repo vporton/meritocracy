@@ -64,3 +64,15 @@ main = "fixtures/private_store_attacker/main.mo"
 
 [canisters.private_store_attacker_fixture.check-stable]
 path = "fixtures/private_store_attacker/private_store_attacker_fixture.most"
+
+[canisters.durable_journal_remote_fixture]
+main = "fixtures/durable_journal_remote/main.mo"
+
+[canisters.durable_journal_remote_fixture.check-stable]
+path = "fixtures/durable_journal_remote/durable_journal_remote_fixture.most"
+
+[canisters.durable_journal_recovery_fixture]
+main = "fixtures/durable_journal_recovery/main.mo"
+
+[canisters.durable_journal_recovery_fixture.check-stable]
+path = "fixtures/durable_journal_recovery/durable_journal_recovery_fixture.most"

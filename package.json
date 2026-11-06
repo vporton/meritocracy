@@ -27,6 +27,7 @@
     "test": "cd backend && npm run test",
     "install:m1-pocketic-tooling": "npm ci --prefix tools/m1-pocketic",
     "test:m1-private-store-upgrade": "node scripts/icp/private-store-upgrade-pocketic-proof.cjs",
+    "test:m1-durable-journal-crash": "node scripts/icp/durable-journal-crash-pocketic-proof.cjs",
     "test:m1-canonical-vectors": "node --test scripts/icp/canonical-migration-vectors.test.cjs && node scripts/icp/canonical-migration-vectors.cjs fixtures/migration_canonical_v1.json"
   },
   "keywords": [
@@ -52,8 +53,8 @@
     "concurrently": "^10.0.3",
     "eslint": "^9.39.5",
     "prisma": "^7.9.0",
-    "serve": "^10.0.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zod": "4.6.6"
   },
   "packageManager": "npm@11.10.1"
 }

@@ -57,7 +57,7 @@ memory, returns no raw payload, starts no external network service, and removes
 its temporary binary copy.
 
 This is not a G2 schema: the collection catalogue, index/cursor design,
-collection-vN migration, actual external-call crash recovery, low-cycle
+collection-vN migration, low-cycle
 behavior, capacity benchmarks, and canonical export remain mandatory M1 work.
 
 `canisters/shared/DurableMutationJournal.mo` adds the corresponding local
@@ -68,7 +68,22 @@ result, only the same operation may be retried; a matching hash marks it
 acknowledged, while a changed operation or observed hash is a conflict. The
 vector in `test/DurableMutationJournal.test.mo` covers those paths, including
 the persisted-pending state left by interruption after an external commit but
-before local acknowledgement. It is deliberately a pure local state-machine
-proof: it does not claim that a PocketIC external call was interrupted, so a
-fault-injected inter-canister crash/recovery proof remains required before M1
-can complete.
+before local acknowledgement.
+
+`fixtures/durable_journal_remote` and `fixtures/durable_journal_recovery`
+now prove that interruption boundary with PocketIC. The recovery fixture
+persists the intent, makes an actual inter-canister call whose remote commits
+the original operation ID and digest, then deliberately traps before local
+acknowledgement. An owner-only reconciliation queries the same remote record
+and acknowledges only the matching digest, without issuing another write;
+repeat reconciliation is idempotent. Direct callers are denied at both actor
+boundaries. Run the local proof with:
+
+```sh
+mops build durable_journal_remote_fixture durable_journal_recovery_fixture
+npm run test:m1-durable-journal-crash
+```
+
+It uses only synthetic principals and exposes no payload. Indexes,
+collection-vN migration, low-cycle behavior, capacity benchmarks, and
+canonical export remain required M1 evidence.

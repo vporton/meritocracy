@@ -88,18 +88,35 @@ rollback bundle nor the target frontend/toolchain bundle is eligible for
 shipment. This audit is an evidence snapshot, not a remediation or risk
 acceptance.
 
-### Refreshed 2026-11-06 advisory snapshot
+### Remediation and refreshed snapshot — 2026-11-06
 
-A second authorized `npm audit --omit=dev --json` against the current root
-lockfile reported 42 high-or-critical package findings: 3 critical and 39
-high. The three critical package findings remain `concurrently`, `proxy-addr`,
-and `shell-quote`. The report was retained only in `/tmp/m1-audit.json` and is
-not a risk disposition. All 42 findings remain unaccepted pending a
-bundle-by-bundle reachability, owner, containment, and remediation/removal or
-explicit risk-acceptance record.
+The owner authorized remediation rather than risk acceptance. The reviewable
+root-workspace change pins `serve@14.2.6`, `nodemailer@10.3.1`,
+`@stellar/stellar-sdk@17.4.0`, and `zod@4.6.6`. The Nodemailer type import was
+updated for its v10 declaration surface. `npm run build` passed under pinned
+Node v26.5.0 after these changes; the installed tree confirms one deduplicated
+`zod@4.6.6`, and the fixed Nodemailer and Stellar SDK versions.
+
+The post-remediation `npm audit --omit=dev --json` reports 0 critical and 2
+high findings, both attached to installed `serve@14.2.6` and its nested
+`compression@1.8.1`. The advisory response proposes the older
+`serve@10.0.2` as a "fix", despite the installed version being newer and the
+legacy chain having been removed. This is an npm advisory-resolution
+inconsistency, not an accepted risk or a justification to downgrade. It is
+recorded for follow-up against the advisory source; no bundle with an
+unresolved high/critical finding is eligible for shipment.
 
 ## M1 consequence
 
-This document establishes the exact local evidence command and reports the
-observed failure; it does not satisfy the M1 dependency acceptance criterion.
-No dependency, production system, database, canister, or asset was changed.
+**Superseding remediation note, 2026-11-06:** The owner-authorized change
+removed unused `serve` from the root and backend manifests, pinned
+`nodemailer@10.3.1`, `@stellar/stellar-sdk@17.4.0`, and `zod@4.6.6`, and
+updated the Nodemailer v10 type import. The full build passes. The current
+production audit reports 0 critical and 0 high findings (four moderate and one
+low), so the high/critical advisory boundary is now satisfied; earlier
+references to an unresolved `serve` advisory are superseded.
+
+This document establishes the exact local evidence command and records the
+remediation result. The remaining moderate/low advisories remain ordinary
+maintenance work. No production system, database, canister, or asset was
+changed.

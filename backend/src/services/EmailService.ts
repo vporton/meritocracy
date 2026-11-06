@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
 import crypto from 'crypto';
 import { getVerifiedEmailAddresses, normalizeEmail, syncPrimaryEmail } from './userEmailUtils.js';
@@ -15,7 +16,7 @@ interface EmailConfig {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private transporter: Transporter | null = null;
   private config: EmailConfig | null = null;
 
   constructor() {

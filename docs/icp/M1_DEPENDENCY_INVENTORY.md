@@ -1,7 +1,7 @@
 # M1 dependency-closure inventory
 
-Status: partial local evidence, 2026-10-30. This is not an approval to ship a
-legacy rollback or target frontend bundle.
+Status: partial local evidence, updated 2026-11-06. This is not an approval to
+ship a legacy rollback or target frontend bundle.
 
 ## Locked scopes
 
@@ -27,8 +27,10 @@ of `@icp-sdk/core@6.1.1`, `utf-8-validate@6.0.6`, and
 light-client closure. This is a blocking closure discrepancy: no affected
 bundle is eligible for shipment until a clean, reproducible root-workspace
 install produces a complete lockfile-conforming closure and compatibility tests
-pass. This record deliberately does not repair or remove wallet adapters;
-that is a separate approved compatibility change.
+pass. On 2026-11-06, the owner authorized a separate, reviewable compatibility
+change to remediate or remove dependencies. It must preserve the legacy
+rollback path until its compatibility tests pass and must not silently remove a
+wallet capability.
 
 ## Advisory boundary
 
@@ -43,7 +45,7 @@ dependencies `@reown/appkit`, `@reown/appkit-adapter-bitcoin`,
 `vite`, plus their transitive closures. The Reown/Sats-connect/Solana chain has
 no offered automatic fix. The audit also reports fixes for some chains,
 including `concurrently`, `prisma`, `nodemailer`, `viem`, and `vite`; applying
-one is deliberately out of scope for this M1 evidence change.
+one is a separately reviewable remediation task, now authorized by the owner.
 
 Every high/critical advisory is currently **untriaged**: affected production
 bundle, actual reachability, owner, containment, and upgrade/removal or

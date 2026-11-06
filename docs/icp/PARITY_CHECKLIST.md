@@ -56,9 +56,9 @@ collection-vN, saga, crash, or low-cycle obligations.
 the versioned canonical codec. It rejects ordinary JavaScript numbers and
 prohibited raw secret/token fields, derives a logical ID from the source table
 and canonical primary key, and locks canonical row/receipt bytes and SHA-256
-hashes across repeated runs. The source slot/exported-snapshot/consistent-point
-delta contract is specified in `MIGRATION_RUNBOOK.md`; it is not a production
-slot or rehearsal. `M1_DEPENDENCY_INVENTORY.md` records that the local
+hashes across repeated runs. The source maintenance-window/write-freeze and
+single-read-snapshot contract is specified in `MIGRATION_RUNBOOK.md`; it is
+not a production rehearsal. `M1_DEPENDENCY_INVENTORY.md` records that the local
 production closure check currently fails and that the authorized online audit
 has 3 critical and 39 high, untriaged findings, so dependency acceptance
 remains blocked.
@@ -289,16 +289,16 @@ Parity means preserving intended user/business capability, authorization, histor
 | DM-009 | `Decimal(65,30)` and double precision | Tagged exact source; base-unit/fixed-point target projection, no silent rounding | DESIGNED / BLOCKED_G2 |
 | DM-010 | Nullable unique semantics permit multiple nulls | Target unique index omits null and property tests match PostgreSQL | DESIGNED / BLOCKED_G2 |
 | DM-011 | JSON/JSONB and serialized ownership | Lossless canonical numeric/string encoding; typed parsed target plus original hash | DESIGNED / BLOCKED_G2 |
-| DM-012 | Deterministic source export | One approved logical-slot exported snapshot, explicit approved/redacted projections and ordering, canonical JSONL, repeatable roots | DESIGNED / BLOCKED_G2 |
+| DM-012 | Deterministic source export | One approved maintenance-window read snapshot, explicit approved/redacted projections and ordering, canonical JSONL, repeatable roots | DESIGNED / BLOCKED_G2 |
 | DM-013 | Bounded chunks | ≤ approved row/byte limit, large-row fragments, hash chain/Merkle roots | DESIGNED / BLOCKED_G2 |
 | DM-014 | Authenticated/idempotent/resumable import | Manifest/principal/module-bound application session; durable local intent plus logical-key/hash-confirmed ZenDB receipt; no direct importer DB role; duplicate no-op/conflict rejection | DESIGNED / BLOCKED_G2 |
 | DM-015 | Partial batch/duplicate detection | Invisible pending fragments, exact logical-key/hash reconciliation after unknown results, acknowledged manifest activation, no blind duplicate or implicit winner | DESIGNED / BLOCKED_G2 |
-| DM-016 | Live writes after base snapshot | G2-proven logical slot/publication created before the exported base snapshot; complete replica-identified source transactions from its consistent point through final barrier LSN, durable target acknowledgement before source watermark advance; direct CDC excludes sensitive tables and any redacted outbox flows inside that same stream. No generic/polling trigger fallback without equivalent commit-order proof | DESIGNED / BLOCKED_G2/G4 |
+| DM-016 | Live writes after base snapshot | INTENTIONALLY_CHANGED: G4 stops every legacy writer, cron, payment sender, and direct database writer; drains in-flight writes; then exports one approved read snapshot. A detected post-freeze write aborts cutover; no delta stream exists | INTENTIONALLY_CHANGED / BLOCKED_G2/G4 |
 | DM-017 | Source/destination verification | Source and target-projection row/table/Merkle hashes, counts, relations, indexes | DESIGNED / BLOCKED_G2 |
 | DM-018 | Separate financial history reconciliation | Chain evidence, exact asset equations, ambiguous hold, signed exceptions | DESIGNED / BLOCKED_G3/G4 |
-| DM-019 | Dry run and fault injection | Local/testnet only; repeat slot-exported snapshot; interruption at capture/snapshot/transaction/target-ack boundaries; replica-identity, WAL-pressure, redaction-leak, duplicate/upgrade/low-cycle tests; zero assets | DESIGNED / BLOCKED_G2 |
+| DM-019 | Dry run and fault injection | Local/testnet only; repeat maintenance freeze/read snapshot; interruption at writer-stop/drain/snapshot/target-ack boundaries; post-freeze write, redaction-leak, duplicate/upgrade/low-cycle tests; zero assets | DESIGNED / BLOCKED_G2 |
 | DM-020 | Machine-readable report | Canonical JSON Schema report with counts/hashes/exceptions/approvals/zero unexplained difference | DESIGNED / BLOCKED_G2 |
-| DM-021 | Secret/private-key migration | Base/delta/direct-CDC/redacted-outbox/report/log scans exclude `SystemSecret.value`, bearer, and raw verification values; source-side one-way metadata projection plus separate fingerprinted disposition only | DESIGNED / BLOCKED_G2/G3 |
+| DM-021 | Secret/private-key migration | Base artifacts/report/log scans exclude `SystemSecret.value`, bearer, and raw verification values; source-side one-way metadata projection plus separate fingerprinted disposition only | DESIGNED / BLOCKED_G2/G3 |
 | DM-022 | PostgreSQL deletion/retention history | Source backup/export retained; no production mutation until G4; no history lost in tombstone conversion | DESIGNED / BLOCKED_G4 |
 
 ## Deployment, testing, monitoring, and governance
@@ -314,7 +314,7 @@ Parity means preserving intended user/business capability, authorization, histor
 | OP-007 | CI build/test steps partly commented/limited | Format, lint, typecheck, build, unit/property/integration/PocketIC/upgrade/security/parity jobs required | DESIGNED / BLOCKED_G2 |
 | OP-008 | Unit/integration suites | Preserve safe legacy tests; add target and differential tests; destructive DB suites require disposable-DB proof | DESIGNED / BLOCKED_G2 |
 | OP-009 | DB financial tests delete all distribution/pending rows and accept inherited `DATABASE_URL` | Add hard non-production database guard before ever running; never point at shared/production DB | INTENTIONALLY_CHANGED / BLOCKED_G2 |
-| OP-010 | No complete backup/restore/reconciliation runbook | Tested PG restore, slot-exported snapshot/contiguous-delta capture with WAL/slot recovery, canister upgrade/forward-repair, canonical replay, financial and rollback rehearsal | DESIGNED / BLOCKED_G2/G4 |
+| OP-010 | No complete backup/restore/reconciliation runbook | Tested PG restore, maintenance freeze/read snapshot, writer/drain audit, canister upgrade/forward-repair, canonical replay, financial and rollback rehearsal | DESIGNED / BLOCKED_G2/G4 |
 | OP-011 | Process logs/provider logs | Structured redacted append-only audit, correlation/operation IDs, bounded retention/export | DESIGNED / BLOCKED_G2 |
 | OP-012 | Service/cron health endpoints | Canister cycle/memory/timer/schedule/index/archive/provider/ledger health and alerts; no AI-task queue metric | INTENTIONALLY_CHANGED / BLOCKED_G2 |
 | OP-013 | Cycle and stable-memory capacity | Measured expected/2×/failure limits, per-operation budgets, shard/upgrade/low-cycle alerts | DESIGNED / BLOCKED_G2 |

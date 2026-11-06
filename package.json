@@ -49,6 +49,7 @@
     "concurrently": "^10.0.3",
     "eslint": "^9.39.5",
     "prisma": "^7.9.0",
+    "serve": "^14.2.6",
     "typescript": "^5.9.3",
     "zod": "4.6.6"
   },

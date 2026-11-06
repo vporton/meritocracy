@@ -50,8 +50,16 @@ owner, rejects anonymous, browser/user, import-operator, and unrelated-service
 direct ingress before and after the upgrade, and treats an identical retry as a
 no-op. The fixture returns hash/count only, not raw payload; `core_canister`
 itself retains no storage Candid API. This is foundation evidence only and does
-not verify actual inter-canister denial, the later schema, cursor,
+not verify the later schema, cursor,
 collection-vN, saga, crash, or low-cycle obligations.
+
+`DurableMutationJournal.mo` and `test/DurableMutationJournal.test.mo` add a
+bounded local intent/write/acknowledgement vector. It persists an operation
+intent before an await, keeps it non-authoritative while pending, allows only
+the identical retry for an absent remote result, acknowledges only the desired
+hash, and rejects divergent operation/result hashes. This is state-machine
+evidence only; a fault-injected PocketIC inter-canister interruption/recovery
+test is still required before M1 is complete.
 
 `scripts/icp/canonical-migration-vectors.cjs` plus
 `fixtures/migration_canonical_v1.json` provide an offline M1 golden vector for

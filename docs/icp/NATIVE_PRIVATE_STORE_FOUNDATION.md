@@ -57,7 +57,18 @@ memory, returns no raw payload, starts no external network service, and removes
 its temporary binary copy.
 
 This is not a G2 schema: the collection catalogue, index/cursor design,
-collection-vN migration, external-call intent journal, crash recovery,
-low-cycle behavior, capacity benchmarks, canonical
-export, and an actual inter-canister authorization-denial proof remain mandatory
-M1 work.
+collection-vN migration, actual external-call crash recovery, low-cycle
+behavior, capacity benchmarks, and canonical export remain mandatory M1 work.
+
+`canisters/shared/DurableMutationJournal.mo` adds the corresponding local
+state-machine vector for a mutation that crosses an `await`. An owning actor
+must persist its operation ID, target logical ID, and desired 32-byte content
+hash before calling out. A pending intent is non-authoritative. On an unknown
+result, only the same operation may be retried; a matching hash marks it
+acknowledged, while a changed operation or observed hash is a conflict. The
+vector in `test/DurableMutationJournal.test.mo` covers those paths, including
+the persisted-pending state left by interruption after an external commit but
+before local acknowledgement. It is deliberately a pure local state-machine
+proof: it does not claim that a PocketIC external call was interrupted, so a
+fault-injected inter-canister crash/recovery proof remains required before M1
+can complete.

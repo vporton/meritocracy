@@ -1,0 +1,4 @@
+// Meritocracy frontend application interface v1.
+// The production frontend uses the standard certified asset-canister API.
+// It intentionally exposes no application or treasury authority.
+service : {}

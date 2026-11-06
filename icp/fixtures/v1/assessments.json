@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "evaluations": [
+    {
+      "evaluationId": "3001",
+      "idempotencyKeyHex": "3030303030303030303030303030303030303030303030303030303030303030",
+      "subjectUserId": "101",
+      "inputHashHex": "3131313131313131313131313131313131313131313131313131313131313131",
+      "promptVersion": "worth-v1",
+      "modelVersion": "fixture-model-v1",
+      "sourceRefs": ["https://example.invalid/public-evidence/101"],
+      "status": "complete",
+      "resultHashHex": "3232323232323232323232323232323232323232323232323232323232323232",
+      "outcome": { "weightNumerator": "12345678901234567890", "weightDenominator": "1000000000000000000" }
+    },
+    {
+      "evaluationId": "3002",
+      "idempotencyKeyHex": "4040404040404040404040404040404040404040404040404040404040404040",
+      "subjectUserId": "202",
+      "inputHashHex": "4141414141414141414141414141414141414141414141414141414141414141",
+      "promptVersion": "worth-v1",
+      "modelVersion": "fixture-model-v1",
+      "sourceRefs": [],
+      "status": "failed",
+      "errorClass": "malformed_provider_result"
+    }
+  ],
+  "scenarios": [
+    { "name": "normal_result", "evaluationId": "3001", "expected": "allocation_proposal_only" },
+    { "name": "duplicate_same_result", "evaluationId": "3001", "expected": "idempotent" },
+    { "name": "duplicate_conflicting_result", "evaluationId": "3001", "expected": "conflict" },
+    { "name": "malformed_result", "evaluationId": "3002", "expected": "failed_without_proposal" },
+    { "name": "provider_failure", "expected": "retryable_error_class" },
+    { "name": "prompt_injection_in_source", "expected": "source_treated_as_untrusted_data" },
+    { "name": "proposal_cannot_transfer", "evaluationId": "3001", "expected": "no_vault_authority" }
+  ]
+}

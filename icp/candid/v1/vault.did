@@ -1,0 +1,31 @@
+type RoundId = nat64;
+type AllocationId = nat64;
+type Hash32 = blob;
+type TimestampNs = int;
+type AssetId = record { ledger : principal; symbol : text; decimals : nat8 };
+type Account = record { owner : principal; subaccount : opt blob };
+type AppError = variant { unauthorized; forbidden; not_found; conflict : text; invalid : text; expired; rate_limited : record { retry_after_ns : nat64 }; paused; transient : text; internal : text };
+type InterfaceVersion = record { major : nat16; minor : nat16; patch : nat16; schema_hash : Hash32 };
+type Reservation = record { round_id : RoundId; asset : AssetId; fund : Hash32; required_atoms : nat; reserved_atoms : nat; account : Account };
+type Transfer = record { allocation_id : AllocationId; to : Account; amount_atoms : nat; fee_atoms : opt nat; memo : Hash32; created_at_time : nat64; state : variant { prepared; executing : nat32; sent : nat; retryable_failure : text; permanent_failure : text } };
+type PreparedTransfer = record { allocation_id : AllocationId; to : Account; amount_atoms : nat; memo : Hash32; created_at_time : nat64 };
+type BatchExecution = record { round_id : RoundId; transfers : vec Transfer };
+type Reconciliation = record { round_id : RoundId; ledger_atoms : nat; reserved_atoms : nat; reconciled : bool; checked_at : TimestampNs };
+type ResultUnit = variant { ok; err : AppError };
+type ResultBalance = variant { ok : record { atoms : nat; checked_at : TimestampNs }; err : AppError };
+type ResultReservation = variant { ok : Reservation; err : AppError };
+type ResultTransfer = variant { ok : Transfer; err : AppError };
+type ResultBatch = variant { ok : BatchExecution; err : AppError };
+type ResultReconciliation = variant { ok : Reconciliation; err : AppError };
+service : {
+  interface_version : () -> (InterfaceVersion) query;
+  derive_round_account : (record { asset : AssetId; fund : Hash32; round_id : RoundId }) -> (Account) query;
+  get_round_balance : (RoundId) -> (ResultBalance);
+  get_reservation : (RoundId) -> (ResultReservation) query;
+  get_transfer : (AllocationId) -> (ResultTransfer) query;
+  reserve_round : (record { round_id : RoundId; asset : AssetId; fund : Hash32; required_atoms : nat }) -> (ResultReservation);
+  execute_batch : (record { round_id : RoundId; allocation_version : Hash32; transfers : vec PreparedTransfer }) -> (ResultBatch);
+  reconcile_round : (RoundId) -> (ResultReconciliation);
+  set_emergency_pause : (bool) -> (ResultUnit);
+  emergency_pause_status : () -> (bool) query;
+}

@@ -1,0 +1,59 @@
+[package]
+name = "meritocracy-icp"
+version = "0.1.0"
+description = "Meritocracy Internet Computer application"
+license = "AGPL-3.0-only"
+
+[dependencies]
+base = "0.16.0"
+core = "1.0.0"
+liminal = "3.1.0"
+llm = "4.0.0"
+sha3 = "0.1.1"
+base-x-encoder = "2.1.0"
+xtended-numbers = "2.3.0"
+candid = "2.4.2"
+eddsa = "2.1.0"
+json = "1.4.0"
+
+[dev-dependencies]
+test = "2.1.1"
+
+[toolchain]
+moc = "0.16.3"
+pocket-ic = "16.1.0"
+lintoko = "0.12.0"
+wasm-opt = "133"
+
+[deployed]
+dir = "icp/stable/deployed"
+
+[canisters.registry]
+main = "canisters/registry/main.mo"
+
+[canisters.registry.check-stable]
+path = "icp/stable/deployed/registry.most"
+
+[canisters.assessment]
+main = "canisters/assessment/main.mo"
+
+[canisters.assessment.check-stable]
+path = "icp/stable/deployed/assessment.most"
+
+[canisters.rounds]
+main = "canisters/rounds/main.mo"
+
+[canisters.rounds.check-stable]
+path = "icp/stable/deployed/rounds.most"
+
+[canisters.vault]
+main = "canisters/vault/main.mo"
+
+[canisters.vault.check-stable]
+path = "icp/stable/deployed/vault.most"
+
+[canisters.audit]
+main = "canisters/audit/main.mo"
+
+[canisters.audit.check-stable]
+path = "icp/stable/deployed/audit.most"

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    { "symbol": "ICP", "ledgerPrincipal": "ryjl3-tyaaa-aaaaa-aaaba-cai", "decimals": 8, "feeAtoms": "10000" },
+    { "symbol": "ckBTC", "ledgerPrincipal": "mxzaz-hqaaa-aaaar-qaada-cai", "decimals": 8, "feeAtoms": "10" },
+    { "symbol": "ckETH", "ledgerPrincipal": "ss2fx-dyaaa-aaaar-qacoq-cai", "decimals": 18, "feeAtoms": "2000000000000" },
+    { "symbol": "ckUSDT", "ledgerPrincipal": "cngnf-vqaaa-aaaar-qag4q-cai", "decimals": 6, "feeAtoms": "10000" },
+    { "symbol": "ckUSDC", "ledgerPrincipal": "xevnm-gaaaa-aaaar-qafnq-cai", "decimals": 6, "feeAtoms": "10000" },
+    { "symbol": "ckEURC", "ledgerPrincipal": "pe5t5-diaaa-aaaar-qahwa-cai", "decimals": 6, "feeAtoms": "10000" }
+  ],
+  "rounds": [
+    {
+      "roundId": "5001",
+      "assetSymbol": "ckBTC",
+      "sourceFund": { "kind": "global" },
+      "status": "disputing",
+      "requiredAtoms": "900719925474099312355",
+      "reservedAtoms": "900719925474099312355",
+      "disputeEndsAtNs": "1794528000000000000",
+      "allocationVersionHex": "5151515151515151515151515151515151515151515151515151515151515151",
+      "allocations": [
+        {
+          "allocationId": "6001",
+          "userId": "101",
+          "amountAtoms": "10",
+          "recipientAccountId": "1001",
+          "state": "frozen",
+          "evidenceHashHex": "6161616161616161616161616161616161616161616161616161616161616161"
+        },
+        {
+          "allocationId": "6002",
+          "userId": "202",
+          "amountAtoms": "900719925474099312345",
+          "recipientAccountId": null,
+          "state": "carried",
+          "carryReason": "no_valid_route",
+          "evidenceHashHex": "6262626262626262626262626262626262626262626262626262626262626262"
+        }
+      ]
+    }
+  ],
+  "transfers": [
+    {
+      "allocationId": "6101",
+      "roundId": "5101",
+      "amountAtoms": "18446744073709551615",
+      "state": "sent",
+      "memoHex": "7171717171717171717171717171717171717171717171717171717171717171",
+      "createdAtTimeNs": "1793923200000000000",
+      "blockIndex": "9007199254740997"
+    },
+    {
+      "allocationId": "6102",
+      "roundId": "5101",
+      "amountAtoms": "1000000000000000000000",
+      "state": "retryable_failure",
+      "attempt": 2,
+      "memoHex": "7272727272727272727272727272727272727272727272727272727272727272",
+      "createdAtTimeNs": "1793923200000000001",
+      "errorClass": "temporarily_unavailable"
+    }
+  ],
+  "scenarios": [
+    "exact_total_validation",
+    "changed_ledger_fee_read_at_execution",
+    "duplicate_batch_pays_once",
+    "duplicate_timer_delivery_is_idempotent",
+    "temporary_failure_reuses_memo_and_created_at_time",
+    "permanent_failure_becomes_carried_balance",
+    "frozen_allocation_does_not_block_other_allocations",
+    "ledger_balance_reconciles_to_reservations",
+    "country_and_eu_fund_scope_selection"
+  ]
+}

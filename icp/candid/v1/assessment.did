@@ -1,0 +1,24 @@
+type UserId = nat64;
+type EvaluationId = nat64;
+type Hash32 = blob;
+type TimestampNs = int;
+type AppError = variant { unauthorized; forbidden; not_found; conflict : text; invalid : text; expired; rate_limited : record { retry_after_ns : nat64 }; paused; transient : text; internal : text };
+type InterfaceVersion = record { major : nat16; minor : nat16; patch : nat16; schema_hash : Hash32 };
+type Page = record { cursor : opt blob; limit : nat32 };
+type SourceRef = record { ordinal : nat32; uri_hash : Hash32; allowed_uri : opt text };
+type EvaluationOutcome = variant { accepted : record { weight_numerator : nat; weight_denominator : nat }; rejected : text };
+type Evaluation = record { id : EvaluationId; idempotency_key : Hash32; subject_user_id : UserId; input_hash : Hash32; prompt_version : Hash32; model_version : text; result_hash : opt Hash32; outcome : opt EvaluationOutcome; status : variant { pending; complete; failed : text }; created_at : TimestampNs; updated_at : TimestampNs };
+type AllocationProposal = record { evaluation_id : EvaluationId; user_id : UserId; weight_numerator : nat; weight_denominator : nat; evidence_hash : Hash32 };
+type EvaluationPage = record { items : vec Evaluation; next_cursor : opt blob };
+type ResultEvaluation = variant { ok : Evaluation; err : AppError };
+type ResultPage = variant { ok : EvaluationPage; err : AppError };
+type ResultProposal = variant { ok : AllocationProposal; err : AppError };
+service : {
+  interface_version : () -> (InterfaceVersion) query;
+  submit_evaluation : (record { idempotency_key : Hash32; subject_user_id : UserId; input_hash : Hash32; source_refs : vec SourceRef; prompt_version : Hash32; model_version : text }) -> (ResultEvaluation);
+  get_evaluation : (EvaluationId) -> (ResultEvaluation) query;
+  get_evaluation_by_key : (Hash32) -> (ResultEvaluation) query;
+  list_evaluations : (record { subject : opt UserId; page : Page }) -> (ResultPage) query;
+  record_normalized_result : (record { evaluation_id : EvaluationId; input_hash : Hash32; result_hash : Hash32; outcome : EvaluationOutcome; provider_reference : opt Hash32 }) -> (ResultEvaluation);
+  propose_allocation : (EvaluationId) -> (ResultProposal);
+}

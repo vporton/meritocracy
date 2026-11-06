@@ -19,9 +19,10 @@ of this plan.
 - Use Mops for the Motoko workspace, dependency lockfile, builds, tests, and
   stable-interface checks. Commit `mops.toml`, `mops.lock`, generated `.did`,
   and generated `.most` stable-type artifacts used as upgrade baselines.
-- Add and pin the Mops packages `luminal` (OAuth) and `llm` (AI integration).
-  Package upgrades require a reviewed lockfile change, `mops verify --locked`,
-  and the full test suite.
+- Add and pin the Mops packages `liminal` (OAuth) and `llm` (AI integration).
+  Package upgrades require a reviewed lockfile change, `mops install --lock
+  check` (the lock-verification command in the pinned Mops CLI), and the full
+  test suite.
 - A user may have any number of payout accounts. A payout account is identified
   by its network, asset scope, normalized address, verification state, and
   activation state. One active default is selected for each `(network, asset)`
@@ -34,7 +35,7 @@ of this plan.
   session key; the raw session secret is not stored in canister state or sent as
   a Candid argument.
 - A session can be authorized by an Ethereum-wallet proof, an optional Internet
-  Identity login, or OAuth through `luminal`. New authorization methods are
+  Identity login, or OAuth through `liminal`. New authorization methods are
   added as session issuers without changing users, sessions, or payout accounts.
 - The initial treasury supports ICP and ICRC-1 assets, including the existing
   chain-key token scope: ckBTC, ckETH, ckUSDT, ckUSDC, and ckEURC.
@@ -174,9 +175,9 @@ an explicit retirement reason.
 
 1. Add the Motoko workspace and canister source layout without replacing the
    current Node application.
-2. Initialize Mops; pin the Motoko toolchain and install `luminal` and `llm`.
+2. Initialize Mops; pin the Motoko toolchain and install `liminal` and `llm`.
 3. Configure the project to emit Candid and stable-type (`.most`) artifacts.
-4. Add CI commands for formatting, type checking, `mops verify --locked`, unit
+4. Add CI commands for formatting, type checking, `mops install --lock check`, unit
    tests, PocketIC integration tests, Candid compatibility checks, and stable
    upgrade compatibility checks.
 5. Add local, staging, and mainnet configuration with distinct canister IDs and
@@ -195,7 +196,7 @@ frontend can consume generated Candid bindings.
 3. Implement optional Internet Identity authorization as another session issuer.
    It creates or renews a normal Meritocracy session rather than replacing
    sessions.
-4. Implement OAuth authorization with `luminal`. Use OAuth/OIDC PKCE where the
+4. Implement OAuth authorization with `liminal`. Use OAuth/OIDC PKCE where the
    provider supports it; preserve only the provider subject/reference required
    by Meritocracy, never provider access or refresh tokens in stable state.
 5. Allow more OAuth issuers without changing the session or user schema.
@@ -249,7 +250,10 @@ and carried balance.
 ### Stage 5 — Port AI evaluation with `llm`
 
 1. Use the Mops `llm` package in `assessment` as the Motoko integration layer
-   for model requests and normalized responses.
+   for synchronous model requests and normalized responses. The package does
+   not support OpenAI asynchronous/batch mode; legacy async batch orchestration
+   is not migrated through this integration and may exist only in a controlled
+   external adapter approved separately.
 2. Keep every paid-provider credential out of stable canister state. Provider
    access is supplied through the package's supported secure configuration or a
    controlled external attestation path; never add a plaintext `SystemSecret`
@@ -270,7 +274,7 @@ cannot influence a vault transfer before round finalization.
 
 1. Replace Express/Axios service calls with generated Candid clients.
 2. Keep the session-oriented UX and session expiry behavior.
-3. Add OAuth session entry points backed by `luminal`, without making OAuth or
+3. Add OAuth session entry points backed by `liminal`, without making OAuth or
    Internet Identity mandatory.
 4. Replace the one-address profile with a payout-account manager and a clear
    default route selector.

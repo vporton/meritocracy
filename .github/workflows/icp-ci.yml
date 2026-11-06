@@ -1,0 +1,53 @@
+name: ICP checks
+
+on:
+  pull_request:
+    paths:
+      - 'canisters/**'
+      - 'icp/**'
+      - 'test/**'
+      - 'scripts/icp/**'
+      - 'frontend/src/declarations/**'
+      - 'frontend/src/ic/**'
+      - 'mops.toml'
+      - 'mops.lock'
+      - 'dfx.json'
+      - '.github/workflows/icp-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'canisters/**'
+      - 'icp/**'
+      - 'test/**'
+      - 'scripts/icp/**'
+      - 'frontend/src/declarations/**'
+      - 'frontend/src/ic/**'
+      - 'mops.toml'
+      - 'mops.lock'
+      - 'dfx.json'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+          cache: npm
+      - uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: 0.32.0
+      - run: npm ci
+      - run: npm install --global ic-mops@2.19.2
+      - name: Cache pinned Mops packages and toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/mops
+            ~/.local/share/mops
+          key: mops-${{ runner.os }}-${{ hashFiles('mops.toml', 'mops.lock') }}
+      - name: Verify ICP workspace
+        run: scripts/icp/check-stage1.sh

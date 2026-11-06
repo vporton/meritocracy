@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "users": [
+    {
+      "legacyId": 101,
+      "userId": "101",
+      "createdAtNs": "1785542400000000000",
+      "publicProfile": { "displayName": "Fixture Ada" },
+      "status": { "kind": "active" },
+      "identityBindings": [
+        { "issuer": "ethereum_wallet", "subjectHashHex": "1111111111111111111111111111111111111111111111111111111111111111" },
+        { "issuer": "oauth:github", "subjectHashHex": "1212121212121212121212121212121212121212121212121212121212121212" }
+      ],
+      "payoutAccounts": [
+        {
+          "id": "1001",
+          "network": "icp",
+          "assetLedgerPrincipal": "ryjl3-tyaaa-aaaaa-aaaba-cai",
+          "assetSymbol": "ICP",
+          "assetDecimals": 8,
+          "submittedAddress": "aaaaa-aa",
+          "normalizedAddress": "aaaaa-aa",
+          "verification": "verified",
+          "active": true,
+          "defaultForRoute": true
+        },
+        {
+          "id": "1002",
+          "network": "ethereum",
+          "assetLedgerPrincipal": null,
+          "assetSymbol": null,
+          "assetDecimals": null,
+          "submittedAddress": "0x1111111111111111111111111111111111111111",
+          "normalizedAddress": "0x1111111111111111111111111111111111111111",
+          "verification": "legacy_imported",
+          "active": false,
+          "defaultForRoute": false
+        }
+      ],
+      "eligibility": { "kind": "eligible", "attestationId": "7001" },
+      "carriedBalances": []
+    },
+    {
+      "legacyId": 202,
+      "userId": "202",
+      "createdAtNs": "1785628800000000000",
+      "publicProfile": { "displayName": "Fixture Lin" },
+      "status": { "kind": "banned", "untilNs": "1790812800000000000" },
+      "identityBindings": [
+        { "issuer": "internet_identity", "subjectHashHex": "2222222222222222222222222222222222222222222222222222222222222222" }
+      ],
+      "payoutAccounts": [],
+      "eligibility": { "kind": "attestation_expired", "attestationId": "7002" },
+      "carriedBalances": [
+        {
+          "assetLedgerPrincipal": "mxzaz-hqaaa-aaaar-qaada-cai",
+          "amountAtoms": "900719925474099312345",
+          "reason": "no_valid_route",
+          "sourceRoundId": "5001"
+        }
+      ]
+    }
+  ],
+  "attestations": [
+    {
+      "id": "7001",
+      "userId": "101",
+      "issuer": "fixture-kyc-issuer",
+      "status": "approved",
+      "issuedAtNs": "1785542400000000000",
+      "expiresAtNs": "1817078400000000000",
+      "referenceHashHex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "7002",
+      "userId": "202",
+      "issuer": "fixture-liveness-issuer",
+      "status": "expired",
+      "issuedAtNs": "1754006400000000000",
+      "expiresAtNs": "1785542400000000000",
+      "referenceHashHex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "negativeCases": [
+    { "name": "normalized_address_conflict", "accountIds": ["1001", "1999"] },
+    { "name": "legacy_import_cannot_activate_without_proof", "accountId": "1002" },
+    { "name": "identity_already_bound_does_not_merge_users", "issuer": "oauth:github" }
+  ]
+}

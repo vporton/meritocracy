@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "applicationDomain": "fixture.meritocracy.invalid",
+  "sessions": [
+    {
+      "principal": "aaaaa-aa",
+      "userId": "101",
+      "issuer": "ethereum_wallet",
+      "issuedAtNs": "1793923200000000000",
+      "expiresAtNs": "1794528000000000000",
+      "revokedAtNs": null,
+      "expected": "valid"
+    },
+    {
+      "principal": "2vxsx-fae",
+      "userId": "101",
+      "issuer": "oauth:github",
+      "issuedAtNs": "1792713600000000000",
+      "expiresAtNs": "1793318400000000000",
+      "revokedAtNs": null,
+      "expected": "expired"
+    },
+    {
+      "principal": "rrkah-fqaaa-aaaaa-aaaaq-cai",
+      "userId": "202",
+      "issuer": "internet_identity",
+      "issuedAtNs": "1793923200000000000",
+      "expiresAtNs": "1794528000000000000",
+      "revokedAtNs": "1794009600000000000",
+      "expected": "revoked"
+    }
+  ],
+  "ethereumChallenges": [
+    {
+      "challengeIdHex": "0101010101010101010101010101010101010101010101010101010101010101",
+      "address": "0x1111111111111111111111111111111111111111",
+      "sessionPrincipal": "aaaaa-aa",
+      "nonceHex": "0202020202020202020202020202020202020202020202020202020202020202",
+      "requestedAction": "create_or_renew_session",
+      "expiresAtNs": "1793923500000000000",
+      "usedAtNs": null,
+      "expected": "accepted_once"
+    }
+  ],
+  "negativeCases": [
+    "nonce_replay",
+    "wrong_application_domain",
+    "wrong_requested_action",
+    "wrong_session_principal",
+    "expired_challenge",
+    "revoke_all_invalidates_every_user_session"
+  ]
+}

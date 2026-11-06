@@ -1,0 +1,22 @@
+type AppError = variant {
+  unauthorized;
+  forbidden;
+  not_found;
+  conflict : text;
+  invalid : text;
+  expired;
+  rate_limited : record { retry_after_ns : nat64 };
+  paused;
+  transient : text;
+  internal : text;
+};
+type ResultUnit = variant { ok; err : AppError };
+service : {
+  configure_authorities : (record {
+    rounds_canister : opt principal;
+    session_consumers : vec principal;
+  attestation_issuers : vec record { name : text; caller : principal; public_key : blob };
+    allowed_domains : vec text;
+    allowed_actions : vec text;
+  }) -> (ResultUnit);
+}

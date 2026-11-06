@@ -1,0 +1,25 @@
+type UserId = nat64;
+type RoundId = nat64;
+type Hash32 = blob;
+type TimestampNs = int;
+type AppError = variant { unauthorized; forbidden; not_found; conflict : text; invalid : text; expired; rate_limited : record { retry_after_ns : nat64 }; paused; transient : text; internal : text };
+type InterfaceVersion = record { major : nat16; minor : nat16; patch : nat16; schema_hash : Hash32 };
+type Page = record { cursor : opt blob; limit : nat32 };
+type AuditSubject = variant { user : UserId; round : RoundId; allocation : nat64; evaluation : nat64; system : text };
+type AuditKind = variant { session; profile; attestation; evaluation; round; dispute; transfer; reconciliation; governance };
+type AuditEvent = record { event_id : Hash32; occurred_at : TimestampNs; actor : principal; subject : AuditSubject; kind : AuditKind; payload_hash : Hash32; public_payload : blob };
+type AuditPage = record { items : vec AuditEvent; next_cursor : opt blob };
+type RoundReport = record { round_id : RoundId; event_count : nat64; last_event_at : opt TimestampNs; event_root : Hash32 };
+type UserReport = record { user_id : UserId; events : AuditPage };
+type ResultEvent = variant { ok : AuditEvent; err : AppError };
+type ResultPage = variant { ok : AuditPage; err : AppError };
+type ResultRoundReport = variant { ok : RoundReport; err : AppError };
+type ResultUserReport = variant { ok : UserReport; err : AppError };
+service : {
+  interface_version : () -> (InterfaceVersion) query;
+  append : (record { event_id : Hash32; occurred_at : TimestampNs; actor : principal; subject : AuditSubject; kind : AuditKind; payload_hash : Hash32; public_payload : blob }) -> (ResultEvent);
+  get_event : (Hash32) -> (ResultEvent) query;
+  list_events : (record { subject : opt AuditSubject; kind : opt AuditKind; from : opt TimestampNs; to : opt TimestampNs; page : Page }) -> (ResultPage) query;
+  report_round : (RoundId) -> (ResultRoundReport) query;
+  report_user : (UserId, Page) -> (ResultUserReport) query;
+}

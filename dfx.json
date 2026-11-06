@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "dfx": "0.32.0",
+  "output_env_file": ".env.dfx",
+  "defaults": {
+    "build": {
+      "packtool": "mops sources"
+    }
+  },
+  "networks": {
+    "staging": {
+      "providers": ["https://icp-api.io"],
+      "type": "persistent"
+    }
+  },
+  "canisters": {
+    "registry": {
+      "type": "motoko",
+      "main": "canisters/registry/main.mo",
+      "candid": "icp/candid/v1/registry.did",
+      "declarations": {
+        "bindings": ["js", "ts", "did"],
+        "output": "frontend/src/declarations/registry",
+        "node_compatibility": false
+      }
+    },
+    "assessment": {
+      "type": "motoko",
+      "main": "canisters/assessment/main.mo",
+      "candid": "icp/candid/v1/assessment.did",
+      "declarations": {
+        "bindings": ["js", "ts", "did"],
+        "output": "frontend/src/declarations/assessment",
+        "node_compatibility": false
+      }
+    },
+    "rounds": {
+      "type": "motoko",
+      "main": "canisters/rounds/main.mo",
+      "candid": "icp/candid/v1/rounds.did",
+      "declarations": {
+        "bindings": ["js", "ts", "did"],
+        "output": "frontend/src/declarations/rounds",
+        "node_compatibility": false
+      }
+    },
+    "vault": {
+      "type": "motoko",
+      "main": "canisters/vault/main.mo",
+      "candid": "icp/candid/v1/vault.did",
+      "declarations": {
+        "bindings": ["js", "ts", "did"],
+        "output": "frontend/src/declarations/vault",
+        "node_compatibility": false
+      }
+    },
+    "audit": {
+      "type": "motoko",
+      "main": "canisters/audit/main.mo",
+      "candid": "icp/candid/v1/audit.did",
+      "declarations": {
+        "bindings": ["js", "ts", "did"],
+        "output": "frontend/src/declarations/audit",
+        "node_compatibility": false
+      }
+    },
+    "frontend": {
+      "type": "assets",
+      "dependencies": ["registry", "assessment", "rounds", "vault", "audit"],
+      "source": ["frontend/dist"],
+      "workspace": "frontend",
+      "build": ["npm run build"]
+    }
+  }
+}

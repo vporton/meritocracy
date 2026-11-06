@@ -1,0 +1,25 @@
+{
+  "codecVersion": 1,
+  "notes": "All hex is lowercase. The fixture principal is the anonymous principal with raw bytes 04.",
+  "inputs": {
+    "asset": {
+      "ledgerPrincipalRawHex": "04",
+      "decimals": 8,
+      "symbol": "ICP",
+      "canonicalHex": "01040800000003494350"
+    },
+    "fundIdHex": "2222222222222222222222222222222222222222222222222222222222222222",
+    "roundId": "42",
+    "allocationId": "7",
+    "userId": "9",
+    "amountAtoms": "9007199254740993",
+    "allocationVersionInputHex": "1111111111111111111111111111111111111111111111111111111111111111",
+    "evidenceHashHex": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "expected": {
+    "routeKeyHex": "a1d22bf17d15f06f37414d959b0889c46d281415ba08748f7a1557a54946f3c3",
+    "vaultSubaccountHex": "657038fd3cca99120e4478fdafb6d08b0564a8a34547d194538d260ad80e9c79",
+    "memoHex": "13244fb88d7e69d1ef98b1f42279d8d14d31ce14ffef609b6d8358745052f701",
+    "singleEntryAllocationVersionHex": "58ed35c11097aee9d88a5f3ad83d13a5110706cb386383b9372ac8a59a95e19d"
+  }
+}

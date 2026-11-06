@@ -64,9 +64,8 @@ hash, and rejects divergent operation/result hashes. A separate PocketIC
 fixture now makes an actual inter-canister write, deliberately traps after its
 remote commit and before local acknowledgement, then reconciles the same
 operation-ID/hash without another write. Direct callers are denied at both
-fixture boundaries and repeated reconciliation is idempotent. Low-cycle,
-benchmark, Motoko canonical-export, and local-replica rehearsal proof are
-still required before M1 is complete.
+fixture boundaries and repeated reconciliation is idempotent. Low-cycle and
+benchmark proof are still required before M1 is complete.
 
 `scripts/icp/canonical-migration-vectors.cjs` plus
 `fixtures/migration_canonical_v1.json` provide an offline M1 golden vector for
@@ -75,7 +74,13 @@ prohibited raw secret/token fields, derives a logical ID from the source table
 and canonical primary key, and locks canonical row/receipt bytes and SHA-256
 hashes across repeated runs. The source maintenance-window/write-freeze and
 single-read-snapshot contract is specified in `MIGRATION_RUNBOOK.md`; it is
-not a production rehearsal. `M1_DEPENDENCY_INVENTORY.md` records that a clean
+not a production rehearsal. `CanonicalMigration.mo` and
+`test/CanonicalMigration.test.mo` reproduce the exact golden row bytes and
+SHA-256 hash in Motoko for that tagged fixture; its deliberately narrow M1
+input domain is not an approved production decoder. The controlled synthetic
+freeze/import/rollback drill in `M1_LOCAL_REPLICA_REHEARSAL.md` verifies the
+single-writer, redaction, snapshot, idempotent-receipt, conflict, abort, and
+rollback protocol without a production connection. `M1_DEPENDENCY_INVENTORY.md` records that a clean
 root production closure check now passes, while the separately pinned local
 PocketIC proof tool remains outside that production closure. The refreshed
 online audit reports zero critical and zero high findings (four moderate and

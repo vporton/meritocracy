@@ -28,6 +28,7 @@
     "install:m1-pocketic-tooling": "npm ci --prefix tools/m1-pocketic",
     "test:m1-private-store-upgrade": "node scripts/icp/private-store-upgrade-pocketic-proof.cjs",
     "test:m1-durable-journal-crash": "node scripts/icp/durable-journal-crash-pocketic-proof.cjs",
+    "test:m1-local-replica-rehearsal": "node scripts/icp/m1-local-replica-rehearsal.cjs",
     "test:m1-canonical-vectors": "node --test scripts/icp/canonical-migration-vectors.test.cjs && node scripts/icp/canonical-migration-vectors.cjs fixtures/migration_canonical_v1.json"
   },
   "keywords": [

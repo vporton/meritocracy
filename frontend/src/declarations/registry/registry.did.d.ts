@@ -97,8 +97,10 @@ export type NetworkId = { 'icp' : null } |
   { 'cosmos' : null } |
   { 'bitcoin' : null };
 export interface OAuthProviderInput {
-  'kind' : { 'google' : null } |
-    { 'github' : null },
+  'kind' : { 'orcid' : null } |
+    { 'bitbucket' : null } |
+    { 'github' : null } |
+    { 'gitlab' : null },
   'client_id' : string,
 }
 export interface PayoutAccount {

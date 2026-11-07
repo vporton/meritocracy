@@ -188,8 +188,10 @@ type OAuthProviderInput =
  record {
    client_id: text;
    kind: variant {
+           bitbucket;
            github;
-           google;
+           gitlab;
+           orcid;
          };
  };
 type NetworkId =

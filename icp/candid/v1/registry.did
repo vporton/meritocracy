@@ -55,7 +55,7 @@ type ResultBalances = variant { ok : vec CarriedBalance; err : AppError };
 type ResultCarriedBalance = variant { ok : CarriedBalance; err : AppError };
 type ResultRecipient = variant { ok : RecipientSnapshot; err : AppError };
 type ResultAuthorization = variant { ok : record { user_id : UserId; expires_at : TimestampNs }; err : AppError };
-type OAuthProviderInput = record { kind : variant { github; google }; client_id : text };
+type OAuthProviderInput = record { kind : variant { orcid; github; bitbucket; gitlab }; client_id : text };
 type AuthorityConfig = record {
   rounds_canister : opt principal;
   session_consumers : vec principal;

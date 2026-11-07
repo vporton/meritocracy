@@ -19,7 +19,7 @@ service : {
     allowed_domains : vec text;
     allowed_actions : vec text;
     oauth_site_url : text;
-    oauth_providers : vec record { kind : variant { github; google }; client_id : text };
+    oauth_providers : vec record { kind : variant { orcid; github; bitbucket; gitlab }; client_id : text };
     oauth_redirect_uris : vec text;
   }) -> (ResultUnit);
 }

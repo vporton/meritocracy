@@ -186,7 +186,7 @@ export default function IcpApp() {
     {notice && <p role="status" className="icp-notice">{notice}</p>}
 
     <section className="icp-card"><h2>Session</h2><p className="mono">Tab principal: {identity.getPrincipal().toText()}</p>
-      {session ? <><p>Signed in as user {session.user_id.toString()} until {formatNanosecondTimestamp(session.expires_at)}.</p><button onClick={logout}>Revoke this session</button></> : <div className="icp-actions"><button onClick={createPrincipalSession} disabled={!actors}>Create principal session</button><form onSubmit={beginOAuth}><select value={provider} onChange={(e) => setProvider(e.target.value)}><option>github</option><option>google</option></select><button disabled={!actors}>Continue with OAuth</button></form></div>}
+      {session ? <><p>Signed in as user {session.user_id.toString()} until {formatNanosecondTimestamp(session.expires_at)}.</p><button onClick={logout}>Revoke this session</button></> : <div className="icp-actions"><button onClick={createPrincipalSession} disabled={!actors}>Create principal session</button><form onSubmit={beginOAuth}><select value={provider} onChange={(e) => setProvider(e.target.value)}><option>orcid</option><option>github</option><option>bitbucket</option><option>gitlab</option></select><button disabled={!actors}>Continue with OAuth</button></form></div>}
       <p className="icp-help">The private session key is stored only in this tab’s sessionStorage so an OAuth redirect can return to it. Closing the tab clears it.</p>
     </section>
 

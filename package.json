@@ -33,7 +33,9 @@
     "test:icp:migration": "node --test test/migration-tools.test.mjs",
     "test:icp:shadow": "mops build -- -Werror && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-icrc1-ledger.wasm test/fixtures/mock-icrc1-ledger.mo && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-registry.wasm test/fixtures/mock-registry.mo && node --test test/shadow-rounds-pocketic.test.mjs",
     "test:icp:release": "node --test test/release-preflight.test.mjs",
-    "preflight:icp": "node scripts/icp/release-preflight.mjs"
+    "test:icp:config": "node --test test/configure-canisters.test.mjs",
+    "preflight:icp": "node scripts/icp/release-preflight.mjs",
+    "configure:icp": "node scripts/icp/configure-canisters.mjs"
   },
   "keywords": [
     "nodejs",

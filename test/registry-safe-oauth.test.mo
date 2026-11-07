@@ -20,7 +20,12 @@ let transformActor = actor "aaaaa-aa" : actor {
 func adapter() : SafeOAuth.Adapter {
   SafeOAuth.Adapter({
     site_url = "https://registry.example/";
-    providers = [SafeOAuth.githubProvider("public-client"), SafeOAuth.googleProvider("google-client")];
+    providers = [
+      SafeOAuth.orcidProvider("orcid-client"),
+      SafeOAuth.githubProvider("public-client"),
+      SafeOAuth.bitbucketProvider("bitbucket-client"),
+      SafeOAuth.gitlabProvider("gitlab-client"),
+    ];
     allowed_redirect_uris = ["https://app.example/oauth/complete"];
     attempt_ttl_ns = 60;
     max_token_response_bytes = 16_384;
@@ -55,6 +60,28 @@ test(
     switch (subject.begin(session, "github", session, "https://app.example/oauth/complete", entropy, verifier, 11)) {
       case (#err(#conflict(_))) {};
       case _ assert false;
+    };
+  },
+);
+
+test(
+  "configured client IDs drive all provider authorization URLs",
+  func() {
+    for ((provider, endpoint, clientId) in [
+      ("orcid", "orcid.org/oauth/authorize", "orcid-client"),
+      ("github", "github.com/login/oauth/authorize", "public-client"),
+      ("bitbucket", "bitbucket.org/site/oauth2/authorize", "bitbucket-client"),
+      ("gitlab", "gitlab.com/oauth/authorize", "gitlab-client"),
+    ].vals()) {
+      let subject = adapter();
+      switch (subject.begin(session, provider, session, "https://app.example/oauth/complete", entropy, verifier, 10)) {
+        case (#ok(start)) {
+          assert Text.contains(start.login_url, #text(endpoint));
+          assert Text.contains(start.login_url, #text("client_id=" # clientId));
+          assert Text.contains(start.login_url, #text("redirect_uri=https%3A%2F%2Fregistry.example%2Fauth%2F" # provider # "%2Fcallback"));
+        };
+        case _ assert false;
+      };
     };
   },
 );
@@ -152,7 +179,7 @@ await asyncTest(
         };
       };
     };
-    assert (await subject.completeWith("google", oauthState, "code", 11, transformActor.transform, outcall)) == #err(#unauthorized);
+    assert (await subject.completeWith("gitlab", oauthState, "code", 11, transformActor.transform, outcall)) == #err(#unauthorized);
     let completed = await subject.completeWith("github", oauthState, "code", 11, transformActor.transform, outcall);
     switch (completed) {
       case (#ok(value)) {
@@ -215,10 +242,10 @@ test(
     ignore subject.begin(session, "github", session, "https://app.example/oauth/complete", entropy, verifier, 10);
     let nextEntropy = Blob.fromArray(Array.tabulate<Nat8>(32, func(index) { Nat8.fromNat(index + 7) }));
     let nextVerifier = Blob.fromArray(Array.tabulate<Nat8>(32, func(index) { Nat8.fromNat(index + 9) }));
-    switch (subject.begin(session, "google", session, "https://app.example/oauth/complete", nextEntropy, nextVerifier, 70)) {
+    switch (subject.begin(session, "gitlab", session, "https://app.example/oauth/complete", nextEntropy, nextVerifier, 70)) {
       case (#ok(start)) {
-        assert Text.contains(start.login_url, #text("accounts.google.com"));
-        assert Text.contains(start.login_url, #text("client_id=google-client"));
+        assert Text.contains(start.login_url, #text("gitlab.com/oauth/authorize"));
+        assert Text.contains(start.login_url, #text("client_id=gitlab-client"));
       };
       case _ assert false;
     };
@@ -227,11 +254,15 @@ test(
 );
 
 test(
-  "provider subjects accept only immutable GitHub id or Google sub",
+  "provider subjects accept only immutable provider identifiers",
   func() {
     assert SafeOAuth.parseSubject(#github, Text.encodeUtf8("{\"id\":42,\"login\":\"mutable\"}")) == #ok("42");
-    assert SafeOAuth.parseSubject(#google, Text.encodeUtf8("{\"sub\":\"immutable-google-sub\"}")) == #ok("immutable-google-sub");
+    assert SafeOAuth.parseSubject(#orcid, Text.encodeUtf8("{\"sub\":\"0000-0001-2345-6789\"}")) == #ok("0000-0001-2345-6789");
+    assert SafeOAuth.parseSubject(#bitbucket, Text.encodeUtf8("{\"uuid\":\"{immutable-bitbucket-uuid}\"}")) == #ok("{immutable-bitbucket-uuid}");
+    assert SafeOAuth.parseSubject(#gitlab, Text.encodeUtf8("{\"id\":84,\"username\":\"mutable\"}")) == #ok("84");
     assert SafeOAuth.parseSubject(#github, Text.encodeUtf8("{\"id\":\"42\"}")) == #err;
-    assert SafeOAuth.parseSubject(#google, Text.encodeUtf8("{\"email\":\"person@example.com\"}")) == #err;
+    assert SafeOAuth.parseSubject(#orcid, Text.encodeUtf8("{\"email\":\"person@example.com\"}")) == #err;
+    assert SafeOAuth.parseSubject(#bitbucket, Text.encodeUtf8("{\"username\":\"mutable\"}")) == #err;
+    assert SafeOAuth.parseSubject(#gitlab, Text.encodeUtf8("{\"id\":\"84\"}")) == #err;
   },
 );

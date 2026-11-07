@@ -21,7 +21,7 @@ module {
   public type HttpResponse = Liminal.RawUpdateHttpResponse;
   public type LiminalProvider = OAuth.ProviderConfig;
 
-  public type ProviderKind = { #github; #google };
+  public type ProviderKind = { #orcid; #github; #bitbucket; #gitlab };
   public type Provider = {
     kind : ProviderKind;
     config : LiminalProvider;
@@ -325,9 +325,17 @@ module {
         let #ok(id) = Json.getAsNat(userJson, "id") else return #err;
         #ok(Nat.toText(id));
       };
-      case (#google) {
+      case (#orcid) {
         let #ok(sub) = Json.getAsText(userJson, "sub") else return #err;
         if (sub == "") #err else #ok(sub);
+      };
+      case (#bitbucket) {
+        let #ok(uuid) = Json.getAsText(userJson, "uuid") else return #err;
+        if (uuid == "") #err else #ok(uuid);
+      };
+      case (#gitlab) {
+        let #ok(id) = Json.getAsNat(userJson, "id") else return #err;
+        #ok(Nat.toText(id));
       };
     };
   };
@@ -346,17 +354,45 @@ module {
     };
   };
 
-  public func googleProvider(clientId : Text) : Provider {
+  public func orcidProvider(clientId : Text) : Provider {
     {
-      kind = #google;
+      kind = #orcid;
       config = {
-        name = "google";
+        name = "orcid";
         clientId;
-        authorizationEndpoint = OAuth.Google.authorizationEndpoint;
-        tokenEndpoint = OAuth.Google.tokenEndpoint;
-        scopes = ["openid", "profile"];
+        authorizationEndpoint = "https://orcid.org/oauth/authorize";
+        tokenEndpoint = "https://orcid.org/oauth/token";
+        scopes = ["openid"];
       };
-      user_info_endpoint = "https://openidconnect.googleapis.com/v1/userinfo";
+      user_info_endpoint = "https://orcid.org/oauth/userinfo";
+    };
+  };
+
+  public func bitbucketProvider(clientId : Text) : Provider {
+    {
+      kind = #bitbucket;
+      config = {
+        name = "bitbucket";
+        clientId;
+        authorizationEndpoint = "https://bitbucket.org/site/oauth2/authorize";
+        tokenEndpoint = "https://bitbucket.org/site/oauth2/access_token";
+        scopes = ["account"];
+      };
+      user_info_endpoint = "https://api.bitbucket.org/2.0/user";
+    };
+  };
+
+  public func gitlabProvider(clientId : Text) : Provider {
+    {
+      kind = #gitlab;
+      config = {
+        name = "gitlab";
+        clientId;
+        authorizationEndpoint = "https://gitlab.com/oauth/authorize";
+        tokenEndpoint = "https://gitlab.com/oauth/token";
+        scopes = ["read_user"];
+      };
+      user_info_endpoint = "https://gitlab.com/api/v4/user";
     };
   };
 

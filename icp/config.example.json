@@ -1,0 +1,43 @@
+{
+  "schema": "meritocracy-icp-config/v1",
+  "registry": {
+    "allowed_domains": ["app.example.com"],
+    "allowed_actions": ["login", "payout"],
+    "oauth_site_url": "https://registry.example.com/",
+    "oauth_providers": [
+      { "kind": "orcid", "client_id": "REPLACE_WITH_ORCID_CLIENT_ID" },
+      { "kind": "github", "client_id": "REPLACE_WITH_GITHUB_CLIENT_ID" },
+      { "kind": "bitbucket", "client_id": "REPLACE_WITH_BITBUCKET_CLIENT_ID" },
+      { "kind": "gitlab", "client_id": "REPLACE_WITH_GITLAB_CLIENT_ID" }
+    ],
+    "oauth_redirect_uris": [
+      "https://app.example.com/auth/orcid/callback",
+      "https://app.example.com/auth/github/callback",
+      "https://app.example.com/auth/bitbucket/callback",
+      "https://app.example.com/auth/gitlab/callback"
+    ],
+    "attestation_issuers": []
+  },
+  "assessment": {
+    "allowed_models": ["gpt-5"],
+    "allowed_prompt_versions_hex": ["REPLACE_WITH_64_HEX_PROMPT_HASH"],
+    "allowed_source_hosts": [],
+    "max_input_bytes": 65536,
+    "max_sources": 32,
+    "max_weight_numerator": 1000000,
+    "rate_limit_count": 10,
+    "rate_limit_window_ns": "3600000000000",
+    "max_attempts": 3,
+    "budget": {
+      "paused": true,
+      "global_limit": 0,
+      "per_caller_limit": 0,
+      "window_ns": "3600000000000"
+    }
+  },
+  "roles": {
+    "rounds_managers": ["REPLACE_WITH_PRINCIPAL"],
+    "dispute_resolvers": ["REPLACE_WITH_PRINCIPAL"]
+  },
+  "supported_ledgers": ["ryjl3-tyaaa-aaaaa-aaaba-cai"]
+}

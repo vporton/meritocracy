@@ -150,7 +150,7 @@ test('registry rejects an OAuth provider swap before making an outcall', async (
     allowed_domains: [], allowed_actions: [], oauth_site_url: siteUrl,
     oauth_providers: [
       { kind: { github: null }, client_id: 'github-client-id' },
-      { kind: { google: null }, client_id: 'google-client-id' },
+      { kind: { gitlab: null }, client_id: 'gitlab-client-id' },
     ],
     oauth_redirect_uris: [appRedirect],
   }));
@@ -160,7 +160,7 @@ test('registry rejects an OAuth provider swap before making an outcall', async (
   });
   assert.ok('ok' in started);
   const state = new URL(started.ok.login_url).searchParams.get('state');
-  const swapped = await fixture.actor.http_request_update(callbackRequest('google', state));
+  const swapped = await fixture.actor.http_request_update(callbackRequest('gitlab', state));
   assert.equal(swapped.status_code, 401);
   assert.equal((await pic.getPendingHttpsOutcalls()).length, 0);
 });

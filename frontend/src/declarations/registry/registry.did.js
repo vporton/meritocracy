@@ -93,7 +93,12 @@ export const idlFactory = ({ IDL }) => {
     'caller' : IDL.Principal,
   });
   const OAuthProviderInput = IDL.Record({
-    'kind' : IDL.Variant({ 'google' : IDL.Null, 'github' : IDL.Null }),
+    'kind' : IDL.Variant({
+      'orcid' : IDL.Null,
+      'bitbucket' : IDL.Null,
+      'github' : IDL.Null,
+      'gitlab' : IDL.Null,
+    }),
     'client_id' : IDL.Text,
   });
   const UnitResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : AppError });

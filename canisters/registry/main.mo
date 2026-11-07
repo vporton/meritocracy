@@ -24,7 +24,7 @@ persistent actor Registry {
     public_key : Blob;
   };
   type OAuthProviderInput = {
-    kind : { #github; #google };
+    kind : { #orcid; #github; #bitbucket; #gitlab };
     client_id : Text;
   };
   type AttestationRecord = {
@@ -73,38 +73,38 @@ persistent actor Registry {
   let sevenDaysNs : Int = 604_800_000_000_000;
   let challengeLifetimeNs : Int = 300_000_000_000;
   let schemaHash : Blob = Blob.fromArray([
-    0x8c,
-    0x58,
-    0x3b,
-    0x9e,
-    0xb5,
-    0xa7,
-    0xb1,
-    0x30,
-    0x17,
-    0xa9,
-    0x5c,
-    0x0a,
-    0x85,
+    0x70,
+    0x4f,
+    0xc7,
+    0xb4,
+    0xea,
+    0xd1,
+    0xc1,
     0xcb,
-    0x2a,
+    0x96,
+    0x22,
+    0x2e,
+    0x37,
     0x1e,
-    0x13,
-    0x23,
-    0x31,
-    0x03,
-    0xd0,
+    0xca,
+    0xe3,
+    0xd5,
+    0xaa,
+    0xa4,
+    0xb5,
+    0x19,
+    0x11,
+    0x0c,
+    0xee,
+    0x33,
     0xe1,
-    0xdf,
-    0x0c,
-    0x0c,
-    0xe8,
-    0xf6,
-    0x4d,
-    0x62,
-    0x9e,
-    0x0e,
-    0xf8,
+    0xa7,
+    0x68,
+    0x2d,
+    0x59,
+    0x6b,
+    0x76,
+    0xa7,
   ]);
 
   var stableState : Types.StableState = Types.emptyState;
@@ -160,7 +160,7 @@ persistent actor Registry {
     patch : Nat16;
     schema_hash : Blob;
   } {
-    { major = 1; minor = 5; patch = 0; schema_hash = schemaHash };
+    { major = 2; minor = 0; patch = 0; schema_hash = schemaHash };
   };
 
   public shared ({ caller }) func begin_ethereum_login(
@@ -807,8 +807,10 @@ persistent actor Registry {
       oauthProviderInputs,
       func(input) {
         switch (input.kind) {
+          case (#orcid) SafeOAuth.orcidProvider(input.client_id);
           case (#github) SafeOAuth.githubProvider(input.client_id);
-          case (#google) SafeOAuth.googleProvider(input.client_id);
+          case (#bitbucket) SafeOAuth.bitbucketProvider(input.client_id);
+          case (#gitlab) SafeOAuth.gitlabProvider(input.client_id);
         };
       },
     );

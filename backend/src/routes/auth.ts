@@ -794,6 +794,10 @@ function sendOAuthPopupMessage(res: express.Response, payload: unknown, status =
   res.status(status);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
+  // The callback is loaded after a cross-origin provider redirect. Helmet's
+  // global same-origin-allow-popups policy can move it into a new browsing
+  // context group, clearing window.opener before the result is posted back.
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
   res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");
   res.send(`<!doctype html><meta charset="utf-8"><title>OAuth result</title><script>if(window.opener){window.opener.postMessage(${serializedPayload},${JSON.stringify(frontendOrigin)});}window.close();</script>`);
 }

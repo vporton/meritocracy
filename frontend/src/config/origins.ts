@@ -49,13 +49,19 @@ export const getFrontendOrigin = (): string => {
 }
 
 export const getApiOrigin = (): string => {
+  // A deployment-supplied API origin is authoritative. In particular, an ICP
+  // asset canister hostname is not an API hostname and must not be rewritten
+  // to api.<canister-id>.localhost.
+  const configured = configuredApiOrigin()
+  if (configured) return configured
+
   if (!runtimeLocation) {
-    return configuredApiOrigin() || LOCAL_API_URL
+    return LOCAL_API_URL
   }
 
   const { hostname, origin, protocol } = runtimeLocation
   if (isLocalHost(hostname)) {
-    return configuredApiOrigin() || LOCAL_API_URL
+    return LOCAL_API_URL
   }
 
   if (hostname.startsWith(API_HOST_PREFIX)) {

@@ -84,7 +84,7 @@ const isLocalhostOrigin = (origin?: string) => {
 
   try {
     const { hostname } = new URL(origin);
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '::1';
+    return hostname === 'localhost' || hostname.endsWith('.localhost') || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '::1';
   } catch {
     return false;
   }

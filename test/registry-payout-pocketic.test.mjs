@@ -33,6 +33,12 @@ const adminIdlFactory = ({ IDL }) => {
         })),
         allowed_domains: IDL.Vec(IDL.Text),
         allowed_actions: IDL.Vec(IDL.Text),
+        oauth_site_url: IDL.Text,
+        oauth_providers: IDL.Vec(IDL.Record({
+          kind: IDL.Variant({ github: IDL.Null, google: IDL.Null }),
+          client_id: IDL.Text,
+        })),
+        oauth_redirect_uris: IDL.Vec(IDL.Text),
       })],
       [IDL.Variant({ ok: IDL.Null, err: AppError })],
       [],
@@ -42,6 +48,7 @@ const adminIdlFactory = ({ IDL }) => {
 
 const ethereumRoute = (asset = []) => ({ network: { ethereum: null }, asset });
 const wallet = new Wallet('0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
+const legacyWallet = new Wallet('0x1123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
 
 async function issueSession(registry, iiIdentity, sessionIdentity) {
   registry.setIdentity(iiIdentity);
@@ -94,11 +101,34 @@ test('payout proofs enforce route conflicts, independent defaults, replay, and r
     attestation_issuers: [],
     allowed_domains: ['app.meritocracy.test'],
     allowed_actions: ['login'],
+    oauth_site_url: '',
+    oauth_providers: [],
+    oauth_redirect_uris: [],
   });
   assert.ok('ok' in configured);
 
-  await issueSession(registry, iiOne, sessionOne);
+  const userOne = await issueSession(registry, iiOne, sessionOne);
   await issueSession(registry, iiTwo, sessionTwo);
+
+  registry.setIdentity(sessionOne);
+  const unauthorizedImport = await registry.import_legacy_payout_account(userOne.user_id, {
+    route: ethereumRoute(),
+    address: legacyWallet.address,
+  });
+  assert.deepEqual(unauthorizedImport, { err: { forbidden: null } });
+
+  registry.setIdentity(controller);
+  const legacyAccount = await registry.import_legacy_payout_account(userOne.user_id, {
+    route: ethereumRoute(),
+    address: legacyWallet.address,
+  });
+  assert.ok('ok' in legacyAccount);
+  assert.deepEqual(legacyAccount.ok.verification, { legacy_imported: null });
+  assert.equal(legacyAccount.ok.active, false);
+
+  registry.setIdentity(sessionOne);
+  const legacyActivation = await registry.set_payout_account_active(legacyAccount.ok.id, true);
+  assert.deepEqual(legacyActivation, { err: { forbidden: null } });
 
   registry.setIdentity(sessionOne);
   const baseAccount = await registry.add_payout_account({

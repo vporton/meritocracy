@@ -33,6 +33,12 @@ const adminIdlFactory = ({ IDL: Candid }) => {
         })),
         allowed_domains: Candid.Vec(Candid.Text),
         allowed_actions: Candid.Vec(Candid.Text),
+        oauth_site_url: Candid.Text,
+        oauth_providers: Candid.Vec(Candid.Record({
+          kind: Candid.Variant({ github: Candid.Null, google: Candid.Null }),
+          client_id: Candid.Text,
+        })),
+        oauth_redirect_uris: Candid.Vec(Candid.Text),
       })],
       [Candid.Variant({ ok: Candid.Null, err: AppError })],
       [],
@@ -71,6 +77,9 @@ test('registry issues, expires, renews, and revokes II-backed sessions', async (
     attestation_issuers: [],
     allowed_domains: ['app.meritocracy.test'],
     allowed_actions: ['login'],
+    oauth_site_url: '',
+    oauth_providers: [],
+    oauth_redirect_uris: [],
   });
   assert.ok('ok' in configured);
 
@@ -139,6 +148,9 @@ test('registry verifies an EIP-191 wallet challenge and rejects misuse', async (
     attestation_issuers: [],
     allowed_domains: ['app.meritocracy.test'],
     allowed_actions: ['login'],
+    oauth_site_url: '',
+    oauth_providers: [],
+    oauth_redirect_uris: [],
   });
   assert.ok('ok' in configured);
 

@@ -1,5 +1,7 @@
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Buffer "mo:base/Buffer";
+import Char "mo:base/Char";
 import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
@@ -36,11 +38,13 @@ module {
   };
   public type Start = { login_url : Text; attempt_id : Blob; expires_at : Int };
   public type Completion = {
+    attempt_id : Blob;
     provider : Text;
     subject : Text;
     session_principal : Principal;
     redirect_uri : Text;
   };
+  public type Outcall = IC.HttpRequestArgs -> async IC.HttpRequestResult;
   type Attempt = {
     id : Blob;
     provider : Text;
@@ -76,6 +80,14 @@ module {
       let ?provider = findProvider(providerKey) else return #err(#invalid("OAuth provider is not allowed"));
       if (not contains(config.allowed_redirect_uris, redirectUri)) return #err(#invalid("OAuth redirect URI is not allowed"));
       prune(now);
+      // This is the authoritative capacity check. Callers may perform an
+      // early check before awaiting entropy, but concurrent calls can all
+      // pass that check. Actor message execution makes this check-and-append
+      // section atomic because there is no await below.
+      switch (capacity(caller, now)) {
+        case (#err(error)) return #err(error);
+        case (#ok) {};
+      };
       let attemptId = attemptEntropy;
       if (findAttempt(attemptId) != null) return #err(#conflict("OAuth attempt already exists"));
       let state = base64Url(attemptEntropy);
@@ -102,12 +114,55 @@ module {
 
     public func attemptCount() : Nat { attempts.size() };
 
+    public func checkCapacity(caller : Principal, now : Int) : {
+      #ok;
+      #err : Types.AppError;
+    } {
+      prune(now);
+      capacity(caller, now);
+    };
+
+    func capacity(caller : Principal, now : Int) : {
+      #ok;
+      #err : Types.AppError;
+    } {
+      if (attempts.size() >= 100) return #err(#rate_limited({ retry_after_ns = 60_000_000_000 }));
+      let callerAttempts = Array.filter<Attempt>(
+        attempts,
+        func(attempt) {
+          attempt.session_principal == caller and not attempt.consumed and attempt.expires_at > now
+        },
+      ).size();
+      if (callerAttempts >= 3) return #err(#rate_limited({ retry_after_ns = 60_000_000_000 }));
+      #ok;
+    };
+
     public func complete(
       providerName : Text,
       state : Text,
       code : Text,
       now : Int,
       transform : IC.TransformFunction,
+    ) : async { #ok : Completion; #err : Types.AppError } {
+      await completeWith(
+        providerName,
+        state,
+        code,
+        now,
+        transform,
+        func(request : IC.HttpRequestArgs) : async IC.HttpRequestResult {
+          await (with cycles = config.http_cycles) IC.ic.http_request(request);
+        },
+      );
+    };
+
+    public func completeWith(
+      providerName : Text,
+      state : Text,
+      code : Text,
+      now : Int,
+      transform : IC.TransformFunction,
+      outcall : Outcall,
     ) : async { #ok : Completion; #err : Types.AppError } {
       if (code == "") return #err(#unauthorized);
       let providerKey = Text.toLowercase(providerName);
@@ -140,8 +195,9 @@ module {
         ?Text.encodeUtf8(tokenBody),
         config.max_token_response_bytes,
         transform,
+        outcall,
       );
-      if (tokenResponse.status != 200) return #err(#unauthorized);
+      if (tokenResponse.status != 200 or not hasJsonContentType(tokenResponse.headers)) return #err(#unauthorized);
       let #ok(tokenJson) = decodeJson(tokenResponse.body) else return #err(#unauthorized);
       let #ok(accessToken) = Json.getAsText(tokenJson, "access_token") else return #err(#unauthorized);
       let #ok(tokenType) = Json.getAsText(tokenJson, "token_type") else return #err(#unauthorized);
@@ -158,11 +214,13 @@ module {
         null,
         config.max_user_info_response_bytes,
         transform,
+        outcall,
       );
       // accessToken is not assigned to any field and becomes unreachable here.
-      if (userResponse.status != 200) return #err(#unauthorized);
+      if (userResponse.status != 200 or not hasJsonContentType(userResponse.headers)) return #err(#unauthorized);
       let #ok(subject) = parseSubject(provider.kind, userResponse.body) else return #err(#unauthorized);
       #ok({
+        attempt_id = attempt.id;
         provider = providerKey;
         subject;
         session_principal = attempt.session_principal;
@@ -177,8 +235,9 @@ module {
       body : ?Blob,
       maxBytes : Nat64,
       transform : IC.TransformFunction,
+      outcall : Outcall,
     ) : async IC.HttpRequestResult {
-      await (with cycles = config.http_cycles) IC.ic.http_request({
+      await outcall({
         url;
         max_response_bytes = ?maxBytes;
         headers;
@@ -209,8 +268,51 @@ module {
     };
   };
 
+  public func safeHttps(value : Text) : Bool {
+    let ?rest = Text.stripStart(value, #text("https://")) else return false;
+    if (rest == "") return false;
+    let authority = Buffer.Buffer<Char>(Text.size(rest));
+    var inAuthority = true;
+    for (char in rest.chars()) {
+      let code = Char.toNat32(char);
+      if (code <= 0x20 or code == 0x7f or char == '\\') return false;
+      if (inAuthority and (char == '/' or char == '?' or char == '#')) {
+        inAuthority := false;
+      } else if (inAuthority) {
+        authority.add(char);
+      };
+    };
+    let host = Text.fromIter(authority.vals());
+    if (host == "" or Text.contains(host, #char('@')) or Text.contains(host, #char(':'))) return false;
+    if (Text.startsWith(host, #char('.')) or Text.endsWith(host, #char('.')) or Text.contains(host, #text(".."))) return false;
+    for (char in host.chars()) {
+      let code = Char.toNat32(char);
+      let valid = (code >= 0x61 and code <= 0x7a) or (code >= 0x41 and code <= 0x5a) or (code >= 0x30 and code <= 0x39) or char == '-' or char == '.';
+      if (not valid) return false;
+    };
+    true;
+  };
+
+  public func normalizeResponseHeaders(args : IC.TransformArg) : IC.HttpRequestResult {
+    let contentType = Array.find<IC.HttpHeader>(
+      args.response.headers,
+      func(header) { Text.toLowercase(header.name) == "content-type" },
+    );
+    {
+      status = args.response.status;
+      headers = switch (contentType) {
+        case null [];
+        case (?header) [{
+          name = "content-type";
+          value = Text.toLowercase(header.value);
+        }];
+      };
+      body = args.response.body;
+    };
+  };
+
   public func stripResponseHeaders(args : IC.TransformArg) : IC.HttpRequestResult {
-    { status = args.response.status; headers = []; body = args.response.body };
+    normalizeResponseHeaders(args);
   };
 
   public func parseSubject(kind : ProviderKind, body : Blob) : {
@@ -270,6 +372,19 @@ module {
   };
   func contains(values : [Text], value : Text) : Bool {
     Array.find<Text>(values, func(candidate) { candidate == value }) != null;
+  };
+  func hasJsonContentType(headers : [IC.HttpHeader]) : Bool {
+    switch (
+      Array.find<IC.HttpHeader>(
+        headers,
+        func(header) {
+          Text.toLowercase(header.name) == "content-type" and Text.startsWith(Text.toLowercase(header.value), #text("application/json"));
+        },
+      )
+    ) {
+      case null false;
+      case (?_) true;
+    };
   };
   func withSlash(value : Text) : Text {
     if (Text.endsWith(value, #char('/'))) value else value # "/";

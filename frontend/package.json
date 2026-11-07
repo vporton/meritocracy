@@ -9,7 +9,10 @@
     "build": "vite build",
     "start": "npx serve -s dist -l 4173",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview --host 0.0.0.0 --port 4173"
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "test:ic": "node --experimental-strip-types --test src/ic/*.test.ts",
+    "test:ic:browser": "node --test scripts/icp-browser-test.mjs",
+    "typecheck:ic": "tsc --noEmit -p tsconfig.ic.json"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.69",

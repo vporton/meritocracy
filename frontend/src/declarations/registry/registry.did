@@ -1,81 +1,440 @@
+type VerificationState =
+ variant {
+   legacy_imported;
+   pending;
+   revoked;
+   verified;
+ };
+type UserStatus =
+ variant {
+   active;
+   banned: TimestampNs;
+   deleted;
+ };
 type UserId = nat64;
-type PayoutAccountId = nat64;
-type RoundId = nat64;
-type Hash32 = blob;
+type User =
+ record {
+   eligibility: EligibilityState;
+   profile: PublicProfile;
+ };
+type UnitResult =
+ variant {
+   err: AppError;
+   ok;
+ };
+type TransformArg =
+ record {
+   context: blob;
+   response: HttpRequestResult;
+ };
 type TimestampNs = int;
-type NetworkId = variant { icp; bitcoin; ethereum; solana; polkadot; stellar; cosmos; bitcoin_cash; other : text };
-type AssetId = record { ledger : principal; symbol : text; decimals : nat8 };
-type Route = record { network : NetworkId; asset : opt AssetId };
-type AppError = variant { unauthorized; forbidden; not_found; conflict : text; invalid : text; expired; rate_limited : record { retry_after_ns : nat64 }; paused; transient : text; internal : text };
-type ResultUnit = variant { ok; err : AppError };
-type InterfaceVersion = record { major : nat16; minor : nat16; patch : nat16; schema_hash : Hash32 };
-type PublicProfile = record { user_id : UserId; name : opt text; created_at : TimestampNs; status : variant { active; banned : TimestampNs; deleted } };
-type User = record { profile : PublicProfile; eligibility : EligibilityState };
-type EligibilityState = record { status : variant { unknown; eligible; ineligible; expired }; issuer : opt text; reference_hash : opt Hash32; expires_at : opt TimestampNs };
-type Session = record { session_principal : principal; user_id : UserId; issuer : variant { ethereum_wallet; internet_identity; oauth : text }; issued_at : TimestampNs; expires_at : TimestampNs; revoked_at : opt TimestampNs };
-type PayoutAccount = record { id : PayoutAccountId; user_id : UserId; route : Route; address : text; normalized_address : text; verification : variant { pending; legacy_imported; verified; revoked }; active : bool; default_for_route : bool; created_at : TimestampNs; verified_at : opt TimestampNs };
-type RecipientSnapshot = record { user_id : UserId; payout_account_id : PayoutAccountId; route : Route; normalized_address : text; captured_at : TimestampNs };
-type CarriedBalance = record { asset : AssetId; atoms : nat; source_round : RoundId; reason : text };
-type Page = record { cursor : opt blob; limit : nat32 };
-type ProfilePage = record { items : vec PublicProfile; next_cursor : opt blob };
-type OAuthStart = record { login_url : text; attempt_id : blob; expires_at : TimestampNs };
-type Challenge = record { challenge_id : blob; message : text; expires_at : TimestampNs };
-type HeaderField = record { text; text };
-type HttpUpdateRequest = record { url : text; method : text; headers : vec HeaderField; body : blob };
-type HttpRequest = record { url : text; method : text; headers : vec HeaderField; body : blob; certificate_version : opt nat16 };
-type StreamingCallbackResponse = record { body : blob; token : opt blob };
-type StreamingStrategy = variant { Callback : record { callback : func (blob) -> (opt StreamingCallbackResponse) query; token : blob } };
-type HttpUpdateResponse = record { status_code : nat16; headers : vec HeaderField; body : blob; streaming_strategy : opt StreamingStrategy };
-type HttpResponse = record { status_code : nat16; headers : vec HeaderField; body : blob; streaming_strategy : opt StreamingStrategy; upgrade : opt bool };
-type SignedAttestation = record { user_id : UserId; issuer : text; status : variant { eligible; ineligible }; reference_hash : Hash32; issued_at : TimestampNs; expires_at : opt TimestampNs; signature : blob };
-type ProfilePatch = record { name : opt text };
-type PayoutAccountInput = record { route : Route; address : text };
-type ResultSession = variant { ok : Session; err : AppError };
-type ResultUser = variant { ok : User; err : AppError };
-type ResultProfile = variant { ok : PublicProfile; err : AppError };
-type ResultProfiles = variant { ok : ProfilePage; err : AppError };
-type ResultAccount = variant { ok : PayoutAccount; err : AppError };
-type ResultAccounts = variant { ok : vec PayoutAccount; err : AppError };
-type ResultChallenge = variant { ok : Challenge; err : AppError };
-type ResultOAuth = variant { ok : OAuthStart; err : AppError };
-type ResultEligibility = variant { ok : EligibilityState; err : AppError };
-type ResultBalances = variant { ok : vec CarriedBalance; err : AppError };
-type ResultRecipient = variant { ok : RecipientSnapshot; err : AppError };
-type ResultAuthorization = variant { ok : record { user_id : UserId; expires_at : TimestampNs }; err : AppError };
-type AuthorityConfig = record {
-  rounds_canister : opt principal;
-  session_consumers : vec principal;
-  attestation_issuers : vec record { name : text; caller : principal; public_key : blob };
-  allowed_domains : vec text;
-  allowed_actions : vec text;
-};
+type StreamingStrategy = variant {
+                           Callback:
+                            record {
+                              callback:
+                               func (blob) ->
+                                (opt StreamingCallbackResponse) query;
+                              token: blob;
+                            };};
+type StreamingCallbackResponse =
+ record {
+   body: blob;
+   token: opt blob;
+ };
+type SessionIssuer =
+ variant {
+   ethereum_wallet;
+   internet_identity;
+   oauth: text;
+ };
+type Session =
+ record {
+   expires_at: TimestampNs;
+   issued_at: TimestampNs;
+   issuer: SessionIssuer;
+   revoked_at: opt TimestampNs;
+   session_principal: principal;
+   user_id: UserId;
+ };
+type Route =
+ record {
+   asset: opt AssetId;
+   network: NetworkId;
+ };
+type RoundId = nat64;
+type Result_9 =
+ variant {
+   err: AppError;
+   ok: vec CarriedBalance;
+ };
+type Result_8 =
+ variant {
+   err: AppError;
+   ok: PublicProfile;
+ };
+type Result_7 =
+ variant {
+   err: AppError;
+   ok: LegacyUserMapping;
+ };
+type Result_6 =
+ variant {
+   err: AppError;
+   ok: record {
+         items: vec LegacyUserMapping;
+         next_cursor: opt blob;
+       };
+ };
+type Result_5 =
+ variant {
+   err: AppError;
+   ok: vec PayoutAccount;
+ };
+type Result_4 =
+ variant {
+   err: AppError;
+   ok: record {
+         items: vec PublicProfile;
+         next_cursor: opt blob;
+       };
+ };
+type Result_3 =
+ variant {
+   err: AppError;
+   ok: EligibilityState;
+ };
+type Result_2 =
+ variant {
+   err: AppError;
+   ok: PayoutAccount;
+ };
+type Result_15 =
+ variant {
+   err: AppError;
+   ok: record {
+         expires_at: int;
+         user_id: UserId;
+       };
+ };
+type Result_13 =
+ variant {
+   err: AppError;
+   ok: record {
+         attempt_id: blob;
+         expires_at: int;
+         login_url: text;
+       };
+ };
+type Result_12 =
+ variant {
+   err: AppError;
+   ok: record {
+         challenge_id: blob;
+         expires_at: int;
+         message: text;
+       };
+ };
+type Result_11 =
+ variant {
+   err: AppError;
+   ok: CarriedBalance;
+ };
+type Result_10 =
+ variant {
+   err: AppError;
+   ok: Session;
+ };
+type Result_1 =
+ variant {
+   err: AppError;
+   ok: RecipientSnapshot;
+ };
+type Result =
+ variant {
+   err: AppError;
+   ok: User;
+ };
+type RecipientSnapshot =
+ record {
+   captured_at: TimestampNs;
+   icrc_account: opt IcrcAccount;
+   normalized_address: text;
+   payout_account_id: PayoutAccountId;
+   route: Route;
+   user_id: UserId;
+ };
+type PublicProfile =
+ record {
+   created_at: TimestampNs;
+   name: opt text;
+   status: UserStatus;
+   user_id: UserId;
+ };
+type PayoutAccountId = nat64;
+type PayoutAccount =
+ record {
+   active: bool;
+   address: text;
+   created_at: TimestampNs;
+   default_for_route: bool;
+   id: PayoutAccountId;
+   normalized_address: text;
+   route: Route;
+   user_id: UserId;
+   verification: VerificationState;
+   verified_at: opt TimestampNs;
+ };
+type OAuthProviderInput =
+ record {
+   client_id: text;
+   kind: variant {
+           github;
+           google;
+         };
+ };
+type NetworkId =
+ variant {
+   bitcoin;
+   bitcoin_cash;
+   cosmos;
+   ethereum;
+   icp;
+   other: text;
+   polkadot;
+   solana;
+   stellar;
+ };
+type LegacyUserMapping =
+ record {
+   imported_profile:
+    record {
+      created_at: TimestampNs;
+      name: opt text;
+      status: UserStatus;
+    };
+   legacy_user_id: text;
+   source_namespace: text;
+   user_id: UserId;
+ };
+type IcrcAccount =
+ record {
+   owner: principal;
+   subaccount: opt blob;
+ };
+type HttpUpdateResponse =
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   streaming_strategy: opt StreamingStrategy;
+ };
+type HttpUpdateRequest =
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HttpResponse =
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   streaming_strategy: opt StreamingStrategy;
+   upgrade: opt bool;
+ };
+type HttpRequestResult =
+ record {
+   body: blob;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type HttpRequest =
+ record {
+   body: blob;
+   certificate_version: opt nat16;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HttpHeader =
+ record {
+   name: text;
+   value: text;
+ };
+type HeaderField =
+ record {
+   text;
+   text;
+ };
+type Hash32 = blob;
+type EligibilityStatus =
+ variant {
+   eligible;
+   expired;
+   ineligible;
+   unknown;
+ };
+type EligibilityState =
+ record {
+   expires_at: opt TimestampNs;
+   issuer: opt text;
+   reference_hash: opt Hash32;
+   status: EligibilityStatus;
+ };
+type CarriedBalance =
+ record {
+   asset: AssetId;
+   atoms: nat;
+   reason: text;
+   source_round: RoundId;
+ };
+type AttestationIssuer =
+ record {
+   caller: principal;
+   name: text;
+   public_key: blob;
+ };
+type AssetId =
+ record {
+   decimals: nat8;
+   ledger: principal;
+   symbol: text;
+ };
+type AppError =
+ variant {
+   conflict: text;
+   expired;
+   forbidden;
+   internal: text;
+   invalid: text;
+   not_found;
+   paused;
+   rate_limited: record {retry_after_ns: nat64;};
+   transient: text;
+   unauthorized;
+ };
+type AllocationId = nat64;
 service : {
-  configure_authorities : (AuthorityConfig) -> (ResultUnit);
-  interface_version : () -> (InterfaceVersion) query;
-  begin_ethereum_login : (record { address : text; session_principal : principal; requested_action : text; domain : text }) -> (ResultChallenge);
-  complete_ethereum_login : (record { challenge_id : blob; signature : blob; public_key : blob }) -> (ResultSession);
-  complete_internet_identity_login : (record { session_principal : principal; requested_action : text }) -> (ResultSession);
-  begin_oauth_login : (record { provider : text; session_principal : principal; redirect_uri : text }) -> (ResultOAuth);
-  http_request : (HttpRequest) -> (HttpResponse) query;
-  http_request_update : (HttpUpdateRequest) -> (HttpUpdateResponse);
-  me : () -> (ResultUser) query;
-  get_public_profile : (UserId) -> (ResultProfile) query;
-  list_public_profiles : (Page) -> (ResultProfiles) query;
-  update_public_profile : (ProfilePatch) -> (ResultUser);
-  add_payout_account : (PayoutAccountInput) -> (ResultAccount);
-  import_legacy_payout_account : (UserId, PayoutAccountInput) -> (ResultAccount);
-  begin_payout_proof : (PayoutAccountId) -> (ResultChallenge);
-  complete_payout_proof : (PayoutAccountId, blob) -> (ResultAccount);
-  set_payout_account_active : (PayoutAccountId, bool) -> (ResultAccount);
-  set_default_payout_account : (PayoutAccountId) -> (ResultAccount);
-  revoke_payout_account : (PayoutAccountId) -> (ResultAccount);
-  list_my_payout_accounts : () -> (ResultAccounts) query;
-  revoke_session : (principal) -> (ResultUnit);
-  revoke_all_sessions : () -> (ResultUnit);
-  authorize_session : (principal) -> (ResultAuthorization);
-  snapshot_recipient : (record { user_id : UserId; route : Route; round_id : RoundId }) -> (ResultRecipient);
-  get_eligibility : (UserId) -> (ResultEligibility) query;
-  put_attestation : (SignedAttestation) -> (ResultEligibility);
-  get_carried_balances : (UserId) -> (ResultBalances) query;
-  credit_carried_balance : (record { user_id : UserId; balance : CarriedBalance; allocation_id : nat64 }) -> (ResultUnit);
+  add_payout_account: (input: record {
+                                address: text;
+                                route: Route;
+                              }) -> (Result_2);
+  authorize_session: (target: principal) -> (Result_15);
+  begin_ethereum_login: (input:
+   record {
+     address: text;
+     domain: text;
+     requested_action: text;
+     session_principal: principal;
+   }) -> (Result_12);
+  begin_oauth_login: (input:
+   record {
+     provider: text;
+     redirect_uri: text;
+     session_principal: principal;
+   }) -> (Result_13);
+  begin_payout_proof: (accountId: PayoutAccountId) -> (Result_12);
+  complete_ethereum_login: (input:
+   record {
+     challenge_id: blob;
+     public_key: blob;
+     signature: blob;
+   }) -> (Result_10);
+  complete_icrc_payout_proof: (accountId: PayoutAccountId) -> (Result_2);
+  complete_internet_identity_login: (input:
+   record {
+     requested_action: text;
+     session_principal: principal;
+   }) -> (Result_10);
+  complete_payout_proof: (accountId: PayoutAccountId, proof: blob) ->
+   (Result_2);
+  configure_authorities: (config:
+   record {
+     allowed_actions: vec text;
+     allowed_domains: vec text;
+     attestation_issuers: vec AttestationIssuer;
+     oauth_providers: vec OAuthProviderInput;
+     oauth_redirect_uris: vec text;
+     oauth_site_url: text;
+     rounds_canister: opt principal;
+     session_consumers: vec principal;
+   }) -> (UnitResult);
+  consume_carried_balance: (input:
+   record {
+     allocation_id: AllocationId;
+     target_round: RoundId;
+   }) -> (Result_11);
+  credit_carried_balance: (input:
+   record {
+     allocation_id: AllocationId;
+     balance: CarriedBalance;
+     user_id: UserId;
+   }) -> (UnitResult);
+  current_session: () -> (Result_10) query;
+  get_carried_balances: (userId: UserId) -> (Result_9) query;
+  get_eligibility: (userId: UserId) -> (Result_3) query;
+  get_legacy_user_mapping: (sourceNamespace: text, legacyUserId: text) ->
+   (Result_7) query;
+  get_public_profile: (userId: UserId) -> (Result_8) query;
+  http_request: (_request: HttpRequest) -> (HttpResponse) query;
+  http_request_update: (request: HttpUpdateRequest) -> (HttpUpdateResponse);
+  import_legacy_payout_account: (userId: UserId, input:
+   record {
+     address: text;
+     route: Route;
+   }) -> (Result_2);
+  import_legacy_profile: (input:
+   record {
+     created_at: int;
+     legacy_user_id: text;
+     name: opt text;
+     source_namespace: text;
+     status: UserStatus;
+   }) -> (Result_7);
+  interface_version: () ->
+   (record {
+      major: nat16;
+      minor: nat16;
+      patch: nat16;
+      schema_hash: blob;
+    }) query;
+  list_legacy_user_mappings: (page:
+   record {
+     cursor: opt blob;
+     limit: nat32;
+   }) -> (Result_6) query;
+  list_my_payout_accounts: () -> (Result_5) query;
+  list_public_profiles: (page: record {
+                                 cursor: opt blob;
+                                 limit: nat32;
+                               }) -> (Result_4) query;
+  me: () -> (Result) query;
+  oauthTransform: (args: TransformArg) -> (HttpRequestResult) query;
+  put_attestation: (attestation:
+   record {
+     expires_at: opt int;
+     issued_at: int;
+     issuer: text;
+     reference_hash: blob;
+     signature: blob;
+     status: variant {
+               eligible;
+               ineligible;
+             };
+     user_id: UserId;
+   }) -> (Result_3);
+  revoke_all_sessions: () -> (UnitResult);
+  revoke_payout_account: (accountId: PayoutAccountId) -> (Result_2);
+  revoke_session: (target: principal) -> (UnitResult);
+  set_default_payout_account: (accountId: PayoutAccountId) -> (Result_2);
+  set_payout_account_active: (accountId: PayoutAccountId, active: bool) ->
+   (Result_2);
+  snapshot_recipient: (input:
+   record {
+     round_id: RoundId;
+     route: Route;
+     user_id: UserId;
+   }) -> (Result_1);
+  update_public_profile: (patch: record {name: opt text;}) -> (Result);
 }

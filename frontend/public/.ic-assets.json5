@@ -1,0 +1,13 @@
+[
+  {
+    // Let the asset canister apply its maintained baseline security headers
+    // instead of duplicating a CSP that can silently drift from the bundle.
+    "match": "**/*",
+    "security_policy": "standard"
+  },
+  {
+    // The application shell changes on each deployment and must revalidate.
+    "match": "index.html",
+    "cache": { "max_age": 0 }
+  }
+]

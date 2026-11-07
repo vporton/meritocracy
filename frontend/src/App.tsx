@@ -15,6 +15,7 @@ import DefensePanel from './pages/DefensePanel'
 import UserAuditLog from './pages/UserAuditLog'
 import Treasury from './pages/Treasury'
 import SocialShareButtons from './components/SocialShareButtons'
+import IcpApp from './ic/IcpApp'
 import './App.css'
 
 const queryClient = new QueryClient()
@@ -22,6 +23,18 @@ const queryClient = new QueryClient()
 function App() {
   const testVar = import.meta.env.VITE_TEST_INSTANCE;
   const isTest = testVar === 'true';
+  // The ICP preview is deliberately outside the legacy AuthProvider and
+  // wallet/query stack: mounting those providers performs Express-backed
+  // bootstrap work. This branch guarantees that /icp has no /api dependency.
+  if (window.location.pathname === '/icp' || window.location.pathname.startsWith('/icp/')) {
+    return (
+      <HelmetProvider>
+        <BrowserRouter>
+          <Routes><Route path="/icp/*" element={<IcpApp />} /></Routes>
+        </BrowserRouter>
+      </HelmetProvider>
+    )
+  }
   return (
     <HelmetProvider>
       <WagmiProvider>

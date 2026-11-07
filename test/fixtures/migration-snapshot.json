@@ -1,0 +1,8 @@
+{
+  "profiles": [{"legacy_id":"7","name":"Sanitized Scientist","created_at":"2026-01-01T00:00:00.000Z","status":{"active":null}}],
+  "identities": [{"legacy_user_id":"7","kind":"github","reference":"sanitized-provider-reference"}],
+  "eligibility": [{"legacy_user_id":"7","status":"eligible","issuer":"legacy-policy-v1","reference_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","expires_at":null}],
+  "payouts": [{"legacy_user_id":"7","network":"icp","asset":{"ledger":"ryjl3-tyaaa-aaaaa-aaaba-cai","symbol":"ICP","decimals":8},"normalized_address":"aaaaa-aa"}],
+  "evaluations": [{"legacy_user_id":"7","input_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","result_hash":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","outcome":{"accepted":{"weight_numerator":"3","weight_denominator":"2"}},"model_version":"fixture-model","prompt_version":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","source_hashes":["eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"]}],
+  "distributions": [{"legacy_id":"91","legacy_user_id":"7","allocation_id":"101","atoms":"300000000","asset":"ICP","fee_atoms":"10000","memo":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","block_index":"987"}]
+}

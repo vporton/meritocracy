@@ -16,6 +16,9 @@ remains the source of truth until the cutover in Stage 8.
   target canisters. An incompatible change requires a new version directory.
 - `../../icp/fixtures/v1/` contains sanitized, production-shaped fixtures and
   the scenarios that later Motoko, PocketIC, and browser tests must preserve.
+- `OPERATIONS.md` defines publication, governance, low-value canary, incident,
+  and cutover gates. The release manifest and fail-closed preflight live under
+  `../../icp/release/` and `../../scripts/icp/release-preflight.mjs`.
 
 ## Locked Stage 0 decisions
 

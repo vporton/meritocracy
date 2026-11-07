@@ -1,0 +1,123 @@
+# ICP production operations
+
+This is the public operational contract for the ICP application. It does not
+authorize deployment, treasury transfer, legacy shutdown, or data cutover.
+Every release must publish a completed manifest derived from
+`icp/release/release-manifest.example.json` and pass `npm run preflight:icp`.
+
+## Published release identity
+
+Publish the Git revision; canister IDs for frontend, Registry, Assessment,
+Rounds, Vault, and Audit; SHA-256 and semantic version of every canonical
+Candid interface; governance/controller principals; enabled ledger principals;
+and the Stage 7 export root and three signed reconciliation reports.
+
+Placeholders, anonymous principals, unreviewed controller changes, or a source
+revision different from the built revision block release.
+
+## Supported assets
+
+The code supports ICP/ICRC-1 accounting. A token is supported in production
+only when its exact ledger principal, symbol, decimals, fee behavior, and
+canary cap are in the signed release manifest. Intended initial assets are ICP
+and reviewed ICRC-1 ledgers for ckBTC, ckETH, ckUSDT, ckUSDC, and ckEURC. Names
+alone are not an allowlist. Non-ICRC routes stay non-payable through Stage 9.
+
+## Treasury derivation and accounting
+
+Vault funds use the Vault canister principal plus this 32-byte subaccount:
+
+```text
+SHA256("meritocracy/icp/v1/vault-subaccount\0"
+       || canonical(asset_id) || fund_id_32_bytes || U64_BE(round_id))
+```
+
+`SERIALIZATION_V1.md` is normative. A round reserves the exact allocation
+principal plus the current fee budget bound to its allocation version and
+transfer count. Each payment reduces the authorized reservation by amount plus
+the fee budget captured for that obligation; the actual fee is retained in the
+durable ledger receipt. Once every allocation is terminal, Rounds calls the
+idempotent `close_round` operation, which reclassifies the reservation to only
+carried/frozen principal plus one current-fee contingency per outstanding
+claim. Paid-only fee savings, fee overruns covered by physical surplus, and
+unsolicited funds therefore become explicit governed `excess_atoms`. A later
+carried rollover removes its principal and captured contingency, reaching zero
+when the last claim is sent. Reconciliation blocks on either a physical or
+internal accounting deficit; excess is never silently assigned or withdrawn.
+Rollover is lifecycle-serialized: Rounds rejects it until the source round is
+`complete`, and Vault independently rejects it until that source reservation is
+finalized. Therefore no rollover can mutate an obligation while `close_round`
+is awaiting fee or balance reads.
+The target-draft requirement applies only when creating a new rollover binding.
+An exact replay of an existing binding remains valid after the target becomes
+funded, so it can finish an idempotent Registry claim consume and source
+`rolled-to` marker after a transient post-transfer failure without sending the
+ledger transfer twice.
+Frozen and carried allocations do not grant an administrative withdrawal.
+
+Memos commit to round, allocation, and immutable allocation version. The
+`created_at_time` is persisted immediately before the first due execution—not
+at seven-day finalization—and is reused on retry; an ICRC duplicate is success.
+Carried principal moves only through the rounds-authorized, receipt-backed
+Vault rollover into a bound immutable target allocation. Upheld frozen funds
+require an explicit resolver settlement to carried first. The ledger block
+index is the authoritative receipt.
+
+## Governance and role separation
+
+Production must use multi-party governance, not a personal hot key.
+
+1. Upgrade governance is distinct from browser and operational principals.
+2. Registry session consumers contain only reviewed canisters. Assessment is
+   configured with Registry and is explicitly a Registry session consumer.
+3. Only configured Rounds is accepted by Vault. Frontend, Registry, Assessment,
+   Audit, and controllers cannot request an arbitrary transfer.
+4. Rounds managers and dispute resolvers are separately documented. Audit
+   appenders cannot authorize funds.
+5. Frontend release, Registry/Assessment policy, Rounds lifecycle, Vault
+   upgrade, treasury, and incident approvals are recorded separately.
+6. Emergency pause stops new execution but cannot withdraw, sweep, or redirect.
+
+Changes to controllers, roles, interfaces, ledgers, revision, export root, or
+accounting configuration invalidate preflight and the shadow-round streak.
+
+## Low-value canary runbook
+
+1. Record governance, security, migration, treasury, and incident approvals.
+   Legacy remains authoritative and writable during the canary.
+2. Run preflight locally, then (with approved network access) use
+   `--online --network ic` for read-only canister metadata/interface checks.
+3. Verify controllers and inter-canister authorities. Enable one reviewed
+   ledger and fund only a segregated deterministic canary subaccount below cap.
+4. Independently recompute subaccount, allocation version, snapshots, memos,
+   atoms, and expected fees.
+5. Exercise the seven-day dispute lifecycle; frozen is excluded and no-route is
+   carried.
+6. Execute and redeliver execution. Confirm one receipt per payable allocation.
+7. Record blocks, fees, balance, reservation, Audit root, and reconciliation.
+   Any mismatch is an incident and blocks launch.
+8. Obtain independent sign-off. Canary success alone does not authorize higher
+   limits or legacy write freeze.
+
+## Incident procedure
+
+For suspected duplicate/wrong payment, authority compromise, unexpected
+balance, upgrade failure, or mismatch:
+
+1. Governedly pause new Vault execution; never improvise a withdrawal.
+2. Preserve ledger blocks, module/status evidence, Audit events, allocation
+   versions, snapshots, transfers, migration roots, and governance proposals.
+3. Stop new rounds and release promotion. Do not delete legacy evidence.
+4. Reconcile every reservation and identify transfers by memo,
+   `created_at_time`, duplicate receipt, and block.
+5. Publish impact without exposing session keys, provider/OAuth tokens, KYC/PII,
+   signing keys, or governance secrets.
+6. Recovery requires reviewed compatible code, a new manifest and preflight,
+   a new canary, and multi-party approval.
+
+## Cutover gate
+
+ICP becomes the sole write authority only after the canary reconciles,
+governance is verified, three unchanged Stage 7 shadow rounds are approved,
+incident ownership is staffed, and cutover is explicitly approved. The legacy
+application/database is retained read-only as historical evidence.

@@ -63,6 +63,19 @@ module {
     eligibility : EligibilityState;
   };
 
+  // A migration mapping is an administrative association only. It does not
+  // bind an OAuth subject, wallet, email, session principal, or KYC evidence.
+  public type LegacyUserMapping = {
+    source_namespace : Text;
+    legacy_user_id : Text;
+    user_id : UserId;
+    imported_profile : {
+      name : ?Text;
+      created_at : TimestampNs;
+      status : UserStatus;
+    };
+  };
+
   public type SessionIssuer = {
     #ethereum_wallet;
     #internet_identity;
@@ -130,11 +143,17 @@ module {
     verified_at : ?TimestampNs;
   };
 
+  public type IcrcAccount = {
+    owner : Principal;
+    subaccount : ?Blob;
+  };
+
   public type RecipientSnapshot = {
     user_id : UserId;
     payout_account_id : PayoutAccountId;
     route : Route;
     normalized_address : Text;
+    icrc_account : ?IcrcAccount;
     captured_at : TimestampNs;
   };
 
@@ -165,6 +184,7 @@ module {
     allocation_id : AllocationId;
     user_id : UserId;
     balance : CarriedBalance;
+    consumed_by_round : ?RoundId;
   };
 
   public type AppError = {
@@ -194,6 +214,7 @@ module {
     payout_proof_challenges : [PayoutProofChallenge];
     recipient_snapshots : [RecipientSnapshotRecord];
     carried_credits : [CarriedCredit];
+    legacy_user_mappings : [LegacyUserMapping];
   };
 
   public let unknownEligibility : EligibilityState = {
@@ -215,5 +236,6 @@ module {
     payout_proof_challenges = [];
     recipient_snapshots = [];
     carried_credits = [];
+    legacy_user_mappings = [];
   };
 };

@@ -15,8 +15,11 @@ service : {
   configure_authorities : (record {
     rounds_canister : opt principal;
     session_consumers : vec principal;
-  attestation_issuers : vec record { name : text; caller : principal; public_key : blob };
+    attestation_issuers : vec record { name : text; caller : principal; public_key : blob };
     allowed_domains : vec text;
     allowed_actions : vec text;
+    oauth_site_url : text;
+    oauth_providers : vec record { kind : variant { github; google }; client_id : text };
+    oauth_redirect_uris : vec text;
   }) -> (ResultUnit);
 }

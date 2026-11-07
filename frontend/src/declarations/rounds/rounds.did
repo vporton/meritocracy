@@ -1,2 +1,237 @@
+type UserId = nat64;
+type UnitResult =
+ variant {
+   err: AppError;
+   ok;
+ };
+type TimestampNs = int;
+type RoundStatus =
+ variant {
+   complete;
+   disputing;
+   draft;
+   executing;
+   funded;
+   paused;
+ };
+type RoundId = nat64;
+type Round =
+ record {
+   allocation_version: opt Hash32;
+   asset: AssetId;
+   dispute_ends_at: opt TimestampNs;
+   id: RoundId;
+   required_atoms: nat;
+   reserved_atoms: nat;
+   source_fund: Hash32;
+   status: RoundStatus;
+   vault_subaccount: blob;
+ };
+type Result_8 =
+ variant {
+   err: AppError;
+   ok: record {
+         items: vec Allocation;
+         next_cursor: opt blob;
+       };
+ };
+type Result_7 =
+ variant {
+   err: AppError;
+   ok: record {
+         items: vec Dispute;
+         next_cursor: opt blob;
+       };
+ };
+type Result_6 =
+ variant {
+   err: AppError;
+   ok: record {
+         items: vec Round;
+         next_cursor: opt blob;
+       };
+ };
+type Result_5 =
+ variant {
+   err: AppError;
+   ok: blob;
+ };
+type Result_4 =
+ variant {
+   err: AppError;
+   ok: Reconciliation;
+ };
+type Result_3 =
+ variant {
+   err: AppError;
+   ok: Dispute;
+ };
+type Result_2 =
+ variant {
+   err: AppError;
+   ok: ExecutionSummary;
+ };
+type Result_1 =
+ variant {
+   err: AppError;
+   ok: Allocation;
+ };
+type Result =
+ variant {
+   err: AppError;
+   ok: Round;
+ };
+type Reconciliation =
+ record {
+   checked_at: TimestampNs;
+   deficit_atoms: nat;
+   excess_atoms: nat;
+   ledger_atoms: nat;
+   reconciled: bool;
+   reserved_atoms: nat;
+   round_id: RoundId;
+ };
+type Page =
+ record {
+   cursor: opt blob;
+   limit: nat32;
+ };
+type Hash32 = blob;
+type ExecutionSummary =
+ record {
+   carried: nat32;
+   prepared: nat32;
+   retryable: nat32;
+   sent: nat32;
+ };
+type DisputeState =
+ variant {
+   open;
+   rejected;
+   upheld;
+ };
+type DisputeResolution =
+ variant {
+   reject;
+   uphold;
+ };
+type Dispute =
+ record {
+   allocation_id: AllocationId;
+   created_at: TimestampNs;
+   evidence_hash: Hash32;
+   id: nat64;
+   reason_code: text;
+   round_id: RoundId;
+   state: DisputeState;
+ };
+type AssetId =
+ record {
+   decimals: nat8;
+   ledger: principal;
+   symbol: text;
+ };
+type AppError =
+ variant {
+   conflict: text;
+   expired;
+   forbidden;
+   internal: text;
+   invalid: text;
+   not_found;
+   paused;
+   rate_limited: record {retry_after_ns: nat64;};
+   transient: text;
+   unauthorized;
+ };
+type AllocationState =
+ variant {
+   carried: text;
+   frozen;
+   paid: nat;
+   pending;
+ };
+type AllocationId = nat64;
+type AllocationDraft =
+ record {
+   amount_atoms: nat;
+   evidence_hash: Hash32;
+   id: AllocationId;
+   user_id: UserId;
+ };
+type Allocation =
+ record {
+   draft: AllocationDraft;
+   recipient_hash: opt Hash32;
+   state: AllocationState;
+ };
 service : {
+  configure_authorities: (config:
+   record {
+     audit_canister: principal;
+     dispute_resolvers: vec principal;
+     managers: vec principal;
+     registry_canister: principal;
+     vault_canister: principal;
+   }) -> (UnitResult);
+  create_draft: (input:
+   record {
+     asset: AssetId;
+     required_atoms: nat;
+     source_fund: blob;
+   }) -> (Result);
+  execute_due: (roundId: RoundId) -> (Result_2);
+  file_dispute: (input:
+   record {
+     allocation_id: AllocationId;
+     evidence_hash: blob;
+     reason_code: text;
+     round_id: RoundId;
+   }) -> (Result_3);
+  finalize: (roundId: RoundId) -> (Result);
+  get_dispute: (disputeId: nat64) -> (Result_3) query;
+  get_round: (roundId: RoundId) -> (Result) query;
+  interface_version: () ->
+   (record {
+      major: nat16;
+      minor: nat16;
+      patch: nat16;
+      schema_hash: blob;
+    }) query;
+  list_allocations: (roundId: RoundId, page: Page) -> (Result_8) query;
+  list_disputes: (input:
+   record {
+     page: Page;
+     round_id: opt RoundId;
+     state: opt DisputeState;
+   }) -> (Result_7) query;
+  list_rounds: (input: record {
+                         page: Page;
+                         status: opt RoundStatus;
+                       }) -> (Result_6) query;
+  put_allocation_version: (input:
+   record {
+     allocations: vec AllocationDraft;
+     expected_previous_version: opt blob;
+     round_id: RoundId;
+   }) -> (Result_5);
+  reconcile: (roundId: RoundId) -> (Result_4);
+  resolve_dispute: (input:
+   record {
+     dispute_id: nat64;
+     resolution: DisputeResolution;
+   }) -> (Result_3);
+  retry_execution: (roundId: RoundId) -> (Result_2);
+  rollover_carried: (input:
+   record {
+     source_allocation_id: AllocationId;
+     target_allocation_id: AllocationId;
+     target_round: RoundId;
+   }) -> (UnitResult);
+  settle_frozen_to_carried: (input:
+   record {
+     dispute_id: nat64;
+     reason: text;
+   }) -> (Result_1);
+  verify_funding: (roundId: RoundId) -> (Result);
 }

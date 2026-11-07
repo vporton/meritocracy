@@ -26,7 +26,14 @@
     "prereqs": "docker build -t vporton/fly -f deploy/Dockerfile.fly . && docker image push vporton/fly",
     "test": "cd backend && npm run test",
     "test:icp": "scripts/icp/check-stage1.sh",
-    "test:icp:registry": "mops build -- -Werror && node --test test/registry-pocketic.test.mjs"
+    "test:icp:registry": "mops build -- -Werror && node --test test/registry-pocketic.test.mjs test/registry-oauth-pocketic.test.mjs test/registry-attestation-pocketic.test.mjs test/registry-payout-pocketic.test.mjs",
+    "test:icp:vault": "mops build vault -- -Werror && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-icrc1-ledger.wasm test/fixtures/mock-icrc1-ledger.mo && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-rounds.wasm test/fixtures/mock-rounds.mo && node --test test/vault-pocketic.test.mjs",
+    "test:icp:rounds": "mops build -- -Werror && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-icrc1-ledger.wasm test/fixtures/mock-icrc1-ledger.mo && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-registry.wasm test/fixtures/mock-registry.mo && node --test test/rounds-pocketic.test.mjs",
+    "test:icp:assessment": "mops check assessment -- -Werror && mops test assessment-domain --reporter compact && mops test assessment-llm-client --reporter compact && mops test assessment-stage5 --reporter compact",
+    "test:icp:migration": "node --test test/migration-tools.test.mjs",
+    "test:icp:shadow": "mops build -- -Werror && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-icrc1-ledger.wasm test/fixtures/mock-icrc1-ledger.mo && moc --package base .mops/base@0.16.0/src -o .mops/.build/mock-registry.wasm test/fixtures/mock-registry.mo && node --test test/shadow-rounds-pocketic.test.mjs",
+    "test:icp:release": "node --test test/release-preflight.test.mjs",
+    "preflight:icp": "node scripts/icp/release-preflight.mjs"
   },
   "keywords": [
     "nodejs",

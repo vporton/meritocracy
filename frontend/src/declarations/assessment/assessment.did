@@ -1,2 +1,161 @@
+type UserId = nat64;
+type UnitResult =
+ variant {
+   err: AppError;
+   ok;
+ };
+type TimestampNs = int;
+type SubmitInput =
+ record {
+   idempotency_key: blob;
+   input_text: text;
+   model_version: text;
+   prompt_version: blob;
+   source_refs: vec SourceRef;
+   subject_user_id: nat64;
+ };
+type SourceRef =
+ record {
+   allowed_uri: opt text;
+   ordinal: nat32;
+   uri_hash: Hash32;
+ };
+type Result_2 =
+ variant {
+   err: AppError;
+   ok: record {
+         items: vec Evaluation;
+         next_cursor: opt blob;
+       };
+ };
+type Result_1 =
+ variant {
+   err: AppError;
+   ok: AllocationProposal;
+ };
+type Result =
+ variant {
+   err: AppError;
+   ok: Evaluation;
+ };
+type Page =
+ record {
+   cursor: opt blob;
+   limit: nat32;
+ };
+type Hash32 = blob;
+type FailureClass =
+ variant {
+   internal;
+   malformed_response;
+   policy_rejected;
+   provider_unavailable;
+   timeout;
+ };
+type EvaluationStatus =
+ variant {
+   complete;
+   failed: FailureClass;
+   pending;
+ };
+type EvaluationOutcome =
+ variant {
+   accepted: record {
+               weight_denominator: nat;
+               weight_numerator: nat;
+             };
+   rejected: text;
+ };
+type EvaluationId = nat64;
+type Evaluation =
+ record {
+   attempt: nat32;
+   attempt_token: Hash32;
+   created_at: TimestampNs;
+   id: EvaluationId;
+   idempotency_key: Hash32;
+   input_hash: Hash32;
+   model_version: text;
+   outcome: opt EvaluationOutcome;
+   prompt_version: Hash32;
+   request_fingerprint: Hash32;
+   result_hash: opt Hash32;
+   source_refs: vec SourceRef;
+   status: EvaluationStatus;
+   subject_user_id: UserId;
+   updated_at: TimestampNs;
+ };
+type Config =
+ record {
+   allowed_models: vec text;
+   allowed_prompt_versions: vec Hash32;
+   allowed_source_hosts: vec text;
+   audit_canister: opt principal;
+   max_attempts: nat32;
+   max_input_bytes: nat;
+   max_sources: nat;
+   max_weight_numerator: nat;
+   rate_limit_count: nat32;
+   rate_limit_window_ns: nat64;
+   submitters: vec principal;
+ };
+type AppError =
+ variant {
+   conflict: text;
+   expired;
+   forbidden;
+   internal: text;
+   invalid: text;
+   not_found;
+   paused;
+   rate_limited: record {retry_after_ns: nat64;};
+   transient: text;
+   unauthorized;
+ };
+type AllocationProposal =
+ record {
+   evaluation_id: EvaluationId;
+   evidence_hash: Hash32;
+   user_id: UserId;
+   weight_denominator: nat;
+   weight_numerator: nat;
+ };
 service : {
+  budget_status: () ->
+   (record {
+      global_limit: nat32;
+      global_used: nat32;
+      paused: bool;
+      per_caller_limit: nat32;
+      window_ns: nat64;
+    }) query;
+  configure: (config: Config) -> (UnitResult);
+  configure_budget: (config:
+   record {
+     global_limit: nat32;
+     paused: bool;
+     per_caller_limit: nat32;
+     window_ns: nat64;
+   }) -> (UnitResult);
+  configure_registry: (registry_canister: principal) -> (UnitResult);
+  get_evaluation: (id: nat64) -> (Result) query;
+  get_evaluation_by_key: (key: blob) -> (Result) query;
+  interface_version: () ->
+   (record {
+      major: nat16;
+      minor: nat16;
+      patch: nat16;
+      schema_hash: blob;
+    }) query;
+  list_evaluations: (input: record {
+                              page: Page;
+                              subject: opt nat64;
+                            }) -> (Result_2) query;
+  propose_allocation: (id: nat64) -> (Result_1) query;
+  retry_evaluation: (input:
+   record {
+     evaluation_id: nat64;
+     input_text: text;
+   }) -> (Result);
+  submit_evaluation: (input: SubmitInput) -> (Result);
 }

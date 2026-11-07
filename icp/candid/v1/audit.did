@@ -17,9 +17,11 @@ type ResultRoundReport = variant { ok : RoundReport; err : AppError };
 type ResultUserReport = variant { ok : UserReport; err : AppError };
 service : {
   interface_version : () -> (InterfaceVersion) query;
+  configure_authorities : (record { appenders : vec principal }) -> (variant { ok; err : AppError });
   append : (record { event_id : Hash32; occurred_at : TimestampNs; actor : principal; subject : AuditSubject; kind : AuditKind; payload_hash : Hash32; public_payload : blob }) -> (ResultEvent);
   get_event : (Hash32) -> (ResultEvent) query;
   list_events : (record { subject : opt AuditSubject; kind : opt AuditKind; from : opt TimestampNs; to : opt TimestampNs; page : Page }) -> (ResultPage) query;
   report_round : (RoundId) -> (ResultRoundReport) query;
   report_user : (UserId, Page) -> (ResultUserReport) query;
+  storage_stats : () -> (record { events : nat64; public_payload_bytes : nat64 }) query;
 }

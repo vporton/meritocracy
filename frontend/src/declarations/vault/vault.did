@@ -1,2 +1,198 @@
+type UnitResult =
+ variant {
+   err: AppError;
+   ok;
+ };
+type TransferState =
+ variant {
+   executing: nat32;
+   permanent_failure: text;
+   prepared;
+   retryable_failure: text;
+   sent: nat;
+ };
+type Transfer =
+ record {
+   allocation_id: AllocationId;
+   amount_atoms: nat;
+   created_at_time: nat64;
+   fee_atoms: opt nat;
+   memo: Hash32;
+   state: TransferState;
+   to: Account;
+ };
+type TimestampNs = int;
+type RoundId = nat64;
+type RolloverState =
+ variant {
+   permanent_failure: text;
+   prepared;
+   retryable_failure: text;
+   sent: nat;
+ };
+type Rollover =
+ record {
+   allocation_id: AllocationId;
+   amount_atoms: nat;
+   created_at_time: nat64;
+   fee_atoms: nat;
+   memo: Hash32;
+   source_round: RoundId;
+   state: RolloverState;
+   target_round: RoundId;
+   to: Account;
+ };
+type Result_5 =
+ variant {
+   err: AppError;
+   ok: BatchExecution;
+ };
+type Result_4 =
+ variant {
+   err: AppError;
+   ok: record {
+         atoms: nat;
+         checked_at: TimestampNs;
+       };
+ };
+type Result_3 =
+ variant {
+   err: AppError;
+   ok: Transfer;
+ };
+type Result_2 =
+ variant {
+   err: AppError;
+   ok: Reconciliation;
+ };
+type Result_1 =
+ variant {
+   err: AppError;
+   ok: Reservation;
+ };
+type Result =
+ variant {
+   err: AppError;
+   ok: Rollover;
+ };
+type Reservation =
+ record {
+   account: Account;
+   accounting_deficit_atoms: nat;
+   allocation_version: Hash32;
+   asset: AssetId;
+   fee_budget_atoms: nat;
+   finalized_outstanding_atoms: opt nat;
+   finalized_outstanding_count: opt nat32;
+   fund: Hash32;
+   required_atoms: nat;
+   reserved_atoms: nat;
+   round_id: RoundId;
+   transfer_count: nat32;
+ };
+type Reconciliation =
+ record {
+   checked_at: TimestampNs;
+   deficit_atoms: nat;
+   excess_atoms: nat;
+   ledger_atoms: nat;
+   reconciled: bool;
+   reserved_atoms: nat;
+   round_id: RoundId;
+ };
+type PreparedTransfer =
+ record {
+   allocation_id: AllocationId;
+   amount_atoms: nat;
+   created_at_time: nat64;
+   memo: Hash32;
+   to: Account;
+ };
+type Hash32 = blob;
+type BatchExecution =
+ record {
+   round_id: RoundId;
+   transfers: vec Transfer;
+ };
+type AssetId =
+ record {
+   decimals: nat8;
+   ledger: principal;
+   symbol: text;
+ };
+type AppError =
+ variant {
+   conflict: text;
+   expired;
+   forbidden;
+   internal: text;
+   invalid: text;
+   not_found;
+   paused;
+   rate_limited: record {retry_after_ns: nat64;};
+   transient: text;
+   unauthorized;
+ };
+type AllocationId = nat64;
+type Account =
+ record {
+   owner: principal;
+   subaccount: opt blob;
+ };
 service : {
+  close_round: (input:
+   record {
+     outstanding_atoms: nat;
+     outstanding_count: nat32;
+     round_id: RoundId;
+   }) -> (Result_1);
+  configure_authorities: (config:
+   record {
+     rounds_canister: principal;
+     supported_ledgers: vec principal;
+   }) -> (UnitResult);
+  derive_round_account: (input:
+   record {
+     asset: AssetId;
+     fund: Hash32;
+     round_id: RoundId;
+   }) -> (Account) query;
+  emergency_pause_status: () -> (bool) query;
+  execute_batch: (input:
+   record {
+     allocation_version: Hash32;
+     round_id: RoundId;
+     transfers: vec PreparedTransfer;
+   }) -> (Result_5);
+  get_reservation: (roundId: RoundId) -> (Result_1) query;
+  get_rollover: (allocationId: AllocationId) -> (Result) query;
+  get_round_balance: (roundId: RoundId) -> (Result_4);
+  get_transfer: (allocationId: AllocationId) -> (Result_3) query;
+  interface_version: () ->
+   (record {
+      major: nat16;
+      minor: nat16;
+      patch: nat16;
+      schema_hash: blob;
+    }) query;
+  reconcile_round: (roundId: RoundId) -> (Result_2);
+  reserve_round: (input:
+   record {
+     allocation_version: Hash32;
+     asset: AssetId;
+     fund: Hash32;
+     required_atoms: nat;
+     round_id: RoundId;
+     transfer_count: nat32;
+   }) -> (Result_1);
+  rollover_carried: (input:
+   record {
+     allocation_id: AllocationId;
+     amount_atoms: nat;
+     memo: blob;
+     source_round: RoundId;
+     target_fund: blob;
+     target_round: RoundId;
+   }) -> (Result);
+  set_emergency_pause: (value: bool) -> (UnitResult);
 }

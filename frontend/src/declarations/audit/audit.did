@@ -1,2 +1,124 @@
+type UserReport =
+ record {
+   events: AuditPage;
+   user_id: UserId;
+ };
+type UserId = nat64;
+type UnitResult =
+ variant {
+   err: AppError;
+   ok;
+ };
+type TimestampNs = int;
+type RoundReport =
+ record {
+   event_count: nat64;
+   event_root: Hash32;
+   last_event_at: opt TimestampNs;
+   round_id: RoundId;
+ };
+type RoundId = nat64;
+type Result_3 =
+ variant {
+   err: AppError;
+   ok: AuditEvent;
+ };
+type Result_2 =
+ variant {
+   err: AppError;
+   ok: AuditPage;
+ };
+type Result_1 =
+ variant {
+   err: AppError;
+   ok: RoundReport;
+ };
+type Result =
+ variant {
+   err: AppError;
+   ok: UserReport;
+ };
+type Hash32 = blob;
+type AuditSubject =
+ variant {
+   allocation: nat64;
+   evaluation: nat64;
+   round: RoundId;
+   system: text;
+   user: UserId;
+ };
+type AuditPage =
+ record {
+   items: vec AuditEvent;
+   next_cursor: opt blob;
+ };
+type AuditKind =
+ variant {
+   attestation;
+   dispute;
+   evaluation;
+   governance;
+   profile;
+   reconciliation;
+   round;
+   session;
+   transfer;
+ };
+type AuditEvent =
+ record {
+   actor: principal;
+   event_id: Hash32;
+   kind: AuditKind;
+   occurred_at: TimestampNs;
+   payload_hash: Hash32;
+   public_payload: blob;
+   subject: AuditSubject;
+ };
+type AppError =
+ variant {
+   conflict: text;
+   expired;
+   forbidden;
+   internal: text;
+   invalid: text;
+   not_found;
+   paused;
+   rate_limited: record {retry_after_ns: nat64;};
+   transient: text;
+   unauthorized;
+ };
 service : {
+  append: (event: AuditEvent) -> (Result_3);
+  configure_authorities: (config: record {appenders: vec principal;}) ->
+   (UnitResult);
+  get_event: (eventId: blob) -> (Result_3) query;
+  interface_version: () ->
+   (record {
+      major: nat16;
+      minor: nat16;
+      patch: nat16;
+      schema_hash: blob;
+    }) query;
+  list_events: (input:
+   record {
+     from: opt TimestampNs;
+     kind: opt AuditKind;
+     page: record {
+             cursor: opt blob;
+             limit: nat32;
+           };
+     subject: opt AuditSubject;
+     to: opt TimestampNs;
+   }) -> (Result_2) query;
+  report_round: (roundId: RoundId) -> (Result_1) query;
+  report_user: (userId: UserId, page:
+   record {
+     cursor: opt blob;
+     limit: nat32;
+   }) -> (Result) query;
+  storage_stats: () ->
+   (record {
+      events: nat64;
+      public_payload_bytes: nat64;
+    }) query;
 }

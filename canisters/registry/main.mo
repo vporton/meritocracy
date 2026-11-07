@@ -7,9 +7,13 @@ import Random "mo:base/Random";
 import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
+import IC "mo:ic@3";
 import Sha3 "mo:sha3";
+import UrlKit "mo:url-kit@4";
 import Attestation "Attestation";
 import EthereumAuth "EthereumAuth";
+import IcrcAccount "IcrcAccount";
+import SafeOAuth "SafeOAuth";
 import State "State";
 import Types "Types";
 
@@ -18,6 +22,16 @@ persistent actor Registry {
     name : Text;
     caller : Principal;
     public_key : Blob;
+  };
+  type OAuthProviderInput = {
+    kind : { #github; #google };
+    client_id : Text;
+  };
+  type AttestationRecord = {
+    user_id : Types.UserId;
+    issuer : Text;
+    reference_hash : Blob;
+    issued_at : Int;
   };
   type Result<T> = { #ok : T; #err : Types.AppError };
   type UnitResult = { #ok; #err : Types.AppError };
@@ -59,38 +73,38 @@ persistent actor Registry {
   let sevenDaysNs : Int = 604_800_000_000_000;
   let challengeLifetimeNs : Int = 300_000_000_000;
   let schemaHash : Blob = Blob.fromArray([
-    0x68,
-    0xf2,
-    0xde,
-    0xe2,
-    0xfc,
-    0x1c,
-    0xbc,
-    0x5b,
-    0x3f,
-    0x8b,
-    0x62,
-    0x66,
+    0x8c,
+    0x58,
+    0x3b,
+    0x9e,
+    0xb5,
+    0xa7,
+    0xb1,
+    0x30,
+    0x17,
+    0xa9,
+    0x5c,
+    0x0a,
+    0x85,
+    0xcb,
+    0x2a,
+    0x1e,
+    0x13,
+    0x23,
+    0x31,
     0x03,
-    0x12,
-    0xd3,
-    0x56,
-    0x05,
-    0xd6,
-    0x92,
-    0xff,
-    0x8c,
-    0xfb,
-    0xbe,
-    0x14,
-    0xbd,
-    0x8c,
-    0x7c,
-    0x81,
-    0x2f,
-    0xb9,
-    0x08,
-    0x10,
+    0xd0,
+    0xe1,
+    0xdf,
+    0x0c,
+    0x0c,
+    0xe8,
+    0xf6,
+    0x4d,
+    0x62,
+    0x9e,
+    0x0e,
+    0xf8,
   ]);
 
   var stableState : Types.StableState = Types.emptyState;
@@ -99,6 +113,17 @@ persistent actor Registry {
   var attestationIssuers : [AttestationIssuer] = [];
   var allowedDomains : [Text] = [];
   var allowedActions : [Text] = [];
+  var oauthSiteUrl : Text = "";
+  var oauthProviderInputs : [OAuthProviderInput] = [];
+  var oauthRedirectUris : [Text] = [];
+  var attestationRecords : [AttestationRecord] = [];
+  transient var oauthAdapter : ?SafeOAuth.Adapter = null;
+
+  system func postupgrade() {
+    // OAuth attempts and PKCE verifiers are intentionally transient, while
+    // reviewed public provider configuration survives upgrades.
+    oauthAdapter := buildOAuthAdapter();
+  };
 
   public shared ({ caller }) func configure_authorities(
     config : {
@@ -107,14 +132,25 @@ persistent actor Registry {
       attestation_issuers : [AttestationIssuer];
       allowed_domains : [Text];
       allowed_actions : [Text];
+      oauth_site_url : Text;
+      oauth_providers : [OAuthProviderInput];
+      oauth_redirect_uris : [Text];
     }
   ) : async UnitResult {
     if (not Principal.isController(caller)) return #err(#forbidden);
+    switch (validateAuthorityConfig(config.rounds_canister, config.session_consumers, config.attestation_issuers, config.allowed_domains, config.allowed_actions, config.oauth_site_url, config.oauth_providers, config.oauth_redirect_uris)) {
+      case (#err(error)) return #err(error);
+      case (#ok) {};
+    };
     roundsCanister := config.rounds_canister;
     sessionConsumers := config.session_consumers;
     attestationIssuers := config.attestation_issuers;
     allowedDomains := config.allowed_domains;
     allowedActions := config.allowed_actions;
+    oauthSiteUrl := config.oauth_site_url;
+    oauthProviderInputs := config.oauth_providers;
+    oauthRedirectUris := config.oauth_redirect_uris;
+    oauthAdapter := buildOAuthAdapter();
     #ok;
   };
 
@@ -124,7 +160,7 @@ persistent actor Registry {
     patch : Nat16;
     schema_hash : Blob;
   } {
-    { major = 1; minor = 1; patch = 0; schema_hash = schemaHash };
+    { major = 1; minor = 5; patch = 0; schema_hash = schemaHash };
   };
 
   public shared ({ caller }) func begin_ethereum_login(
@@ -218,19 +254,68 @@ persistent actor Registry {
 
   public shared ({ caller }) func begin_oauth_login(input : { provider : Text; session_principal : Principal; redirect_uri : Text }) : async Result<{ login_url : Text; attempt_id : Blob; expires_at : Int }> {
     if (Principal.isAnonymous(caller) or caller != input.session_principal) return #err(#unauthorized);
-    #err(#transient_("OAuth adapter is not configured"));
+    switch (oauthAdapter) {
+      case null return #err(#transient_("OAuth adapter is not configured"));
+      case (?_) {};
+    };
+    let now = Time.now();
+    let ?capacityAdapter = oauthAdapter else return #err(#transient_("OAuth configuration changed; retry login"));
+    switch (capacityAdapter.checkCapacity(caller, now)) {
+      case (#err(error)) return #err(error);
+      case (#ok) {};
+    };
+    let attemptEntropy = await Random.blob();
+    let verifierEntropy = await Random.blob();
+    let ?adapter = oauthAdapter else return #err(#transient_("OAuth configuration changed; retry login"));
+    adapter.begin(caller, input.provider, input.session_principal, input.redirect_uri, attemptEntropy, verifierEntropy, now);
   };
 
   public query func http_request(_request : HttpRequest) : async HttpResponse {
     response(426, "OAuth routes require an update call", true);
   };
-  public shared func http_request_update(_request : HttpUpdateRequest) : async HttpUpdateResponse {
-    {
-      status_code = 503;
-      headers = [("content-type", "text/plain; charset=utf-8")];
-      body = Text.encodeUtf8("OAuth adapter is not configured");
-      streaming_strategy = null;
+  public shared func http_request_update(request : HttpUpdateRequest) : async HttpUpdateResponse {
+    if (Text.toUppercase(request.method) != "GET") return updateResponse(405, "OAuth callback requires GET", null);
+    let parsed = switch (UrlKit.fromText(request.url)) {
+      case (#err(_)) return updateResponse(400, "Invalid OAuth callback URL", null);
+      case (#ok(value)) value;
     };
+    if (parsed.path.segments.size() != 3 or parsed.path.segments[0] != "auth" or parsed.path.segments[2] != "callback") {
+      return updateResponse(404, "OAuth route not found", null);
+    };
+    let ?state = UrlKit.getQueryParam(parsed, "state") else return updateResponse(400, "Missing OAuth state", null);
+    let ?code = UrlKit.getQueryParam(parsed, "code") else return updateResponse(400, "Missing OAuth code", null);
+    let ?adapter = oauthAdapter else return updateResponse(503, "OAuth adapter is not configured", null);
+    switch (await adapter.complete(parsed.path.segments[1], state, code, Time.now(), oauthTransform)) {
+      case (#err(#expired)) updateResponse(401, "OAuth attempt expired", null);
+      case (#err(_)) updateResponse(401, "OAuth authorization failed", null);
+      case (#ok(completion)) {
+        let now = Time.now();
+        let store = State.Store(stableState);
+        let issuer : Types.SessionIssuer = #oauth(completion.provider);
+        let subjectHash = oauthSubjectHash(completion.provider, completion.subject);
+        let userId = switch (store.resolveIdentity(issuer, subjectHash)) {
+          case (?existing) existing;
+          case null {
+            let user = store.createUser(null, now);
+            switch (store.bindIdentity(issuer, subjectHash, user.profile.user_id)) {
+              case (#err(_)) return updateResponse(500, "OAuth identity binding failed", null);
+              case (#ok) user.profile.user_id;
+            };
+          };
+        };
+        switch (store.putSession(makeSession(completion.session_principal, userId, issuer, now))) {
+          case (#err(_)) updateResponse(500, "OAuth session issuance failed", null);
+          case (#ok(_)) {
+            stableState := store.snapshot();
+            updateResponse(302, "", ?completion.redirect_uri);
+          };
+        };
+      };
+    };
+  };
+
+  public shared query func oauthTransform(args : IC.TransformArg) : async IC.HttpRequestResult {
+    SafeOAuth.stripResponseHeaders(args);
   };
 
   public shared query ({ caller }) func me() : async Result<Types.User> {
@@ -253,6 +338,47 @@ persistent actor Registry {
 
   public query func list_public_profiles(page : { cursor : ?Blob; limit : Nat32 }) : async Result<{ items : [Types.PublicProfile]; next_cursor : ?Blob }> {
     State.Store(stableState).listPublicProfiles(page.cursor, page.limit);
+  };
+
+  public shared ({ caller }) func import_legacy_profile(
+    input : {
+      source_namespace : Text;
+      legacy_user_id : Text;
+      name : ?Text;
+      created_at : Int;
+      status : Types.UserStatus;
+    }
+  ) : async Result<Types.LegacyUserMapping> {
+    if (not Principal.isController(caller)) return #err(#forbidden);
+    let store = State.Store(stableState);
+    switch (
+      store.importLegacyUser(
+        input.source_namespace,
+        input.legacy_user_id,
+        input.name,
+        input.created_at,
+        input.status,
+      )
+    ) {
+      case (#err(error)) #err(error);
+      case (#ok(mapping)) {
+        stableState := store.snapshot();
+        #ok(mapping);
+      };
+    };
+  };
+
+  public shared query ({ caller }) func get_legacy_user_mapping(sourceNamespace : Text, legacyUserId : Text) : async Result<Types.LegacyUserMapping> {
+    if (not Principal.isController(caller)) return #err(#forbidden);
+    switch (State.Store(stableState).getLegacyUserMapping(sourceNamespace, legacyUserId)) {
+      case null #err(#not_found);
+      case (?mapping) #ok(mapping);
+    };
+  };
+
+  public shared query ({ caller }) func list_legacy_user_mappings(page : { cursor : ?Blob; limit : Nat32 }) : async Result<{ items : [Types.LegacyUserMapping]; next_cursor : ?Blob }> {
+    if (not Principal.isController(caller)) return #err(#forbidden);
+    State.Store(stableState).listLegacyUserMappings(page.cursor, page.limit);
   };
 
   public shared ({ caller }) func update_public_profile(patch : { name : ?Text }) : async Result<Types.User> {
@@ -285,6 +411,10 @@ persistent actor Registry {
         case (#err(message)) return #err(#invalid(message));
         case (#ok(value)) value;
       };
+      case (#icp) switch (IcrcAccount.parse(input.address)) {
+        case (#err(message)) return #err(#invalid(message));
+        case (#ok(value)) value.canonical;
+      };
       case _ {
         if (input.address == "") return #err(#invalid("address is required"));
         input.address;
@@ -307,6 +437,10 @@ persistent actor Registry {
       case (#ethereum) switch (EthereumAuth.normalizeAddress(input.address)) {
         case (#err(message)) return #err(#invalid(message));
         case (#ok(value)) value;
+      };
+      case (#icp) switch (IcrcAccount.parse(input.address)) {
+        case (#err(message)) return #err(#invalid(message));
+        case (#ok(value)) value.canonical;
       };
       case _ {
         if (input.address == "") return #err(#invalid("address is required"));
@@ -407,6 +541,33 @@ persistent actor Registry {
     result;
   };
 
+  public shared ({ caller }) func complete_icrc_payout_proof(accountId : Types.PayoutAccountId) : async Result<Types.PayoutAccount> {
+    if (Principal.isAnonymous(caller)) return #err(#unauthorized);
+    let store = State.Store(stableState);
+    let account = switch (store.getPayoutAccount(accountId)) {
+      case null return #err(#not_found);
+      case (?value) value;
+    };
+    switch (account.route.network) {
+      case (#icp) {};
+      case _ return #err(#invalid("account is not an ICP/ICRC payout account"));
+    };
+    if (account.verification != #pending and account.verification != #legacy_imported) {
+      return #err(#conflict("payout account is not pending verification"));
+    };
+    let parsed = switch (IcrcAccount.parse(account.normalized_address)) {
+      case (#err(message)) return #err(#invalid(message));
+      case (#ok(value)) value;
+    };
+    if (caller != parsed.owner) return #err(#forbidden);
+    let result = store.verifyPayoutAccount(account.user_id, account.id, Time.now());
+    switch (result) {
+      case (#ok(_)) stableState := store.snapshot();
+      case (#err(_)) {};
+    };
+    result;
+  };
+
   public shared ({ caller }) func set_payout_account_active(accountId : Types.PayoutAccountId, active : Bool) : async Result<Types.PayoutAccount> {
     withAuthorizedUpdate(caller, func(store, userId) { store.setPayoutAccountActive(userId, accountId, active) });
   };
@@ -455,6 +616,17 @@ persistent actor Registry {
     State.Store(stableState).authorizeSession(target, Time.now());
   };
 
+  public shared query ({ caller }) func current_session() : async Result<Types.Session> {
+    let store = State.Store(stableState);
+    switch (store.authorizeSession(caller, Time.now())) {
+      case (#err(error)) #err(error);
+      case (#ok(_)) switch (store.getSession(caller)) {
+        case null #err(#not_found);
+        case (?session) #ok(session);
+      };
+    };
+  };
+
   public shared ({ caller }) func snapshot_recipient(input : { user_id : Types.UserId; route : Types.Route; round_id : Types.RoundId }) : async Result<Types.RecipientSnapshot> {
     if (not isRounds(caller)) return #err(#forbidden);
     let store = State.Store(stableState);
@@ -499,6 +671,21 @@ persistent actor Registry {
     if (attestation.signature.size() != 64) return #err(#invalid("attestation signature must be 64 bytes"));
     let now = Time.now();
     if (attestation.issued_at > now) return #err(#invalid("attestation issuance is in the future"));
+    switch (
+      Array.find<AttestationRecord>(
+        attestationRecords,
+        func(record) {
+          record.user_id == attestation.user_id and record.issuer == attestation.issuer;
+        },
+      )
+    ) {
+      case (?latest) {
+        if (attestation.issued_at <= latest.issued_at) {
+          return #err(#conflict("attestation is not newer than the current issuer record"));
+        };
+      };
+      case null {};
+    };
     switch (attestation.expires_at) {
       case (?expiry) if (expiry <= attestation.issued_at or expiry <= now) return #err(#expired);
       case _ {};
@@ -526,7 +713,23 @@ persistent actor Registry {
     let store = State.Store(stableState);
     let result = store.putEligibility(attestation.user_id, eligibility);
     switch (result) {
-      case (#ok(_)) stableState := store.snapshot();
+      case (#ok(_)) {
+        stableState := store.snapshot();
+        attestationRecords := Array.append(
+          Array.filter<AttestationRecord>(
+            attestationRecords,
+            func(record) {
+              not (record.user_id == attestation.user_id and record.issuer == attestation.issuer);
+            },
+          ),
+          [{
+            user_id = attestation.user_id;
+            issuer = attestation.issuer;
+            reference_hash = attestation.reference_hash;
+            issued_at = attestation.issued_at;
+          }],
+        );
+      };
       case (#err(_)) {};
     };
     result;
@@ -547,6 +750,15 @@ persistent actor Registry {
     switch (store.creditCarriedBalance(input.allocation_id, input.user_id, input.balance)) {
       case (#err(error)) #err(error);
       case (#ok) { stableState := store.snapshot(); #ok };
+    };
+  };
+
+  public shared ({ caller }) func consume_carried_balance(input : { allocation_id : Types.AllocationId; target_round : Types.RoundId }) : async Result<Types.CarriedBalance> {
+    if (not isRounds(caller)) return #err(#forbidden);
+    let store = State.Store(stableState);
+    switch (store.consumeCarriedBalance(input.allocation_id, input.target_round)) {
+      case (#err(error)) #err(error);
+      case (#ok(balance)) { stableState := store.snapshot(); #ok(balance) };
     };
   };
 
@@ -585,6 +797,31 @@ persistent actor Registry {
     digest.update(Blob.toArray(value));
     Blob.fromArray(digest.finalize());
   };
+  func oauthSubjectHash(provider : Text, subject : Text) : Blob {
+    hashBlob(Text.encodeUtf8("meritocracy/icp/v1/oauth-subject\00" # provider # "\00" # subject));
+  };
+  func buildOAuthAdapter() : ?SafeOAuth.Adapter {
+    if (oauthProviderInputs.size() == 0) return null;
+    if (oauthSiteUrl == "" or oauthRedirectUris.size() == 0) return null;
+    let providers = Array.map<OAuthProviderInput, SafeOAuth.Provider>(
+      oauthProviderInputs,
+      func(input) {
+        switch (input.kind) {
+          case (#github) SafeOAuth.githubProvider(input.client_id);
+          case (#google) SafeOAuth.googleProvider(input.client_id);
+        };
+      },
+    );
+    ?SafeOAuth.Adapter({
+      site_url = oauthSiteUrl;
+      providers;
+      allowed_redirect_uris = oauthRedirectUris;
+      attempt_ttl_ns = challengeLifetimeNs;
+      max_token_response_bytes = 32_768;
+      max_user_info_response_bytes = 32_768;
+      http_cycles = 50_000_000_000;
+    });
+  };
   func blobHex(value : Blob) : Text {
     let digits : [Char] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
     var result = "";
@@ -616,6 +853,76 @@ persistent actor Registry {
   func containsPrincipal(values : [Principal], value : Principal) : Bool {
     Array.find<Principal>(values, func(candidate) { candidate == value }) != null;
   };
+  func safeHttps(value : Text) : Bool {
+    SafeOAuth.safeHttps(value);
+  };
+  func uniqueText(values : [Text]) : Bool {
+    var i = 0;
+    while (i < values.size()) {
+      var j = i + 1;
+      while (j < values.size()) {
+        if (values[i] == values[j]) return false;
+        j += 1;
+      };
+      i += 1;
+    };
+    true;
+  };
+  func uniquePrincipals(values : [Principal]) : Bool {
+    var i = 0;
+    while (i < values.size()) {
+      var j = i + 1;
+      while (j < values.size()) {
+        if (values[i] == values[j]) return false;
+        j += 1;
+      };
+      i += 1;
+    };
+    true;
+  };
+  func validateAuthorityConfig(
+    rounds : ?Principal,
+    consumers : [Principal],
+    issuers : [AttestationIssuer],
+    domains : [Text],
+    actions : [Text],
+    site : Text,
+    providers : [OAuthProviderInput],
+    redirects : [Text],
+  ) : UnitResult {
+    switch (rounds) {
+      case (?p) if (Principal.isAnonymous(p)) return #err(#invalid("rounds canister cannot be anonymous"));
+      case _ {};
+    };
+    for (p in consumers.vals()) if (Principal.isAnonymous(p)) return #err(#invalid("session consumers cannot be anonymous"));
+    if (not uniquePrincipals(consumers)) return #err(#invalid("session consumers must be unique"));
+    if (not uniqueText(domains) or not uniqueText(actions) or not uniqueText(redirects)) return #err(#invalid("authority text lists must be unique"));
+    for (value in domains.vals()) if (value == "" or Text.size(value) > 255) return #err(#invalid("allowed domain is invalid"));
+    for (value in actions.vals()) if (value == "" or Text.size(value) > 64) return #err(#invalid("allowed action is invalid"));
+    if ((providers.size() > 0 or redirects.size() > 0) and not safeHttps(site)) return #err(#invalid("OAuth site URL must be HTTPS"));
+    for (uri in redirects.vals()) if (not safeHttps(uri)) return #err(#invalid("OAuth redirect URI must be HTTPS"));
+    var i = 0;
+    while (i < issuers.size()) {
+      if (issuers[i].name == "" or Principal.isAnonymous(issuers[i].caller) or issuers[i].public_key.size() != 32) return #err(#invalid("attestation issuer is invalid"));
+      var j = i + 1;
+      while (j < issuers.size()) {
+        if (issuers[i].name == issuers[j].name) return #err(#invalid("attestation issuer names must be unique"));
+        j += 1;
+      };
+      i += 1;
+    };
+    i := 0;
+    while (i < providers.size()) {
+      if (providers[i].client_id == "") return #err(#invalid("OAuth client ID cannot be empty"));
+      var j = i + 1;
+      while (j < providers.size()) {
+        if (providers[i].kind == providers[j].kind) return #err(#invalid("OAuth provider kinds must be unique"));
+        j += 1;
+      };
+      i += 1;
+    };
+    #ok;
+  };
   func isRounds(caller : Principal) : Bool {
     switch (roundsCanister) {
       case (?configured) caller == configured;
@@ -637,6 +944,17 @@ persistent actor Registry {
       body = Text.encodeUtf8(message);
       streaming_strategy = null;
       upgrade = ?upgrade;
+    };
+  };
+  func updateResponse(status : Nat16, message : Text, location : ?Text) : HttpUpdateResponse {
+    {
+      status_code = status;
+      headers = switch (location) {
+        case null [("content-type", "text/plain; charset=utf-8")];
+        case (?value) [("location", value), ("cache-control", "no-store")];
+      };
+      body = Text.encodeUtf8(message);
+      streaming_strategy = null;
     };
   };
 };

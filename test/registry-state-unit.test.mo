@@ -94,7 +94,16 @@ test(
     ignore store.setPayoutAccountActive(user.profile.user_id, imported.id, true);
     ignore store.setDefaultPayoutAccount(user.profile.user_id, imported.id);
     switch (store.snapshotRecipient(user.profile.user_id, route, 7, 4)) {
-      case (#ok(snapshot)) assert snapshot.payout_account_id == imported.id;
+      case (#ok(snapshot)) {
+        assert snapshot.payout_account_id == imported.id;
+        switch (snapshot.icrc_account) {
+          case null assert false;
+          case (?account) {
+            assert account.owner == ledger;
+            assert account.subaccount == null;
+          };
+        };
+      };
       case (#err(_)) assert false;
     };
   },
@@ -291,5 +300,33 @@ test(
     assert store.creditCarriedBalance(99, user.profile.user_id, balance) == #ok(());
     assert store.creditCarriedBalance(99, user.profile.user_id, balance) == #ok(());
     assert store.getCarriedBalances(user.profile.user_id) == [balance];
+    assert store.consumeCarriedBalance(99, 8) == #ok(balance);
+    assert store.consumeCarriedBalance(99, 8) == #ok(balance);
+    assert store.consumeCarriedBalance(99, 9) == #err(#conflict("carried balance was consumed by another round"));
+    assert store.getCarriedBalances(user.profile.user_id) == [];
+  },
+);
+
+test(
+  "legacy profile import is idempotent, conflict-safe, and shares the user id sequence",
+  func() {
+    let store = State.Store(Types.emptyState);
+    let first = store.importLegacyUser("postgres-v1", "42", ?"Legacy Alice", 123, #active);
+    let #ok(mapping) = first else Debug.trap("legacy import failed");
+    assert mapping.user_id == 1;
+    assert store.importLegacyUser("postgres-v1", "42", ?"Legacy Alice", 123, #active) == first;
+    assert store.importLegacyUser("postgres-v1", "42", ?"Changed", 123, #active) == #err(#conflict("legacy user mapping already exists with different profile data"));
+    assert store.getLegacyUserMapping("postgres-v1", "42") == ?mapping;
+    let normal = store.createUser(null, 124);
+    assert normal.profile.user_id == 2;
+    let #ok(page) = store.listLegacyUserMappings(null, 10) else Debug.trap("mapping list failed");
+    assert page.items == [mapping] and page.next_cursor == null;
+    let imported = store.getUser(mapping.user_id);
+    assert switch (imported) {
+      case (?user) user.profile.created_at == 123 and user.profile.status == #active and user.eligibility == Types.unknownEligibility;
+      case null false;
+    };
+    assert store.snapshot().identity_bindings.size() == 0;
+    assert store.snapshot().sessions.size() == 0;
   },
 );

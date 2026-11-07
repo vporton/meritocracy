@@ -1,0 +1,52 @@
+{
+  "schema": "meritocracy-icp-release/v1",
+  "source_revision": "REPLACE_WITH_40_HEX_GIT_REVISION",
+  "migration_export_root": "REPLACE_WITH_64_HEX_EXPORT_ROOT",
+  "canisters": {
+    "frontend": "REPLACE_WITH_PRINCIPAL",
+    "registry": "REPLACE_WITH_PRINCIPAL",
+    "assessment": "REPLACE_WITH_PRINCIPAL",
+    "rounds": "REPLACE_WITH_PRINCIPAL",
+    "vault": "REPLACE_WITH_PRINCIPAL",
+    "audit": "REPLACE_WITH_PRINCIPAL"
+  },
+  "interfaces": {
+    "registry": "REPLACE_WITH_64_HEX_SHA256",
+    "assessment": "REPLACE_WITH_64_HEX_SHA256",
+    "rounds": "REPLACE_WITH_64_HEX_SHA256",
+    "vault": "REPLACE_WITH_64_HEX_SHA256",
+    "audit": "REPLACE_WITH_64_HEX_SHA256"
+  },
+  "interface_versions": {
+    "registry": "REPLACE_WITH_SEMVER",
+    "assessment": "REPLACE_WITH_SEMVER",
+    "rounds": "REPLACE_WITH_SEMVER",
+    "vault": "REPLACE_WITH_SEMVER",
+    "audit": "REPLACE_WITH_SEMVER"
+  },
+  "roles": {
+    "governance": "REPLACE_WITH_PRINCIPAL",
+    "frontend_release": "REPLACE_WITH_PRINCIPAL",
+    "registry_policy": "REPLACE_WITH_PRINCIPAL",
+    "assessment_policy": "REPLACE_WITH_PRINCIPAL",
+    "rounds_manager": "REPLACE_WITH_PRINCIPAL",
+    "dispute_resolver": "REPLACE_WITH_PRINCIPAL",
+    "vault_pause": "REPLACE_WITH_PRINCIPAL",
+    "audit_appender": "REPLACE_WITH_PRINCIPAL"
+  },
+  "ledgers": [{
+    "principal": "REPLACE_WITH_PRINCIPAL",
+    "symbol": "ICP",
+    "decimals": 8,
+    "standard": "ICRC-1",
+    "canary_cap_atoms": "REPLACE_WITH_POSITIVE_INTEGER_STRING"
+  }],
+  "shadow_rounds": ["REPLACE_WITH_ROUND_ID_1", "REPLACE_WITH_ROUND_ID_2", "REPLACE_WITH_ROUND_ID_3"],
+  "approvals": {
+    "security_review": { "approved": false, "approver": "REPLACE_WITH_PRINCIPAL", "evidence_hash": "REPLACE_WITH_64_HEX_HASH" },
+    "governance": { "approved": false, "approver": "REPLACE_WITH_PRINCIPAL", "evidence_hash": "REPLACE_WITH_64_HEX_HASH" },
+    "migration_review": { "approved": false, "approver": "REPLACE_WITH_PRINCIPAL", "evidence_hash": "REPLACE_WITH_64_HEX_HASH" },
+    "treasury": { "approved": false, "approver": "REPLACE_WITH_PRINCIPAL", "evidence_hash": "REPLACE_WITH_64_HEX_HASH" },
+    "incident_owner": { "approved": false, "approver": "REPLACE_WITH_PRINCIPAL", "evidence_hash": "REPLACE_WITH_64_HEX_HASH" }
+  }
+}

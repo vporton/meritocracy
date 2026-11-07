@@ -2,6 +2,7 @@ import type { Principal } from '@icp-sdk/core/principal';
 import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 
+export type AllocationId = bigint;
 export type AppError = { 'conflict' : string } |
   { 'expired' : null } |
   { 'internal' : string } |
@@ -17,16 +18,10 @@ export interface AssetId {
   'ledger' : Principal,
   'symbol' : string,
 }
-export interface AuthorityConfig {
-  'rounds_canister' : [] | [Principal],
-  'session_consumers' : Array<Principal>,
-  'attestation_issuers' : Array<{
-    'name' : string,
-    'caller' : Principal,
-    'public_key' : Uint8Array | number[],
-  }>,
-  'allowed_domains' : Array<string>,
-  'allowed_actions' : Array<string>,
+export interface AttestationIssuer {
+  'public_key' : Uint8Array | number[],
+  'name' : string,
+  'caller' : Principal,
 }
 export interface CarriedBalance {
   'asset' : AssetId,
@@ -34,28 +29,30 @@ export interface CarriedBalance {
   'source_round' : RoundId,
   'reason' : string,
 }
-export interface Challenge {
-  'message' : string,
-  'challenge_id' : Uint8Array | number[],
-  'expires_at' : TimestampNs,
-}
 export interface EligibilityState {
-  'status' : { 'expired' : null } |
-    { 'ineligible' : null } |
-    { 'eligible' : null } |
-    { 'unknown' : null },
+  'status' : EligibilityStatus,
   'reference_hash' : [] | [Hash32],
   'issuer' : [] | [string],
   'expires_at' : [] | [TimestampNs],
 }
+export type EligibilityStatus = { 'expired' : null } |
+  { 'ineligible' : null } |
+  { 'eligible' : null } |
+  { 'unknown' : null };
 export type Hash32 = Uint8Array | number[];
 export type HeaderField = [string, string];
+export interface HttpHeader { 'value' : string, 'name' : string }
 export interface HttpRequest {
   'url' : string,
   'method' : string,
   'body' : Uint8Array | number[],
   'headers' : Array<HeaderField>,
   'certificate_version' : [] | [number],
+}
+export interface HttpRequestResult {
+  'status' : bigint,
+  'body' : Uint8Array | number[],
+  'headers' : Array<HttpHeader>,
 }
 export interface HttpResponse {
   'body' : Uint8Array | number[],
@@ -76,11 +73,19 @@ export interface HttpUpdateResponse {
   'streaming_strategy' : [] | [StreamingStrategy],
   'status_code' : number,
 }
-export interface InterfaceVersion {
-  'major' : number,
-  'minor' : number,
-  'patch' : number,
-  'schema_hash' : Hash32,
+export interface IcrcAccount {
+  'owner' : Principal,
+  'subaccount' : [] | [Uint8Array | number[]],
+}
+export interface LegacyUserMapping {
+  'user_id' : UserId,
+  'source_namespace' : string,
+  'legacy_user_id' : string,
+  'imported_profile' : {
+    'status' : UserStatus,
+    'name' : [] | [string],
+    'created_at' : TimestampNs,
+  },
 }
 export type NetworkId = { 'icp' : null } |
   { 'polkadot' : null } |
@@ -91,14 +96,10 @@ export type NetworkId = { 'icp' : null } |
   { 'bitcoin_cash' : null } |
   { 'cosmos' : null } |
   { 'bitcoin' : null };
-export interface OAuthStart {
-  'login_url' : string,
-  'attempt_id' : Uint8Array | number[],
-  'expires_at' : TimestampNs,
-}
-export interface Page {
-  'cursor' : [] | [Uint8Array | number[]],
-  'limit' : number,
+export interface OAuthProviderInput {
+  'kind' : { 'google' : null } |
+    { 'github' : null },
+  'client_id' : string,
 }
 export interface PayoutAccount {
   'id' : PayoutAccountId,
@@ -109,23 +110,12 @@ export interface PayoutAccount {
   'default_for_route' : boolean,
   'address' : string,
   'verified_at' : [] | [TimestampNs],
-  'verification' : { 'verified' : null } |
-    { 'revoked' : null } |
-    { 'pending' : null } |
-    { 'legacy_imported' : null },
+  'verification' : VerificationState,
   'route' : Route,
 }
 export type PayoutAccountId = bigint;
-export interface PayoutAccountInput { 'address' : string, 'route' : Route }
-export interface ProfilePage {
-  'next_cursor' : [] | [Uint8Array | number[]],
-  'items' : Array<PublicProfile>,
-}
-export interface ProfilePatch { 'name' : [] | [string] }
 export interface PublicProfile {
-  'status' : { 'deleted' : null } |
-    { 'active' : null } |
-    { 'banned' : TimestampNs },
+  'status' : UserStatus,
   'name' : [] | [string],
   'created_at' : TimestampNs,
   'user_id' : UserId,
@@ -134,36 +124,63 @@ export interface RecipientSnapshot {
   'payout_account_id' : PayoutAccountId,
   'user_id' : UserId,
   'normalized_address' : string,
+  'icrc_account' : [] | [IcrcAccount],
   'captured_at' : TimestampNs,
   'route' : Route,
 }
-export type ResultAccount = { 'ok' : PayoutAccount } |
+export type Result = { 'ok' : User } |
   { 'err' : AppError };
-export type ResultAccounts = { 'ok' : Array<PayoutAccount> } |
+export type Result_1 = { 'ok' : RecipientSnapshot } |
   { 'err' : AppError };
-export type ResultAuthorization = {
-    'ok' : { 'user_id' : UserId, 'expires_at' : TimestampNs }
+export type Result_10 = { 'ok' : Session } |
+  { 'err' : AppError };
+export type Result_11 = { 'ok' : CarriedBalance } |
+  { 'err' : AppError };
+export type Result_12 = {
+    'ok' : {
+      'message' : string,
+      'challenge_id' : Uint8Array | number[],
+      'expires_at' : bigint,
+    }
   } |
   { 'err' : AppError };
-export type ResultBalances = { 'ok' : Array<CarriedBalance> } |
+export type Result_13 = {
+    'ok' : {
+      'login_url' : string,
+      'attempt_id' : Uint8Array | number[],
+      'expires_at' : bigint,
+    }
+  } |
   { 'err' : AppError };
-export type ResultChallenge = { 'ok' : Challenge } |
+export type Result_15 = {
+    'ok' : { 'user_id' : UserId, 'expires_at' : bigint }
+  } |
   { 'err' : AppError };
-export type ResultEligibility = { 'ok' : EligibilityState } |
+export type Result_2 = { 'ok' : PayoutAccount } |
   { 'err' : AppError };
-export type ResultOAuth = { 'ok' : OAuthStart } |
+export type Result_3 = { 'ok' : EligibilityState } |
   { 'err' : AppError };
-export type ResultProfile = { 'ok' : PublicProfile } |
+export type Result_4 = {
+    'ok' : {
+      'next_cursor' : [] | [Uint8Array | number[]],
+      'items' : Array<PublicProfile>,
+    }
+  } |
   { 'err' : AppError };
-export type ResultProfiles = { 'ok' : ProfilePage } |
+export type Result_5 = { 'ok' : Array<PayoutAccount> } |
   { 'err' : AppError };
-export type ResultRecipient = { 'ok' : RecipientSnapshot } |
+export type Result_6 = {
+    'ok' : {
+      'next_cursor' : [] | [Uint8Array | number[]],
+      'items' : Array<LegacyUserMapping>,
+    }
+  } |
   { 'err' : AppError };
-export type ResultSession = { 'ok' : Session } |
+export type Result_7 = { 'ok' : LegacyUserMapping } |
   { 'err' : AppError };
-export type ResultUnit = { 'ok' : null } |
+export type Result_8 = { 'ok' : PublicProfile } |
   { 'err' : AppError };
-export type ResultUser = { 'ok' : User } |
+export type Result_9 = { 'ok' : Array<CarriedBalance> } |
   { 'err' : AppError };
 export type RoundId = bigint;
 export interface Route { 'asset' : [] | [AssetId], 'network' : NetworkId }
@@ -171,22 +188,13 @@ export interface Session {
   'issued_at' : TimestampNs,
   'user_id' : UserId,
   'revoked_at' : [] | [TimestampNs],
-  'issuer' : { 'oauth' : string } |
-    { 'ethereum_wallet' : null } |
-    { 'internet_identity' : null },
+  'issuer' : SessionIssuer,
   'session_principal' : Principal,
   'expires_at' : TimestampNs,
 }
-export interface SignedAttestation {
-  'status' : { 'ineligible' : null } |
-    { 'eligible' : null },
-  'signature' : Uint8Array | number[],
-  'issued_at' : TimestampNs,
-  'reference_hash' : Hash32,
-  'user_id' : UserId,
-  'issuer' : string,
-  'expires_at' : [] | [TimestampNs],
-}
+export type SessionIssuer = { 'oauth' : string } |
+  { 'ethereum_wallet' : null } |
+  { 'internet_identity' : null };
 export interface StreamingCallbackResponse {
   'token' : [] | [Uint8Array | number[]],
   'body' : Uint8Array | number[],
@@ -198,15 +206,30 @@ export type StreamingStrategy = {
     }
   };
 export type TimestampNs = bigint;
+export interface TransformArg {
+  'context' : Uint8Array | number[],
+  'response' : HttpRequestResult,
+}
+export type UnitResult = { 'ok' : null } |
+  { 'err' : AppError };
 export interface User {
   'eligibility' : EligibilityState,
   'profile' : PublicProfile,
 }
 export type UserId = bigint;
+export type UserStatus = { 'deleted' : null } |
+  { 'active' : null } |
+  { 'banned' : TimestampNs };
+export type VerificationState = { 'verified' : null } |
+  { 'revoked' : null } |
+  { 'pending' : null } |
+  { 'legacy_imported' : null };
 export interface _SERVICE {
-  'add_payout_account' : ActorMethod<[PayoutAccountInput], ResultAccount>,
-  'authorize_session' : ActorMethod<[Principal], ResultAuthorization>,
-  'configure_authorities' : ActorMethod<[AuthorityConfig], ResultUnit>,
+  'add_payout_account' : ActorMethod<
+    [{ 'address' : string, 'route' : Route }],
+    Result_2
+  >,
+  'authorize_session' : ActorMethod<[Principal], Result_15>,
   'begin_ethereum_login' : ActorMethod<
     [
       {
@@ -216,7 +239,7 @@ export interface _SERVICE {
         'session_principal' : Principal,
       },
     ],
-    ResultChallenge
+    Result_12
   >,
   'begin_oauth_login' : ActorMethod<
     [
@@ -226,9 +249,9 @@ export interface _SERVICE {
         'session_principal' : Principal,
       },
     ],
-    ResultOAuth
+    Result_13
   >,
-  'begin_payout_proof' : ActorMethod<[PayoutAccountId], ResultChallenge>,
+  'begin_payout_proof' : ActorMethod<[PayoutAccountId], Result_12>,
   'complete_ethereum_login' : ActorMethod<
     [
       {
@@ -237,53 +260,117 @@ export interface _SERVICE {
         'challenge_id' : Uint8Array | number[],
       },
     ],
-    ResultSession
+    Result_10
   >,
+  'complete_icrc_payout_proof' : ActorMethod<[PayoutAccountId], Result_2>,
   'complete_internet_identity_login' : ActorMethod<
     [{ 'requested_action' : string, 'session_principal' : Principal }],
-    ResultSession
+    Result_10
   >,
   'complete_payout_proof' : ActorMethod<
     [PayoutAccountId, Uint8Array | number[]],
-    ResultAccount
+    Result_2
+  >,
+  'configure_authorities' : ActorMethod<
+    [
+      {
+        'attestation_issuers' : Array<AttestationIssuer>,
+        'oauth_redirect_uris' : Array<string>,
+        'oauth_site_url' : string,
+        'allowed_actions' : Array<string>,
+        'oauth_providers' : Array<OAuthProviderInput>,
+        'rounds_canister' : [] | [Principal],
+        'session_consumers' : Array<Principal>,
+        'allowed_domains' : Array<string>,
+      },
+    ],
+    UnitResult
+  >,
+  'consume_carried_balance' : ActorMethod<
+    [{ 'allocation_id' : AllocationId, 'target_round' : RoundId }],
+    Result_11
   >,
   'credit_carried_balance' : ActorMethod<
     [
       {
         'balance' : CarriedBalance,
-        'allocation_id' : bigint,
+        'allocation_id' : AllocationId,
         'user_id' : UserId,
       },
     ],
-    ResultUnit
+    UnitResult
   >,
-  'get_carried_balances' : ActorMethod<[UserId], ResultBalances>,
-  'get_eligibility' : ActorMethod<[UserId], ResultEligibility>,
-  'get_public_profile' : ActorMethod<[UserId], ResultProfile>,
+  'current_session' : ActorMethod<[], Result_10>,
+  'get_carried_balances' : ActorMethod<[UserId], Result_9>,
+  'get_eligibility' : ActorMethod<[UserId], Result_3>,
+  'get_legacy_user_mapping' : ActorMethod<[string, string], Result_7>,
+  'get_public_profile' : ActorMethod<[UserId], Result_8>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'http_request_update' : ActorMethod<[HttpUpdateRequest], HttpUpdateResponse>,
   'import_legacy_payout_account' : ActorMethod<
-    [UserId, PayoutAccountInput],
-    ResultAccount
+    [UserId, { 'address' : string, 'route' : Route }],
+    Result_2
   >,
-  'interface_version' : ActorMethod<[], InterfaceVersion>,
-  'list_my_payout_accounts' : ActorMethod<[], ResultAccounts>,
-  'list_public_profiles' : ActorMethod<[Page], ResultProfiles>,
-  'me' : ActorMethod<[], ResultUser>,
-  'put_attestation' : ActorMethod<[SignedAttestation], ResultEligibility>,
-  'revoke_all_sessions' : ActorMethod<[], ResultUnit>,
-  'revoke_payout_account' : ActorMethod<[PayoutAccountId], ResultAccount>,
-  'revoke_session' : ActorMethod<[Principal], ResultUnit>,
-  'set_default_payout_account' : ActorMethod<[PayoutAccountId], ResultAccount>,
+  'import_legacy_profile' : ActorMethod<
+    [
+      {
+        'status' : UserStatus,
+        'name' : [] | [string],
+        'created_at' : bigint,
+        'source_namespace' : string,
+        'legacy_user_id' : string,
+      },
+    ],
+    Result_7
+  >,
+  'interface_version' : ActorMethod<
+    [],
+    {
+      'major' : number,
+      'minor' : number,
+      'patch' : number,
+      'schema_hash' : Uint8Array | number[],
+    }
+  >,
+  'list_legacy_user_mappings' : ActorMethod<
+    [{ 'cursor' : [] | [Uint8Array | number[]], 'limit' : number }],
+    Result_6
+  >,
+  'list_my_payout_accounts' : ActorMethod<[], Result_5>,
+  'list_public_profiles' : ActorMethod<
+    [{ 'cursor' : [] | [Uint8Array | number[]], 'limit' : number }],
+    Result_4
+  >,
+  'me' : ActorMethod<[], Result>,
+  'oauthTransform' : ActorMethod<[TransformArg], HttpRequestResult>,
+  'put_attestation' : ActorMethod<
+    [
+      {
+        'status' : { 'ineligible' : null } |
+          { 'eligible' : null },
+        'signature' : Uint8Array | number[],
+        'issued_at' : bigint,
+        'reference_hash' : Uint8Array | number[],
+        'user_id' : UserId,
+        'issuer' : string,
+        'expires_at' : [] | [bigint],
+      },
+    ],
+    Result_3
+  >,
+  'revoke_all_sessions' : ActorMethod<[], UnitResult>,
+  'revoke_payout_account' : ActorMethod<[PayoutAccountId], Result_2>,
+  'revoke_session' : ActorMethod<[Principal], UnitResult>,
+  'set_default_payout_account' : ActorMethod<[PayoutAccountId], Result_2>,
   'set_payout_account_active' : ActorMethod<
     [PayoutAccountId, boolean],
-    ResultAccount
+    Result_2
   >,
   'snapshot_recipient' : ActorMethod<
     [{ 'user_id' : UserId, 'round_id' : RoundId, 'route' : Route }],
-    ResultRecipient
+    Result_1
   >,
-  'update_public_profile' : ActorMethod<[ProfilePatch], ResultUser>,
+  'update_public_profile' : ActorMethod<[{ 'name' : [] | [string] }], Result>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];

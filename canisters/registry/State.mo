@@ -1,10 +1,13 @@
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
 import Principal "mo:base/Principal";
+import Text "mo:base/Text";
 import Types "Types";
+import IcrcAccount "IcrcAccount";
 
 module {
   public class Store(initial : Types.StableState) {
@@ -19,6 +22,7 @@ module {
     var payoutProofChallenges = initial.payout_proof_challenges;
     var recipientSnapshots = initial.recipient_snapshots;
     var carriedCredits = initial.carried_credits;
+    var legacyUserMappings = initial.legacy_user_mappings;
 
     public func snapshot() : Types.StableState {
       {
@@ -33,6 +37,7 @@ module {
         payout_proof_challenges = payoutProofChallenges;
         recipient_snapshots = recipientSnapshots;
         carried_credits = carriedCredits;
+        legacy_user_mappings = legacyUserMappings;
       };
     };
 
@@ -49,6 +54,89 @@ module {
       nextUserId += 1;
       users := Array.append(users, [user]);
       user;
+    };
+
+    public func importLegacyUser(
+      sourceNamespace : Text,
+      legacyUserId : Text,
+      name : ?Text,
+      createdAt : Types.TimestampNs,
+      status : Types.UserStatus,
+    ) : { #ok : Types.LegacyUserMapping; #err : Types.AppError } {
+      if (sourceNamespace == "" or Text.size(sourceNamespace) > 64) {
+        return #err(#invalid("source namespace must contain 1 to 64 characters"));
+      };
+      if (legacyUserId == "" or Text.size(legacyUserId) > 128) {
+        return #err(#invalid("legacy user id must contain 1 to 128 characters"));
+      };
+      switch (name) {
+        case (?value) if (value == "" or Text.size(value) > 100) {
+          return #err(#invalid("name must contain 1 to 100 characters"));
+        };
+        case _ {};
+      };
+      let importedProfile = { name; created_at = createdAt; status };
+      switch (getLegacyUserMapping(sourceNamespace, legacyUserId)) {
+        case (?existing) {
+          if (existing.imported_profile == importedProfile) #ok(existing) else {
+            #err(#conflict("legacy user mapping already exists with different profile data"));
+          };
+        };
+        case null {
+          let user : Types.User = {
+            profile = {
+              user_id = nextUserId;
+              name;
+              created_at = createdAt;
+              status;
+            };
+            eligibility = Types.unknownEligibility;
+          };
+          let mapping : Types.LegacyUserMapping = {
+            source_namespace = sourceNamespace;
+            legacy_user_id = legacyUserId;
+            user_id = nextUserId;
+            imported_profile = importedProfile;
+          };
+          nextUserId += 1;
+          users := Array.append(users, [user]);
+          legacyUserMappings := Array.append(legacyUserMappings, [mapping]);
+          #ok(mapping);
+        };
+      };
+    };
+
+    public func getLegacyUserMapping(sourceNamespace : Text, legacyUserId : Text) : ?Types.LegacyUserMapping {
+      Array.find<Types.LegacyUserMapping>(
+        legacyUserMappings,
+        func(mapping) {
+          mapping.source_namespace == sourceNamespace and mapping.legacy_user_id == legacyUserId;
+        },
+      );
+    };
+
+    public func listLegacyUserMappings(cursor : ?Blob, limit : Nat32) : {
+      #ok : { items : [Types.LegacyUserMapping]; next_cursor : ?Blob };
+      #err : Types.AppError;
+    } {
+      if (limit == 0 or limit > 100) return #err(#invalid("limit must be between 1 and 100"));
+      let start : Nat = switch (cursor) {
+        case null 0;
+        case (?value) switch (decodeUserId(value)) {
+          case null return #err(#invalid("cursor must be an 8-byte offset"));
+          case (?offset) Nat64.toNat(offset);
+        };
+      };
+      if (start > legacyUserMappings.size()) return #err(#invalid("cursor is out of range"));
+      let count = Nat32.toNat(limit);
+      let remaining = Nat.sub(legacyUserMappings.size(), start);
+      let take = if (remaining < count) remaining else count;
+      let items = Array.tabulate<Types.LegacyUserMapping>(take, func(index) { legacyUserMappings[start + index] });
+      let end = start + take;
+      #ok({
+        items;
+        next_cursor = if (end < legacyUserMappings.size()) ?encodeUserId(Nat64.fromNat(end)) else null;
+      });
     };
 
     public func getUser(userId : Types.UserId) : ?Types.User {
@@ -630,6 +718,16 @@ module {
             payout_account_id = account.id;
             route = account.route;
             normalized_address = account.normalized_address;
+            icrc_account = switch (account.route.network) {
+              case (#icp) switch (IcrcAccount.parse(account.normalized_address)) {
+                case (#ok(value)) ?{
+                  owner = value.owner;
+                  subaccount = value.subaccount;
+                };
+                case (#err(_)) null;
+              };
+              case _ null;
+            };
             captured_at = now;
           };
           recipientSnapshots := Array.append(recipientSnapshots, [{ round_id = roundId; snapshot }]);
@@ -653,7 +751,7 @@ module {
           if (existing.user_id == userId and existing.balance == balance) #ok(()) else #err(#conflict("allocation already credited with different data"));
         };
         case null {
-          carriedCredits := Array.append(carriedCredits, [{ allocation_id = allocationId; user_id = userId; balance }]);
+          carriedCredits := Array.append(carriedCredits, [{ allocation_id = allocationId; user_id = userId; balance; consumed_by_round = null }]);
           #ok(());
         };
       };
@@ -661,9 +759,26 @@ module {
 
     public func getCarriedBalances(userId : Types.UserId) : [Types.CarriedBalance] {
       Array.map<Types.CarriedCredit, Types.CarriedBalance>(
-        Array.filter<Types.CarriedCredit>(carriedCredits, func(credit) { credit.user_id == userId }),
+        Array.filter<Types.CarriedCredit>(carriedCredits, func(credit) { credit.user_id == userId and credit.consumed_by_round == null }),
         func(credit) { credit.balance },
       );
+    };
+
+    public func consumeCarriedBalance(allocationId : Types.AllocationId, targetRound : Types.RoundId) : {
+      #ok : Types.CarriedBalance;
+      #err : Types.AppError;
+    } {
+      let ?existing = Array.find<Types.CarriedCredit>(carriedCredits, func(credit) { credit.allocation_id == allocationId }) else return #err(#not_found);
+      switch (existing.consumed_by_round) {
+        case (?round) {
+          if (round == targetRound) return #ok(existing.balance);
+          return #err(#conflict("carried balance was consumed by another round"));
+        };
+        case null {};
+      };
+      let updated = { existing with consumed_by_round = ?targetRound };
+      carriedCredits := Array.map<Types.CarriedCredit, Types.CarriedCredit>(carriedCredits, func(credit) { if (credit.allocation_id == allocationId) updated else credit });
+      #ok(existing.balance);
     };
 
     func findSession(sessionPrincipal : Principal) : ?Types.Session {

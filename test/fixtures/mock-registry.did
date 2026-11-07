@@ -1,0 +1,15 @@
+type AssetId = record { ledger : principal; symbol : text; decimals : nat8 };
+type Account = record { owner : principal; subaccount : opt blob };
+type NetworkId = variant { icp; bitcoin; ethereum; solana; polkadot; stellar; cosmos; bitcoin_cash; other : text };
+type Route = record { network : NetworkId; asset : opt AssetId };
+type AppError = variant { unauthorized; forbidden; not_found; conflict : text; invalid : text; expired; rate_limited : record { retry_after_ns : nat64 }; paused; transient : text; internal : text };
+type CarriedBalance = record { asset : AssetId; atoms : nat; source_round : nat64; reason : text };
+type Credit = record { user_id : nat64; balance : CarriedBalance; allocation_id : nat64 };
+service : {
+  configure : (record { rounds : principal; session : principal; recipient : Account; asset : AssetId }) -> ();
+  authorize_session : (principal) -> (variant { ok : record { user_id : nat64; expires_at : int }; err : AppError });
+  snapshot_recipient : (record { user_id : nat64; route : Route; round_id : nat64 }) -> (variant { ok : record { user_id : nat64; payout_account_id : nat64; route : Route; normalized_address : text; icrc_account : opt Account; captured_at : int }; err : AppError });
+  credit_carried_balance : (Credit) -> (variant { ok; err : AppError });
+  carried_credits : () -> (vec Credit) query;
+  consume_carried_balance : (record { allocation_id : nat64; target_round : nat64 }) -> (variant { ok : CarriedBalance; err : AppError });
+}

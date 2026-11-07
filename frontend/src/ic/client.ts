@@ -54,11 +54,20 @@ export interface IcActors {
 
 export const createIcActors = async (options: IcClientOptions = {}): Promise<IcActors> => {
   const env = options.env ?? import.meta.env
-  const host = options.host ?? env.VITE_IC_HOST
+  const host = options.host ?? env.VITE_IC_HOST ?? (typeof window === 'undefined' ? undefined : window.location.origin)
   const agent = await HttpAgent.create({ identity: options.identity, host })
-  // A fetched local root key disables mainnet certificate trust. Never allow
-  // production bundles to opt into it, even through a mistaken runtime flag.
-  const fetchLocalRootKey = import.meta.env.DEV && (options.fetchLocalRootKey ?? true)
+  const localHost = (() => {
+    if (!host) return false
+    try {
+      const hostname = new URL(host).hostname
+      return hostname === 'localhost' || hostname.endsWith('.localhost') || hostname === '127.0.0.1'
+    } catch {
+      return false
+    }
+  })()
+  // Local replicas use a development root key even when Vite created a
+  // production bundle for dfx deploy. Mainnet hosts never enter this branch.
+  const fetchLocalRootKey = options.fetchLocalRootKey ?? localHost
   if (fetchLocalRootKey) await agent.fetchRootKey()
 
   return {

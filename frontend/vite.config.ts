@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 dotenv.config();
 
 const polyfillsPath = fileURLToPath(new URL('./src/polyfills.ts', import.meta.url));
+const canisterEnv = (name: string) => process.env[`VITE_CANISTER_ID_${name}`] || process.env[`CANISTER_ID_${name}`] || '';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -28,6 +29,11 @@ export default defineConfig({
     'process.env': {},
     'process.browser': 'true',
     'process.version': JSON.stringify('v18.16.0'),
+    'import.meta.env.VITE_CANISTER_ID_REGISTRY': JSON.stringify(canisterEnv('REGISTRY')),
+    'import.meta.env.VITE_CANISTER_ID_ASSESSMENT': JSON.stringify(canisterEnv('ASSESSMENT')),
+    'import.meta.env.VITE_CANISTER_ID_ROUNDS': JSON.stringify(canisterEnv('ROUNDS')),
+    'import.meta.env.VITE_CANISTER_ID_VAULT': JSON.stringify(canisterEnv('VAULT')),
+    'import.meta.env.VITE_CANISTER_ID_AUDIT': JSON.stringify(canisterEnv('AUDIT')),
   },
   resolve: {
     alias: {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import api, { usersApi, SalaryStats } from '../services/api'
+import { usersApi, SalaryStats } from '../services/api'
 import Leaderboard from '../components/Leaderboard'
 import { useAuth } from '../contexts/AuthContext'
 import { Helmet } from 'react-helmet-async'
@@ -20,7 +20,6 @@ export default function Home() {
   const frontendOrigin = getFrontendOrigin()
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
-  const [primaryNetworkAddress, setPrimaryNetworkAddress] = useState<string | null>(null)
   const [userGdpShare, setUserGdpShare] = useState<UserGdpShareData | null>(null)
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
@@ -29,25 +28,6 @@ export default function Home() {
 
   const formatUsd = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
-
-  useEffect(() => {
-    const fetchPrimaryNetworkAddress = async () => {
-      try {
-        // Try to get the primary network address from multi-network list (lighter than status)
-        const response = await api.get('/api/multi-network-gas/list')
-        if (response.data.success && response.data.data.networkDetails && response.data.data.networkDetails.length > 0) {
-          const firstNetwork = response.data.data.networkDetails[0]
-          if (firstNetwork?.walletAddress) {
-            setPrimaryNetworkAddress(firstNetwork.walletAddress)
-          }
-        }
-      } catch (error) {
-        console.log('Failed to fetch network address:', error)
-      }
-    }
-
-    fetchPrimaryNetworkAddress()
-  }, [])
 
   useEffect(() => {
     const fetchSalaryStats = async () => {

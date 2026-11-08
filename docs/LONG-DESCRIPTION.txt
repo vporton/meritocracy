@@ -1,6 +1,6 @@
 The problem to be solved: Many scientists don't receive adequate funding for their research and publication and discoveries remain unpublished or mis-published. This holds back science and economy by times. The same applied to FOSS developers. I want to give crypto to every scientist and FOSS developer. I am also going to create a new occupation - scientific marketers/popularizers, to offload marketing of scientific works and free software to professional marketers, with salaries measured by their impact on promoting science and an emphasis on under-represented areas and discoveries.
 
-AI Internet-Meritocracy (AIIM) is a Web app, that asks an AI, how big portion of world GDP a registered user is worth, and gives him the proportional share of donated funds.
+SciWard (SciWard) is a Web app, that asks an AI, how big portion of world GDP a registered user is worth, and gives him the proportional share of donated funds.
 
 It is written in Node.js and has a custodial wallet.
 
@@ -16,12 +16,12 @@ It is protected against prompt injections by several means: randomizing proofs, 
 
 Calls to the AI are implemented through storing AI and other tasks in a DB, as a graph of interconnected tasks. It can use the usual (non-batch) OpenAI API calls or (still untested) batch calls (50% cheaper) of OpenAI API.
 
-https://science-dao.org/ai-internet-meritocracy/ -  product homepage.
+https://science-dao.org/sciward/ -  product homepage.
 
-https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ - the initial whitepaper.
+https://science-dao.org/a-new-economic-formation-sciward/ - the initial whitepaper.
 
 https://youtu.be/h21sKeHMHLI - demo video.
 
 https://science-dao.org/product-status/ - the status of the product (the diagram became outdated, because security review shows that certain simple changes are needed).
 
-https://science-dao.org/category/ai-internet-meritocracy/ - blog posts.
+https://science-dao.org/category/sciward/ - blog posts.

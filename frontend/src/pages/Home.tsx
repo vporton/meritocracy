@@ -273,7 +273,7 @@ export default function Home() {
         </div>
       )}
       <div style={{textAlign: 'left'}}>
-        <h2>What is AI Internet-Meritocracy?</h2>
+        <h2>What is SciWard?</h2>
         <p>Meritocracy is a decentralized science DAO that funds researchers through transparent governance.</p>
         <p>Meritocracy is:</p>
         <ul>

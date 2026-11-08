@@ -14,8 +14,8 @@ import { getFrontendOrigin } from '../config/origins';
 import { API_BASE_URL } from '../services/api';
 import './DefensePanel.css';
 
-const PROPOSAL_URL = 'https://science-dao.org/creating-a-solution-against-attackers-hiding-prompt-injections-with-ciphers-or-invented-languages-aiims-human-governance-defense/';
-const KEY_PREFIX = 'aiim-defense-panel-key:';
+const PROPOSAL_URL = 'https://science-dao.org/creating-a-solution-against-attackers-hiding-prompt-injections-with-ciphers-or-invented-languages-sciward-human-governance-defense/';
+const KEY_PREFIX = 'sciward-defense-panel-key:';
 type Provider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'groq' | 'mistral' | 'xai';
 type Depth = 'page' | 'low' | 'medium' | 'high' | 'custom';
 const providers: Record<Provider, { label: string; model: string }> = {

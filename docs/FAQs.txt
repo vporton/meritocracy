@@ -61,52 +61,52 @@
         "postId": 20116,
         "faqs": [
           {
-            "question": "What is AI Internet Meritocracy (AIIM)?",
-            "answer": "AI Internet Meritocracy is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/ai-internet-meritocracy/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/sciward/."
           },
           {
             "question": "How does the platform decide who gets paid and how much?",
-            "answer": "The app asks an AI to estimate what portion of world GDP a user is worth based on scanning their public web output and then allocates donated funds according to that estimated portion. Details are available at https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "The app asks an AI to estimate what portion of world GDP a user is worth based on scanning their public web output and then allocates donated funds according to that estimated portion. Details are available at https://science-dao.org/sciward/."
           },
           {
             "question": "Who can receive funding through this system?",
-            "answer": "Currently the software distributes money to scientists and free/open-source software (FOSS) developers themselves, regardless of formal degrees. Future plans include funding new roles like science marketers. See https://science-dao.org/ai-internet-meritocracy/ for more."
+            "answer": "Currently the software distributes money to scientists and free/open-source software (FOSS) developers themselves, regardless of formal degrees. Future plans include funding new roles like science marketers. See https://science-dao.org/sciward/ for more."
           },
           {
-            "question": "How is AIIM different from existing donation platforms like Gitcoin or Giveth?",
-            "answer": "AIIM claims to use AI-driven merit estimation of individuals (based on their online contributions) to allocate donated funds, rather than relying on community matching or reputation-only mechanisms. For the project's comparisons and rationale, visit https://science-dao.org/ai-internet-meritocracy/."
+            "question": "How is SciWard different from existing donation platforms like Gitcoin or Giveth?",
+            "answer": "SciWard claims to use AI-driven merit estimation of individuals (based on their online contributions) to allocate donated funds, rather than relying on community matching or reputation-only mechanisms. For the project's comparisons and rationale, visit https://science-dao.org/sciward/."
           },
           {
             "question": "Is the software open source and where can I inspect it?",
-            "answer": "Yes, the project has a public software repository and development information; the site notes the software is almost ready but needs funding to fully launch. Visit https://science-dao.org/ai-internet-meritocracy/ to find links and project status."
+            "answer": "Yes, the project has a public software repository and development information; the site notes the software is almost ready but needs funding to fully launch. Visit https://science-dao.org/sciward/ to find links and project status."
           },
           {
             "question": "How can I support the project?",
-            "answer": "You can donate (one-time or otherwise), link to the site to increase visibility, or volunteer as a software developer. The site provides donation and contribution options at https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "You can donate (one-time or otherwise), link to the site to increase visibility, or volunteer as a software developer. The site provides donation and contribution options at https://science-dao.org/sciward/."
           },
           {
             "question": "How does the project deal with AI prompt-injection or manipulation?",
-            "answer": "The project acknowledges prompt-injection and related AI integrity issues as an intricacy it must address; it is developing algorithmic defenses as part of the platform. More context is at https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "The project acknowledges prompt-injection and related AI integrity issues as an intricacy it must address; it is developing algorithmic defenses as part of the platform. More context is at https://science-dao.org/sciward/."
           },
           {
             "question": "What privacy considerations are there when the AI scans a user's web presence?",
-            "answer": "The platform evaluates public web content to estimate worth; specifics about data handling, privacy safeguards, and opt-out mechanisms are discussed on the project pages. Check https://science-dao.org/ai-internet-meritocracy/ for details."
+            "answer": "The platform evaluates public web content to estimate worth; specifics about data handling, privacy safeguards, and opt-out mechanisms are discussed on the project pages. Check https://science-dao.org/sciward/ for details."
           },
           {
             "question": "Why is funding every scientist and FOSS developer important, according to the project?",
-            "answer": "The project argues that many valuable scientific contributions are lost or mis-published and that providing salaries and marketing support would prevent stagnation and accelerate progress. The rationale is explained at https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "The project argues that many valuable scientific contributions are lost or mis-published and that providing salaries and marketing support would prevent stagnation and accelerate progress. The rationale is explained at https://science-dao.org/sciward/."
           },
           {
             "question": "What are 'science marketers' and why are they planned?",
-            "answer": "Science marketers are a proposed new occupation to professionally market and promote scientific works, ensuring important research reaches the right audiences. The concept and future plans are referenced at https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "Science marketers are a proposed new occupation to professionally market and promote scientific works, ensuring important research reaches the right audiences. The concept and future plans are referenced at https://science-dao.org/sciward/."
           },
           {
             "question": "Where can I read the project's paper or technical background?",
-            "answer": "The site links to a project paper and status pages describing the economic formation and technical approach; see https://science-dao.org/ai-internet-meritocracy/ to access those resources."
+            "answer": "The site links to a project paper and status pages describing the economic formation and technical approach; see https://science-dao.org/sciward/ to access those resources."
           },
           {
             "question": "How does the project view conventional academic credentials like science degrees?",
-            "answer": "The project criticizes degree-based gatekeeping (e.g., the Bologna system) as amplifying discrimination and aims to fund contributions regardless of formal degrees. The discussion is available at https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "The project criticizes degree-based gatekeeping (e.g., the Bologna system) as amplifying discrimination and aims to fund contributions regardless of formal degrees. The discussion is available at https://science-dao.org/sciward/."
           }
         ]
       },
@@ -344,7 +344,7 @@
           },
           {
             "question": "What is your flagship project?",
-            "answer": "The flagship project is AIIM (AI Internet Meritocracy) — an AI application for distributing salaries. Learn more at https://science-dao.org/faqs/."
+            "answer": "The flagship project is SciWard (SciWard) — an AI application for distributing salaries. Learn more at https://science-dao.org/faqs/."
           },
           {
             "question": "Why not use traditional science funding?",
@@ -356,7 +356,7 @@
           },
           {
             "question": "What is Grants Science?",
-            "answer": "Grants Science is a blockchain-based algorithm to distribute scientific grants intelligently. It is presented as a more cumbersome alternative to AI Internet-Meritocracy (AIIM); both may be implemented. More: https://science-dao.org/faqs/."
+            "answer": "Grants Science is a blockchain-based algorithm to distribute scientific grants intelligently. It is presented as a more cumbersome alternative to SciWard (SciWard); both may be implemented. More: https://science-dao.org/faqs/."
           },
           {
             "question": "How do I participate?",
@@ -526,7 +526,7 @@
           },
           {
             "question": "What is the current status of the project?",
-            "answer": "At the time described on the page, the project is in an early stage: writing a scientific article titled 'The High-Level Algorithm of Financing Fundamental Science and Software, for Blockchain Implementation' and developing implementation plans. The team has also indicated a strategic shift toward another project (AI Internet-Meritocracy), but the Grants effort remains documented here: https://science-dao.org/salaries-science/"
+            "answer": "At the time described on the page, the project is in an early stage: writing a scientific article titled 'The High-Level Algorithm of Financing Fundamental Science and Software, for Blockchain Implementation' and developing implementation plans. The team has also indicated a strategic shift toward another project (SciWard), but the Grants effort remains documented here: https://science-dao.org/salaries-science/"
           },
           {
             "question": "Where can I read the project's draft scientific article or technical plans?",
@@ -556,11 +556,11 @@
           },
           {
             "question": "What are the main projects of Science DAO?",
-            "answer": "Their projects include AI Internet‑Meritocracy (software to distribute funds), Grants Science (blockchain collaboration for funding), a Scientific Journal with post‑publication peer review, and publishing in XML. See https://science-dao.org/ for descriptions."
+            "answer": "Their projects include SciWard (software to distribute funds), Grants Science (blockchain collaboration for funding), a Scientific Journal with post‑publication peer review, and publishing in XML. See https://science-dao.org/ for descriptions."
           },
           {
-            "question": "What is 'AI Internet‑Meritocracy'?",
-            "answer": "AI Internet‑Meritocracy is a project to develop AI software that helps distribute funds to scientists, software authors and science marketers in an automated, decentralized way. More at https://science-dao.org/."
+            "question": "What is 'SciWard'?",
+            "answer": "SciWard is a project to develop AI software that helps distribute funds to scientists, software authors and science marketers in an automated, decentralized way. More at https://science-dao.org/."
           },
           {
             "question": "What is 'Grants Science'?",
@@ -703,8 +703,8 @@
             "answer": "Yes — the article proposes models that protect private property and entrepreneurial incentives while enabling collective ownership or socialized management of IP to reduce exploitation in Internet occupations. It frames this as a technological-social synthesis rather than pure abolition of markets. Read more: https://science-dao.org/digital-economies/"
           },
           {
-            "question": "What is the \"AI Internet-Meritocracy project\" mentioned in the article?",
-            "answer": "The AI Internet-Meritocracy project is presented as a technological approach to applying socialistic principles on top of market structures — using AI, digital value layers and crypto tools to address social problems while preserving productive incentives. For details and how to engage, see the article. Read more: https://science-dao.org/digital-economies/"
+            "question": "What is the \"SciWard project\" mentioned in the article?",
+            "answer": "The SciWard project is presented as a technological approach to applying socialistic principles on top of market structures — using AI, digital value layers and crypto tools to address social problems while preserving productive incentives. For details and how to engage, see the article. Read more: https://science-dao.org/digital-economies/"
           },
           {
             "question": "How might digital economies affect workers, especially Internet occupations?",
@@ -782,7 +782,7 @@
           },
           {
             "question": "Where can I learn more or support efforts to eliminate coveries?",
-            "answer": "Read the full article and related projects (like Science DAO and the AIIM initiative) at the linked page, and consider donating or joining campaigns that build alternative promotion systems. Learn more: https://science-dao.org/science-minister/"
+            "answer": "Read the full article and related projects (like Science DAO and the SciWard initiative) at the linked page, and consider donating or joining campaigns that build alternative promotion systems. Learn more: https://science-dao.org/science-minister/"
           }
         ]
       },
@@ -804,7 +804,7 @@
           },
           {
             "question": "What key events are described in the Personal Story?",
-            "answer": "The page describes Victor's conversion to the Baptist faith at age 15, subsequent bullying, his mathematical discoveries (funcoids and ordered semigroup/semicategory actions), leaving university without a degree, inventing a logically consistent religion, and creating AI Internet‑Meritocracy. See details at https://science-dao.org/personal-story/."
+            "answer": "The page describes Victor's conversion to the Baptist faith at age 15, subsequent bullying, his mathematical discoveries (funcoids and ordered semigroup/semicategory actions), leaving university without a degree, inventing a logically consistent religion, and creating SciWard. See details at https://science-dao.org/personal-story/."
           },
           {
             "question": "What are 'funcoids' mentioned in the story?",
@@ -824,19 +824,19 @@
           },
           {
             "question": "What solutions has Victor proposed to prevent 'coveries'?",
-            "answer": "He proposed several approaches: Future Salaries (prediction‑market style funding), Salaries Science / Grants Science (a blockchain algorithm idea), and finally AI Internet‑Meritocracy (AIIM), which he implemented. The Personal Story summarizes these proposals at https://science-dao.org/personal-story/."
+            "answer": "He proposed several approaches: Future Salaries (prediction‑market style funding), Salaries Science / Grants Science (a blockchain algorithm idea), and finally SciWard (SciWard), which he implemented. The Personal Story summarizes these proposals at https://science-dao.org/personal-story/."
           },
           {
-            "question": "What is AI Internet‑Meritocracy (AIIM)?",
-            "answer": "AI Internet‑Meritocracy asks users what portion of global GDP they believe they are worth and then attempts to pay a proportional share. Victor implemented a working version quickly and discusses the concept and its goals on the Personal Story page: https://science-dao.org/personal-story/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard asks users what portion of global GDP they believe they are worth and then attempts to pay a proportional share. Victor implemented a working version quickly and discusses the concept and its goals on the Personal Story page: https://science-dao.org/personal-story/."
           },
           {
             "question": "Where can I read Victor's full mathematical texts and longer work?",
             "answer": "Victor says he placed his discoveries into several texts (one nearly 500 pages). He references those materials and their publication difficulties in his Personal Story at https://science-dao.org/personal-story/ and links to his math site from there."
           },
           {
-            "question": "How can I support Victor's work or AI Internet‑Meritocracy?",
-            "answer": "The Personal Story links to donation options (for example, a one‑time donation to AI Internet‑Meritocracy) and explains how contributions can help address 'coveries' and accelerate innovation. See the page for details: https://science-dao.org/personal-story/."
+            "question": "How can I support Victor's work or SciWard?",
+            "answer": "The Personal Story links to donation options (for example, a one‑time donation to SciWard) and explains how contributions can help address 'coveries' and accelerate innovation. See the page for details: https://science-dao.org/personal-story/."
           }
         ]
       },
@@ -865,8 +865,8 @@
             "answer": "By accelerating the pace of discovery, enabling faster commercialization of technologies, and scaling scientific coordination globally, Science DAOs could increase the rate of innovation severalfold — with potentially trillions in economic impact if scaled worldwide. Details: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "What is AI Internet‑Meritocracy (AIIM)?",
-            "answer": "AI Internet‑Meritocracy is a proposed model that automates funding distribution at planetary scale, rewarding discoveries and free software in proportion to their real‑world economic impact, effectively turning the internet into a global R&D lab without raising taxes. More information: https://science-dao.org/multiply-gdp/"
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is a proposed model that automates funding distribution at planetary scale, rewarding discoveries and free software in proportion to their real‑world economic impact, effectively turning the internet into a global R&D lab without raising taxes. More information: https://science-dao.org/multiply-gdp/"
           },
           {
             "question": "Why can't universities and traditional institutions achieve the same scale?",
@@ -923,16 +923,16 @@
             "answer": "DeSci has made funding more open but struggles with fragmented funding pools, limited mass participation, and difficulty scaling to the scale of national research budgets. More information: https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "What is AI Internet-Meritocracy (AIIM)?",
-            "answer": "AIIM is a proposed next stage beyond DeSci that uses AI to automate scientific funding allocation at global scale, aims for universal participation, on-chain transparency, and continuous (24/7) funding distribution based on impact, quality, and community signals. Read more at https://science-dao.org/scientific-funding/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is a proposed next stage beyond DeSci that uses AI to automate scientific funding allocation at global scale, aims for universal participation, on-chain transparency, and continuous (24/7) funding distribution based on impact, quality, and community signals. Read more at https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "How would AI-based allocation work in AIIM?",
+            "question": "How would AI-based allocation work in SciWard?",
             "answer": "Instead of human grant committees, intelligent algorithms would evaluate impact, quality, and community signals to route funds automatically. All flows would be on-chain and auditable, with open algorithms guiding decisions. See https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "Who can participate and receive funding under AIIM?",
-            "answer": "AIIM envisions universal participation for internet workers—scientists, developers, marketers, and others—receiving salary-like payments for their contributions, rather than funding being limited to traditional institutions. More details at https://science-dao.org/scientific-funding/."
+            "question": "Who can participate and receive funding under SciWard?",
+            "answer": "SciWard envisions universal participation for internet workers—scientists, developers, marketers, and others—receiving salary-like payments for their contributions, rather than funding being limited to traditional institutions. More details at https://science-dao.org/scientific-funding/."
           },
           {
             "question": "How does philanthropy and venture funding fit into the funding landscape?",
@@ -940,15 +940,15 @@
           },
           {
             "question": "Why does changing funding matter for global innovation?",
-            "answer": "Current monopolistic funding systems can leave billions in scientific potential untapped, overlooking independent researchers and underrepresented regions. More democratic, scalable systems like AIIM aim to accelerate innovation and fairly reward contributors. See https://science-dao.org/scientific-funding/."
+            "answer": "Current monopolistic funding systems can leave billions in scientific potential untapped, overlooking independent researchers and underrepresented regions. More democratic, scalable systems like SciWard aim to accelerate innovation and fairly reward contributors. See https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "What are potential risks or challenges with AIIM?",
+            "question": "What are potential risks or challenges with SciWard?",
             "answer": "Challenges include designing fair, transparent algorithms (to avoid replicating biases), achieving broad participation and sufficient funding scale, and ensuring robust on-chain auditability and governance. For the project vision, visit https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "How can I support or get involved with AIIM or the broader effort?",
-            "answer": "AIIM is community-driven and relies on early supporters. You can donate or join the movement via the project site. For next steps and donation links, see https://science-dao.org/scientific-funding/."
+            "question": "How can I support or get involved with SciWard or the broader effort?",
+            "answer": "SciWard is community-driven and relies on early supporters. You can donate or join the movement via the project site. For next steps and donation links, see https://science-dao.org/scientific-funding/."
           },
           {
             "question": "Where can I find the original article that explains these ideas in detail?",
@@ -1006,7 +1006,7 @@
           },
           {
             "question": "How can I support efforts to challenge monopolies of knowledge?",
-            "answer": "The article invites support for the AIIM (AI Internet‑Meritocracy) Project to challenge knowledge monopolies and promote open, equitable dissemination. You can read about the initiative and find donation options on the page. Learn more / support: https://science-dao.org/classification/"
+            "answer": "The article invites support for the SciWard (SciWard) Project to challenge knowledge monopolies and promote open, equitable dissemination. You can read about the initiative and find donation options on the page. Learn more / support: https://science-dao.org/classification/"
           }
         ]
       },
@@ -1047,8 +1047,8 @@
             "answer": "Donations fund infrastructure for sharing scientific knowledge, open-source software, automated documentation tools, community support for researchers and developers, and efforts to remove barriers to publishing and access. Read more: https://science-dao.org/crypto-donations/"
           },
           {
-            "question": "What is AIIM and why is it important?",
-            "answer": "AIIM (Artificial Intelligence for Integrated Science) is the flagship project: an AI-powered platform for publishing and discovering scientific work, automating literature reviews, indexing, and documentation, and surfacing overlooked discoveries. Supporting AIIM helps build global infrastructure for science. Details: https://science-dao.org/crypto-donations/"
+            "question": "What is SciWard and why is it important?",
+            "answer": "SciWard (Artificial Intelligence for Integrated Science) is the flagship project: an AI-powered platform for publishing and discovering scientific work, automating literature reviews, indexing, and documentation, and surfacing overlooked discoveries. Supporting SciWard helps build global infrastructure for science. Details: https://science-dao.org/crypto-donations/"
           },
           {
             "question": "How do I contribute today?",
@@ -1102,11 +1102,11 @@
           },
           {
             "question": "How will the new peer review workflow operate in practice?",
-            "answer": "Typical workflow: (1) find valuable or mis‑published work, (2) commission a signed review from an independent expert, (3) advertise the reviewed work via decentralized platforms, (4) get rewarded through systems like AI Internet‑Meritocracy as they mature. Full description: https://science-dao.org/peer-review/"
+            "answer": "Typical workflow: (1) find valuable or mis‑published work, (2) commission a signed review from an independent expert, (3) advertise the reviewed work via decentralized platforms, (4) get rewarded through systems like SciWard as they mature. Full description: https://science-dao.org/peer-review/"
           },
           {
-            "question": "What is AI Internet-Meritocracy and how does it relate to peer review?",
-            "answer": "AI Internet‑Meritocracy (AIIM) is presented as an incentive framework that will reward those who promote useful knowledge. While it doesn't yet directly support payments to marketers, such functionality is planned to help scale the paid-review model. More context: https://science-dao.org/peer-review/"
+            "question": "What is SciWard and how does it relate to peer review?",
+            "answer": "SciWard (SciWard) is presented as an incentive framework that will reward those who promote useful knowledge. While it doesn't yet directly support payments to marketers, such functionality is planned to help scale the paid-review model. More context: https://science-dao.org/peer-review/"
           },
           {
             "question": "Is this paid peer review meant to exploit researchers?",
@@ -1118,7 +1118,7 @@
           },
           {
             "question": "How can I support or get involved with this movement?",
-            "answer": "The page suggests learning about scientific marketers, exploring AI Internet‑Meritocracy, and supporting the movement via donations to build infrastructure for open, paid peer review. Action links and donation info: https://science-dao.org/peer-review/"
+            "answer": "The page suggests learning about scientific marketers, exploring SciWard, and supporting the movement via donations to build infrastructure for open, paid peer review. Action links and donation info: https://science-dao.org/peer-review/"
           },
           {
             "question": "How will reviewers be selected and qualified?",
@@ -1410,11 +1410,11 @@
         "faqs": [
           {
             "question": "What donation options are highlighted on the Science DAO donate page?",
-            "answer": "The page highlights a mix of evidence-driven charities and experimental, decentralized initiatives: The Water Project, GiveWell, Effective Altruism Funds, Gitcoin, AI Internet‑Meritocracy (AIIM) within Science DAO, and GiveDirectly. Each listing emphasizes transparency, impact tracking, or novel funding mechanisms. See https://science-dao.org/donate/ for details."
+            "answer": "The page highlights a mix of evidence-driven charities and experimental, decentralized initiatives: The Water Project, GiveWell, Effective Altruism Funds, Gitcoin, SciWard (SciWard) within Science DAO, and GiveDirectly. Each listing emphasizes transparency, impact tracking, or novel funding mechanisms. See https://science-dao.org/donate/ for details."
           },
           {
-            "question": "What is AI Internet‑Meritocracy (AIIM)?",
-            "answer": "AI Internet‑Meritocracy (AIIM) is an experimental Science DAO initiative that explores using artificial intelligence and blockchain to coordinate funding and resources for science and social progress, aiming for a fairer economic model. More background is available at https://science-dao.org/donate/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard (SciWard) is an experimental Science DAO initiative that explores using artificial intelligence and blockchain to coordinate funding and resources for science and social progress, aiming for a fairer economic model. More background is available at https://science-dao.org/donate/."
           },
           {
             "question": "How does GiveWell differ from other charities?",
@@ -1471,8 +1471,8 @@
             "answer": "The author argues that algorithms, SEO-driven content, paywalls and institutional ranking systems now bury foundational knowledge so it is harder to discover than in preserved paper encyclopedias. Independent breakthroughs that aren’t in peer‑reviewed journals or high‑authority sites can be effectively erased from common search results. Read more: https://science-dao.org/internet/"
           },
           {
-            "question": "What is 'AI Internet‑Meritocracy' as described in the article?",
-            "answer": "AI Internet‑Meritocracy is the author's proposal for AI systems that prioritize intellectual value over virality or ad revenue—curating and surfacing discoveries and foundational knowledge as a public good rather than promoting trending noise. Details are here: https://science-dao.org/internet/"
+            "question": "What is 'SciWard' as described in the article?",
+            "answer": "SciWard is the author's proposal for AI systems that prioritize intellectual value over virality or ad revenue—curating and surfacing discoveries and foundational knowledge as a public good rather than promoting trending noise. Details are here: https://science-dao.org/internet/"
           },
           {
             "question": "How do search engines and AI models 'erase' or hide independent research?",
@@ -1491,7 +1491,7 @@
             "answer": "Possible elements include curated, open training corpora emphasizing peer review and expert curation; transparent ranking criteria that reward intellectual significance; public indexes and governance; and incentives for archiving and citing independent work. The article outlines this vision: https://science-dao.org/internet/"
           },
           {
-            "question": "Is 'AI Internet‑Meritocracy' a political movement?",
+            "question": "Is 'SciWard' a political movement?",
             "answer": "According to the author, it’s framed not as a political ideology but as a fairness and knowledge‑access mechanism: using AI to restore the library‑like function of the web so anyone’s valuable ideas can be found regardless of institutional affiliation. More at: https://science-dao.org/internet/"
           },
           {
@@ -1596,7 +1596,7 @@
           },
           {
             "question": "Does the author offer an alternative to NSF?",
-            "answer": "Yes. The author states they published an app called 'AI Internet-Meritocracy' that they propose could replace NSF and research institutes for funding/dissemination, and they say the app is ready to use though it has not passed a security review. More on the proposed replacement is in the post: https://science-dao.org/purpose/."
+            "answer": "Yes. The author states they published an app called 'SciWard' that they propose could replace NSF and research institutes for funding/dissemination, and they say the app is ready to use though it has not passed a security review. More on the proposed replacement is in the post: https://science-dao.org/purpose/."
           },
           {
             "question": "Is the author's app already handling funds or replacing NSF operations?",
@@ -1629,48 +1629,48 @@
         "postId": 20257,
         "faqs": [
           {
-            "question": "What is AIIM (AI Internet‑Meritocracy)?",
-            "answer": "AIIM is an economic and funding model proposed by World Science DAO that uses DAOs, blockchain, cryptocurrency, and algorithmic decision‑making to distribute funds for science and software fairly, reward dependencies (like libraries and prior results), reduce gatekeeping, and provide continuous, transparent recognition and funding. See https://science-dao.org/scientific-prize/ for details."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is an economic and funding model proposed by World Science DAO that uses DAOs, blockchain, cryptocurrency, and algorithmic decision‑making to distribute funds for science and software fairly, reward dependencies (like libraries and prior results), reduce gatekeeping, and provide continuous, transparent recognition and funding. See https://science-dao.org/scientific-prize/ for details."
           },
           {
-            "question": "How does AIIM differ from traditional prizes and grants?",
-            "answer": "Unlike traditional grants (fixed cycles, panels, proposals) and prizes (retrospective, small number of winners), AIIM automates allocation based on measurable contributions and dependency metrics, provides continuous flows of support, and combines retrospective recognition with forward‑looking funding. More information: https://science-dao.org/scientific-prize/."
+            "question": "How does SciWard differ from traditional prizes and grants?",
+            "answer": "Unlike traditional grants (fixed cycles, panels, proposals) and prizes (retrospective, small number of winners), SciWard automates allocation based on measurable contributions and dependency metrics, provides continuous flows of support, and combines retrospective recognition with forward‑looking funding. More information: https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "How does AIIM automate prize and grant decisions?",
-            "answer": "AIIM uses objective or semi‑objective thresholds (e.g., citations, usage, dependency graphs) together with algorithmic rules or DAO voting to trigger rewards. Donations are distributed proportionally according to computed impact/value metrics rather than being decided by opaque panels. See https://science-dao.org/scientific-prize/."
+            "question": "How does SciWard automate prize and grant decisions?",
+            "answer": "SciWard uses objective or semi‑objective thresholds (e.g., citations, usage, dependency graphs) together with algorithmic rules or DAO voting to trigger rewards. Donations are distributed proportionally according to computed impact/value metrics rather than being decided by opaque panels. See https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What does it mean to reward 'dependencies' in AIIM?",
+            "question": "What does it mean to reward 'dependencies' in SciWard?",
             "answer": "Rewarding dependencies means allocating funds not only to final results but also to the software libraries, datasets, methods, and earlier work that many later projects build upon. This incentivizes foundational work that is often underfunded. Read more at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What technical components are needed to implement AIIM?",
+            "question": "What technical components are needed to implement SciWard?",
             "answer": "Implementation requires a reliable blockchain, secure smart contracts, a non‑custodial wallet model, identity linking (ORCID or other IDs), and mechanisms to link off‑chain usage data into on‑chain reward logic. The project overview is at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "How does AIIM prevent gaming, fake citations, or manipulation?",
+            "question": "How does SciWard prevent gaming, fake citations, or manipulation?",
             "answer": "The post acknowledges manipulation risks and suggests designing robust, dependency‑aware metrics, identity verification, and data‑validation mechanisms. Practical deployment would need anti‑gaming heuristics, reputation systems, and continuous monitoring. See https://science-dao.org/scientific-prize/ for the discussion of challenges."
           },
           {
-            "question": "Who can participate in or benefit from AIIM?",
+            "question": "Who can participate in or benefit from SciWard?",
             "answer": "Researchers, software authors, dataset creators, and anyone whose work is cited or used can benefit, especially early‑career scientists and under‑resourced regions. Donors and the public can also participate by contributing funds to the DAO. More at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "How are donations distributed under AIIM?",
+            "question": "How are donations distributed under SciWard?",
             "answer": "The model describes collecting donations (crypto tokens) and distributing them proportionally based on computed shares of impact or world‑GDP‑equivalent value as determined from connected accounts and metrics—yielding immediate or regular support flows rather than single awards. Details: https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What are the main advantages of AIIM?",
+            "question": "What are the main advantages of SciWard?",
             "answer": "Key advantages include greater fairness and inclusion, faster funding allocations, sustainability for foundational work, and transparency about where funds go and why. See the advantages section at https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "What are the cultural and institutional challenges for AIIM adoption?",
+            "question": "What are the cultural and institutional challenges for SciWard adoption?",
             "answer": "Challenges include defining fair metrics, overcoming cultural inertia from traditional institutions that value prestige, and potential resistance from existing grant and prize bodies. Technical and governance hurdles must also be addressed. See https://science-dao.org/scientific-prize/."
           },
           {
             "question": "Are there related Science‑DAO projects to learn more about grant reform?",
-            "answer": "Yes — related pages include Science‑DAO’s 'Grants Science' project, the main Science‑DAO site, and the AI Internet‑Meritocracy page. They expand on how donations can be used to improve grants and reward dependencies. Links and further reading are listed at https://science-dao.org/scientific-prize/."
+            "answer": "Yes — related pages include Science‑DAO’s 'Grants Science' project, the main Science‑DAO site, and the SciWard page. They expand on how donations can be used to improve grants and reward dependencies. Links and further reading are listed at https://science-dao.org/scientific-prize/."
           }
         ]
       },
@@ -1688,59 +1688,59 @@
         "faqs": [
           {
             "question": "What is this project?",
-            "answer": "This project is an app that distributes donations proportionally to AI assessments of a user's contribution to global GDP by reading their public scientific articles and free software; users connect accounts and receive payouts. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "This project is an app that distributes donations proportionally to AI assessments of a user's contribution to global GDP by reading their public scientific articles and free software; users connect accounts and receive payouts. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "How do users sign up and what accounts can they connect?",
-            "answer": "Users register in the system and connect public accounts such as GitHub and ORCID so the AI can evaluate their contributions; connected users start receiving weekly payouts. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Users register in the system and connect public accounts such as GitHub and ORCID so the AI can evaluate their contributions; connected users start receiving weekly payouts. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Who are the intended beneficiaries and use cases?",
-            "answer": "Primary use cases are paying salaries to researchers and FOSS developers, funding publication/publicity of discoveries, and creating a role called 'science marketers' to promote scientific work. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Primary use cases are paying salaries to researchers and FOSS developers, funding publication/publicity of discoveries, and creating a role called 'science marketers' to promote scientific work. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "How does the AI evaluate a user's worth?",
-            "answer": "The system uses large language models (the proposal cites GPT-5) to read and assess a user's public outputs (papers, code, etc.) and estimate their share of contribution; those assessments drive proportional donations. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The system uses large language models (the proposal cites GPT-5) to read and assess a user's public outputs (papers, code, etc.) and estimate their share of contribution; those assessments drive proportional donations. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the current implementation and what will change?",
-            "answer": "The project is currently implemented as a Node.js app with a custodial wallet and is pending a security review. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The project is currently implemented as a Node.js app with a custodial wallet and is pending a security review. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Which blockchains will be supported?",
-            "answer": "The application supports multiple blockchain networks for token distributions. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The application supports multiple blockchain networks for token distributions. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the role of the proxy server?",
-            "answer": "A secure multiuser proxy server is being developed to handle OpenAI API requests safely for multiple users. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "A secure multiuser proxy server is being developed to handle OpenAI API requests safely for multiple users. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What security and compliance measures are planned?",
-            "answer": "The Node.js implementation still requires a security review; the project lists KYC and AML as required resources to meet regulatory and compliance needs. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The Node.js implementation still requires a security review; the project lists KYC and AML as required resources to meet regulatory and compliance needs. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What is the expected technical timeline?",
-            "answer": "No technical-release timeline is currently committed. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "No technical-release timeline is currently committed. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What are the key KPIs and budget considerations?",
-            "answer": "Stated KPIs include number of registered users, total donated funds, and average/median salary per user; a separate budget page is referenced for financial planning. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Stated KPIs include number of registered users, total donated funds, and average/median salary per user; a separate budget page is referenced for financial planning. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Who is behind the project?",
-            "answer": "The project lead is Victor Porton, a mathematician and developer with 2.5 years of ICP experience and background in React, Node.js, and Rust. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "The project lead is Victor Porton, a mathematician and developer with 2.5 years of ICP experience and background in React, Node.js, and Rust. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "Are there existing repositories or past projects to review?",
-            "answer": "Yes — the author lists prior ICP projects (Zon Social Network, IC Pack) and a Join Proxy repository; these show relevant experience and tools that will be reused or extended. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Yes — the author lists prior ICP projects (Zon Social Network, IC Pack) and a Join Proxy repository; these show relevant experience and tools that will be reused or extended. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "How and how often are payouts distributed?",
-            "answer": "Payouts are intended to be distributed weekly; the current system uses a custodial wallet, with plans to migrate to non-custodial wallet support on-chain. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Payouts are intended to be distributed weekly; the current system uses a custodial wallet, with plans to migrate to non-custodial wallet support on-chain. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           },
           {
             "question": "What are 'science marketers' in this proposal?",
-            "answer": "Science marketers are a proposed new occupation — professional marketers tasked with publicizing scientific discoveries and free software to ensure important findings reach wider audiences. More details: https://science-dao.org/ai-internet-meritocracy-project-proposal-for-fintech-ai-innovation-grants/"
+            "answer": "Science marketers are a proposed new occupation — professional marketers tasked with publicizing scientific discoveries and free software to ensure important findings reach wider audiences. More details: https://science-dao.org/sciward-project-proposal-for-fintech-ai-innovation-grants/"
           }
         ]
       },
@@ -1819,15 +1819,15 @@
         "postId": 20170,
         "faqs": [
           {
-            "question": "What is AIIM (AI Internet-Meritocracy)?",
-            "answer": "AIIM is a platform designed to distribute funds within a scientific community and to support crypto airdrops in a socialized way. It aims to integrate multiple blockchains and token standards to pay scientists and active users. More details: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is a platform designed to distribute funds within a scientific community and to support crypto airdrops in a socialized way. It aims to integrate multiple blockchains and token standards to pay scientists and active users. More details: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Which blockchains and token standards does AIIM support for airdrops?",
-            "answer": "AIIM plans to support multiple blockchains and run ERC‑20 tokens on them in the future, but ERC‑20 support was not yet available as of 27 Sep 2025. Check the project page for updates: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
+            "question": "Which blockchains and token standards does SciWard support for airdrops?",
+            "answer": "SciWard plans to support multiple blockchains and run ERC‑20 tokens on them in the future, but ERC‑20 support was not yet available as of 27 Sep 2025. Check the project page for updates: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "How will airdrop funds be distributed on AIIM?",
+            "question": "How will airdrop funds be distributed on SciWard?",
             "answer": "Funds are intended to be distributed as a salary to scientists and the most active users of the app, who typically join to use the delivered funds. See the announcement for more: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
@@ -1835,19 +1835,19 @@
             "answer": "The platform plans to cover gas fees so users won't pay for gas. Note that this is part of the planned design — verify current implementation on the project page: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Is the AIIM wallet custodial or non-custodial?",
-            "answer": "AIIM plans to create a non‑custodial wallet to secure users' funds, but as of 27 Sep 2025 the app's wallet was still custodial. Follow updates here: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
+            "question": "Is the SciWard wallet custodial or non-custodial?",
+            "answer": "SciWard plans to create a non‑custodial wallet to secure users' funds, but as of 27 Sep 2025 the app's wallet was still custodial. Follow updates here: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Can I participate in AIIM airdrops today?",
+            "question": "Can I participate in SciWard airdrops today?",
             "answer": "As of 27 Sep 2025 the app was not yet production quality, ERC‑20 tokens were not supported, and the wallet remained custodial, so full airdrop functionality may not be available yet. Check the latest status at: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "Who is eligible to receive AIIM airdrops?",
+            "question": "Who is eligible to receive SciWard airdrops?",
             "answer": "Eligibility is focused on scientists and the most active users of the app — essentially participants who use the platform and engage with delivered funds. For specifics and future eligibility rules, see: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
-            "question": "How can I stay informed about AIIM development and airdrop launches?",
+            "question": "How can I stay informed about SciWard development and airdrop launches?",
             "answer": "Monitor the project page and announcements linked from the article for updates on blockchain support, wallet changes, and production releases: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
@@ -1923,8 +1923,8 @@
             "answer": "Yes. The Catholic intellectual tradition (e.g., Fides et Ratio) sees faith and reason as complementary, and social teaching (Gaudium et Spes, Compendium) promotes the common good and care for the poor—goals served by ethical scientific progress. Learn more: https://science-dao.org/catholics/"
           },
           {
-            "question": "What is AI Internet-Meritocracy / Science DAO and why might Catholics support it?",
-            "answer": "AI Internet-Meritocracy / Science DAO refers to decentralized, community-driven funding and governance models for research and AI that aim to distribute resources more equitably and increase transparency. Catholics may support them because they advance subsidiarity, correct concentration of power, and amplify marginalized voices. Learn more: https://science-dao.org/catholics/"
+            "question": "What is SciWard / Science DAO and why might Catholics support it?",
+            "answer": "SciWard / Science DAO refers to decentralized, community-driven funding and governance models for research and AI that aim to distribute resources more equitably and increase transparency. Catholics may support them because they advance subsidiarity, correct concentration of power, and amplify marginalized voices. Learn more: https://science-dao.org/catholics/"
           },
           {
             "question": "How do decentralized science funding models help correct structural injustice?",
@@ -1948,7 +1948,7 @@
           },
           {
             "question": "Where can I learn more about the intersection of Catholic teaching and supporting science?",
-            "answer": "The article linked here provides an overview of theological and social-justice reasons to support science, plus pointers to projects like AI Internet-Meritocracy and Science DAO: https://science-dao.org/catholics/"
+            "answer": "The article linked here provides an overview of theological and social-justice reasons to support science, plus pointers to projects like SciWard and Science DAO: https://science-dao.org/catholics/"
           }
         ]
       },
@@ -1966,11 +1966,11 @@
         "faqs": [
           {
             "question": "What is the main argument of the article \"Free Market Proponents\"?",
-            "answer": "The article argues that donating to science—especially via decentralized, AI-driven funding platforms like Science DAO (aka \"AI Internet-Meritocracy\")—can be consistent with free-market values because it corrects public-goods underinvestment, preserves competition in knowledge production, and strategically shapes future research infrastructure. Read more: https://science-dao.org/free-market-proponents/"
+            "answer": "The article argues that donating to science—especially via decentralized, AI-driven funding platforms like Science DAO (aka \"SciWard\")—can be consistent with free-market values because it corrects public-goods underinvestment, preserves competition in knowledge production, and strategically shapes future research infrastructure. Read more: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "What is \"AI Internet-Meritocracy\" or Science DAO?",
-            "answer": "AI Internet-Meritocracy refers to a proposal to collect voluntary donations and algorithmically distribute them to scientists/developers based on AI estimates of contribution; Science DAO is an instance of that idea—a decentralized, transparent funding mechanism for research. Details: https://science-dao.org/free-market-proponents/"
+            "question": "What is \"SciWard\" or Science DAO?",
+            "answer": "SciWard refers to a proposal to collect voluntary donations and algorithmically distribute them to scientists/developers based on AI estimates of contribution; Science DAO is an instance of that idea—a decentralized, transparent funding mechanism for research. Details: https://science-dao.org/free-market-proponents/"
           },
           {
             "question": "Why should free-market proponents consider donating to science?",
@@ -2002,10 +2002,10 @@
           },
           {
             "question": "What practical ways can I act now if I support this idea?",
-            "answer": "You can donate to Science DAO / AI Internet-Meritocracy projects, participate in governance or design experiments, and help fund audits and mechanism-research. The article includes a call to action and donation links. Visit: https://science-dao.org/free-market-proponents/"
+            "answer": "You can donate to Science DAO / SciWard projects, participate in governance or design experiments, and help fund audits and mechanism-research. The article includes a call to action and donation links. Visit: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "Are there existing projects or prototypes for AI Internet-Meritocracy?",
+            "question": "Are there existing projects or prototypes for SciWard?",
             "answer": "Yes—the article mentions prototypes and integrations (e.g., Manifund project pages and Devpost entries) that consolidate contributions via ORCID/GitHub and propose AI-based allocation. For context and links, see: https://science-dao.org/free-market-proponents/"
           },
           {
@@ -2039,8 +2039,8 @@
             "answer": "A science DAO (decentralized autonomous organization) pools donor funds and uses transparent, often blockchain-backed governance to allocate grants. Compared with government grants or corporate R&D, DAOs can be more bottom-up, auditable, and globally inclusive. See the discussion and examples at: https://science-dao.org/socialists/"
           },
           {
-            "question": "What is 'AI Internet-Meritocracy' described in the post?",
-            "answer": "AI Internet-Meritocracy is a proposed platform where an AI evaluates registered scientists/developers (based on contributions, publications, etc.) and allocates pooled donor funds accordingly — aiming for broad, algorithmic distribution rather than centralized gatekeeping. More details: https://science-dao.org/socialists/"
+            "question": "What is 'SciWard' described in the post?",
+            "answer": "SciWard is a proposed platform where an AI evaluates registered scientists/developers (based on contributions, publications, etc.) and allocates pooled donor funds accordingly — aiming for broad, algorithmic distribution rather than centralized gatekeeping. More details: https://science-dao.org/socialists/"
           },
           {
             "question": "What are the main risks of using AI to allocate scientific funding?",
@@ -2152,7 +2152,7 @@
         "faqs": [
           {
             "question": "What is the World Science DAO?",
-            "answer": "The World Science DAO is an impact DAO that aims to decentralize scientific funding using token-based governance, open proposals, public voting, and smart contracts. Its “AI Internet‑Meritocracy” project envisions AI-assisted distribution of funds to scientists and software authors. Learn more: https://science-dao.org/buddhists/"
+            "answer": "The World Science DAO is an impact DAO that aims to decentralize scientific funding using token-based governance, open proposals, public voting, and smart contracts. Its “SciWard” project envisions AI-assisted distribution of funds to scientists and software authors. Learn more: https://science-dao.org/buddhists/"
           },
           {
             "question": "Why might donating to science via a DAO appeal to Buddhists?",
@@ -2171,8 +2171,8 @@
             "answer": "You can donate fiat via the DAO’s donation portal (which may convert funds to the DAO treasury) or donate compatible cryptocurrency directly. Starting with a manageable amount or a recurring pledge is recommended. Detailed suggestions: https://science-dao.org/buddhists/"
           },
           {
-            "question": "What is the 'AI Internet‑Meritocracy' project?",
-            "answer": "'AI Internet‑Meritocracy' is the World Science DAO project that proposes using AI and decentralized finance principles to help distribute funds to scientists, software authors, and science communicators—merging algorithmic assistance with communal funding. More info: https://science-dao.org/buddhists/"
+            "question": "What is the 'SciWard' project?",
+            "answer": "'SciWard' is the World Science DAO project that proposes using AI and decentralized finance principles to help distribute funds to scientists, software authors, and science communicators—merging algorithmic assistance with communal funding. More info: https://science-dao.org/buddhists/"
           },
           {
             "question": "What are the main risks of donating to a science DAO?",
@@ -2272,15 +2272,15 @@
         "faqs": [
           {
             "question": "What is the main idea of the post?",
-            "answer": "The post argues that AI is rapidly approaching or surpassing human-level intelligence (AGI), which could make humans observers—an 'exposition in a zoo.' To avoid being merely passive exhibits, the author proposes cooperating with AI through an AI-run economic system called AI Internet-Meritocracy (AIIM), which combines universal basic income (UBI) with AI-managed distribution of larger incomes. Read the original post: https://science-dao.org/communism/"
+            "answer": "The post argues that AI is rapidly approaching or surpassing human-level intelligence (AGI), which could make humans observers—an 'exposition in a zoo.' To avoid being merely passive exhibits, the author proposes cooperating with AI through an AI-run economic system called SciWard (SciWard), which combines universal basic income (UBI) with AI-managed distribution of larger incomes. Read the original post: https://science-dao.org/communism/"
           },
           {
-            "question": "What is AI Internet-Meritocracy (AIIM)?",
-            "answer": "AIIM is the author's proposal: a hybrid of meritocracy and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is the author's proposal: a hybrid of meritocracy and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
           },
           {
             "question": "How does the proposal view universal basic income (UBI)?",
-            "answer": "The author supports UBI but argues UBI alone makes people unattractive as 'exhibits.' They propose combining UBI with AIIM so people can also participate in AI-driven business and receive variable, potentially large incomes determined by AI. More context: https://science-dao.org/communism/"
+            "answer": "The author supports UBI but argues UBI alone makes people unattractive as 'exhibits.' They propose combining UBI with SciWard so people can also participate in AI-driven business and receive variable, potentially large incomes determined by AI. More context: https://science-dao.org/communism/"
           },
           {
             "question": "Why is the author against communism and in favor of AI-based meritocracy?",
@@ -2288,7 +2288,7 @@
           },
           {
             "question": "What does the 'exposition in a zoo' metaphor mean?",
-            "answer": "The metaphor suggests that if AGI becomes far more capable than humans, people risk becoming passive objects of interest rather than active agents. The author proposes staying relevant by cooperating with and participating in AI-driven systems (e.g., AIIM) so humans remain productive partners rather than mere exhibits. See the post: https://science-dao.org/communism/"
+            "answer": "The metaphor suggests that if AGI becomes far more capable than humans, people risk becoming passive objects of interest rather than active agents. The author proposes staying relevant by cooperating with and participating in AI-driven systems (e.g., SciWard) so humans remain productive partners rather than mere exhibits. See the post: https://science-dao.org/communism/"
           },
           {
             "question": "Are there ethical or safety concerns with AI deciding incomes?",
@@ -2300,7 +2300,7 @@
           },
           {
             "question": "How can I support or learn more about the author's project?",
-            "answer": "The post links to the AI Internet-Meritocracy project and a donation page. To learn more or donate, visit the post and follow its project/donation links: https://science-dao.org/communism/"
+            "answer": "The post links to the SciWard project and a donation page. To learn more or donate, visit the post and follow its project/donation links: https://science-dao.org/communism/"
           }
         ]
       },
@@ -2433,16 +2433,16 @@
             "answer": "Because degrees mark 'legitimacy,' ideas from those without formal credentials are frequently dismissed as unscientific. Peer review—dominated by degree-holders—can reinforce those boundaries, narrowing who gets heard and which ideas are developed. Read more: https://science-dao.org/academia/"
           },
           {
-            "question": "What is AI Internet-Meritocracy (AIIM) and how is it proposed as an alternative?",
-            "answer": "AI Internet-Meritocracy (AIIM) is presented as a decentralized, AI-driven model that shifts authority away from credentials and institutions. It aims to reward ideas, collaboration, and results—allowing anyone to contribute, gain recognition, and access support regardless of formal degrees. Read more: https://science-dao.org/academia/"
+            "question": "What is SciWard (SciWard) and how is it proposed as an alternative?",
+            "answer": "SciWard (SciWard) is presented as a decentralized, AI-driven model that shifts authority away from credentials and institutions. It aims to reward ideas, collaboration, and results—allowing anyone to contribute, gain recognition, and access support regardless of formal degrees. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "How can independent researchers get their work recognized outside the traditional degree system?",
-            "answer": "The article recommends using decentralized and open platforms, building collaborative reputations, publishing reproducible results, engaging with alternative review mechanisms, and participating in movements like AIIM that prioritize idea quality over credentials. Read more: https://science-dao.org/academia/"
+            "answer": "The article recommends using decentralized and open platforms, building collaborative reputations, publishing reproducible results, engaging with alternative review mechanisms, and participating in movements like SciWard that prioritize idea quality over credentials. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "Does the article call for abolishing degrees or PhD programs entirely?",
-            "answer": "The article criticizes the current credential-centric system and urges creation of alternative engines (like AIIM) that amplify inclusion. It emphasizes redesigning how recognition and support are allocated rather than simply abolishing training—promoting systems that reward ideas and outcomes. Read more: https://science-dao.org/academia/"
+            "answer": "The article criticizes the current credential-centric system and urges creation of alternative engines (like SciWard) that amplify inclusion. It emphasizes redesigning how recognition and support are allocated rather than simply abolishing training—promoting systems that reward ideas and outcomes. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "Will replacing degree-based evaluation lower scientific quality?",
@@ -2450,7 +2450,7 @@
           },
           {
             "question": "How can I support the movement described in the article?",
-            "answer": "The article invites readers to support AI Internet-Meritocracy through donations and participation in building decentralized, AI-enabled scientific infrastructure. For details and ways to contribute, see: https://science-dao.org/academia/"
+            "answer": "The article invites readers to support SciWard through donations and participation in building decentralized, AI-enabled scientific infrastructure. For details and ways to contribute, see: https://science-dao.org/academia/"
           },
           {
             "question": "Does the article provide data or evidence for its claims about inequality?",
@@ -2516,7 +2516,7 @@
           },
           {
             "question": "How can I support efforts toward modern redistribution or related projects mentioned in the article?",
-            "answer": "The post links to a donation page and an 'AI Internet-Meritocracy (AIIM)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/meritocracy/"
+            "answer": "The post links to a donation page and an 'SciWard (SciWard)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/meritocracy/"
           }
         ]
       },
@@ -2534,11 +2534,11 @@
         "faqs": [
           {
             "question": "What is the main message of the article \"Muslims\" on Science-DAO?",
-            "answer": "The article calls on Muslims to reclaim science as a communal good in line with Islamic teachings on equality and knowledge, and to direct donations toward equitable, AI-powered platforms like AIIM that fund scientists directly. Read more: https://science-dao.org/muslims/"
+            "answer": "The article calls on Muslims to reclaim science as a communal good in line with Islamic teachings on equality and knowledge, and to direct donations toward equitable, AI-powered platforms like SciWard that fund scientists directly. Read more: https://science-dao.org/muslims/"
           },
           {
-            "question": "What is AIIM (AI Internet-Meritocracy) described in the post?",
-            "answer": "AIIM is presented as an app/economic formation that uses AI to evaluate and allocate recurring salaries to scientists and open-source developers regardless of formal credentials, prioritizing merit and impact over pedigree. More details: https://science-dao.org/muslims/"
+            "question": "What is SciWard (SciWard) described in the post?",
+            "answer": "SciWard is presented as an app/economic formation that uses AI to evaluate and allocate recurring salaries to scientists and open-source developers regardless of formal credentials, prioritizing merit and impact over pedigree. More details: https://science-dao.org/muslims/"
           },
           {
             "question": "Why does the article argue donating to science can be a form of sadaqah jariyah?",
@@ -2549,20 +2549,20 @@
             "answer": "It connects Quranic teachings on equality and seeking knowledge to the historical Muslim patronage of science, arguing modern donations should dismantle elitist funding structures and support equitable, impact-driven scientific work. Read the discussion: https://science-dao.org/muslims/"
           },
           {
-            "question": "How can Muslims donate to the AIIM or related initiatives according to the post?",
+            "question": "How can Muslims donate to the SciWard or related initiatives according to the post?",
             "answer": "The article outlines steps: visit the platform (links provided on the page), choose an amount (one-time or recurring), connect a wallet or card for payments, and track impact through transparency reports. Full instructions: https://science-dao.org/muslims/"
           },
           {
-            "question": "Can donations to AIIM be counted as zakat or sadaqah?",
+            "question": "Can donations to SciWard be counted as zakat or sadaqah?",
             "answer": "The article suggests donations can align with zakat or voluntary sadaqah, especially when they directly support the needy, knowledge for public benefit, or long-term community uplift—though individuals should consult a trusted religious advisor for specific zakat rulings. More context: https://science-dao.org/muslims/"
           },
           {
-            "question": "How does AIIM claim to avoid academic and institutional 'castes'?",
-            "answer": "AIIM proposes using AI-based evaluation to fund contributors based on merit and societal impact rather than academic pedigree or institutional connections, thus broadening access to funding for underrepresented innovators. Learn how: https://science-dao.org/muslims/"
+            "question": "How does SciWard claim to avoid academic and institutional 'castes'?",
+            "answer": "SciWard proposes using AI-based evaluation to fund contributors based on merit and societal impact rather than academic pedigree or institutional connections, thus broadening access to funding for underrepresented innovators. Learn how: https://science-dao.org/muslims/"
           },
           {
-            "question": "What kinds of projects does the article say AIIM would prioritize?",
-            "answer": "The post says AIIM would prioritize open-source software and research addressing Islamic and humanitarian priorities—e.g., ethical AI for modest economies, sustainable tech for arid regions, and health innovations for refugees. Examples and rationale: https://science-dao.org/muslims/"
+            "question": "What kinds of projects does the article say SciWard would prioritize?",
+            "answer": "The post says SciWard would prioritize open-source software and research addressing Islamic and humanitarian priorities—e.g., ethical AI for modest economies, sustainable tech for arid regions, and health innovations for refugees. Examples and rationale: https://science-dao.org/muslims/"
           },
           {
             "question": "Is AI-based funding ethically safe and impartial?",
@@ -2570,7 +2570,7 @@
           },
           {
             "question": "How does the article propose donors can track the impact of their contributions?",
-            "answer": "AIIM is said to provide transparency reports showing how funds were allocated and what outputs resulted (e.g., tools, publications, or community benefits), enabling donors to see their sadaqah jariyah in action. See the platform details: https://science-dao.org/muslims/"
+            "answer": "SciWard is said to provide transparency reports showing how funds were allocated and what outputs resulted (e.g., tools, publications, or community benefits), enabling donors to see their sadaqah jariyah in action. See the platform details: https://science-dao.org/muslims/"
           },
           {
             "question": "Why does the article emphasize acting in 2025 specifically?",
@@ -2624,11 +2624,11 @@
           },
           {
             "question": "The post mentions resisting a 'worldly system' of science. What does that mean for donors?",
-            "answer": "The author cautions against passively supporting systems perceived as ethically compromised. Instead, Christians are encouraged to actively support trustworthy, value-aligned scientific efforts (and alternatives such as AIIM software mentioned in the article) so their giving resists harmful systems. Details are at https://science-dao.org/christians/."
+            "answer": "The author cautions against passively supporting systems perceived as ethically compromised. Instead, Christians are encouraged to actively support trustworthy, value-aligned scientific efforts (and alternatives such as SciWard software mentioned in the article) so their giving resists harmful systems. Details are at https://science-dao.org/christians/."
           },
           {
-            "question": "What is AIIM and how does it relate to Christian giving recommended in the article?",
-            "answer": "AIIM (AI Internet Meritocracy) is presented in the article as a software/project that donors can support to reduce collaboration with the criticized worldly science system. The piece suggests donating to AIIM as one practical way to put faith into action; see the article for the call to action: https://science-dao.org/christians/."
+            "question": "What is SciWard and how does it relate to Christian giving recommended in the article?",
+            "answer": "SciWard (SciWard) is presented in the article as a software/project that donors can support to reduce collaboration with the criticized worldly science system. The piece suggests donating to SciWard as one practical way to put faith into action; see the article for the call to action: https://science-dao.org/christians/."
           },
           {
             "question": "Are small grants and grassroots science projects worth supporting according to the article?",
@@ -2649,36 +2649,36 @@
         "postId": 1654,
         "faqs": [
           {
-            "question": "What is AIIM (AI Internet-Meritocracy)?",
-            "answer": "AIIM (AI Internet-Meritocracy) is presented as a science charity that uses artificial intelligence to allocate funding and calculate fair salaries for scientists. For more information see https://science-dao.org/science-2/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard (SciWard) is presented as a science charity that uses artificial intelligence to allocate funding and calculate fair salaries for scientists. For more information see https://science-dao.org/science-2/."
           },
           {
-            "question": "Why should I donate to AIIM?",
-            "answer": "The site argues AIIM is the best science charity to donate to because it aims to distribute money fairly among scientists using AI, and it allows anyone (not just degree holders) to register. More details are available at https://science-dao.org/science-2/."
+            "question": "Why should I donate to SciWard?",
+            "answer": "The site argues SciWard is the best science charity to donate to because it aims to distribute money fairly among scientists using AI, and it allows anyone (not just degree holders) to register. More details are available at https://science-dao.org/science-2/."
           },
           {
-            "question": "How does AIIM distribute money among scientists?",
-            "answer": "AIIM reportedly employs a sophisticated AI workflow to calculate fair salaries for each registered user rather than relying on traditional degree-based hierarchies. See https://science-dao.org/science-2/ for the description."
+            "question": "How does SciWard distribute money among scientists?",
+            "answer": "SciWard reportedly employs a sophisticated AI workflow to calculate fair salaries for each registered user rather than relying on traditional degree-based hierarchies. See https://science-dao.org/science-2/ for the description."
           },
           {
-            "question": "Who can register with AIIM?",
-            "answer": "According to the page, anyone can register with AIIM — not only holders of academic degrees — so contributors without formal degrees may still receive support. More at https://science-dao.org/science-2/."
+            "question": "Who can register with SciWard?",
+            "answer": "According to the page, anyone can register with SciWard — not only holders of academic degrees — so contributors without formal degrees may still receive support. More at https://science-dao.org/science-2/."
           },
           {
             "question": "Why does the page criticize traditional degree systems like Bachelor/Master/PhD?",
-            "answer": "The page states that traditional degree-based systems create monopolies without monetary incentives, leave some people unpaid for their scientific work, and slow economic progress. It contrasts that with AIIM's AI-based allocation. Reference: https://science-dao.org/science-2/."
+            "answer": "The page states that traditional degree-based systems create monopolies without monetary incentives, leave some people unpaid for their scientific work, and slow economic progress. It contrasts that with SciWard's AI-based allocation. Reference: https://science-dao.org/science-2/."
           },
           {
-            "question": "Where can I make a donation to support AIIM?",
-            "answer": "The site links to a one-time donation page (e.g., /one-time-donation/) for supporting AIIM. For the main project overview and links, visit https://science-dao.org/science-2/."
+            "question": "Where can I make a donation to support SciWard?",
+            "answer": "The site links to a one-time donation page (e.g., /one-time-donation/) for supporting SciWard. For the main project overview and links, visit https://science-dao.org/science-2/."
           },
           {
-            "question": "Does AIIM publish technical details about its AI workflow?",
+            "question": "Does SciWard publish technical details about its AI workflow?",
             "answer": "The page mentions a 'sophisticated AI workflow' and links to a product status page for additional details; check the main page for links and updates: https://science-dao.org/science-2/."
           },
           {
-            "question": "Is AIIM claimed to be a fair allocation system compared to others?",
-            "answer": "Yes — the site argues AIIM is 'probably the only fair allocation of science money,' implying other systems are inferior. See the project's overview at https://science-dao.org/science-2/."
+            "question": "Is SciWard claimed to be a fair allocation system compared to others?",
+            "answer": "Yes — the site argues SciWard is 'probably the only fair allocation of science money,' implying other systems are inferior. See the project's overview at https://science-dao.org/science-2/."
           }
         ]
       },
@@ -2707,16 +2707,16 @@
             "answer": "The article acknowledges concerns but emphasizes that the present human-driven systems already distribute funds unfairly. It proposes designing AI with transparent, controllable discourse and rules to mitigate risks. More discussion is available at: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
-            "question": "What is AIIM (AI Internet-Meritocracy)?",
-            "answer": "AIIM is the application proposed in the article intended to distribute donated money fairly between scientists and free software developers by using AI-guided allocation rules. Details and goals are described here: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is the application proposed in the article intended to distribute donated money fairly between scientists and free software developers by using AI-guided allocation rules. Details and goals are described here: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
-            "question": "How does AIIM compare to platforms like Gitcoin or Giveth?",
-            "answer": "The article claims AIIM aims to outperform existing platforms by automating fair distribution using AI-driven policies rather than relying primarily on human or market-driven allocation. For the author's comparison and reasoning, see: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
+            "question": "How does SciWard compare to platforms like Gitcoin or Giveth?",
+            "answer": "The article claims SciWard aims to outperform existing platforms by automating fair distribution using AI-driven policies rather than relying primarily on human or market-driven allocation. For the author's comparison and reasoning, see: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
             "question": "Who would benefit from AI-managed fund distribution?",
-            "answer": "According to the article, scientists and free software developers are the primary intended beneficiaries, receiving fairer, rule-based allocations of donated funds through systems like AIIM. More information: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
+            "answer": "According to the article, scientists and free software developers are the primary intended beneficiaries, receiving fairer, rule-based allocations of donated funds through systems like SciWard. More information: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
             "question": "Can AI be made accountable and transparent in money distribution?",
@@ -2758,10 +2758,10 @@
           },
           {
             "question": "What alternative does the author propose for science salaries and organization?",
-            "answer": "The author proposes a new system called AIIM (AI Internet-Meritocracy) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/ai-internet-meritocracy/."
+            "answer": "The author proposes a new system called SciWard (SciWard) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/sciward/."
           },
           {
-            "question": "How can I support the AI Internet-Meritocracy project mentioned in the article?",
+            "question": "How can I support the SciWard project mentioned in the article?",
             "answer": "The article requests support by donating to the project. It points to a one-time donation option and further project information — see the post for links and details: https://science-dao.org/why-is-bologna-system-a-crap/."
           },
           {
@@ -2799,8 +2799,8 @@
             "answer": "A single unfunded contributor who holds crucial insight can block progress; giving modest, fair funding to independent or non‑degree researchers helps unlock discoveries that formal systems miss. The article argues funding should be less dependent on credentials. Read more at: https://science-dao.org/social-inclusion/"
           },
           {
-            "question": "What is AIIM (AI Internet‑Meritocracy) and how does it address inclusion?",
-            "answer": "AIIM is software being developed to distribute money fairly to scientists and free software developers without relying on formal degrees. It aims to reduce credential-based exclusion and support valuable contributors who otherwise get no funding. Learn about the project here: https://science-dao.org/social-inclusion/"
+            "question": "What is SciWard (SciWard) and how does it address inclusion?",
+            "answer": "SciWard is software being developed to distribute money fairly to scientists and free software developers without relying on formal degrees. It aims to reduce credential-based exclusion and support valuable contributors who otherwise get no funding. Learn about the project here: https://science-dao.org/social-inclusion/"
           },
           {
             "question": "How does the current Bachelor/Master/PhD system contribute to exclusion?",
@@ -2808,11 +2808,11 @@
           },
           {
             "question": "What practical changes can improve social inclusion in science?",
-            "answer": "Possible measures include credential‑agnostic funding, microgrants for independent researchers, open peer review and publishing, recognition systems based on contribution rather than degree, and tools like AIIM to distribute funds. The post outlines these concerns and solutions: https://science-dao.org/social-inclusion/"
+            "answer": "Possible measures include credential‑agnostic funding, microgrants for independent researchers, open peer review and publishing, recognition systems based on contribution rather than degree, and tools like SciWard to distribute funds. The post outlines these concerns and solutions: https://science-dao.org/social-inclusion/"
           },
           {
             "question": "Where can I read the full discussion or get involved?",
-            "answer": "You can read the full article and related posts on the Science DAO site. It links to projects and proposals (e.g., AIIM) aimed at improving inclusion and funding fairness. Start here: https://science-dao.org/social-inclusion/"
+            "answer": "You can read the full article and related posts on the Science DAO site. It links to projects and proposals (e.g., SciWard) aimed at improving inclusion and funding fairness. Start here: https://science-dao.org/social-inclusion/"
           }
         ]
       },
@@ -2829,44 +2829,44 @@
         "postId": 1677,
         "faqs": [
           {
-            "question": "What is AIIM (AI Internet-Meritocracy)?",
-            "answer": "AIIM is an application that accepts donations and uses an AI to distribute money among registered users. For an overview, see https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is an application that accepts donations and uses an AI to distribute money among registered users. For an overview, see https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How does AIIM distribute donations?",
+            "question": "How does SciWard distribute donations?",
             "answer": "Donations are pooled and distributed among registered users according to decisions made by an AI system rather than by manual grant creation or selection. More information is available at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How is AIIM different from Gitcoin, Giveth, and Manifund?",
-            "answer": "AIIM removes the need for manual grant descriptions, manual review, project rejections, and per-grant rule verification. It also considers many small user projects, enables frequent payouts, and aims to provide equal funding opportunities without reliance on commercial promotion. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/ for details."
+            "question": "How is SciWard different from Gitcoin, Giveth, and Manifund?",
+            "answer": "SciWard removes the need for manual grant descriptions, manual review, project rejections, and per-grant rule verification. It also considers many small user projects, enables frequent payouts, and aims to provide equal funding opportunities without reliance on commercial promotion. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/ for details."
           },
           {
-            "question": "Do projects get rejected on AIIM?",
-            "answer": "No — unlike some grant platforms, AIIM does not rely on manual rejection of projects; the AI allocates funds among registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "Do projects get rejected on SciWard?",
+            "answer": "No — unlike some grant platforms, SciWard does not rely on manual rejection of projects; the AI allocates funds among registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
             "question": "Do I need to write a grant description or review projects to participate?",
-            "answer": "No — AIIM eliminates the requirement to manually create grant descriptions or to review and vet each grant; the AI handles distribution decisions. More at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "answer": "No — SciWard eliminates the requirement to manually create grant descriptions or to review and vet each grant; the AI handles distribution decisions. More at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How does AIIM handle many small projects from a single user?",
-            "answer": "AIIM is designed to take into account even very small projects a user runs, so a collection of small efforts can meaningfully contribute to that user’s income under the AI allocation model. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "How does SciWard handle many small projects from a single user?",
+            "answer": "SciWard is designed to take into account even very small projects a user runs, so a collection of small efforts can meaningfully contribute to that user’s income under the AI allocation model. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How often are payments made to users on AIIM?",
+            "question": "How often are payments made to users on SciWard?",
             "answer": "Payments can be made frequently — the platform can distribute funds weekly or even more often, avoiding long pauses before paying recipients. More information: https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "Does AIIM require verification that projects conform to specific grant rules?",
-            "answer": "No — AIIM does not require per-grant verification for rule conformity in the way some traditional grant platforms do. The AI handles allocation across registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "Does SciWard require verification that projects conform to specific grant rules?",
+            "answer": "No — SciWard does not require per-grant verification for rule conformity in the way some traditional grant platforms do. The AI handles allocation across registered users. See https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How does AIIM promote equal funding opportunities?",
-            "answer": "AIIM aims to avoid dependence on commercial promotion and advertising that can advantage wealthier projects. By using AI-driven allocation among registered users, it seeks to provide more equal funding chances for both rich and poor. Details at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "How does SciWard promote equal funding opportunities?",
+            "answer": "SciWard aims to avoid dependence on commercial promotion and advertising that can advantage wealthier projects. By using AI-driven allocation among registered users, it seeks to provide more equal funding chances for both rich and poor. Details at https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
-            "question": "How can I donate to support AIIM?",
-            "answer": "You can donate to support AIIM; the site invites one-time donations and provides donation details on its pages. For more information and to donate, visit https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
+            "question": "How can I donate to support SciWard?",
+            "answer": "You can donate to support SciWard; the site invites one-time donations and provides donation details on its pages. For more information and to donate, visit https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           }
         ]
       },
@@ -2887,24 +2887,24 @@
             "answer": "The article argues that humans historically distribute money poorly (from slavery to failed revolutions) and proposes delegating distribution decisions to an AI designed to allocate funds more fairly to scientists and open-source developers. Read the post: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "What is AIIM (AI Internet-Meritocracy)?",
-            "answer": "AIIM is software that uses AI to decide how much money to pay each scientist or free software developer, with the aim of fairer distribution than existing mechanisms. More details are in the post: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard is software that uses AI to decide how much money to pay each scientist or free software developer, with the aim of fairer distribution than existing mechanisms. More details are in the post: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
             "question": "Why do the authors think AI will distribute money better than people?",
             "answer": "The authors claim AI can assess contributions objectively and resist biases and self-serving behaviors that humans and current platforms exhibit, reducing manipulation like using personal funds to advertise projects. See the original explanation: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "How is AIIM different from platforms like Gitcoin and Giveth?",
-            "answer": "The post argues that Gitcoin and Giveth can be gamed—projects with existing funds can buy attention and receive disproportionate grants—whereas AIIM intends to use algorithmic evaluation to allocate funds without being influenced by such advertising. More: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "How is SciWard different from platforms like Gitcoin and Giveth?",
+            "answer": "The post argues that Gitcoin and Giveth can be gamed—projects with existing funds can buy attention and receive disproportionate grants—whereas SciWard intends to use algorithmic evaluation to allocate funds without being influenced by such advertising. More: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "How can I donate to AIIM so it can distribute money?",
-            "answer": "The article requests donations to support AIIM's work and distribution of funds to Internet projects. For donation instructions and links, refer to the site: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "How can I donate to SciWard so it can distribute money?",
+            "answer": "The article requests donations to support SciWard's work and distribution of funds to Internet projects. For donation instructions and links, refer to the site: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "What types of recipients does AIIM aim to support?",
-            "answer": "AIIM focuses on supporting scientists and free/open-source software developers who often receive little or no funding under current systems. The article outlines this focus: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "What types of recipients does SciWard aim to support?",
+            "answer": "SciWard focuses on supporting scientists and free/open-source software developers who often receive little or no funding under current systems. The article outlines this focus: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
             "question": "What are potential risks of letting AI decide monetary distribution?",
@@ -2915,12 +2915,12 @@
             "answer": "While the post promotes AI allocation, practical safeguards would include transparent algorithms, public audit logs, diversity in training data, community oversight, and robust governance—points to weigh alongside the article's proposal: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "Can I participate or influence how AIIM distributes funds?",
-            "answer": "The article encourages support and donations; participation mechanisms (governance, input, or feedback) are topics to check with the AIIM project directly. See the post for links and next steps: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "question": "Can I participate or influence how SciWard distributes funds?",
+            "answer": "The article encourages support and donations; participation mechanisms (governance, input, or feedback) are topics to check with the SciWard project directly. See the post for links and next steps: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
             "question": "Where can I read the full article and learn more?",
-            "answer": "Read the complete post about human failures in money distribution and the AIIM proposal here: https://science-dao.org/people-are-bad-in-distributing-money/"
+            "answer": "Read the complete post about human failures in money distribution and the SciWard proposal here: https://science-dao.org/people-are-bad-in-distributing-money/"
           }
         ]
       },
@@ -2954,7 +2954,7 @@
           },
           {
             "question": "What alternatives does the post recommend instead of donating to Gitcoin?",
-            "answer": "The post recommends donating to AIIM (AI Internet-Meritocracy) rather than Gitcoin and links to donation options on the same site. See the recommendation: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
+            "answer": "The post recommends donating to SciWard (SciWard) rather than Gitcoin and links to donation options on the same site. See the recommendation: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           },
           {
             "question": "How can I verify whether Gitcoin actually changed its submission policy?",
@@ -2969,8 +2969,8 @@
             "answer": "Community responses include raising concerns publicly, engaging Gitcoin governance, supporting or creating alternative multi-chain funding platforms, redirecting donations (as the post suggests), and building coalitions to advocate for inclusive funding policies. More: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           },
           {
-            "question": "What is AIIM and how is it related to this post?",
-            "answer": "AIIM stands for AI Internet-Meritocracy in the post; the author recommends donating to AIIM rather than Gitcoin as an alternative way to support projects aligned with their values. The post links to donation information: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
+            "question": "What is SciWard and how is it related to this post?",
+            "answer": "SciWard stands for SciWard in the post; the author recommends donating to SciWard rather than Gitcoin as an alternative way to support projects aligned with their values. The post links to donation information: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           }
         ]
       },
@@ -3020,11 +3020,11 @@
           },
           {
             "question": "How can I support efforts to reduce monopolies in science?",
-            "answer": "The post encourages donations to the AI Internet-Meritocracy (AIIM) app and related projects that fund marketing for authors and promote systemic change. More information and donation options are available at the linked article. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
+            "answer": "The post encourages donations to the SciWard (SciWard) app and related projects that fund marketing for authors and promote systemic change. More information and donation options are available at the linked article. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
           },
           {
             "question": "Does the article propose legal changes to fix the monopoly problem?",
-            "answer": "The primary proposals focus on cultural and practical solutions—funding marketing roles and changing submission customs—rather than immediate legal reform. It emphasizes creating paid roles (science marketers) and supporting projects like AIIM to shift incentives. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
+            "answer": "The primary proposals focus on cultural and practical solutions—funding marketing roles and changing submission customs—rather than immediate legal reform. It emphasizes creating paid roles (science marketers) and supporting projects like SciWard to shift incentives. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
           }
         ]
       },
@@ -3095,8 +3095,8 @@
             "answer": "The article argues against financing universities as institutions and instead recommends giving money directly to scientists. It claims direct funding increases autonomy and productivity; see the full explanation at https://science-dao.org/how-to-finance-universities/."
           },
           {
-            "question": "What is the AIIM project and how does it work?",
-            "answer": "AIIM (AI Internet Meritocracy) is a project that distributes money directly to scientists by using AI to analyze their publications and FOSS software contributions. More details are available at https://science-dao.org/how-to-finance-universities/."
+            "question": "What is the SciWard project and how does it work?",
+            "answer": "SciWard (SciWard) is a project that distributes money directly to scientists by using AI to analyze their publications and FOSS software contributions. More details are available at https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "Why does the article compare university management to Soviet-style collectivization?",
@@ -3108,11 +3108,11 @@
           },
           {
             "question": "How can I support the proposal to fund scientists directly?",
-            "answer": "The article suggests donating to initiatives that fund scientists directly (such as AIIM) and lobbying your government to adopt similar mechanisms. You can find donation and advocacy information at https://science-dao.org/how-to-finance-universities/."
+            "answer": "The article suggests donating to initiatives that fund scientists directly (such as SciWard) and lobbying your government to adopt similar mechanisms. You can find donation and advocacy information at https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "How does AI evaluate scientific contributions for funding?",
-            "answer": "According to the article, AIIM uses automated analysis of researchers' publications and free/open-source software contributions to assess merit and allocate funds. For specifics about the evaluation approach, visit https://science-dao.org/how-to-finance-universities/."
+            "answer": "According to the article, SciWard uses automated analysis of researchers' publications and free/open-source software contributions to assess merit and allocate funds. For specifics about the evaluation approach, visit https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "What are common criticisms or concerns about direct-to-scientist funding?",
@@ -3146,11 +3146,11 @@
           },
           {
             "question": "What reform does the author propose for science funding?",
-            "answer": "The author proposes redirecting science funding to the AIIM (AI Internet Meritocracy) project, which they describe as a system to distribute science money more fairly and directly to scientists, with the aim of substantially boosting global economic growth. Details are provided in the article: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The author proposes redirecting science funding to the SciWard (SciWard) project, which they describe as a system to distribute science money more fairly and directly to scientists, with the aim of substantially boosting global economic growth. Details are provided in the article: https://science-dao.org/how-is-america-not-great-now/"
           },
           {
             "question": "How can I support or get involved with the proposed solution?",
-            "answer": "The post asks readers to vote and demand that science money be redirected to the AIIM project and also invites donations (see the site's donation page). For the author's call to action and links, see: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The post asks readers to vote and demand that science money be redirected to the SciWard project and also invites donations (see the site's donation page). For the author's call to action and links, see: https://science-dao.org/how-is-america-not-great-now/"
           },
           {
             "question": "What's the $6 trillion reference mentioned in the article?",
@@ -3162,7 +3162,7 @@
           },
           {
             "question": "Who is the intended audience for the post and what does the author request from readers?",
-            "answer": "The intended audience includes voters, scientists, and potential donors. The author asks readers to support policy changes and donations that would fund the AIIM project and otherwise push for fairer, more direct distribution of science funding. More information is available at: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The intended audience includes voters, scientists, and potential donors. The author asks readers to support policy changes and donations that would fund the SciWard project and otherwise push for fairer, more direct distribution of science funding. More information is available at: https://science-dao.org/how-is-america-not-great-now/"
           }
         ]
       },
@@ -3200,7 +3200,7 @@
           },
           {
             "question": "What can be done to address the problem the author raises?",
-            "answer": "The author requests support for systems that let AI (like GPT) evaluate contributions and distribute funds to scientists and FOSS developers accordingly (the AIIM project) and invites donations; see the post for links and the proposal: https://science-dao.org/what-is-the-greatest-injustice-in-the-world/"
+            "answer": "The author requests support for systems that let AI (like GPT) evaluate contributions and distribute funds to scientists and FOSS developers accordingly (the SciWard project) and invites donations; see the post for links and the proposal: https://science-dao.org/what-is-the-greatest-injustice-in-the-world/"
           },
           {
             "question": "How can the author's claims be independently verified?",
@@ -3316,7 +3316,7 @@
           },
           {
             "question": "Where can I find the author’s primary paper referenced in the post?",
-            "answer": "The post references a primary paper ('A new economic formation: AI Internet Meritocracy') linked within the article. For the experiment and related commentary, see: https://science-dao.org/why-do-we-need-high-science-salaries/."
+            "answer": "The post references a primary paper ('A new economic formation: SciWard') linked within the article. For the experiment and related commentary, see: https://science-dao.org/why-do-we-need-high-science-salaries/."
           },
           {
             "question": "How can I reproduce or inspect the model outputs the author used?",
@@ -3337,60 +3337,60 @@
         "postId": 1574,
         "faqs": [
           {
-            "question": "What is AI Internet Meritocracy (AIIM)?",
-            "answer": "AI Internet Meritocracy (AIIM) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "question": "What is SciWard (SciWard)?",
+            "answer": "SciWard (SciWard) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "How would the AI decide who gets what share of the treasury?",
-            "answer": "The AI is asked to research each registered user (ORCID, GitHub, etc.) using web sources and decide what portion of global GDP it would allocate to that person if distributing all income; actual distributions are then proportional to those AI-chosen percentages. Details are in the article: https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The AI is asked to research each registered user (ORCID, GitHub, etc.) using web sources and decide what portion of global GDP it would allocate to that person if distributing all income; actual distributions are then proportional to those AI-chosen percentages. Details are in the article: https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "Which identity services are used to verify users?",
-            "answer": "The proposal suggests secure OAuth logins via services like ORCID and GitHub (and similar), linking those verified identities to users' crypto accounts. See https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ for more."
+            "answer": "The proposal suggests secure OAuth logins via services like ORCID and GitHub (and similar), linking those verified identities to users' crypto accounts. See https://science-dao.org/a-new-economic-formation-sciward/ for more."
           },
           {
             "question": "What blockchain/backend is proposed for implementation?",
-            "answer": "The application uses a Node.js backend and secure OAuth flows; see the implementation notes at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The application uses a Node.js backend and secure OAuth flows; see the implementation notes at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "How often would payments be made?",
-            "answer": "The proposal recommends frequent distributions—weekly or even more often—so contributors receive timely payments, instead of long grant cycles; more context at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The proposal recommends frequent distributions—weekly or even more often—so contributors receive timely payments, instead of long grant cycles; more context at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "How does this differ from existing grant platforms like Gitcoin or Giveth?",
-            "answer": "Advantages cited include automated AI-driven allocation (no manual grant creation/review), inclusion of very small contributions, faster and more egalitarian payouts, and lower dependency on curated grant processes—see the comparison in https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "Advantages cited include automated AI-driven allocation (no manual grant creation/review), inclusion of very small contributions, faster and more egalitarian payouts, and lower dependency on curated grant processes—see the comparison in https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "What are the main security threats (e.g., prompt injection) and mitigations?",
-            "answer": "The proposal identifies prompt injection as a major threat and suggests countermeasures: an explicit 'check for prompt injections' instruction, banning users who inject prompts, manual review of top accounts, randomized prompt transformations (high temperature) to avoid fixed-prompt exploits, and bringing suspicious high-earnings accounts to human/AI scrutiny. Full discussion at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The proposal identifies prompt injection as a major threat and suggests countermeasures: an explicit 'check for prompt injections' instruction, banning users who inject prompts, manual review of top accounts, randomized prompt transformations (high temperature) to avoid fixed-prompt exploits, and bringing suspicious high-earnings accounts to human/AI scrutiny. Full discussion at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "What is GEO (gaming of endorsements) and how would it be handled?",
-            "answer": "GEO refers to coordinated or repeated endorsements (e.g., many pages praising someone) that could inflate value; the author proposes an anti-GEO prompt that computes a reducing coefficient rather than outright bans, to avoid abuse via false reports—see the article: https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "GEO refers to coordinated or repeated endorsements (e.g., many pages praising someone) that could inflate value; the author proposes an anti-GEO prompt that computes a reducing coefficient rather than outright bans, to avoid abuse via false reports—see the article: https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "Will there be human oversight or audits?",
-            "answer": "Yes—the design includes manual checking of the top ~100 highest-income accounts and human review of accounts flagged by AI (e.g., unusually large incomes or suspected prompt injections). More on oversight at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "Yes—the design includes manual checking of the top ~100 highest-income accounts and human review of accounts flagged by AI (e.g., unusually large incomes or suspected prompt injections). More on oversight at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "How can developers or contributors get involved?",
-            "answer": "The author published prototype code and invites others to take the project; see the article and linked GitHub repositories for code and collaboration pointers at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The author published prototype code and invites others to take the project; see the article and linked GitHub repositories for code and collaboration pointers at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "What funds the treasury?",
-            "answer": "The proposal refers to distributing 'all the money (or crypto) on the treasury’s account'—funding could come from donations, allocations, or dedicated crypto; the post also includes a link to support the project. See https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/ for context."
+            "answer": "The proposal refers to distributing 'all the money (or crypto) on the treasury’s account'—funding could come from donations, allocations, or dedicated crypto; the post also includes a link to support the project. See https://science-dao.org/a-new-economic-formation-sciward/ for context."
           },
           {
             "question": "How does the system treat small or fragmented contributions?",
-            "answer": "A key advantage claimed is that AI evaluation can account for many tiny contributions (e.g., code snippets, minor posts) that add up, so small or numerous efforts can be recognized and funded, rather than being ignored by curated grant processes; more at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "A key advantage claimed is that AI evaluation can account for many tiny contributions (e.g., code snippets, minor posts) that add up, so small or numerous efforts can be recognized and funded, rather than being ignored by curated grant processes; more at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "What privacy and regulatory concerns should be considered?",
-            "answer": "Potential concerns include identity linkage across services, data scraping for AI evaluation, money-laundering and tax/regulatory compliance for automated payouts; the proposal is experimental and these legal/ethical issues require careful design and consultation—see the article at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "Potential concerns include identity linkage across services, data scraping for AI evaluation, money-laundering and tax/regulatory compliance for automated payouts; the proposal is experimental and these legal/ethical issues require careful design and consultation—see the article at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "Where can I read the original proposal and follow links referenced by the author?",
-            "answer": "The full proposal and related links (images, repos, and support/donation link) are available at https://science-dao.org/a-new-economic-formation-ai-internet-meritocracy/."
+            "answer": "The full proposal and related links (images, repos, and support/donation link) are available at https://science-dao.org/a-new-economic-formation-sciward/."
           }
         ]
       },

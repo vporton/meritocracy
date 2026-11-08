@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertController, useAppKit, useAppKitAccount, useAppKitEvents, useAppKitState } from '../lib/walletModal';
 import { connectInjectedEthereumWallet, useConnection, useDisconnect, useSignMessage } from '../lib/retiredWallet';
 import { isAddress } from 'ethers';
+import { createSolanaClient } from '@metamask/connect-solana';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';
 import { NonEvmAddressInput, validateNonEvmAddresses } from '../utils/addressValidation';
@@ -278,7 +279,7 @@ const selectInjectedSolanaWallet = (wallets: SolanaWalletOption[]): SolanaWallet
 const connectInjectedSolanaWallet = async (): Promise<string | null> => {
   const wallets = getInjectedSolanaWallets();
   if (wallets.length === 0) {
-    throw new Error('No Solana wallet was found. Install or enable Phantom, Solflare, Backpack, or MetaMask, then reload this page.');
+    return null;
   }
 
   const selectedWallet = selectInjectedSolanaWallet(wallets);
@@ -303,6 +304,30 @@ const connectInjectedSolanaWallet = async (): Promise<string | null> => {
     console.error('Failed to connect injected Solana wallet:', error);
     throw error;
   }
+};
+
+const connectMetaMaskSolanaWallet = async (): Promise<string | null> => {
+  if (typeof window === 'undefined') return null;
+
+  const ethereumProvider = (window as Window & { ethereum?: { isMetaMask?: boolean } }).ethereum;
+  if (!ethereumProvider?.isMetaMask) return null;
+
+  const client = await createSolanaClient({
+    dapp: {
+      name: 'Meritocracy DAO',
+      url: window.location.origin,
+      iconUrl: `${window.location.origin}/logo.png`,
+    },
+    // The connector accepts any Solana RPC endpoint. A public endpoint keeps
+    // address-only wallet linking independent of an Infura account.
+    api: { supportedNetworks: { mainnet: 'https://api.mainnet-beta.solana.com' } },
+  });
+  const wallet = client.getWallet();
+  const connect = wallet.features['standard:connect'];
+  if (!connect) throw new Error('MetaMask Solana support is unavailable in this wallet.');
+
+  const { accounts } = await connect.connect();
+  return accounts[0]?.address ?? null;
 };
 
 const findBitcoinAddress = (value: unknown): string | undefined => {
@@ -1393,14 +1418,16 @@ const ConnectForm = () => {
     if (namespace === 'solana') {
       try {
         setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
-        const injectedSolanaAddress = await connectInjectedSolanaWallet();
-        if (injectedSolanaAddress) {
-          const updatedValue = syncWalletAddressField(field, injectedSolanaAddress);
+        const solanaAddress = await connectInjectedSolanaWallet()
+          ?? await connectMetaMaskSolanaWallet();
+        if (solanaAddress) {
+          const updatedValue = syncWalletAddressField(field, solanaAddress);
           if (user && updatedValue) {
             void persistAddressForm({ [field]: updatedValue });
           }
           return;
         }
+        throw new Error('No Solana wallet was found. Install or enable Phantom, Solflare, Backpack, or MetaMask, then reload this page.');
       } catch (error: any) {
         setConnectStatus(prev => ({
           ...prev,

@@ -19,6 +19,7 @@
     "@ai-sdk/mistral": "^4.0.55",
     "@ai-sdk/openai": "^4.0.82",
     "@ai-sdk/xai": "^5.0.13",
+    "@metamask/connect-solana": "^2.1.1",
     "@tanstack/react-query": "^5.90.21",
     "@vitejs/plugin-react": "^5.1.4",
     "ai": "^7.0.123",

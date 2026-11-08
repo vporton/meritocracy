@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertController, useAppKit, useAppKitAccount, useAppKitEvents, useAppKitState } from '../lib/walletModal';
-import { useConnection, useDisconnect, useSignMessage } from '../lib/retiredWallet';
+import { connectInjectedEthereumWallet, useConnection, useDisconnect, useSignMessage } from '../lib/retiredWallet';
 import { isAddress } from 'ethers';
 import { useAuth } from '../contexts/AuthContext';
 import api, { User, authApi, usersApi } from '../services/api';
@@ -824,11 +824,9 @@ const ConnectForm = () => {
       }
 
       if (!hasReownWalletModal) {
-        setConnectStatus(prev => ({
-          ...prev,
-          ethereum: 'error',
-          error: 'Wallet connection is not configured. Set VITE_WALLETCONNECT_PROJECT_ID to enable Reown.'
-        }));
+        setConnectStatus(prev => ({ ...prev, ethereum: 'connecting' }));
+        await connectInjectedEthereumWallet();
+        setPendingWalletAuth(true);
         return;
       }
 

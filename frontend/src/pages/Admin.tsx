@@ -108,7 +108,7 @@ const Admin: React.FC = () => {
         return (
             <div className="admin-container">
                 <Helmet>
-                    <title>Admin Login - Meritocracy</title>
+                    <title>Admin Login - SciWard</title>
                 </Helmet>
                 <div className="admin-card login-card">
                     <h1>Admin Access</h1>
@@ -137,7 +137,7 @@ const Admin: React.FC = () => {
     return (
         <div className="admin-container">
             <Helmet>
-                <title>Admin Dashboard - Meritocracy</title>
+                <title>Admin Dashboard - SciWard</title>
             </Helmet>
             <div className="admin-header">
                 <h1>Admin Dashboard</h1>

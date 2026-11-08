@@ -1,6 +1,6 @@
 # Cron Job Setup
 
-This document explains how the Meritocracy backend now runs its recurring maintenance flows via external HTTP schedulers rather than an in-process scheduler.
+This document explains how the SciWard backend now runs its recurring maintenance flows via external HTTP schedulers rather than an in-process scheduler.
 
 ## Overview
 

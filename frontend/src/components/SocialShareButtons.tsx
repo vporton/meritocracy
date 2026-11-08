@@ -8,7 +8,7 @@ interface SocialShareButtonsProps {
 }
 
 export default function SocialShareButtons({
-  title = 'Meritocracy DAO',
+  title = 'SciWard',
   text = 'Funding scientists and open-source developers through transparent governance.',
   url,
 }: SocialShareButtonsProps) {
@@ -37,8 +37,8 @@ export default function SocialShareButtons({
   }
 
   return (
-    <section className="social-share-card" aria-label="Share Meritocracy" data-nosnippet="data-nosnippet">
-      <p className="social-share-title">Share Meritocracy</p>
+    <section className="social-share-card" aria-label="Share SciWard" data-nosnippet="data-nosnippet">
+      <p className="social-share-title">Share SciWard</p>
       <div className="social-share-list">
         {links.map((link) => (
           <a

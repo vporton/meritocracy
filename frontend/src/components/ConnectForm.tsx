@@ -314,7 +314,7 @@ const connectMetaMaskSolanaWallet = async (): Promise<string | null> => {
 
   const client = await createSolanaClient({
     dapp: {
-      name: 'Meritocracy DAO',
+      name: 'SciWard',
       url: window.location.origin,
       iconUrl: `${window.location.origin}/logo.png`,
     },
@@ -379,7 +379,7 @@ const connectInjectedBitcoinWallet = async (): Promise<string> => {
       } else if (provider.request) {
         response = await provider.request('getAccounts', {
           purposes: ['payment'],
-          message: 'Connect your Bitcoin address to Meritocracy DAO',
+          message: 'Connect your Bitcoin address to SciWard',
         });
       }
 
@@ -1689,11 +1689,11 @@ const ConnectForm = () => {
   return (
     <div className="connect-form">
       <Helmet>
-        <title>Meritocracy App - Connect Your Account and Receive Money</title>
-        <meta name="description" content="Meritocracy App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
+        <title>SciWard App - Connect Your Account and Receive Money</title>
+        <meta name="description" content="SciWard App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
       </Helmet>
       <Canonical baseUrl={`${getFrontendOrigin()}/connect`} />
-      <h2>Connect to Meritocracy Platform</h2>
+      <h2>Connect to SciWard Platform</h2>
 
       {renderConnectedStatus()}
       {renderVotingPleaPreference()}

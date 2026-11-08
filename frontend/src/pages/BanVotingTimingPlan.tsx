@@ -5,10 +5,10 @@ export default function BanVotingTimingPlan() {
   return (
     <div className="timing-plan-page">
       <Helmet>
-        <title>Ban Voting Timing Plan · Meritocracy Platform</title>
+        <title>Ban Voting Timing Plan · SciWard Platform</title>
         <meta
           name="description"
-          content="Explore the timing plan for Meritocracy's worth assessments, ban/unban votes, and payment schedules."
+          content="Explore the timing plan for SciWard's worth assessments, ban/unban votes, and payment schedules."
         />
       </Helmet>
       <div className="timing-plan-container">

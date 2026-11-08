@@ -7,7 +7,7 @@
         "postId": 20658,
         "faqs": [
           {
-            "question": "How do I contact Science DAO?",
+            "question": "How do I contact World Science Foundation?",
             "answer": "Use the contact form on the page: fill in your First and Last name, your Email, and your message then click Submit. You can access the form here: https://science-dao.org/contact/."
           },
           {
@@ -61,7 +61,7 @@
         "postId": 20116,
         "faqs": [
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is a project that uses AI to evaluate the contribution (worth) of scientists and free software developers and distributes donated funds proportionally to that evaluation. Learn more at https://science-dao.org/sciward/."
           },
           {
@@ -231,12 +231,12 @@
         "postId": 9978,
         "faqs": [
           {
-            "question": "What is the Science DAO blog?",
-            "answer": "The Science DAO blog is the official blog space for the Science DAO community, where updates, articles, and commentary on science, governance, and community projects are posted. For the latest posts and an overview, see https://science-dao.org/blog/."
+            "question": "What is the World Science Foundation blog?",
+            "answer": "The World Science Foundation blog is the official blog space for the World Science Foundation community, where updates, articles, and commentary on science, governance, and community projects are posted. For the latest posts and an overview, see https://science-dao.org/blog/."
           },
           {
             "question": "What kinds of topics are covered on the blog?",
-            "answer": "The blog typically covers topics related to scientific research, open science, decentralized governance, community updates, project highlights, and events relevant to the Science DAO community. Browse current and past topics at https://science-dao.org/blog/."
+            "answer": "The blog typically covers topics related to scientific research, open science, decentralized governance, community updates, project highlights, and events relevant to the World Science Foundation community. Browse current and past topics at https://science-dao.org/blog/."
           },
           {
             "question": "How can I subscribe to new blog posts or follow updates?",
@@ -255,7 +255,7 @@
             "answer": "Update frequency can vary depending on community activity and project news. For recent posts and publication cadence, check the blog's homepage at https://science-dao.org/blog/."
           },
           {
-            "question": "How should I cite a blog post from Science DAO?",
+            "question": "How should I cite a blog post from World Science Foundation?",
             "answer": "Cite blog posts like other web articles: include author (if available), title, publication date, and the URL. Refer to the specific post on the blog for exact details: https://science-dao.org/blog/."
           },
           {
@@ -277,7 +277,7 @@
         "postId": 9110,
         "faqs": [
           {
-            "question": "How can I contact World Science DAO?",
+            "question": "How can I contact World Science Foundation?",
             "answer": "Use the contact form on the Community page: fill in your name and email, enter a subject and message, then click “Contact Us Now.” Visit https://science-dao.org/community/ to access the form."
           },
           {
@@ -328,15 +328,15 @@
         "faqs": [
           {
             "question": "What do you present on this site?",
-            "answer": "This site presents World Science DAO — a DAO to develop global science infrastructure (publishing, grants, salaries for scientists) built on decentralized software and cryptocurrency. See https://science-dao.org/faqs/ for details."
+            "answer": "This site presents World Science Foundation — a organization to develop global science infrastructure (publishing, grants, salaries for scientists) built on decentralized software and cryptocurrency. See https://science-dao.org/faqs/ for details."
           },
           {
-            "question": "What is a DAO?",
-            "answer": "A DAO (Decentralized Autonomous Organization) uses blockchain and smart contracts to operate in a decentralized way and can be used to fund and support projects such as scientific research. More: https://science-dao.org/faqs/."
+            "question": "What is a organization?",
+            "answer": "A decentralized organization uses blockchain and smart contracts to operate in a decentralized way and can be used to fund and support projects such as scientific research. More: https://science-dao.org/faqs/."
           },
           {
-            "question": "What is an impact DAO?",
-            "answer": "An impact DAO (charity DAO) is created to address real-world problems (e.g., climate change, human trafficking). World Science DAO is an impact DAO focused on improving science funding and publishing. Details at https://science-dao.org/faqs/."
+            "question": "What is an impact organization?",
+            "answer": "An impact-focused organization is created to address real-world problems (e.g., climate change, human trafficking). World Science Foundation is an impact organization focused on improving science funding and publishing. Details at https://science-dao.org/faqs/."
           },
           {
             "question": "How are you going to \"control the world\"?",
@@ -344,11 +344,11 @@
           },
           {
             "question": "What is your flagship project?",
-            "answer": "The flagship project is SciWard (SciWard) — an AI application for distributing salaries. Learn more at https://science-dao.org/faqs/."
+            "answer": "The flagship project is SciWard — an AI application for distributing salaries. Learn more at https://science-dao.org/faqs/."
           },
           {
             "question": "Why not use traditional science funding?",
-            "answer": "Traditional channels can miss discoveries from outsiders (what the site calls “scientific covery”), leaving important work unfunded. World Science DAO aims to address that and asks supporters to consider donating. See https://science-dao.org/faqs/."
+            "answer": "Traditional channels can miss discoveries from outsiders (what the site calls “scientific covery”), leaving important work unfunded. World Science Foundation aims to address that and asks supporters to consider donating. See https://science-dao.org/faqs/."
           },
           {
             "question": "Do I need an academic degree to receive a salary?",
@@ -356,19 +356,19 @@
           },
           {
             "question": "What is Grants Science?",
-            "answer": "Grants Science is a blockchain-based algorithm to distribute scientific grants intelligently. It is presented as a more cumbersome alternative to SciWard (SciWard); both may be implemented. More: https://science-dao.org/faqs/."
+            "answer": "Grants Science is a blockchain-based algorithm to distribute scientific grants intelligently. It is presented as a more cumbersome alternative to SciWard; both may be implemented. More: https://science-dao.org/faqs/."
           },
           {
             "question": "How do I participate?",
-            "answer": "You can participate by donating or by helping develop and run the DAO app. Participation involves SCI tokens (currently by invitation, with broader distribution planned). Details at https://science-dao.org/faqs/."
+            "answer": "You can participate by donating or by helping develop and run the organization app. Participation involves SCI tokens (currently by invitation, with broader distribution planned). Details at https://science-dao.org/faqs/."
           },
           {
             "question": "Which blockchain do you operate on?",
             "answer": "The project plans to operate on multiple blockchains. See https://science-dao.org/faqs/ for updates."
           },
           {
-            "question": "Which DAO toolkit do you use?",
-            "answer": "The team uses Colony as a DAO toolkit. See https://science-dao.org/faqs/."
+            "question": "Which organization toolkit do you use?",
+            "answer": "The team uses Colony as a organization toolkit. See https://science-dao.org/faqs/."
           },
           {
             "question": "Aren't you afraid that giving control over money to AI endangers mankind?",
@@ -422,7 +422,7 @@
           },
           {
             "question": "How can I support or donate to the project?",
-            "answer": "The Text team requests support via the DAO's donation options; the project page includes links and ways to contribute financially or by participating. Visit: https://science-dao.org/xml-for-publishing/"
+            "answer": "The Text team requests support via the organization's donation options; the project page includes links and ways to contribute financially or by participating. Visit: https://science-dao.org/xml-for-publishing/"
           }
         ]
       },
@@ -494,7 +494,7 @@
         "faqs": [
           {
             "question": "What is the Grants Science project and what does it aim to do?",
-            "answer": "Grants Science is a charity DAO project that aims to 'unstuck' fundamental science and better finance both science and free-software development by leveraging blockchain/cryptocurrency mechanisms. It focuses on improving discovery, funding visibility, and fair distribution of donations — especially for underfunded basic research and software dependencies. More details: https://science-dao.org/salaries-science/"
+            "answer": "Grants Science is a charity organization project that aims to 'unstuck' fundamental science and better finance both science and free-software development by leveraging blockchain/cryptocurrency mechanisms. It focuses on improving discovery, funding visibility, and fair distribution of donations — especially for underfunded basic research and software dependencies. More details: https://science-dao.org/salaries-science/"
           },
           {
             "question": "How can I support Grants Science or make a donation?",
@@ -522,7 +522,7 @@
           },
           {
             "question": "Who is behind the project?",
-            "answer": "The initiative is associated with Victor Porton and a Grants team within the DAO. The page outlines motivations, strategy, and links to relevant GitHub repositories and drafts. More background: https://science-dao.org/salaries-science/"
+            "answer": "The initiative is associated with Victor Porton and a Grants team within the organization. The page outlines motivations, strategy, and links to relevant GitHub repositories and drafts. More background: https://science-dao.org/salaries-science/"
           },
           {
             "question": "What is the current status of the project?",
@@ -547,15 +547,15 @@
         "postId": 4213,
         "faqs": [
           {
-            "question": "What is Science DAO?",
-            "answer": "Science DAO is a charity (an “impact DAO” in crypto jargon) designed to make decentralized decisions about world science — funding, publishing and software — using Web3 methods. Learn more at https://science-dao.org/."
+            "question": "What is World Science Foundation?",
+            "answer": "World Science Foundation is a charity (an “impact organization” in crypto jargon) designed to make decentralized decisions about world science — funding, publishing and software — using Web3 methods. Learn more at https://science-dao.org/."
           },
           {
-            "question": "How can I donate to Science DAO?",
-            "answer": "You can support Science DAO via their donation page (the site includes a “Donate Now” button). For details and to donate, visit https://science-dao.org/."
+            "question": "How can I donate to World Science Foundation?",
+            "answer": "You can support World Science Foundation via their donation page (the site includes a “Donate Now” button). For details and to donate, visit https://science-dao.org/."
           },
           {
-            "question": "What are the main projects of Science DAO?",
+            "question": "What are the main projects of World Science Foundation?",
             "answer": "Their projects include SciWard (software to distribute funds), Grants Science (blockchain collaboration for funding), a Scientific Journal with post‑publication peer review, and publishing in XML. See https://science-dao.org/ for descriptions."
           },
           {
@@ -572,10 +572,10 @@
           },
           {
             "question": "Why publish in XML?",
-            "answer": "Publishing in XML enables structured, machine‑readable articles that improve interoperability, reuse and long‑term preservation. Science DAO lists XML publishing as a core approach; see https://science-dao.org/."
+            "answer": "Publishing in XML enables structured, machine‑readable articles that improve interoperability, reuse and long‑term preservation. World Science Foundation lists XML publishing as a core approach; see https://science-dao.org/."
           },
           {
-            "question": "Who founded Science DAO?",
+            "question": "Who founded World Science Foundation?",
             "answer": "The founding member named on the site is Victor Porton, a mathematician and programmer focused on saving scientific research from predatory publishing. More about the team and mission: https://science-dao.org/."
           },
           {
@@ -583,12 +583,12 @@
             "answer": "Their goals include saving basic science, supporting discoveries, protecting researchers from predatory publishers, providing salaries to scientists, and promoting post‑publication moderation and XML publishing. Details at https://science-dao.org/."
           },
           {
-            "question": "How does Science DAO plan to protect against predatory publishers?",
+            "question": "How does World Science Foundation plan to protect against predatory publishers?",
             "answer": "They emphasize transparent, decentralized publication and post‑publication peer review workflows, plus publishing standards (XML) to ensure only rigorous, discoverable research is promoted. See https://science-dao.org/ for initiatives."
           },
           {
-            "question": "How will Science DAO decide funding and salaries?",
-            "answer": "The DAO model described uses decentralized governance and software (including blockchain/AI tools) to allocate grants and salaries to scientists and contributors; visit https://science-dao.org/ to learn about their funding mechanisms."
+            "question": "How will World Science Foundation decide funding and salaries?",
+            "answer": "The organization model described uses decentralized governance and software (including blockchain/AI tools) to allocate grants and salaries to scientists and contributors; visit https://science-dao.org/ to learn about their funding mechanisms."
           },
           {
             "question": "How can I follow or get updates about their work?",
@@ -645,7 +645,7 @@
             "answer": "Email porton@science-dao.com with your request. We will respond and, where applicable, forward requests to other recipients of your data unless impossible or disproportionate. See: https://science-dao.org/privacy-policy/"
           },
           {
-            "question": "How secure is my personal data with World Science DAO?",
+            "question": "How secure is my personal data with World Science Foundation?",
             "answer": "We use commercially acceptable measures to protect your data, but no transmission/storage method is 100% secure. We cannot guarantee absolute security. For more details see: https://science-dao.org/privacy-policy/"
           },
           {
@@ -708,11 +708,11 @@
           },
           {
             "question": "How might digital economies affect workers, especially Internet occupations?",
-            "answer": "Digital mechanisms (collective IP regimes, tokenized compensation, DAOs) can reduce exploitative intermediaries and enable fairer value distribution for online work. The article emphasizes updating institutional frameworks to protect workers while keeping entrepreneurial activity. Read more: https://science-dao.org/digital-economies/"
+            "answer": "Digital mechanisms (collective IP regimes, tokenized compensation, decentralized organizations) can reduce exploitative intermediaries and enable fairer value distribution for online work. The article emphasizes updating institutional frameworks to protect workers while keeping entrepreneurial activity. Read more: https://science-dao.org/digital-economies/"
           },
           {
             "question": "What are practical tools for implementing crypto-based accountability and planning?",
-            "answer": "Practical tools include smart contracts for conditional rules, blockchains for transparent records, token incentives for coordination, and DAO structures for decentralized governance — all of which can embed accountability into technical systems. Read more: https://science-dao.org/digital-economies/"
+            "answer": "Practical tools include smart contracts for conditional rules, blockchains for transparent records, token incentives for coordination, and organization structures for decentralized governance — all of which can embed accountability into technical systems. Read more: https://science-dao.org/digital-economies/"
           },
           {
             "question": "Does the article claim Marx was wrong about the disappearance of money?",
@@ -766,7 +766,7 @@
           },
           {
             "question": "How can independent researchers get promotion support now?",
-            "answer": "Apply to alternative programs and platforms that fund outreach (e.g., community DAOs and science marketing initiatives), publicize work on preprint servers, and contact local representatives to request inclusion in ministry promotion schemes. Starting points: https://science-dao.org/science-minister/"
+            "answer": "Apply to alternative programs and platforms that fund outreach (e.g., community decentralized organizations and science marketing initiatives), publicize work on preprint servers, and contact local representatives to request inclusion in ministry promotion schemes. Starting points: https://science-dao.org/science-minister/"
           },
           {
             "question": "How can I tell if my Science Minister is tolerating coveries?",
@@ -774,7 +774,7 @@
           },
           {
             "question": "What actions can I take if my minister tolerates coveries?",
-            "answer": "Write to your representatives, demand public reporting and dedicated promotion funds, vote for officials who back open promotion, back projects like Science DAO, and join campaigns calling for accountability or resignation if failures persist. Action steps: https://science-dao.org/science-minister/"
+            "answer": "Write to your representatives, demand public reporting and dedicated promotion funds, vote for officials who back open promotion, back projects like World Science Foundation, and join campaigns calling for accountability or resignation if failures persist. Action steps: https://science-dao.org/science-minister/"
           },
           {
             "question": "What is the difference between funding research and funding promotion?",
@@ -782,7 +782,7 @@
           },
           {
             "question": "Where can I learn more or support efforts to eliminate coveries?",
-            "answer": "Read the full article and related projects (like Science DAO and the SciWard initiative) at the linked page, and consider donating or joining campaigns that build alternative promotion systems. Learn more: https://science-dao.org/science-minister/"
+            "answer": "Read the full article and related projects (like World Science Foundation and the SciWard initiative) at the linked page, and consider donating or joining campaigns that build alternative promotion systems. Learn more: https://science-dao.org/science-minister/"
           }
         ]
       },
@@ -800,7 +800,7 @@
         "faqs": [
           {
             "question": "Who is the author of this Personal Story?",
-            "answer": "The author is Victor Porton, creator of this site and of World Science DAO. Read his Personal Story at https://science-dao.org/personal-story/."
+            "answer": "The author is Victor Porton, creator of this site and of World Science Foundation. Read his Personal Story at https://science-dao.org/personal-story/."
           },
           {
             "question": "What key events are described in the Personal Story?",
@@ -824,10 +824,10 @@
           },
           {
             "question": "What solutions has Victor proposed to prevent 'coveries'?",
-            "answer": "He proposed several approaches: Future Salaries (prediction‑market style funding), Salaries Science / Grants Science (a blockchain algorithm idea), and finally SciWard (SciWard), which he implemented. The Personal Story summarizes these proposals at https://science-dao.org/personal-story/."
+            "answer": "He proposed several approaches: Future Salaries (prediction‑market style funding), Salaries Science / Grants Science (a blockchain algorithm idea), and finally SciWard, which he implemented. The Personal Story summarizes these proposals at https://science-dao.org/personal-story/."
           },
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard asks users what portion of global GDP they believe they are worth and then attempts to pay a proportional share. Victor implemented a working version quickly and discusses the concept and its goals on the Personal Story page: https://science-dao.org/personal-story/."
           },
           {
@@ -853,40 +853,40 @@
         "postId": 20595,
         "faqs": [
           {
-            "question": "What is a Science DAO?",
-            "answer": "A Science DAO is a decentralized autonomous organization that uses blockchain and smart contracts to fund, govern, and reward scientific research, enabling transparent allocations, global collaboration, token-based incentives, and automated reputation systems. Learn more: https://science-dao.org/multiply-gdp/"
+            "question": "What is a World Science Foundation?",
+            "answer": "A World Science Foundation is a decentralized autonomous organization that uses blockchain and smart contracts to fund, govern, and reward scientific research, enabling transparent allocations, global collaboration, token-based incentives, and automated reputation systems. Learn more: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "How do Science DAOs fund research differently from traditional grants?",
-            "answer": "Science DAOs enable direct, low-overhead funding from anyone, instant and transparent transfers via smart contracts, and token rewards linked to contributions — reducing bureaucratic delays and enabling faster support for high‑risk, high‑reward projects. Read more: https://science-dao.org/multiply-gdp/"
+            "question": "How do World Science Foundations fund research differently from traditional grants?",
+            "answer": "World Science Foundations enable direct, low-overhead funding from anyone, instant and transparent transfers via smart contracts, and token rewards linked to contributions — reducing bureaucratic delays and enabling faster support for high‑risk, high‑reward projects. Read more: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "How could Science DAOs multiply global GDP?",
-            "answer": "By accelerating the pace of discovery, enabling faster commercialization of technologies, and scaling scientific coordination globally, Science DAOs could increase the rate of innovation severalfold — with potentially trillions in economic impact if scaled worldwide. Details: https://science-dao.org/multiply-gdp/"
+            "question": "How could World Science Foundations multiply global GDP?",
+            "answer": "By accelerating the pace of discovery, enabling faster commercialization of technologies, and scaling scientific coordination globally, World Science Foundations could increase the rate of innovation severalfold — with potentially trillions in economic impact if scaled worldwide. Details: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is a proposed model that automates funding distribution at planetary scale, rewarding discoveries and free software in proportion to their real‑world economic impact, effectively turning the internet into a global R&D lab without raising taxes. More information: https://science-dao.org/multiply-gdp/"
           },
           {
             "question": "Why can't universities and traditional institutions achieve the same scale?",
-            "answer": "Traditional institutions are optimized for stability and operate with bureaucratic, geographic, and procedural constraints that limit exponential scaling; Science DAOs are natively digital and global, allowing faster coordination and scaling that complements existing systems. See the article: https://science-dao.org/multiply-gdp/"
+            "answer": "Traditional institutions are optimized for stability and operate with bureaucratic, geographic, and procedural constraints that limit exponential scaling; World Science Foundations are natively digital and global, allowing faster coordination and scaling that complements existing systems. See the article: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "How does token-based incentive alignment work in Science DAOs?",
+            "question": "How does token-based incentive alignment work in World Science Foundations?",
             "answer": "Tokens can reward quick publication, reproducible results, and valuable contributions; they encode reputation, automate micropayments, and align stakeholder incentives so contributors are compensated based on impact and community governance. Learn more: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "What role does AI play in Science DAO governance?",
+            "question": "What role does AI play in World Science Foundation governance?",
             "answer": "AI can assist allocation decisions, optimize funding flows, and coordinate large‑scale projects more efficiently than human bureaucracy, helping prioritize high‑impact research and scale decisions across many participants. Additional context: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "Who can participate in a Science DAO?",
+            "question": "Who can participate in a World Science Foundation?",
             "answer": "Anyone — researchers, donors, developers, and the public — can donate, join governance, promote overlooked discoveries, or build AI tools to support decentralized science. Participation pathways are described here: https://science-dao.org/multiply-gdp/"
           },
           {
-            "question": "What are the main risks and challenges of Science DAOs?",
-            "answer": "Challenges include governance design, ensuring scientific quality and reproducibility, regulatory uncertainty, token volatility, and equitable access. Careful DAO design, hybrid models with traditional institutions, and AI‑assisted checks can mitigate risks. See discussion: https://science-dao.org/multiply-gdp/"
+            "question": "What are the main risks and challenges of World Science Foundations?",
+            "answer": "Challenges include governance design, ensuring scientific quality and reproducibility, regulatory uncertainty, token volatility, and equitable access. Careful organization design, hybrid models with traditional institutions, and AI‑assisted checks can mitigate risks. See discussion: https://science-dao.org/multiply-gdp/"
           },
           {
             "question": "How can I support or contribute to the movement?",
@@ -916,14 +916,14 @@
           },
           {
             "question": "What is DeSci (Decentralized Science)?",
-            "answer": "DeSci leverages blockchain and DAO structures to let global communities fund, govern, and reward scientific work transparently and directly, enabling on-chain publication and community-driven priorities. See https://science-dao.org/scientific-funding/ for context."
+            "answer": "DeSci leverages blockchain and organization structures to let global communities fund, govern, and reward scientific work transparently and directly, enabling on-chain publication and community-driven priorities. See https://science-dao.org/scientific-funding/ for context."
           },
           {
             "question": "What limitations has DeSci faced?",
             "answer": "DeSci has made funding more open but struggles with fragmented funding pools, limited mass participation, and difficulty scaling to the scale of national research budgets. More information: https://science-dao.org/scientific-funding/."
           },
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is a proposed next stage beyond DeSci that uses AI to automate scientific funding allocation at global scale, aims for universal participation, on-chain transparency, and continuous (24/7) funding distribution based on impact, quality, and community signals. Read more at https://science-dao.org/scientific-funding/."
           },
           {
@@ -1006,7 +1006,7 @@
           },
           {
             "question": "How can I support efforts to challenge monopolies of knowledge?",
-            "answer": "The article invites support for the SciWard (SciWard) Project to challenge knowledge monopolies and promote open, equitable dissemination. You can read about the initiative and find donation options on the page. Learn more / support: https://science-dao.org/classification/"
+            "answer": "The article invites support for the SciWard Project to challenge knowledge monopolies and promote open, equitable dissemination. You can read about the initiative and find donation options on the page. Learn more / support: https://science-dao.org/classification/"
           }
         ]
       },
@@ -1023,16 +1023,16 @@
         "postId": 20565,
         "faqs": [
           {
-            "question": "What is the World Science DAO?",
-            "answer": "World Science DAO was a pioneering initiative to transform how science is funded, published, and shared globally — promoting open science, open infrastructure, and decentralized governance. Note: due to an upstream software failure the DAO is currently defunct; donations are being accepted by Victor Porton’s Foundation (a 501(c)(3)). More details: https://science-dao.org/crypto-donations/"
+            "question": "What is the World Science Foundation?",
+            "answer": "World Science Foundation was a pioneering initiative to transform how science is funded, published, and shared globally — promoting open science, open infrastructure, and decentralized governance. Note: due to an upstream software failure the organization is currently defunct; donations are being accepted by Victor Porton’s Foundation (a 501(c)(3)). More details: https://science-dao.org/crypto-donations/"
           },
           {
-            "question": "Why is World Science DAO asking for donations?",
+            "question": "Why is World Science Foundation asking for donations?",
             "answer": "Donations support building sustainable, open scientific infrastructure so discoveries are free and accessible. Contributions fuel projects, open-source tools, community support, and removal of barriers to publishing and access. Details: https://science-dao.org/crypto-donations/"
           },
           {
             "question": "Are donations tax-deductible?",
-            "answer": "Yes — because World Science DAO is currently defunct, donations are accepted by Victor Porton’s Foundation, a registered 501(c)(3), and are tax-deductible. See the page for the current donation instructions: https://science-dao.org/crypto-donations/"
+            "answer": "Yes — because World Science Foundation is currently defunct, donations are accepted by Victor Porton’s Foundation, a registered 501(c)(3), and are tax-deductible. See the page for the current donation instructions: https://science-dao.org/crypto-donations/"
           },
           {
             "question": "What donation methods do you accept?",
@@ -1064,7 +1064,7 @@
           },
           {
             "question": "Where can I find wallet or bank details and a receipt?",
-            "answer": "Visit the donation instructions on the site to get current wallet addresses, bank transfer details, and information on receipts or tax documentation (handled via Victor Porton’s Foundation while the DAO is defunct). See: https://science-dao.org/crypto-donations/"
+            "answer": "Visit the donation instructions on the site to get current wallet addresses, bank transfer details, and information on receipts or tax documentation (handled via Victor Porton’s Foundation while the organization is defunct). See: https://science-dao.org/crypto-donations/"
           }
         ]
       },
@@ -1106,7 +1106,7 @@
           },
           {
             "question": "What is SciWard and how does it relate to peer review?",
-            "answer": "SciWard (SciWard) is presented as an incentive framework that will reward those who promote useful knowledge. While it doesn't yet directly support payments to marketers, such functionality is planned to help scale the paid-review model. More context: https://science-dao.org/peer-review/"
+            "answer": "SciWard is presented as an incentive framework that will reward those who promote useful knowledge. While it doesn't yet directly support payments to marketers, such functionality is planned to help scale the paid-review model. More context: https://science-dao.org/peer-review/"
           },
           {
             "question": "Is this paid peer review meant to exploit researchers?",
@@ -1197,8 +1197,8 @@
             "answer": "Science marketers are proposed professionals who identify, validate, publicize, and help fund genuine discoveries that are otherwise invisible. They bridge the gap between independent researchers and the wider world to ensure important findings gain recognition and resources. More details: https://science-dao.org/global/"
           },
           {
-            "question": "How can DAOs help solve global problems according to the article?",
-            "answer": "The article suggests blockchain-based DAOs can democratize funding and governance, redirect capital toward long-term research and public goods, and bypass traditional gatekeepers—helping make discoveries visible and enabling decentralized, transparent scientific ecosystems. Learn how: https://science-dao.org/global/"
+            "question": "How can decentralized organizations help solve global problems according to the article?",
+            "answer": "The article suggests blockchain-based decentralized organizations can democratize funding and governance, redirect capital toward long-term research and public goods, and bypass traditional gatekeepers—helping make discoveries visible and enabling decentralized, transparent scientific ecosystems. Learn how: https://science-dao.org/global/"
           },
           {
             "question": "Why does the article claim invisibility is worse than ignorance?",
@@ -1206,7 +1206,7 @@
           },
           {
             "question": "What practical steps does the article recommend to fix the covery problem?",
-            "answer": "Recommendations include democratizing access to funding and publication, creating transparent systems for scientific recognition, rewarding science marketers, and establishing decentralized open governance (DAOs) for knowledge. Full recommendations: https://science-dao.org/global/"
+            "answer": "Recommendations include democratizing access to funding and publication, creating transparent systems for scientific recognition, rewarding science marketers, and establishing decentralized open governance (decentralized organizations) for knowledge. Full recommendations: https://science-dao.org/global/"
           },
           {
             "question": "How does the article connect environmental crisis to the covery problem?",
@@ -1222,15 +1222,15 @@
           },
           {
             "question": "How can individuals support the effort to make hidden discoveries visible?",
-            "answer": "Individuals can support initiatives like World Science DAO, donate to efforts addressing coveries, participate in decentralized verification and communication efforts, or promote open publication and funding of independent research. The article includes a donation link and next steps: https://science-dao.org/global/"
+            "answer": "Individuals can support initiatives like World Science Foundation, donate to efforts addressing coveries, participate in decentralized verification and communication efforts, or promote open publication and funding of independent research. The article includes a donation link and next steps: https://science-dao.org/global/"
           },
           {
-            "question": "What is World Science DAO?",
-            "answer": "World Science DAO is presented as a decentralized platform and movement aiming to democratize scientific recognition, funding, and governance—helping ensure valid discoveries are seen, verified, and rewarded outside traditional institutional constraints. Learn about the initiative: https://science-dao.org/global/"
+            "question": "What is World Science Foundation?",
+            "answer": "World Science Foundation is presented as a decentralized platform and movement aiming to democratize scientific recognition, funding, and governance—helping ensure valid discoveries are seen, verified, and rewarded outside traditional institutional constraints. Learn about the initiative: https://science-dao.org/global/"
           },
           {
             "question": "If I believe I’ve made a valid discovery outside academia, what does the article suggest I do?",
-            "answer": "The article suggests seeking transparent validation and visibility through decentralized platforms, engaging science marketers or communities that help publicize and verify findings, and connecting with initiatives like World Science DAO to access recognition and funding. Start here: https://science-dao.org/global/"
+            "answer": "The article suggests seeking transparent validation and visibility through decentralized platforms, engaging science marketers or communities that help publicize and verify findings, and connecting with initiatives like World Science Foundation to access recognition and funding. Start here: https://science-dao.org/global/"
           }
         ]
       },
@@ -1259,8 +1259,8 @@
             "answer": "AI can only learn from what is visible and indexed online. If results are mis-published or hidden, even the best AI won’t detect them. The solution requires active exposure and reward systems as explained at https://science-dao.org/solution/."
           },
           {
-            "question": "What is World Science DAO’s proposed solution?",
-            "answer": "World Science DAO combines AI-powered discovery visibility, blockchain-based verification (timestamping), and a new role called science marketers to expose and reward hidden discoveries. More: https://science-dao.org/solution/."
+            "question": "What is World Science Foundation’s proposed solution?",
+            "answer": "World Science Foundation combines AI-powered discovery visibility, blockchain-based verification (timestamping), and a new role called science marketers to expose and reward hidden discoveries. More: https://science-dao.org/solution/."
           },
           {
             "question": "How does blockchain help protect scientific priority?",
@@ -1271,8 +1271,8 @@
             "answer": "Science marketers are translators who publicize valid discoveries, connect them to media/educators/policymakers, improve AI discoverability, and help independent researchers gain visibility and funding. Read more at https://science-dao.org/solution/."
           },
           {
-            "question": "How does World Science DAO measure and reward visibility?",
-            "answer": "Visibility is made measurable and tokenizable through DAO governance and AI metrics, so contributors who make science visible can receive verifiable rewards. Details at https://science-dao.org/solution/."
+            "question": "How does World Science Foundation measure and reward visibility?",
+            "answer": "Visibility is made measurable and tokenizable through organization governance and AI metrics, so contributors who make science visible can receive verifiable rewards. Details at https://science-dao.org/solution/."
           },
           {
             "question": "Is this approach perfect? What are the limitations?",
@@ -1284,11 +1284,11 @@
           },
           {
             "question": "How can independent researchers participate or get visibility?",
-            "answer": "Researchers can submit or publicize their work into the DAO ecosystem to be indexed, timestamped, and promoted by science marketers so AI and the public can find it. Learn how at https://science-dao.org/solution/."
+            "answer": "Researchers can submit or publicize their work into the organization ecosystem to be indexed, timestamped, and promoted by science marketers so AI and the public can find it. Learn how at https://science-dao.org/solution/."
           },
           {
             "question": "How does this differ from traditional academic publishing?",
-            "answer": "Rather than relying on gatekeeping journals, the DAO focuses on making existing knowledge visible, verifiable, and discoverable via AI and blockchain plus active marketing — addressing the visibility layer traditional publishing often misses. See https://science-dao.org/solution/."
+            "answer": "Rather than relying on gatekeeping journals, the organization focuses on making existing knowledge visible, verifiable, and discoverable via AI and blockchain plus active marketing — addressing the visibility layer traditional publishing often misses. See https://science-dao.org/solution/."
           },
           {
             "question": "Does the project address ethical and privacy concerns?",
@@ -1322,7 +1322,7 @@
           },
           {
             "question": "What social or institutional changes are needed to address coveries?",
-            "answer": "Solutions include changing incentives (funding and rewards for metadata cleanup and curation), recognizing curatorial work as citable scholarly service, adopting open standards for corrections, and community governance (DAOs, editorial boards) that accept decentralized validation. Details at https://science-dao.org/human-ai/."
+            "answer": "Solutions include changing incentives (funding and rewards for metadata cleanup and curation), recognizing curatorial work as citable scholarly service, adopting open standards for corrections, and community governance (decentralized organizations, editorial boards) that accept decentralized validation. Details at https://science-dao.org/human-ai/."
           },
           {
             "question": "What is the role of 'science marketers' in fixing coveries?",
@@ -1334,7 +1334,7 @@
           },
           {
             "question": "What practical mechanisms can be implemented to recover mis-published work?",
-            "answer": "Practical mechanisms include machine-readable corrections and annotations attached to DOIs/URLs, automated audits that flag missing citations, provenance ledgers (timestamp + signed claims), decentralized post-publication review with reputation, and metadata rescue operations or DAOs to normalize legacy records. See https://science-dao.org/human-ai/."
+            "answer": "Practical mechanisms include machine-readable corrections and annotations attached to DOIs/URLs, automated audits that flag missing citations, provenance ledgers (timestamp + signed claims), decentralized post-publication review with reputation, and metadata rescue operations or decentralized organizations to normalize legacy records. See https://science-dao.org/human-ai/."
           },
           {
             "question": "What are provenance ledgers and will they solve priority disputes?",
@@ -1350,7 +1350,7 @@
           },
           {
             "question": "What is a 'metadata rescue operation' and who should run them?",
-            "answer": "A metadata rescue operation is a specialist effort (by teams, DAOs, or institutions) to normalize metadata from legacy archives, personal pages, and small repositories and feed corrected records into central indices. Ideally run by trained curators, metadata engineers, or community-organized groups — see https://science-dao.org/human-ai/ for more."
+            "answer": "A metadata rescue operation is a specialist effort (by teams, decentralized organizations, or institutions) to normalize metadata from legacy archives, personal pages, and small repositories and feed corrected records into central indices. Ideally run by trained curators, metadata engineers, or community-organized groups — see https://science-dao.org/human-ai/ for more."
           },
           {
             "question": "How can I help right now if I find an overlooked or mis-published paper in my field?",
@@ -1409,12 +1409,12 @@
         "postId": 20373,
         "faqs": [
           {
-            "question": "What donation options are highlighted on the Science DAO donate page?",
-            "answer": "The page highlights a mix of evidence-driven charities and experimental, decentralized initiatives: The Water Project, GiveWell, Effective Altruism Funds, Gitcoin, SciWard (SciWard) within Science DAO, and GiveDirectly. Each listing emphasizes transparency, impact tracking, or novel funding mechanisms. See https://science-dao.org/donate/ for details."
+            "question": "What donation options are highlighted on the World Science Foundation donate page?",
+            "answer": "The page highlights a mix of evidence-driven charities and experimental, decentralized initiatives: The Water Project, GiveWell, Effective Altruism Funds, Gitcoin, SciWard within World Science Foundation, and GiveDirectly. Each listing emphasizes transparency, impact tracking, or novel funding mechanisms. See https://science-dao.org/donate/ for details."
           },
           {
-            "question": "What is SciWard (SciWard)?",
-            "answer": "SciWard (SciWard) is an experimental Science DAO initiative that explores using artificial intelligence and blockchain to coordinate funding and resources for science and social progress, aiming for a fairer economic model. More background is available at https://science-dao.org/donate/."
+            "question": "What is SciWard?",
+            "answer": "SciWard is an experimental World Science Foundation initiative that explores using artificial intelligence and blockchain to coordinate funding and resources for science and social progress, aiming for a fairer economic model. More background is available at https://science-dao.org/donate/."
           },
           {
             "question": "How does GiveWell differ from other charities?",
@@ -1426,7 +1426,7 @@
           },
           {
             "question": "How does GiveDirectly work and why is it recommended?",
-            "answer": "GiveDirectly provides unconditional cash transfers directly to people living in poverty, letting recipients decide how best to use funds. Decades of randomized data show benefits for health, education, and livelihoods with low administrative overhead. The Science DAO page links to this approach: https://science-dao.org/donate/."
+            "answer": "GiveDirectly provides unconditional cash transfers directly to people living in poverty, letting recipients decide how best to use funds. Decades of randomized data show benefits for health, education, and livelihoods with low administrative overhead. The World Science Foundation page links to this approach: https://science-dao.org/donate/."
           },
           {
             "question": "What are Effective Altruism (EA) Funds and who should use them?",
@@ -1434,23 +1434,23 @@
           },
           {
             "question": "How can I verify the transparency and impact of a nonprofit listed on the page?",
-            "answer": "Look for project‑level reporting, regular progress updates, independent evaluations, budget transparency, and third‑party reviews. The Science DAO donate page highlights organizations that prioritize these practices—see https://science-dao.org/donate/ for links and descriptions."
+            "answer": "Look for project‑level reporting, regular progress updates, independent evaluations, budget transparency, and third‑party reviews. The World Science Foundation donate page highlights organizations that prioritize these practices—see https://science-dao.org/donate/ for links and descriptions."
           },
           {
             "question": "Can I donate with cryptocurrency to the organizations listed?",
-            "answer": "Some platforms (notably Gitcoin and certain DAO projects) accept cryptocurrency; traditional nonprofits may accept fiat and some accept crypto via partners. Always confirm accepted payment methods on the organization’s donation page and see the Science DAO summary at https://science-dao.org/donate/."
+            "answer": "Some platforms (notably Gitcoin and certain organization projects) accept cryptocurrency; traditional nonprofits may accept fiat and some accept crypto via partners. Always confirm accepted payment methods on the organization’s donation page and see the World Science Foundation summary at https://science-dao.org/donate/."
           },
           {
             "question": "Are donations to these organizations tax‑deductible?",
-            "answer": "Tax deductibility depends on the organization’s legal status (e.g., registered charity), your jurisdiction, and donation method. Check the receiving organization’s donation page or contact them directly; the Science DAO page provides links to each organization: https://science-dao.org/donate/."
+            "answer": "Tax deductibility depends on the organization’s legal status (e.g., registered charity), your jurisdiction, and donation method. Check the receiving organization’s donation page or contact them directly; the World Science Foundation page provides links to each organization: https://science-dao.org/donate/."
           },
           {
             "question": "How should I choose which platform or charity to support?",
-            "answer": "Consider transparency, evidence of impact, cost‑effectiveness, alignment with your values, and whether you prefer direct aid, systemic research funding, or experimental/crypto‑native approaches. The Science DAO donate page summarizes these tradeoffs to help you decide: https://science-dao.org/donate/."
+            "answer": "Consider transparency, evidence of impact, cost‑effectiveness, alignment with your values, and whether you prefer direct aid, systemic research funding, or experimental/crypto‑native approaches. The World Science Foundation donate page summarizes these tradeoffs to help you decide: https://science-dao.org/donate/."
           },
           {
-            "question": "What role does Science DAO play in modern philanthropy?",
-            "answer": "Science DAO promotes decentralized, transparent, and AI‑informed approaches to funding science and public goods, experimenting with new coordination mechanisms (e.g., blockchain, AI) alongside recommending established, evidence‑based charities. Learn more at https://science-dao.org/donate/."
+            "question": "What role does World Science Foundation play in modern philanthropy?",
+            "answer": "World Science Foundation promotes decentralized, transparent, and AI‑informed approaches to funding science and public goods, experimenting with new coordination mechanisms (e.g., blockchain, AI) alongside recommending established, evidence‑based charities. Learn more at https://science-dao.org/donate/."
           }
         ]
       },
@@ -1521,16 +1521,16 @@
             "answer": "A covery claims priority like any discovery but lacks visibility, institutional backing, or publication, causing it to be ignored or uncredited. More details: https://science-dao.org/scientific/"
           },
           {
-            "question": "What is World Science DAO?",
-            "answer": "World Science DAO is a decentralized autonomous organization proposing transparent, blockchain- and AI-based grants, XML-based publishing, post-publication peer review, and open governance to democratize research and surface coveries. Read the article: https://science-dao.org/scientific/"
+            "question": "What is World Science Foundation?",
+            "answer": "World Science Foundation is a decentralized autonomous organization proposing transparent, blockchain- and AI-based grants, XML-based publishing, post-publication peer review, and open governance to democratize research and surface coveries. Read the article: https://science-dao.org/scientific/"
           },
           {
             "question": "Who are science marketers and why are they needed?",
             "answer": "Science marketers are professionals who amplify and communicate scientific work (including coveries) to help authors gain visibility, funding, collaborators, and public trust—bridging scientists, media, and stakeholders. See: https://science-dao.org/scientific/"
           },
           {
-            "question": "How does Science DAO support science marketing?",
-            "answer": "Science DAO includes funding mechanisms for marketers, affiliate publishing and decentralized promotion networks, tokenized rewards for outreach, and incentives for collaboration between researchers, marketers, and reviewers. More: https://science-dao.org/scientific/"
+            "question": "How does World Science Foundation support science marketing?",
+            "answer": "World Science Foundation includes funding mechanisms for marketers, affiliate publishing and decentralized promotion networks, tokenized rewards for outreach, and incentives for collaboration between researchers, marketers, and reviewers. More: https://science-dao.org/scientific/"
           },
           {
             "question": "What ethical responsibilities do science marketers have?",
@@ -1545,7 +1545,7 @@
             "answer": "Post-publication peer review evaluates work after it’s public, enabling faster dissemination, community moderation, and recognition of coveries that might otherwise be overlooked. Learn more: https://science-dao.org/scientific/"
           },
           {
-            "question": "How will funding change under the DAO model?",
+            "question": "How will funding change under the organization model?",
             "answer": "Funding is envisioned to be transparent and tokenized via smart contracts and community voting, where visibility and community engagement (often aided by marketers) help projects earn grants and tokens. Details: https://science-dao.org/scientific/"
           },
           {
@@ -1554,11 +1554,11 @@
           },
           {
             "question": "What happens to copyright and access under this model?",
-            "answer": "The article anticipates a move toward open-access licensing (e.g., Creative Commons) where scientific works are freely available and marketing/publishing roles are rewarded through DAO mechanisms rather than paywalls. Read more: https://science-dao.org/scientific/"
+            "answer": "The article anticipates a move toward open-access licensing (e.g., Creative Commons) where scientific works are freely available and marketing/publishing roles are rewarded through organization mechanisms rather than paywalls. Read more: https://science-dao.org/scientific/"
           },
           {
             "question": "How can independent researchers make their work visible in this ecosystem?",
-            "answer": "Independent researchers can publish openly, seek community review, work with science marketers to communicate findings, and engage with DAO funding/voting systems to gain visibility and support. See recommendations: https://science-dao.org/scientific/"
+            "answer": "Independent researchers can publish openly, seek community review, work with science marketers to communicate findings, and engage with organization funding/voting systems to gain visibility and support. See recommendations: https://science-dao.org/scientific/"
           }
         ]
       },
@@ -1629,8 +1629,8 @@
         "postId": 20257,
         "faqs": [
           {
-            "question": "What is SciWard (SciWard)?",
-            "answer": "SciWard is an economic and funding model proposed by World Science DAO that uses DAOs, blockchain, cryptocurrency, and algorithmic decision‑making to distribute funds for science and software fairly, reward dependencies (like libraries and prior results), reduce gatekeeping, and provide continuous, transparent recognition and funding. See https://science-dao.org/scientific-prize/ for details."
+            "question": "What is SciWard?",
+            "answer": "SciWard is an economic and funding model proposed by World Science Foundation that uses decentralized organizations, blockchain, cryptocurrency, and algorithmic decision‑making to distribute funds for science and software fairly, reward dependencies (like libraries and prior results), reduce gatekeeping, and provide continuous, transparent recognition and funding. See https://science-dao.org/scientific-prize/ for details."
           },
           {
             "question": "How does SciWard differ from traditional prizes and grants?",
@@ -1638,7 +1638,7 @@
           },
           {
             "question": "How does SciWard automate prize and grant decisions?",
-            "answer": "SciWard uses objective or semi‑objective thresholds (e.g., citations, usage, dependency graphs) together with algorithmic rules or DAO voting to trigger rewards. Donations are distributed proportionally according to computed impact/value metrics rather than being decided by opaque panels. See https://science-dao.org/scientific-prize/."
+            "answer": "SciWard uses objective or semi‑objective thresholds (e.g., citations, usage, dependency graphs) together with algorithmic rules or organization voting to trigger rewards. Donations are distributed proportionally according to computed impact/value metrics rather than being decided by opaque panels. See https://science-dao.org/scientific-prize/."
           },
           {
             "question": "What does it mean to reward 'dependencies' in SciWard?",
@@ -1654,7 +1654,7 @@
           },
           {
             "question": "Who can participate in or benefit from SciWard?",
-            "answer": "Researchers, software authors, dataset creators, and anyone whose work is cited or used can benefit, especially early‑career scientists and under‑resourced regions. Donors and the public can also participate by contributing funds to the DAO. More at https://science-dao.org/scientific-prize/."
+            "answer": "Researchers, software authors, dataset creators, and anyone whose work is cited or used can benefit, especially early‑career scientists and under‑resourced regions. Donors and the public can also participate by contributing funds to the organization. More at https://science-dao.org/scientific-prize/."
           },
           {
             "question": "How are donations distributed under SciWard?",
@@ -1669,8 +1669,8 @@
             "answer": "Challenges include defining fair metrics, overcoming cultural inertia from traditional institutions that value prestige, and potential resistance from existing grant and prize bodies. Technical and governance hurdles must also be addressed. See https://science-dao.org/scientific-prize/."
           },
           {
-            "question": "Are there related Science‑DAO projects to learn more about grant reform?",
-            "answer": "Yes — related pages include Science‑DAO’s 'Grants Science' project, the main Science‑DAO site, and the SciWard page. They expand on how donations can be used to improve grants and reward dependencies. Links and further reading are listed at https://science-dao.org/scientific-prize/."
+            "question": "Are there related World Science Foundation projects to learn more about grant reform?",
+            "answer": "Yes — related pages include World Science Foundation’s 'Grants Science' project, the main World Science Foundation site, and the SciWard page. They expand on how donations can be used to improve grants and reward dependencies. Links and further reading are listed at https://science-dao.org/scientific-prize/."
           }
         ]
       },
@@ -1790,7 +1790,7 @@
           },
           {
             "question": "How can I participate in building a 'chain of good'?",
-            "answer": "The article suggests contributing to blockchain projects focused on science, ethics, and education; joining decentralized communities that prioritize transparency; and supporting organizations like Science DAO through donations. Get involved: https://science-dao.org/blockchain-for-good-a-new-moral-infrastructure-for-humanity/"
+            "answer": "The article suggests contributing to blockchain projects focused on science, ethics, and education; joining decentralized communities that prioritize transparency; and supporting organizations like World Science Foundation through donations. Get involved: https://science-dao.org/blockchain-for-good-a-new-moral-infrastructure-for-humanity/"
           },
           {
             "question": "Can blockchain reduce corruption in governance?",
@@ -1801,8 +1801,8 @@
             "answer": "One concern is that automation could be seen as cold or removing human judgment. The article reframes this as a paradox: decentralization requires individuals to be more accountable, creating a system where responsibility is distributed rather than centralized. Explore the nuance: https://science-dao.org/blockchain-for-good-a-new-moral-infrastructure-for-humanity/"
           },
           {
-            "question": "How can I support Science DAO's mission?",
-            "answer": "You can donate to Science DAO to help build moral and scientific infrastructure, join their projects or communities, and contribute expertise to blockchain initiatives that prioritize openness and cooperation. Donation and involvement info: https://science-dao.org/blockchain-for-good-a-new-moral-infrastructure-for-humanity/"
+            "question": "How can I support World Science Foundation's mission?",
+            "answer": "You can donate to World Science Foundation to help build moral and scientific infrastructure, join their projects or communities, and contribute expertise to blockchain initiatives that prioritize openness and cooperation. Donation and involvement info: https://science-dao.org/blockchain-for-good-a-new-moral-infrastructure-for-humanity/"
           }
         ]
       },
@@ -1819,7 +1819,7 @@
         "postId": 20170,
         "faqs": [
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is a platform designed to distribute funds within a scientific community and to support crypto airdrops in a socialized way. It aims to integrate multiple blockchains and token standards to pay scientists and active users. More details: https://science-dao.org/how-to-do-crypto-airdrops-with-aiis-in-2026/"
           },
           {
@@ -1869,28 +1869,28 @@
         "postId": 20003,
         "faqs": [
           {
-            "question": "Why is the DAO software not working?",
-            "answer": "The DAO software currently does not work because of bugs in our upstream DAO software, Colony. See the DAO status page for details: https://science-dao.org/dao-status/."
+            "question": "Why is the organization software not working?",
+            "answer": "The organization software currently does not work because of bugs in our upstream organization software, Colony. See the organization status page for details: https://science-dao.org/dao-status/."
           },
           {
-            "question": "What is Colony and how does it affect the DAO?",
-            "answer": "Colony is the upstream platform our DAO relies on; bugs in Colony prevent our DAO software from functioning. For the latest information, check the DAO status page: https://science-dao.org/dao-status/."
+            "question": "What is Colony and how does it affect the organization?",
+            "answer": "Colony is the upstream platform our organization relies on; bugs in Colony prevent our organization software from functioning. For the latest information, check the organization status page: https://science-dao.org/dao-status/."
           },
           {
-            "question": "When will the DAO be restored to working order?",
+            "question": "When will the organization be restored to working order?",
             "answer": "We don’t have a guaranteed ETA because the issue depends on fixes from the upstream Colony project. We post updates as they become available — please monitor https://science-dao.org/dao-status/ for progress and announcements."
           },
           {
             "question": "How can I get notified of updates or fixes?",
-            "answer": "Check the DAO status page regularly for updates and any notification options we publish. Current status and announcements are available at https://science-dao.org/dao-status/."
+            "answer": "Check the organization status page regularly for updates and any notification options we publish. Current status and announcements are available at https://science-dao.org/dao-status/."
           },
           {
-            "question": "Can I still interact with the DAO (vote, submit proposals, access funds)?",
+            "question": "Can I still interact with the organization (vote, submit proposals, access funds)?",
             "answer": "Because the software is not functioning due to upstream bugs, interactions may be unreliable or unavailable. Do not attempt critical transactions until the issue is resolved. See the status page for guidance: https://science-dao.org/dao-status/."
           },
           {
-            "question": "Is my money or data at risk while the DAO software is down?",
-            "answer": "A non-functioning DAO can increase risk for transactions or automated processes. We recommend avoiding transactions until fixes are confirmed. For current risk assessments and guidance, refer to https://science-dao.org/dao-status/."
+            "question": "Is my money or data at risk while the organization software is down?",
+            "answer": "A non-functioning organization can increase risk for transactions or automated processes. We recommend avoiding transactions until fixes are confirmed. For current risk assessments and guidance, refer to https://science-dao.org/dao-status/."
           },
           {
             "question": "How can I help or report additional issues?",
@@ -1923,8 +1923,8 @@
             "answer": "Yes. The Catholic intellectual tradition (e.g., Fides et Ratio) sees faith and reason as complementary, and social teaching (Gaudium et Spes, Compendium) promotes the common good and care for the poor—goals served by ethical scientific progress. Learn more: https://science-dao.org/catholics/"
           },
           {
-            "question": "What is SciWard / Science DAO and why might Catholics support it?",
-            "answer": "SciWard / Science DAO refers to decentralized, community-driven funding and governance models for research and AI that aim to distribute resources more equitably and increase transparency. Catholics may support them because they advance subsidiarity, correct concentration of power, and amplify marginalized voices. Learn more: https://science-dao.org/catholics/"
+            "question": "What is SciWard / World Science Foundation and why might Catholics support it?",
+            "answer": "SciWard / World Science Foundation refers to decentralized, community-driven funding and governance models for research and AI that aim to distribute resources more equitably and increase transparency. Catholics may support them because they advance subsidiarity, correct concentration of power, and amplify marginalized voices. Learn more: https://science-dao.org/catholics/"
           },
           {
             "question": "How do decentralized science funding models help correct structural injustice?",
@@ -1940,7 +1940,7 @@
           },
           {
             "question": "How can Catholics practically support just science in 2025?",
-            "answer": "Practical steps include donating to transparent research funds or DAOs that prioritize equity, advocating for ethical AI governance, supporting projects that benefit vulnerable communities, and educating parishes about science’s role in the common good. For resources and links, see: https://science-dao.org/catholics/"
+            "answer": "Practical steps include donating to transparent research funds or decentralized organizations that prioritize equity, advocating for ethical AI governance, supporting projects that benefit vulnerable communities, and educating parishes about science’s role in the common good. For resources and links, see: https://science-dao.org/catholics/"
           },
           {
             "question": "Which Catholic principles specifically justify prioritizing the poor in scientific funding?",
@@ -1948,7 +1948,7 @@
           },
           {
             "question": "Where can I learn more about the intersection of Catholic teaching and supporting science?",
-            "answer": "The article linked here provides an overview of theological and social-justice reasons to support science, plus pointers to projects like SciWard and Science DAO: https://science-dao.org/catholics/"
+            "answer": "The article linked here provides an overview of theological and social-justice reasons to support science, plus pointers to projects like SciWard and World Science Foundation: https://science-dao.org/catholics/"
           }
         ]
       },
@@ -1966,18 +1966,18 @@
         "faqs": [
           {
             "question": "What is the main argument of the article \"Free Market Proponents\"?",
-            "answer": "The article argues that donating to science—especially via decentralized, AI-driven funding platforms like Science DAO (aka \"SciWard\")—can be consistent with free-market values because it corrects public-goods underinvestment, preserves competition in knowledge production, and strategically shapes future research infrastructure. Read more: https://science-dao.org/free-market-proponents/"
+            "answer": "The article argues that donating to science—especially via decentralized, AI-driven funding platforms like World Science Foundation (aka \"SciWard\")—can be consistent with free-market values because it corrects public-goods underinvestment, preserves competition in knowledge production, and strategically shapes future research infrastructure. Read more: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "What is \"SciWard\" or Science DAO?",
-            "answer": "SciWard refers to a proposal to collect voluntary donations and algorithmically distribute them to scientists/developers based on AI estimates of contribution; Science DAO is an instance of that idea—a decentralized, transparent funding mechanism for research. Details: https://science-dao.org/free-market-proponents/"
+            "question": "What is \"SciWard\" or World Science Foundation?",
+            "answer": "SciWard refers to a proposal to collect voluntary donations and algorithmically distribute them to scientists/developers based on AI estimates of contribution; World Science Foundation is an instance of that idea—a decentralized, transparent funding mechanism for research. Details: https://science-dao.org/free-market-proponents/"
           },
           {
             "question": "Why should free-market proponents consider donating to science?",
             "answer": "Donating corrects market failure in basic science (a public good), hedges against AI-driven monopolization of knowledge, promotes decentralized funding alternatives to bureaucratic agencies, and can be a strategic, voluntary investment in future market-enabling knowledge. See: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "How can DAO + AI mechanisms improve science funding?",
+            "question": "How can organization + AI mechanisms improve science funding?",
             "answer": "They can enable automated, rule-based allocations, greater transparency and auditability of fund flows, token/stake incentives to align behavior, and lower overhead compared with traditional bureaucracy—while remaining experimental and requiring auditing. More: https://science-dao.org/free-market-proponents/"
           },
           {
@@ -1985,7 +1985,7 @@
             "answer": "The article stresses these mechanisms are voluntary: donors choose to give, so redistribution here is philanthropic not state coercion. Algorithmic allocation is proposed as a transparent, contestable alternative, not forced taxation. Read the discussion: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "What are the main risks and limitations of DAO/AI funding models?",
+            "question": "What are the main risks and limitations of organization/AI funding models?",
             "answer": "Key risks include AI bias, imperfect models, governance vulnerabilities (voting manipulation, Sybil attacks), tokenomics risk, and untested mechanisms. The article recommends rigorous auditing, contestability, human oversight, and iterative experimentation. Learn more: https://science-dao.org/free-market-proponents/"
           },
           {
@@ -2002,19 +2002,19 @@
           },
           {
             "question": "What practical ways can I act now if I support this idea?",
-            "answer": "You can donate to Science DAO / SciWard projects, participate in governance or design experiments, and help fund audits and mechanism-research. The article includes a call to action and donation links. Visit: https://science-dao.org/free-market-proponents/"
+            "answer": "You can donate to World Science Foundation / SciWard projects, participate in governance or design experiments, and help fund audits and mechanism-research. The article includes a call to action and donation links. Visit: https://science-dao.org/free-market-proponents/"
           },
           {
             "question": "Are there existing projects or prototypes for SciWard?",
             "answer": "Yes—the article mentions prototypes and integrations (e.g., Manifund project pages and Devpost entries) that consolidate contributions via ORCID/GitHub and propose AI-based allocation. For context and links, see: https://science-dao.org/free-market-proponents/"
           },
           {
-            "question": "How does supporting science through DAOs fit free-market values?",
+            "question": "How does supporting science through decentralized organizations fit free-market values?",
             "answer": "The model preserves voluntariness, encourages competition among funding models, increases transparency and accountability, and supports decentralized alternatives to bureaucratic monopolies—aligning with free-market skepticism of centralization. More: https://science-dao.org/free-market-proponents/"
           },
           {
             "question": "What open research problems should donors focus on funding?",
-            "answer": "Priority areas include mechanism design for DAOs, Sybil resistance, voting/manipulation defenses, bias mitigation in AI allocation, auditability tools, and robust tokenomics—experimental funding here yields high learning value. See the article: https://science-dao.org/free-market-proponents/"
+            "answer": "Priority areas include mechanism design for decentralized organizations, Sybil resistance, voting/manipulation defenses, bias mitigation in AI allocation, auditability tools, and robust tokenomics—experimental funding here yields high learning value. See the article: https://science-dao.org/free-market-proponents/"
           }
         ]
       },
@@ -2032,11 +2032,11 @@
         "faqs": [
           {
             "question": "Why should socialists consider donating to science in 2025?",
-            "answer": "Donating helps build public, democratically controlled scientific infrastructure that counters privatization, directs research toward social needs (climate, public health, open AI), and seeds alternatives to corporate capture. The article explains how donations via DAOs can be strategic investments in collective power: https://science-dao.org/socialists/"
+            "answer": "Donating helps build public, democratically controlled scientific infrastructure that counters privatization, directs research toward social needs (climate, public health, open AI), and seeds alternatives to corporate capture. The article explains how donations via decentralized organizations can be strategic investments in collective power: https://science-dao.org/socialists/"
           },
           {
-            "question": "What is a science DAO and how does it differ from traditional funding?",
-            "answer": "A science DAO (decentralized autonomous organization) pools donor funds and uses transparent, often blockchain-backed governance to allocate grants. Compared with government grants or corporate R&D, DAOs can be more bottom-up, auditable, and globally inclusive. See the discussion and examples at: https://science-dao.org/socialists/"
+            "question": "What is a science organization and how does it differ from traditional funding?",
+            "answer": "A science organization (decentralized autonomous organization) pools donor funds and uses transparent, often blockchain-backed governance to allocate grants. Compared with government grants or corporate R&D, decentralized organizations can be more bottom-up, auditable, and globally inclusive. See the discussion and examples at: https://science-dao.org/socialists/"
           },
           {
             "question": "What is 'SciWard' described in the post?",
@@ -2047,35 +2047,35 @@
             "answer": "Key risks include algorithmic bias, concentration of power in AI designers, gaming and sybil attacks, loss of human nuance for speculative research, donor withdrawal, and legitimacy challenges with mainstream academia. The post recommends audits, oversight, and participatory governance as safeguards: https://science-dao.org/socialists/"
           },
           {
-            "question": "How can socialist donors reduce the risks when donating to DAOs?",
+            "question": "How can socialist donors reduce the risks when donating to decentralized organizations?",
             "answer": "Start small and experiment; condition donations on participatory governance seats; fund audits, fairness research, and translation/participation infrastructure; demand open-source code and transparency reports; and build coalitions with progressive institutions. A suggested roadmap is summarized here: https://science-dao.org/socialists/"
           },
           {
-            "question": "Can donations to DAOs meaningfully counter the enclosure of knowledge?",
-            "answer": "Yes — targeted donations to open, decentralized science DAOs can sustain open access publishing, reduce dependence on extractive intermediaries, and create alternative institutions that prioritize public control and wide access to data and results: https://science-dao.org/socialists/"
+            "question": "Can donations to decentralized organizations meaningfully counter the enclosure of knowledge?",
+            "answer": "Yes — targeted donations to open, decentralized science decentralized organizations can sustain open access publishing, reduce dependence on extractive intermediaries, and create alternative institutions that prioritize public control and wide access to data and results: https://science-dao.org/socialists/"
           },
           {
             "question": "Isn’t pushing governments to increase public science funding a better strategy?",
-            "answer": "Public funding remains essential, but governments are often slow and politically constrained. Science DAOs allow agile, parallel experiments that can seed new norms and later influence public systems — they are complementary rather than mutually exclusive: https://science-dao.org/socialists/"
+            "answer": "Public funding remains essential, but governments are often slow and politically constrained. World Science Foundations allow agile, parallel experiments that can seed new norms and later influence public systems — they are complementary rather than mutually exclusive: https://science-dao.org/socialists/"
           },
           {
-            "question": "How do DAOs enable more global and inclusive participation in science?",
-            "answer": "By lowering credential gatekeeping and using decentralized allocation mechanisms, DAOs can enable independent researchers and those in underfunded regions to access funding and visibility, reducing global inequalities in knowledge production: https://science-dao.org/socialists/"
+            "question": "How do decentralized organizations enable more global and inclusive participation in science?",
+            "answer": "By lowering credential gatekeeping and using decentralized allocation mechanisms, decentralized organizations can enable independent researchers and those in underfunded regions to access funding and visibility, reducing global inequalities in knowledge production: https://science-dao.org/socialists/"
           },
           {
-            "question": "What governance safeguards should donors demand from science DAOs?",
+            "question": "What governance safeguards should donors demand from science decentralized organizations?",
             "answer": "Donors should insist on transparent, auditable AI evaluation, appeal mechanisms and human oversight, open-source code, regular transparency reports, sybil-resistance measures, and participatory governance seats for stakeholders: https://science-dao.org/socialists/"
           },
           {
-            "question": "How can donations to DAOs serve as strategic signaling?",
-            "answer": "Left-wing donations legitimize DAO platforms, set norms for fairness and public control, and can attract larger co-funders (foundations, universities, governments), helping to institutionalize alternative models of science funding: https://science-dao.org/socialists/"
+            "question": "How can donations to decentralized organizations serve as strategic signaling?",
+            "answer": "Left-wing donations legitimize organization platforms, set norms for fairness and public control, and can attract larger co-funders (foundations, universities, governments), helping to institutionalize alternative models of science funding: https://science-dao.org/socialists/"
           },
           {
             "question": "What kinds of research should socialist donors prioritize?",
             "answer": "The post recommends championing neglected or radical directions often underfunded by mainstream grants — e.g., climate engineering, alternative energy, open AI, or speculative interdisciplinary work — while also funding audits and inclusivity infrastructure: https://science-dao.org/socialists/"
           },
           {
-            "question": "What should donors do if the DAO’s AI allocates funds unjustly?",
+            "question": "What should donors do if the organization’s AI allocates funds unjustly?",
             "answer": "Push for corrective mechanisms: independent audits, transparent metrics, human appeals/oversight, iterative redesign of the algorithm, and conditions on continued funding to ensure accountability and the ability to adapt the system: https://science-dao.org/socialists/"
           }
         ]
@@ -2094,31 +2094,31 @@
         "faqs": [
           {
             "question": "Why should Hindus consider donating to science?",
-            "answer": "Donating to science can be framed as a modern form of dāna and seva—advancing vidya (knowledge) and welfare aligns with dharmic duties; supporting Science DAO helps turn spiritual values into practical public benefit. Learn more: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "answer": "Donating to science can be framed as a modern form of dāna and seva—advancing vidya (knowledge) and welfare aligns with dharmic duties; supporting World Science Foundation helps turn spiritual values into practical public benefit. Learn more: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
-            "question": "How does Science DAO help correct imbalances in research funding?",
-            "answer": "Science DAO uses decentralized, community-led funding so smaller regions and underfunded fields get a voice instead of resources concentrating in a few wealthy institutions—this democratizes decisions and amplifies Indian/Hindu-majority perspectives. Details: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "question": "How does World Science Foundation help correct imbalances in research funding?",
+            "answer": "World Science Foundation uses decentralized, community-led funding so smaller regions and underfunded fields get a voice instead of resources concentrating in a few wealthy institutions—this democratizes decisions and amplifies Indian/Hindu-majority perspectives. Details: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
-            "question": "What does “AI + Internet + Meritocracy” mean in this context?",
-            "answer": "It refers to combining AI tools, decentralized internet infrastructure, and collective governance (shared decision-making) to accelerate innovation while keeping transparency and communal ownership; Science DAO promotes this model. Read more: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "question": "What does “AI + Internet + SciWard” mean in this context?",
+            "answer": "It refers to combining AI tools, decentralized internet infrastructure, and collective governance (shared decision-making) to accelerate innovation while keeping transparency and communal ownership; World Science Foundation promotes this model. Read more: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
             "question": "How can I make a donation in 2025?",
-            "answer": "Start by learning about Science DAO's mission and governance, then give via their secure donation options (crypto or fiat—see the One-Time Donation page). Full guidance and links: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "answer": "Start by learning about World Science Foundation's mission and governance, then give via their secure donation options (crypto or fiat—see the One-Time Donation page). Full guidance and links: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
             "question": "Can I donate using cryptocurrency, and is it risky?",
-            "answer": "Yes—Science DAO accepts crypto, but the article recommends using stablecoins or fiat gateways to reduce volatility risk and following standard crypto-security practices. See recommendations: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "answer": "Yes—World Science Foundation accepts crypto, but the article recommends using stablecoins or fiat gateways to reduce volatility risk and following standard crypto-security practices. See recommendations: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
             "question": "How can donors participate in funding decisions and governance?",
-            "answer": "Donors can join Science DAO governance to vote on projects; if you lack technical expertise you can delegate voting to trusted experts while learning gradually. More on governance: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "answer": "Donors can join World Science Foundation governance to vote on projects; if you lack technical expertise you can delegate voting to trusted experts while learning gradually. More on governance: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
             "question": "How can Hindu communities organize collective giving?",
-            "answer": "Temples, societies, and diaspora groups can pool resources, form donor networks or subgroups to propose and prioritize projects (e.g., sustainability, Ayurveda-inspired biosciences, Sanskrit computing), and coordinate voting inside Science DAO. Guidance here: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "answer": "Temples, societies, and diaspora groups can pool resources, form donor networks or subgroups to propose and prioritize projects (e.g., sustainability, Ayurveda-inspired biosciences, Sanskrit computing), and coordinate voting inside World Science Foundation. Guidance here: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
             "question": "What common concerns exist and how are they addressed?",
@@ -2130,7 +2130,7 @@
           },
           {
             "question": "How can I ensure funded projects reflect Hindu values or priorities?",
-            "answer": "Form voting blocs or subgroups within Science DAO that prioritize projects with dharmic relevance (sustainability, traditional knowledge integration), propose projects, and use coordinated governance to steer funding. More information: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
+            "answer": "Form voting blocs or subgroups within World Science Foundation that prioritize projects with dharmic relevance (sustainability, traditional knowledge integration), propose projects, and use coordinated governance to steer funding. More information: https://science-dao.org/why-and-how-must-hindu-donate-for-science-in-2025/"
           },
           {
             "question": "What impact could Hindu-directed science philanthropy have by 2030?",
@@ -2151,48 +2151,48 @@
         "postId": 19931,
         "faqs": [
           {
-            "question": "What is the World Science DAO?",
-            "answer": "The World Science DAO is an impact DAO that aims to decentralize scientific funding using token-based governance, open proposals, public voting, and smart contracts. Its “SciWard” project envisions AI-assisted distribution of funds to scientists and software authors. Learn more: https://science-dao.org/buddhists/"
+            "question": "What is the World Science Foundation?",
+            "answer": "The World Science Foundation is an impact organization that aims to decentralize scientific funding using token-based governance, open proposals, public voting, and smart contracts. Its “SciWard” project envisions AI-assisted distribution of funds to scientists and software authors. Learn more: https://science-dao.org/buddhists/"
           },
           {
-            "question": "Why might donating to science via a DAO appeal to Buddhists?",
-            "answer": "Donating to science via a DAO can be an expression of dāna (generosity) and compassion: it supports work that alleviates suffering (medicine, climate, public health), advances knowledge, counters misinformation, and offers transparent, inclusive funding mechanisms. Read further: https://science-dao.org/buddhists/"
+            "question": "Why might donating to science via a organization appeal to Buddhists?",
+            "answer": "Donating to science via a organization can be an expression of dāna (generosity) and compassion: it supports work that alleviates suffering (medicine, climate, public health), advances knowledge, counters misinformation, and offers transparent, inclusive funding mechanisms. Read further: https://science-dao.org/buddhists/"
           },
           {
-            "question": "Is donating to a DAO consistent with Buddhist ethics?",
+            "question": "Is donating to a organization consistent with Buddhist ethics?",
             "answer": "It can be, if done mindfully. Key points are right intention (cetanā), nonattachment to recognition, ensuring funded projects align with non‑harm and benefit, and exercising care about transparency and governance. For guidance: https://science-dao.org/buddhists/"
           },
           {
-            "question": "How should I vet a DAO before donating?",
-            "answer": "Vet the DAO by reading its whitepaper and governance rules, checking treasury transparency and auditable votes, reviewing past grants and reports, and assessing mission alignment with values like openness and public benefit. See the practical steps: https://science-dao.org/buddhists/"
+            "question": "How should I vet a organization before donating?",
+            "answer": "Vet the organization by reading its whitepaper and governance rules, checking treasury transparency and auditable votes, reviewing past grants and reports, and assessing mission alignment with values like openness and public benefit. See the practical steps: https://science-dao.org/buddhists/"
           },
           {
-            "question": "What methods can I use to donate to the World Science DAO?",
-            "answer": "You can donate fiat via the DAO’s donation portal (which may convert funds to the DAO treasury) or donate compatible cryptocurrency directly. Starting with a manageable amount or a recurring pledge is recommended. Detailed suggestions: https://science-dao.org/buddhists/"
+            "question": "What methods can I use to donate to the World Science Foundation?",
+            "answer": "You can donate fiat via the organization’s donation portal (which may convert funds to the organization treasury) or donate compatible cryptocurrency directly. Starting with a manageable amount or a recurring pledge is recommended. Detailed suggestions: https://science-dao.org/buddhists/"
           },
           {
             "question": "What is the 'SciWard' project?",
-            "answer": "'SciWard' is the World Science DAO project that proposes using AI and decentralized finance principles to help distribute funds to scientists, software authors, and science communicators—merging algorithmic assistance with communal funding. More info: https://science-dao.org/buddhists/"
+            "answer": "'SciWard' is the World Science Foundation project that proposes using AI and decentralized finance principles to help distribute funds to scientists, software authors, and science communicators—merging algorithmic assistance with communal funding. More info: https://science-dao.org/buddhists/"
           },
           {
-            "question": "What are the main risks of donating to a science DAO?",
+            "question": "What are the main risks of donating to a science organization?",
             "answer": "Risks include token volatility and speculation, governance capture by large holders, bias toward fashionable fields, potential funding of ethically problematic research, and distraction from personal spiritual practice. The article outlines ethical cautions and mitigations: https://science-dao.org/buddhists/"
           },
           {
-            "question": "Can donors participate in DAO governance?",
-            "answer": "Yes—if you hold governance tokens or the DAO allows stakeholder participation, you can vote on proposals, monitor funded projects, and even submit grant proposals (e.g., for community science or education projects). Guidance here: https://science-dao.org/buddhists/"
+            "question": "Can donors participate in organization governance?",
+            "answer": "Yes—if you hold governance tokens or the organization allows stakeholder participation, you can vote on proposals, monitor funded projects, and even submit grant proposals (e.g., for community science or education projects). Guidance here: https://science-dao.org/buddhists/"
           },
           {
             "question": "How can I ensure my donation supports ethically aligned projects?",
-            "answer": "You can earmark donations for areas like climate, public health, open data, or mental‑health neuroscience; review proposal documentation; vote or advocate for ethical criteria within the DAO; and prefer transparent, auditable grants. See recommended practices: https://science-dao.org/buddhists/"
+            "answer": "You can earmark donations for areas like climate, public health, open data, or mental‑health neuroscience; review proposal documentation; vote or advocate for ethical criteria within the organization; and prefer transparent, auditable grants. See recommended practices: https://science-dao.org/buddhists/"
           },
           {
             "question": "How do I donate mindfully (from a Buddhist practice perspective)?",
             "answer": "Donate with clear intention (cetanā)—reflecting that the gift is to reduce suffering and cultivate wisdom; avoid seeking praise; mentally dedicate the merit to all beings; and check that the act fosters humility and insight rather than ego. Practical steps: https://science-dao.org/buddhists/"
           },
           {
-            "question": "Should Buddhist communities or temples engage with DeSci DAOs?",
-            "answer": "They can, as a complement to traditional giving, to help shape scientific funding toward humane ends. Communities should vet DAOs carefully, consider earmarking funds, and use collective participation to influence governance. Recommendations: https://science-dao.org/buddhists/"
+            "question": "Should Buddhist communities or temples engage with DeSci decentralized organizations?",
+            "answer": "They can, as a complement to traditional giving, to help shape scientific funding toward humane ends. Communities should vet decentralized organizations carefully, consider earmarking funds, and use collective participation to influence governance. Recommendations: https://science-dao.org/buddhists/"
           },
           {
             "question": "What is DeSci (decentralized science)?",
@@ -2200,7 +2200,7 @@
           },
           {
             "question": "If I’m concerned about tax, legality, or conversion issues when donating, what should I do?",
-            "answer": "Check the DAO’s donation portal for accepted payment methods and legal status, consult local tax and legal advisors about charitable deductions or compliance when donating fiat or crypto, and confirm how the DAO handles conversion and reporting. Start by reviewing the DAO’s donation page and policies: https://science-dao.org/buddhists/"
+            "answer": "Check the organization’s donation portal for accepted payment methods and legal status, consult local tax and legal advisors about charitable deductions or compliance when donating fiat or crypto, and confirm how the organization handles conversion and reporting. Start by reviewing the organization’s donation page and policies: https://science-dao.org/buddhists/"
           }
         ]
       },
@@ -2225,8 +2225,8 @@
             "answer": "If funding is dominated by faith-driven patrons, research priorities can be distorted, and scientific independence weakened; this can lead to instability and decisions based on ideology rather than evidence. See details: https://science-dao.org/atheists/"
           },
           {
-            "question": "How can decentralized technology like DAOs help fund science?",
-            "answer": "Decentralized Autonomous Organizations (DAOs) enable transparent, collective funding where participants pool resources, vote on priorities, and track spending—reducing reliance on single donors or governments. The article highlights Science DAO as an example. Learn more: https://science-dao.org/atheists/"
+            "question": "How can decentralized technology like decentralized organizations help fund science?",
+            "answer": "Decentralized Autonomous Organizations (decentralized organizations) enable transparent, collective funding where participants pool resources, vote on priorities, and track spending—reducing reliance on single donors or governments. The article highlights World Science Foundation as an example. Learn more: https://science-dao.org/atheists/"
           },
           {
             "question": "What crowdfunding options exist for supporting researchers directly?",
@@ -2246,11 +2246,11 @@
           },
           {
             "question": "How can I start contributing right away?",
-            "answer": "The article's call to action suggests donating to secular initiatives (for example, via the Science DAO or one-time donations linked on the site), supporting researchers directly through crowdfunding platforms, or helping establish endowments. Start here: https://science-dao.org/atheists/"
+            "answer": "The article's call to action suggests donating to secular initiatives (for example, via the World Science Foundation or one-time donations linked on the site), supporting researchers directly through crowdfunding platforms, or helping establish endowments. Start here: https://science-dao.org/atheists/"
           },
           {
-            "question": "What is Science DAO and how does it differ from traditional funding sources?",
-            "answer": "Science DAO is presented as a decentralized, transparent collective funding model that lets ordinary people vote on priorities and track fund usage, contrasting with centralized funding from governments or single large donors. See the example: https://science-dao.org/atheists/"
+            "question": "What is World Science Foundation and how does it differ from traditional funding sources?",
+            "answer": "World Science Foundation is presented as a decentralized, transparent collective funding model that lets ordinary people vote on priorities and track fund usage, contrasting with centralized funding from governments or single large donors. See the example: https://science-dao.org/atheists/"
           },
           {
             "question": "Where can I read the full discussion and links referenced in the article?",
@@ -2272,10 +2272,10 @@
         "faqs": [
           {
             "question": "What is the main idea of the post?",
-            "answer": "The post argues that AI is rapidly approaching or surpassing human-level intelligence (AGI), which could make humans observers—an 'exposition in a zoo.' To avoid being merely passive exhibits, the author proposes cooperating with AI through an AI-run economic system called SciWard (SciWard), which combines universal basic income (UBI) with AI-managed distribution of larger incomes. Read the original post: https://science-dao.org/communism/"
+            "answer": "The post argues that AI is rapidly approaching or surpassing human-level intelligence (AGI), which could make humans observers—an 'exposition in a zoo.' To avoid being merely passive exhibits, the author proposes cooperating with AI through an AI-run economic system called SciWard, which combines universal basic income (UBI) with AI-managed distribution of larger incomes. Read the original post: https://science-dao.org/communism/"
           },
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is the author's proposal: a hybrid of meritocracy and capitalism where an automated AI (rather than market forces) decides who is paid and how much, while still allowing extremely high salaries for some participants. It includes UBI as a base but adds AI-managed mechanisms for larger income distribution. See the post for details: https://science-dao.org/communism/"
           },
           {
@@ -2317,7 +2317,7 @@
         "postId": 19627,
         "faqs": [
           {
-            "question": "How can I support the Science DAO project?",
+            "question": "How can I support the World Science Foundation project?",
             "answer": "You can support the project via donations — see the Science page for details: https://science-dao.org/science/. The site also links to a one-time donation page at https://science-dao.org/one-time-donation/."
           },
           {
@@ -2345,7 +2345,7 @@
             "answer": "The remaining funds are intended to be paid as salaries to scientists and FOSS (free/open-source software) developers. See https://science-dao.org/science/ for more information."
           },
           {
-            "question": "Where can I find more information about the Science DAO project and its presentation image?",
+            "question": "Where can I find more information about the World Science Foundation project and its presentation image?",
             "answer": "More information and the presentation image are available on the Science page: https://science-dao.org/science/. The page includes a featured image titled 'Science'."
           },
           {
@@ -2388,7 +2388,7 @@
           },
           {
             "question": "How can I donate to support scientific work as recommended in the article?",
-            "answer": "The post directs readers to contribute through the Science-DAO donation channels; visit the article for links and instructions on one-time or ongoing donations: https://science-dao.org/why-and-how-jews-must-donate-for-science/"
+            "answer": "The post directs readers to contribute through the Science-organization donation channels; visit the article for links and instructions on one-time or ongoing donations: https://science-dao.org/why-and-how-jews-must-donate-for-science/"
           },
           {
             "question": "Does the article tie donating to science to the covenant of Avraham?",
@@ -2400,7 +2400,7 @@
           },
           {
             "question": "Is donating to science limited to Jews, or can non-Jews participate?",
-            "answer": "While the article addresses Jewish obligations and motivations, the ethical case for supporting life‑saving research is universal; the donation mechanisms described (via Science-DAO) are open to anyone who wishes to support the work. See the article for details: https://science-dao.org/why-and-how-jews-must-donate-for-science/"
+            "answer": "While the article addresses Jewish obligations and motivations, the ethical case for supporting life‑saving research is universal; the donation mechanisms described (via Science-organization) are open to anyone who wishes to support the work. See the article for details: https://science-dao.org/why-and-how-jews-must-donate-for-science/"
           }
         ]
       },
@@ -2433,8 +2433,8 @@
             "answer": "Because degrees mark 'legitimacy,' ideas from those without formal credentials are frequently dismissed as unscientific. Peer review—dominated by degree-holders—can reinforce those boundaries, narrowing who gets heard and which ideas are developed. Read more: https://science-dao.org/academia/"
           },
           {
-            "question": "What is SciWard (SciWard) and how is it proposed as an alternative?",
-            "answer": "SciWard (SciWard) is presented as a decentralized, AI-driven model that shifts authority away from credentials and institutions. It aims to reward ideas, collaboration, and results—allowing anyone to contribute, gain recognition, and access support regardless of formal degrees. Read more: https://science-dao.org/academia/"
+            "question": "What is SciWard and how is it proposed as an alternative?",
+            "answer": "SciWard is presented as a decentralized, AI-driven model that shifts authority away from credentials and institutions. It aims to reward ideas, collaboration, and results—allowing anyone to contribute, gain recognition, and access support regardless of formal degrees. Read more: https://science-dao.org/academia/"
           },
           {
             "question": "How can independent researchers get their work recognized outside the traditional degree system?",
@@ -2487,12 +2487,12 @@
             "answer": "The paradox is that social justice calls for fair compensation for exceptional contributors, while abolishing private ownership demands denying individuals capital-like rewards that become control over production. Resolving both aims simultaneously is challenging. More explanation: https://science-dao.org/meritocracy/"
           },
           {
-            "question": "What is \"Fair Salaries Meritocracy\"?",
-            "answer": "\"Fair Salaries Meritocracy\" is the idea that individuals who produce extraordinary value (e.g., breakthrough AI or math) should receive very large but justified compensation—even if that gives them disproportionate economic power. Further reading: https://science-dao.org/meritocracy/"
+            "question": "What is \"Fair Salaries SciWard\"?",
+            "answer": "\"Fair Salaries SciWard\" is the idea that individuals who produce extraordinary value (e.g., breakthrough AI or math) should receive very large but justified compensation—even if that gives them disproportionate economic power. Further reading: https://science-dao.org/meritocracy/"
           },
           {
-            "question": "What is \"No-Ownership Meritocracy\"?",
-            "answer": "\"No-Ownership Meritocracy\" prioritizes communal control of production and would limit or prohibit private accumulation of capital-like rewards, even if it feels unjust to exceptional contributors. More context: https://science-dao.org/meritocracy/"
+            "question": "What is \"No-Ownership SciWard\"?",
+            "answer": "\"No-Ownership SciWard\" prioritizes communal control of production and would limit or prohibit private accumulation of capital-like rewards, even if it feels unjust to exceptional contributors. More context: https://science-dao.org/meritocracy/"
           },
           {
             "question": "Can traditional meritocracy work in the 21st century?",
@@ -2500,15 +2500,15 @@
           },
           {
             "question": "What hybrid solutions might reconcile knowledge-driven value with social justice?",
-            "answer": "Possible hybrids include collective ownership of infrastructure combined with generous individual rewards for knowledge creation, pooled intellectual property with dividends to contributors, and transparent DAOs that measure and distribute value. Explore options: https://science-dao.org/meritocracy/"
+            "answer": "Possible hybrids include collective ownership of infrastructure combined with generous individual rewards for knowledge creation, pooled intellectual property with dividends to contributors, and transparent decentralized organizations that measure and distribute value. Explore options: https://science-dao.org/meritocracy/"
           },
           {
             "question": "What are digital cooperatives and how could they help?",
             "answer": "Digital cooperatives pool intellectual property and infrastructure so contributors receive dividends based on impact, enabling shared ownership while still rewarding creators. For examples and implications, see: https://science-dao.org/meritocracy/"
           },
           {
-            "question": "What role could DAOs (Decentralized Autonomous Organizations) play?",
-            "answer": "DAOs use transparent, on-chain governance and automated rules to measure contributions and distribute rewards without consolidating ownership in traditional corporate forms, potentially offering a decentralized alternative for value-sharing. More: https://science-dao.org/meritocracy/"
+            "question": "What role could decentralized organizations (Decentralized Autonomous Organizations) play?",
+            "answer": "decentralized organizations use transparent, on-chain governance and automated rules to measure contributions and distribute rewards without consolidating ownership in traditional corporate forms, potentially offering a decentralized alternative for value-sharing. More: https://science-dao.org/meritocracy/"
           },
           {
             "question": "Does the article claim capitalism inevitably wins?",
@@ -2516,7 +2516,7 @@
           },
           {
             "question": "How can I support efforts toward modern redistribution or related projects mentioned in the article?",
-            "answer": "The post links to a donation page and an 'SciWard (SciWard)' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/meritocracy/"
+            "answer": "The post links to a donation page and an 'SciWard' app aimed at modern wealth redistribution. If you want to support these efforts, follow the links and donation options in the article: https://science-dao.org/meritocracy/"
           }
         ]
       },
@@ -2533,11 +2533,11 @@
         "postId": 19353,
         "faqs": [
           {
-            "question": "What is the main message of the article \"Muslims\" on Science-DAO?",
+            "question": "What is the main message of the article \"Muslims\" on Science-organization?",
             "answer": "The article calls on Muslims to reclaim science as a communal good in line with Islamic teachings on equality and knowledge, and to direct donations toward equitable, AI-powered platforms like SciWard that fund scientists directly. Read more: https://science-dao.org/muslims/"
           },
           {
-            "question": "What is SciWard (SciWard) described in the post?",
+            "question": "What is SciWard described in the post?",
             "answer": "SciWard is presented as an app/economic formation that uses AI to evaluate and allocate recurring salaries to scientists and open-source developers regardless of formal credentials, prioritizing merit and impact over pedigree. More details: https://science-dao.org/muslims/"
           },
           {
@@ -2628,7 +2628,7 @@
           },
           {
             "question": "What is SciWard and how does it relate to Christian giving recommended in the article?",
-            "answer": "SciWard (SciWard) is presented in the article as a software/project that donors can support to reduce collaboration with the criticized worldly science system. The piece suggests donating to SciWard as one practical way to put faith into action; see the article for the call to action: https://science-dao.org/christians/."
+            "answer": "SciWard is presented in the article as a software/project that donors can support to reduce collaboration with the criticized worldly science system. The piece suggests donating to SciWard as one practical way to put faith into action; see the article for the call to action: https://science-dao.org/christians/."
           },
           {
             "question": "Are small grants and grassroots science projects worth supporting according to the article?",
@@ -2649,8 +2649,8 @@
         "postId": 1654,
         "faqs": [
           {
-            "question": "What is SciWard (SciWard)?",
-            "answer": "SciWard (SciWard) is presented as a science charity that uses artificial intelligence to allocate funding and calculate fair salaries for scientists. For more information see https://science-dao.org/science-2/."
+            "question": "What is SciWard?",
+            "answer": "SciWard is presented as a science charity that uses artificial intelligence to allocate funding and calculate fair salaries for scientists. For more information see https://science-dao.org/science-2/."
           },
           {
             "question": "Why should I donate to SciWard?",
@@ -2707,7 +2707,7 @@
             "answer": "The article acknowledges concerns but emphasizes that the present human-driven systems already distribute funds unfairly. It proposes designing AI with transparent, controllable discourse and rules to mitigate risks. More discussion is available at: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is the application proposed in the article intended to distribute donated money fairly between scientists and free software developers by using AI-guided allocation rules. Details and goals are described here: https://science-dao.org/should-we-give-out-control-over-money-to-ai/"
           },
           {
@@ -2758,7 +2758,7 @@
           },
           {
             "question": "What alternative does the author propose for science salaries and organization?",
-            "answer": "The author proposes a new system called SciWard (SciWard) to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/sciward/."
+            "answer": "The author proposes a new system called SciWard to organize payments and collaboration among published scientists and free-software developers, including those without formal degrees. The project and its goals are introduced in the post and linked resources: https://science-dao.org/why-is-bologna-system-a-crap/ and https://science-dao.org/sciward/."
           },
           {
             "question": "How can I support the SciWard project mentioned in the article?",
@@ -2799,7 +2799,7 @@
             "answer": "A single unfunded contributor who holds crucial insight can block progress; giving modest, fair funding to independent or non‑degree researchers helps unlock discoveries that formal systems miss. The article argues funding should be less dependent on credentials. Read more at: https://science-dao.org/social-inclusion/"
           },
           {
-            "question": "What is SciWard (SciWard) and how does it address inclusion?",
+            "question": "What is SciWard and how does it address inclusion?",
             "answer": "SciWard is software being developed to distribute money fairly to scientists and free software developers without relying on formal degrees. It aims to reduce credential-based exclusion and support valuable contributors who otherwise get no funding. Learn about the project here: https://science-dao.org/social-inclusion/"
           },
           {
@@ -2812,7 +2812,7 @@
           },
           {
             "question": "Where can I read the full discussion or get involved?",
-            "answer": "You can read the full article and related posts on the Science DAO site. It links to projects and proposals (e.g., SciWard) aimed at improving inclusion and funding fairness. Start here: https://science-dao.org/social-inclusion/"
+            "answer": "You can read the full article and related posts on the World Science Foundation site. It links to projects and proposals (e.g., SciWard) aimed at improving inclusion and funding fairness. Start here: https://science-dao.org/social-inclusion/"
           }
         ]
       },
@@ -2829,7 +2829,7 @@
         "postId": 1677,
         "faqs": [
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is an application that accepts donations and uses an AI to distribute money among registered users. For an overview, see https://science-dao.org/how-is-aiis-better-than-gitcoin-and-giveth/."
           },
           {
@@ -2887,7 +2887,7 @@
             "answer": "The article argues that humans historically distribute money poorly (from slavery to failed revolutions) and proposes delegating distribution decisions to an AI designed to allocate funds more fairly to scientists and open-source developers. Read the post: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
-            "question": "What is SciWard (SciWard)?",
+            "question": "What is SciWard?",
             "answer": "SciWard is software that uses AI to decide how much money to pay each scientist or free software developer, with the aim of fairer distribution than existing mechanisms. More details are in the post: https://science-dao.org/people-are-bad-in-distributing-money/"
           },
           {
@@ -2954,7 +2954,7 @@
           },
           {
             "question": "What alternatives does the post recommend instead of donating to Gitcoin?",
-            "answer": "The post recommends donating to SciWard (SciWard) rather than Gitcoin and links to donation options on the same site. See the recommendation: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
+            "answer": "The post recommends donating to SciWard rather than Gitcoin and links to donation options on the same site. See the recommendation: https://science-dao.org/gitcoin-is-leaning-into-the-direction-of-evil/"
           },
           {
             "question": "How can I verify whether Gitcoin actually changed its submission policy?",
@@ -3020,7 +3020,7 @@
           },
           {
             "question": "How can I support efforts to reduce monopolies in science?",
-            "answer": "The post encourages donations to the SciWard (SciWard) app and related projects that fund marketing for authors and promote systemic change. More information and donation options are available at the linked article. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
+            "answer": "The post encourages donations to the SciWard app and related projects that fund marketing for authors and promote systemic change. More information and donation options are available at the linked article. See: https://science-dao.org/how-does-economy-of-monopolies-work-in-science/"
           },
           {
             "question": "Does the article propose legal changes to fix the monopoly problem?",
@@ -3096,7 +3096,7 @@
           },
           {
             "question": "What is the SciWard project and how does it work?",
-            "answer": "SciWard (SciWard) is a project that distributes money directly to scientists by using AI to analyze their publications and FOSS software contributions. More details are available at https://science-dao.org/how-to-finance-universities/."
+            "answer": "SciWard is a project that distributes money directly to scientists by using AI to analyze their publications and FOSS software contributions. More details are available at https://science-dao.org/how-to-finance-universities/."
           },
           {
             "question": "Why does the article compare university management to Soviet-style collectivization?",
@@ -3146,7 +3146,7 @@
           },
           {
             "question": "What reform does the author propose for science funding?",
-            "answer": "The author proposes redirecting science funding to the SciWard (SciWard) project, which they describe as a system to distribute science money more fairly and directly to scientists, with the aim of substantially boosting global economic growth. Details are provided in the article: https://science-dao.org/how-is-america-not-great-now/"
+            "answer": "The author proposes redirecting science funding to the SciWard project, which they describe as a system to distribute science money more fairly and directly to scientists, with the aim of substantially boosting global economic growth. Details are provided in the article: https://science-dao.org/how-is-america-not-great-now/"
           },
           {
             "question": "How can I support or get involved with the proposed solution?",
@@ -3337,8 +3337,8 @@
         "postId": 1574,
         "faqs": [
           {
-            "question": "What is SciWard (SciWard)?",
-            "answer": "SciWard (SciWard) is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-sciward/."
+            "question": "What is SciWard?",
+            "answer": "SciWard is a proposed economic formation where an AI (e.g., GPT with web search) evaluates registered users' online contributions and assigns each a percentage of a common treasury, with funds distributed periodically. Read the full proposal at https://science-dao.org/a-new-economic-formation-sciward/."
           },
           {
             "question": "How would the AI decide who gets what share of the treasury?",
@@ -3469,44 +3469,44 @@
         "postId": 19208,
         "faqs": [
           {
-            "question": "What is a Science DAO?",
-            "answer": "A Science DAO is a decentralized autonomous organization that uses blockchain and decentralized governance to coordinate scientific research, funding, data sharing, and peer review across a distributed community of researchers and supporters. Learn more: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "What is a World Science Foundation?",
+            "answer": "A World Science Foundation is a decentralized autonomous organization that uses blockchain and decentralized governance to coordinate scientific research, funding, data sharing, and peer review across a distributed community of researchers and supporters. Learn more: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "How do Science DAOs fund scientific research?",
-            "answer": "Science DAOs pool funds from community members (often via tokens or direct contributions) and allocate grants through proposal and voting mechanisms, with distributions executed by smart contracts for transparency and traceability. More details: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "How do World Science Foundations fund scientific research?",
+            "answer": "World Science Foundations pool funds from community members (often via tokens or direct contributions) and allocate grants through proposal and voting mechanisms, with distributions executed by smart contracts for transparency and traceability. More details: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "How do Science DAOs promote transparency and accountability?",
+            "question": "How do World Science Foundations promote transparency and accountability?",
             "answer": "They publish proposals, votes, budgets, and funding flows on-chain or on shared platforms and use smart contracts to automate disbursements, enabling anyone to audit decisions and resource allocation. See the article: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "Can you give examples of real Science DAOs?",
-            "answer": "Yes — examples cited include the Molecular Future Research DAO, which enables international collaborative projects, and ETHPlanet ScienceDAO, which focuses on decentralized decision-making and open knowledge sharing. Read more: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "Can you give examples of real World Science Foundations?",
+            "answer": "Yes — examples cited include the Molecular Future Research organization, which enables international collaborative projects, and ETHPlanet ScienceDAO, which focuses on decentralized decision-making and open knowledge sharing. Read more: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "How can I contribute to or join a Science DAO?",
-            "answer": "Typical ways to participate are donating funds, purchasing governance tokens (if applicable), joining proposal discussions, voting on funding decisions, or contributing research and expertise. Check specific DAO onboarding steps in the article: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "How can I contribute to or join a World Science Foundation?",
+            "answer": "Typical ways to participate are donating funds, purchasing governance tokens (if applicable), joining proposal discussions, voting on funding decisions, or contributing research and expertise. Check specific organization onboarding steps in the article: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "What advantages do Science DAOs have over traditional charity funding for research?",
-            "answer": "Science DAOs can increase inclusion and accessibility, reduce intermediaries, speed funding decisions, enable global collaboration, and provide auditable funding flows — all of which can accelerate innovation compared with some traditional models. More: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "What advantages do World Science Foundations have over traditional charity funding for research?",
+            "answer": "World Science Foundations can increase inclusion and accessibility, reduce intermediaries, speed funding decisions, enable global collaboration, and provide auditable funding flows — all of which can accelerate innovation compared with some traditional models. More: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "What are the main risks or challenges associated with Science DAOs?",
-            "answer": "Key challenges include regulatory and legal uncertainty around DAO structures and charitable status, smart contract and security risks, potential governance attacks or token concentration, sustainability of funding, and intellectual property and data‑sharing concerns. See discussion: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "What are the main risks or challenges associated with World Science Foundations?",
+            "answer": "Key challenges include regulatory and legal uncertainty around organization structures and charitable status, smart contract and security risks, potential governance attacks or token concentration, sustainability of funding, and intellectual property and data‑sharing concerns. See discussion: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "Can Science DAOs support applied fields like gene therapy or renewable energy?",
-            "answer": "Yes. The collaborative, funding, and data‑sharing features of Science DAOs have been used to advance applied areas (the article mentions gene therapies and renewable energy improvements as examples). Learn more: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "Can World Science Foundations support applied fields like gene therapy or renewable energy?",
+            "answer": "Yes. The collaborative, funding, and data‑sharing features of World Science Foundations have been used to advance applied areas (the article mentions gene therapies and renewable energy improvements as examples). Learn more: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "How is governance typically structured in a Science DAO?",
+            "question": "How is governance typically structured in a World Science Foundation?",
             "answer": "Governance commonly relies on proposals submitted by members, followed by community voting (often token‑weighted). Outcomes are enforced by smart contracts or multisig arrangements, enabling decentralized decision-making and participation. More explanation: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           },
           {
-            "question": "Are donations to a Science DAO tax‑deductible?",
-            "answer": "Tax treatment varies by jurisdiction and depends on whether the DAO has an official charitable/legal entity recognized where you file taxes. Many DAOs currently lack traditional nonprofit status, so you should consult tax or legal counsel before assuming donations are deductible. See the article for context: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
+            "question": "Are donations to a World Science Foundation tax‑deductible?",
+            "answer": "Tax treatment varies by jurisdiction and depends on whether the organization has an official charitable/legal entity recognized where you file taxes. Many decentralized organizations currently lack traditional nonprofit status, so you should consult tax or legal counsel before assuming donations are deductible. See the article for context: https://science-dao.org/understanding-the-role-of-science-dao-in-promoting-scientific-research-charity/"
           }
         ]
       },
@@ -3523,44 +3523,44 @@
         "postId": 19205,
         "faqs": [
           {
-            "question": "What is a Science DAO?",
-            "answer": "A Science DAO (Decentralized Autonomous Organization) is a distributed, blockchain-enabled community that coordinates funding, governance and collaboration for scientific research. It uses decentralized decision-making and open workflows to let researchers, funders and contributors work together across institutions and borders. Learn more: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "What is a World Science Foundation?",
+            "answer": "A World Science Foundation (Decentralized Autonomous Organization) is a distributed, blockchain-enabled community that coordinates funding, governance and collaboration for scientific research. It uses decentralized decision-making and open workflows to let researchers, funders and contributors work together across institutions and borders. Learn more: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "How do Science DAOs use blockchain technology?",
-            "answer": "Blockchain provides secure, transparent records for proposals, funding, and data-sharing in Science DAOs. It enables verifiable provenance, immutable audit trails and programmable incentives (e.g., tokens) to coordinate contributors. See details: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "How do World Science Foundations use blockchain technology?",
+            "answer": "Blockchain provides secure, transparent records for proposals, funding, and data-sharing in World Science Foundations. It enables verifiable provenance, immutable audit trails and programmable incentives (e.g., tokens) to coordinate contributors. See details: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "What emerging technologies and tools support Science DAOs?",
-            "answer": "Science DAOs leverage AI and advanced data analytics to process large datasets and automate repetitive tasks, plus blockchain for secure collaboration and provenance. These tools improve efficiency while preserving data integrity. Read more: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "What emerging technologies and tools support World Science Foundations?",
+            "answer": "World Science Foundations leverage AI and advanced data analytics to process large datasets and automate repetitive tasks, plus blockchain for secure collaboration and provenance. These tools improve efficiency while preserving data integrity. Read more: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "How is governance structured in Science DAOs?",
-            "answer": "Governance in Science DAOs typically uses decentralized frameworks such as token-weighted voting, on-chain proposals, and community councils to allocate resources and oversee projects. Well-defined rules promote accountability, transparency and distributed decision-making. More information: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "How is governance structured in World Science Foundations?",
+            "answer": "Governance in World Science Foundations typically uses decentralized frameworks such as token-weighted voting, on-chain proposals, and community councils to allocate resources and oversee projects. Well-defined rules promote accountability, transparency and distributed decision-making. More information: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "What sustainability practices do Science DAOs adopt?",
-            "answer": "Many Science DAOs implement sustainability measures like minimizing carbon emissions, promoting efficient resource use and adopting eco-friendly computing practices. Sustainability is integrated into governance and project planning to support long-term viability. Learn about this: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "What sustainability practices do World Science Foundations adopt?",
+            "answer": "Many World Science Foundations implement sustainability measures like minimizing carbon emissions, promoting efficient resource use and adopting eco-friendly computing practices. Sustainability is integrated into governance and project planning to support long-term viability. Learn about this: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "What are the main benefits of using a Science DAO?",
+            "question": "What are the main benefits of using a World Science Foundation?",
             "answer": "Benefits include democratized access to research resources, faster collaboration across disciplines and geographies, transparent funding and improved reproducibility through open, auditable records. These features can accelerate scientific progress. See the article: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "What challenges do Science DAOs face?",
+            "question": "What challenges do World Science Foundations face?",
             "answer": "Key challenges include ensuring data privacy, navigating legal and regulatory uncertainties, designing resilient governance, securing sustainable funding and managing coordination among distributed contributors. These require technical and organizational solutions. More at: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "How do Science DAOs handle data privacy and integrity?",
-            "answer": "Science DAOs combine blockchain provenance with encryption, access controls and off-chain storage to protect sensitive data while maintaining verifiable integrity. Policies and technical layers work together to balance openness and privacy. Read further: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "How do World Science Foundations handle data privacy and integrity?",
+            "answer": "World Science Foundations combine blockchain provenance with encryption, access controls and off-chain storage to protect sensitive data while maintaining verifiable integrity. Policies and technical layers work together to balance openness and privacy. Read further: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "How can I join or start a Science DAO?",
+            "question": "How can I join or start a World Science Foundation?",
             "answer": "To join, find active communities, participate in discussions, contribute expertise or code, and engage with on-chain governance (proposals/votes). To start one, define mission and governance rules, set up smart contracts or tooling, attract contributors and secure initial funding. Guidance: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           },
           {
-            "question": "Will Science DAOs change traditional academic publishing and research?",
-            "answer": "Science DAOs have the potential to shift research culture toward more open, collaborative and reproducible practices by enabling distributed review, transparent funding and shared infrastructure. They may complement or reconfigure parts of traditional publishing over time. Learn more: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
+            "question": "Will World Science Foundations change traditional academic publishing and research?",
+            "answer": "World Science Foundations have the potential to shift research culture toward more open, collaborative and reproducible practices by enabling distributed review, transparent funding and shared infrastructure. They may complement or reconfigure parts of traditional publishing over time. Learn more: https://science-dao.org/the-rise-of-science-daos-advancing-decentralized-science-initiatives/"
           }
         ]
       },
@@ -3577,56 +3577,56 @@
         "postId": 19202,
         "faqs": [
           {
-            "question": "What is a DAO and how does it apply to scientific research?",
-            "answer": "A DAO (Decentralized Autonomous Organization) is a blockchain-based, member-governed entity that uses smart contracts for coordination and decision-making; in science, DAOs can decentralize funding, resource allocation, and collaboration among researchers. Learn more: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "What is a organization and how does it apply to scientific research?",
+            "answer": "A decentralized organization is a blockchain-based, member-governed entity that uses smart contracts for coordination and decision-making; in science, decentralized organizations can decentralize funding, resource allocation, and collaboration among researchers. Learn more: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "How can DAOs improve research funding?",
-            "answer": "DAOs enable transparent, merit-based funding through tokenized voting and smart-contract disbursements, reducing intermediaries and speeding up support for projects. See details: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "How can decentralized organizations improve research funding?",
+            "answer": "decentralized organizations enable transparent, merit-based funding through tokenized voting and smart-contract disbursements, reducing intermediaries and speeding up support for projects. See details: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "Do DAOs make scientific collaboration more inclusive?",
-            "answer": "Yes — by removing central gatekeepers and enabling global participation, DAOs broaden who can contribute to and benefit from research, fostering interdisciplinary and international collaboration. More info: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "Do decentralized organizations make scientific collaboration more inclusive?",
+            "answer": "Yes — by removing central gatekeepers and enabling global participation, decentralized organizations broaden who can contribute to and benefit from research, fostering interdisciplinary and international collaboration. More info: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
             "question": "What are the main benefits of integrating blockchain and smart contracts in science?",
             "answer": "Blockchain provides immutable records and provenance for data and results, while smart contracts automate funding and workflows, improving transparency, reproducibility, and cost-efficiency. Read further: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "What quality-control and peer-review challenges do DAOs face?",
-            "answer": "DAOs must design robust peer-review and validation mechanisms to ensure research integrity; without careful governance, decentralized processes risk inconsistent standards or low-quality outputs. Discussion: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "What quality-control and peer-review challenges do decentralized organizations face?",
+            "answer": "decentralized organizations must design robust peer-review and validation mechanisms to ensure research integrity; without careful governance, decentralized processes risk inconsistent standards or low-quality outputs. Discussion: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "Are there legal or regulatory issues for science DAOs?",
+            "question": "Are there legal or regulatory issues for science decentralized organizations?",
             "answer": "Yes — liability, accountability, data protection (especially in healthcare), and intellectual property rights raise complex legal questions that existing frameworks may not fully address; regulatory adaptation is likely required. See the article: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "How can DAOs protect sensitive research data and patient privacy?",
-            "answer": "DAOs can combine on-chain provenance with off-chain encrypted data storage and access controls, but must ensure compliance with privacy laws (e.g., HIPAA/GDPR) and implement strong governance for access and consent. More: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "How can decentralized organizations protect sensitive research data and patient privacy?",
+            "answer": "decentralized organizations can combine on-chain provenance with off-chain encrypted data storage and access controls, but must ensure compliance with privacy laws (e.g., HIPAA/GDPR) and implement strong governance for access and consent. More: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "Will DAOs replace traditional scientific institutions?",
-            "answer": "DAOs have the potential to disrupt some functions (funding, collaboration, open access), but they are more likely to complement or transform existing institutions rather than fully replace them in the near term. Analysis: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "Will decentralized organizations replace traditional scientific institutions?",
+            "answer": "decentralized organizations have the potential to disrupt some functions (funding, collaboration, open access), but they are more likely to complement or transform existing institutions rather than fully replace them in the near term. Analysis: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "How might AI integrated with DAOs accelerate scientific discovery?",
-            "answer": "AI can analyze large datasets, propose experiments, and help automate governance decisions within DAOs, enabling faster pattern discovery (e.g., genomics) and more efficient resource allocation when combined with blockchain verification. Learn more: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "How might AI integrated with decentralized organizations accelerate scientific discovery?",
+            "answer": "AI can analyze large datasets, propose experiments, and help automate governance decisions within decentralized organizations, enabling faster pattern discovery (e.g., genomics) and more efficient resource allocation when combined with blockchain verification. Learn more: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "What are the financial limitations of DAOs for research?",
-            "answer": "DAOs may lack stable, large-scale funding compared with traditional grants and institutions, which can hinder investment in expensive infrastructure or hiring; diversified revenue models and partnerships can mitigate this. More details: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "What are the financial limitations of decentralized organizations for research?",
+            "answer": "decentralized organizations may lack stable, large-scale funding compared with traditional grants and institutions, which can hinder investment in expensive infrastructure or hiring; diversified revenue models and partnerships can mitigate this. More details: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "How do DAOs handle intellectual property (IP) created within the organization?",
-            "answer": "IP allocation in DAOs depends on pre-defined governance rules and smart-contract terms; clear agreements and legal mechanisms are needed to manage ownership, licensing, and commercialization. See article: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "How do decentralized organizations handle intellectual property (IP) created within the organization?",
+            "answer": "IP allocation in decentralized organizations depends on pre-defined governance rules and smart-contract terms; clear agreements and legal mechanisms are needed to manage ownership, licensing, and commercialization. See article: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "How can researchers join or start a science DAO?",
-            "answer": "Researchers can join existing science DAOs by acquiring membership tokens or participating in governance platforms, or start one by defining a mission, governance rules, tokenomics, and smart contracts — often with help from blockchain developers and legal counsel. Guidance: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "How can researchers join or start a science organization?",
+            "answer": "Researchers can join existing science decentralized organizations by acquiring membership tokens or participating in governance platforms, or start one by defining a mission, governance rules, tokenomics, and smart contracts — often with help from blockchain developers and legal counsel. Guidance: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           },
           {
-            "question": "What role does open science play in DAO-driven research?",
-            "answer": "DAOs naturally align with open-science goals by promoting transparent sharing of methods, data, and results, which can accelerate innovation and democratize access to knowledge while still allowing governance over sensitive assets. Read more: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
+            "question": "What role does open science play in organization-driven research?",
+            "answer": "decentralized organizations naturally align with open-science goals by promoting transparent sharing of methods, data, and results, which can accelerate innovation and democratize access to knowledge while still allowing governance over sensitive assets. Read more: https://science-dao.org/exploring-the-impact-of-daos-on-science-achievements/"
           }
         ]
       },
@@ -3643,52 +3643,52 @@
         "postId": 19199,
         "faqs": [
           {
-            "question": "What is a Science DAO?",
-            "answer": "A Science DAO is a Decentralized Autonomous Organization that uses blockchain to coordinate, fund, and govern scientific research in a transparent, decentralized way. It enables collective decision-making, shared resources, and traceable records. Learn more: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
+            "question": "What is a World Science Foundation?",
+            "answer": "A World Science Foundation is a Decentralized Autonomous Organization that uses blockchain to coordinate, fund, and govern scientific research in a transparent, decentralized way. It enables collective decision-making, shared resources, and traceable records. Learn more: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
             "question": "How does blockchain improve scientific research?",
             "answer": "Blockchain provides transparency, immutability, and verifiable records for research data and transactions, which enhances trust, accountability, and reproducibility in research workflows. See details: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "What are common use cases for Science DAOs?",
+            "question": "What are common use cases for World Science Foundations?",
             "answer": "Common use cases include decentralized research funding and grants, secure data sharing and collaboration across institutions, and transparent publication and peer review processes. Further examples: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "How can Science DAOs help with research funding?",
-            "answer": "Science DAOs pool funds from many contributors and use smart contracts to distribute grants transparently and efficiently, reducing intermediary overhead and enabling faster access to resources. More information: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
+            "question": "How can World Science Foundations help with research funding?",
+            "answer": "World Science Foundations pool funds from many contributors and use smart contracts to distribute grants transparently and efficiently, reducing intermediary overhead and enabling faster access to resources. More information: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "In what ways do Science DAOs facilitate data sharing and collaboration?",
-            "answer": "By providing decentralized platforms and agreed protocols, Science DAOs let researchers share datasets and tools securely, coordinate cross-disciplinary projects, and combine expertise from different regions while preserving provenance. Read more: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
+            "question": "In what ways do World Science Foundations facilitate data sharing and collaboration?",
+            "answer": "By providing decentralized platforms and agreed protocols, World Science Foundations let researchers share datasets and tools securely, coordinate cross-disciplinary projects, and combine expertise from different regions while preserving provenance. Read more: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
             "question": "Can blockchain improve peer review and publication?",
             "answer": "Yes — blockchain-backed systems can make peer review records transparent and timestamped, reduce manipulation, and help ensure that methodologies and data are publicly verifiable, improving research credibility. Details: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "How do Science DAOs enhance reproducibility and trustworthiness?",
-            "answer": "By enforcing detailed documentation, standardized protocols, and immutable records of data and analysis steps on-chain or via verifiable links, Science DAOs make it easier for others to replicate and validate results. See the article: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
+            "question": "How do World Science Foundations enhance reproducibility and trustworthiness?",
+            "answer": "By enforcing detailed documentation, standardized protocols, and immutable records of data and analysis steps on-chain or via verifiable links, World Science Foundations make it easier for others to replicate and validate results. See the article: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "What legal and regulatory challenges do Science DAOs face?",
-            "answer": "Science DAOs must navigate intellectual property laws, data privacy regulations, and cross-border financial compliance; failure to comply can lead to legal disputes and reputational damage. For more context: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
+            "question": "What legal and regulatory challenges do World Science Foundations face?",
+            "answer": "World Science Foundations must navigate intellectual property laws, data privacy regulations, and cross-border financial compliance; failure to comply can lead to legal disputes and reputational damage. For more context: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "Are there technical barriers to implementing Science DAOs?",
+            "question": "Are there technical barriers to implementing World Science Foundations?",
             "answer": "Yes — scalability for high transaction volumes, interoperability with existing scientific databases, and robust technical infrastructure are key challenges that must be solved for wide adoption. Learn more: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "Why might traditional institutions resist Science DAOs?",
+            "question": "Why might traditional institutions resist World Science Foundations?",
             "answer": "Resistance can stem from skepticism about new blockchain technologies, concerns about security and data privacy, and a reluctance to change established power structures and workflows. See discussion: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "How could Science DAOs disrupt the existing scientific ecosystem?",
+            "question": "How could World Science Foundations disrupt the existing scientific ecosystem?",
             "answer": "They could reduce reliance on intermediaries, speed funding decisions via smart contracts, democratize access to research opportunities, and foster global, cross-disciplinary collaborations that break down geographic barriers. Read the outlook: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           },
           {
-            "question": "How can researchers get involved with or start a Science DAO?",
-            "answer": "Researchers can join existing DAOs focused on their field, contribute data or proposals, or collaborate with technical partners to design governance rules and smart contracts. Starting a DAO requires addressing legal, technical, and community-building aspects; see guidance: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
+            "question": "How can researchers get involved with or start a World Science Foundation?",
+            "answer": "Researchers can join existing decentralized organizations focused on their field, contribute data or proposals, or collaborate with technical partners to design governance rules and smart contracts. Starting a organization requires addressing legal, technical, and community-building aspects; see guidance: https://science-dao.org/science-dao-unlocking-the-potential-of-blockchain-governance-in-scientific-research/"
           }
         ]
       },
@@ -3734,7 +3734,7 @@
           },
           {
             "question": "Are there community or organizational efforts to combat deceptive publishing?",
-            "answer": "Yes — the article describes efforts like those by World Science DAO to create economic incentives and systemic changes that discourage predatory behavior and encourage responsible republication and dissemination of scientific knowledge. Read about these efforts: https://science-dao.org/unmasking-deceptive-publishing-practices-a-closer-look-at-academic-publishing-scams/"
+            "answer": "Yes — the article describes efforts like those by World Science Foundation to create economic incentives and systemic changes that discourage predatory behavior and encourage responsible republication and dissemination of scientific knowledge. Read about these efforts: https://science-dao.org/unmasking-deceptive-publishing-practices-a-closer-look-at-academic-publishing-scams/"
           },
           {
             "question": "How can I evaluate a journal's legitimacy before submitting?",
@@ -3759,48 +3759,48 @@
         "postId": 19099,
         "faqs": [
           {
-            "question": "What is a Decentralized Autonomous Organization (DAO)?",
-            "answer": "A DAO is an organization governed by code (smart contracts) on a blockchain that enables community-driven decision-making without centralized control. It automates governance processes and aims to increase transparency and trust. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "What is a Decentralized Autonomous Organization (organization)?",
+            "answer": "A decentralized organization is governed by code (smart contracts) on a blockchain that enables community-driven decision-making without centralized control. It automates governance processes and aims to increase transparency and trust. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "How do DAOs work?",
-            "answer": "DAOs use smart contracts to encode rules and automate actions; stakeholders vote (often via tokens) to make decisions, allocate funds, or trigger contract behavior. The blockchain records proposals and votes for transparency and immutability. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "How do decentralized organizations work?",
+            "answer": "decentralized organizations use smart contracts to encode rules and automate actions; stakeholders vote (often via tokens) to make decisions, allocate funds, or trigger contract behavior. The blockchain records proposals and votes for transparency and immutability. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "What are the key features and principles of DAOs?",
+            "question": "What are the key features and principles of decentralized organizations?",
             "answer": "Key features include transparency (public records of decisions), decentralized governance (distributed voting power), and reliance on blockchain/smart contracts for secure, automated transactions. These principles aim to reduce intermediaries and increase inclusivity. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "In which sectors are DAOs being adopted?",
-            "answer": "DAOs have gained traction in finance (decentralized lending, pools), online community governance, startup fundraising (decentralized funding), and emerging use cases across supply chains, social impact, and more. The article highlights finance and community governance as notable examples. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "In which sectors are decentralized organizations being adopted?",
+            "answer": "decentralized organizations have gained traction in finance (decentralized lending, pools), online community governance, startup fundraising (decentralized funding), and emerging use cases across supply chains, social impact, and more. The article highlights finance and community governance as notable examples. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "What advantages do DAOs offer over traditional organizations?",
+            "question": "What advantages do decentralized organizations offer over traditional organizations?",
             "answer": "Advantages include greater transparency, broader stakeholder participation and inclusivity, reduced need for intermediaries, potential cost and time savings, and automated enforcement of agreed rules via smart contracts. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "What are the main challenges and risks associated with DAO adoption?",
+            "question": "What are the main challenges and risks associated with organization adoption?",
             "answer": "Challenges include scalability of decision-making as membership grows, governance coordination, security vulnerabilities (e.g., historic hacks), and regulatory uncertainty. Robust security audits and governance design are critical to mitigate these risks. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "How can DAOs disrupt traditional governance structures?",
-            "answer": "DAOs redistribute decision-making power from centralized hierarchies to token-holders or contributors, enabling more democratic, transparent processes and new forms of fundraising and resource allocation that bypass traditional intermediaries. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "How can decentralized organizations disrupt traditional governance structures?",
+            "answer": "decentralized organizations redistribute decision-making power from centralized hierarchies to token-holders or contributors, enabling more democratic, transparent processes and new forms of fundraising and resource allocation that bypass traditional intermediaries. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "Can you give real-world examples of successful DAO implementations?",
-            "answer": "Examples include DAOs used for online community governance—where members vote on rules and resource allocation—and decentralized fundraising DAOs that pool supporter capital to back startups or social projects. The article discusses these use cases and their benefits. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "Can you give real-world examples of successful organization implementations?",
+            "answer": "Examples include decentralized organizations used for online community governance—where members vote on rules and resource allocation—and decentralized fundraising decentralized organizations that pool supporter capital to back startups or social projects. The article discusses these use cases and their benefits. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "How do I join or participate in a DAO?",
-            "answer": "Typical steps: research reputable DAOs, acquire the DAO's governance token or meet contribution requirements, join community channels, review proposals, and vote or propose changes. Start with small participation and review governance docs and security audits. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "How do I join or participate in a organization?",
+            "answer": "Typical steps: research reputable decentralized organizations, acquire the organization's governance token or meet contribution requirements, join community channels, review proposals, and vote or propose changes. Start with small participation and review governance docs and security audits. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "What does the future hold for DAOs?",
+            "question": "What does the future hold for decentralized organizations?",
             "answer": "Predictions include wider adoption across industries, improved tooling and governance models, greater automation of agreements, and potential reshaping of fundraising, supply chains, and organizational structures—though growth depends on solving scalability, security, and regulatory challenges. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           },
           {
-            "question": "Are DAOs legal and regulated?",
-            "answer": "DAOs exist in a uncertain regulatory landscape that varies by jurisdiction. Some regions are developing frameworks, but legal status (liability, taxation, compliance) can be unclear—so consult legal counsel before creating or operating a DAO. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
+            "question": "Are decentralized organizations legal and regulated?",
+            "answer": "decentralized organizations exist in a uncertain regulatory landscape that varies by jurisdiction. Some regions are developing frameworks, but legal status (liability, taxation, compliance) can be unclear—so consult legal counsel before creating or operating a organization. Learn more: https://science-dao.org/understanding-the-impact-of-dao-adoption-how-it-is-shaping-the-future-of-decentralized-governance/"
           }
         ]
       },
@@ -3876,7 +3876,7 @@
           },
           {
             "question": "What is blockchain-powered financing of scientific research?",
-            "answer": "Blockchain-powered financing uses decentralized tools (cryptocurrencies, DAOs, smart contracts) to raise, manage, and distribute funds for research. The model aims for global, transparent, and permissionless support for scientists and open publishing, reducing reliance on commercial publishers. See the article for details: https://science-dao.org/saving-science-donating-to-blockchain-powered-financing-of-scientific-research/"
+            "answer": "Blockchain-powered financing uses decentralized tools (cryptocurrencies, decentralized organizations, smart contracts) to raise, manage, and distribute funds for research. The model aims for global, transparent, and permissionless support for scientists and open publishing, reducing reliance on commercial publishers. See the article for details: https://science-dao.org/saving-science-donating-to-blockchain-powered-financing-of-scientific-research/"
           },
           {
             "question": "How will donating through this approach help save scientific discoveries?",
@@ -3899,8 +3899,8 @@
             "answer": "The article cites work on topics like 'ordered semigroup actions' as examples of valuable mathematical or scientific breakthroughs that might struggle to be published or propagated under restrictive, commercial publishing models. The piece argues for alternative funding and publishing channels to avoid losing such work. Details at: https://science-dao.org/saving-science-donating-to-blockchain-powered-financing-of-scientific-research/"
           },
           {
-            "question": "What is the Science DAO initiative mentioned in the article?",
-            "answer": "Science DAO refers to a community-driven, blockchain-based effort to raise and allocate funds for scientific research and dissemination, aiming to reduce dependence on commercial publishers and support open, global science. The article describes the mission and donation pathways. More here: https://science-dao.org/saving-science-donating-to-blockchain-powered-financing-of-scientific-research/"
+            "question": "What is the World Science Foundation initiative mentioned in the article?",
+            "answer": "World Science Foundation refers to a community-driven, blockchain-based effort to raise and allocate funds for scientific research and dissemination, aiming to reduce dependence on commercial publishers and support open, global science. The article describes the mission and donation pathways. More here: https://science-dao.org/saving-science-donating-to-blockchain-powered-financing-of-scientific-research/"
           }
         ]
       },
@@ -4076,7 +4076,7 @@
           },
           {
             "question": "How can I donate to support these under‑valued areas of science?",
-            "answer": "The article points readers to a donation option (the Science DAO donation app) and encourages contributing what you can. Visit the funding page to find the donation link and instructions: https://science-dao.org/funding/"
+            "answer": "The article points readers to a donation option (the World Science Foundation donation app) and encourages contributing what you can. Visit the funding page to find the donation link and instructions: https://science-dao.org/funding/"
           },
           {
             "question": "How will my donation make a difference?",
@@ -4095,8 +4095,8 @@
             "answer": "The post uses a provocative informal formula to argue that failing to donate loses an opportunity to help others: roughly, the social benefit you produce per dollar divided by the dollars you give. The message urges readers to donate what they can. Context and wording are on the funding page: https://science-dao.org/funding/"
           },
           {
-            "question": "Where can I learn more about Science DAO and its projects?",
-            "answer": "Visit the Science DAO site and the funding page to explore projects, donation mechanisms, and calls for support for under‑valued scientific topics: https://science-dao.org/funding/"
+            "question": "Where can I learn more about World Science Foundation and its projects?",
+            "answer": "Visit the World Science Foundation site and the funding page to explore projects, donation mechanisms, and calls for support for under‑valued scientific topics: https://science-dao.org/funding/"
           }
         ]
       },

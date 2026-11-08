@@ -191,7 +191,7 @@ export default function UserAuditLog() {
     return (
         <div className="user-audit-log-page">
             <Helmet>
-                <title>{`Recommended Salary for "${displayName}"${page !== 1 ? ` (Archive page ${page})` : ""} - Meritocracy`}</title>
+                <title>{`Recommended Salary for "${displayName}"${page !== 1 ? ` (Archive page ${page})` : ""} - SciWard`}</title>
             </Helmet>
             <Canonical baseUrl={frontendOrigin} />
             <div className="container">

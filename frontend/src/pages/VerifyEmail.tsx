@@ -78,10 +78,10 @@ const VerifyEmail = () => {
   return (
     <div className="verify-email">
       <Helmet>
-        <title>Email Verification · Meritocracy Platform</title>
+        <title>Email Verification · SciWard Platform</title>
         <meta
           name="description"
-          content="Track the status of your Meritocracy email verification and resend the verification link if necessary."
+          content="Track the status of your SciWard email verification and resend the verification link if necessary."
         />
       </Helmet>
       <div className="verify-email-container">

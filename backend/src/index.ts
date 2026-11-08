@@ -144,7 +144,7 @@ app.get('/', (req, res) => {
   }
 
   res.json({
-    message: 'Meritocracy API Server',
+    message: 'SciWard API Server',
     version: '0.0.1',
     status: 'running',
   });

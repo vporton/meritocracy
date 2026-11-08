@@ -1,12 +1,12 @@
-# Meritocracy App
+# SciWard App
 
 **Don't forget to run `git config core.hooksPath git_hooks`, if you are a maintainer!**
 
 (For the most functioning version, you may see the `stable` branch.)
 
-"Meritocracy" (in full: "SciWard", or SciWard) is an app that gathers crypto donations and distributes them among scientists, free software developers, and science marketers/popularizers whose salaries are based on their impact in promoting science (especially under-represented areas and discoveries).
+SciWard is an app that gathers crypto donations and distributes them among scientists, free software developers, and science marketers/popularizers whose salaries are based on their impact in promoting science (especially under-represented areas and discoveries).
 
-See [the site](https://science-dao.org/meritocracy/) for more information.
+See [the site](https://science-dao.org/sciward/) for more information.
 
 The app decides how much to pay each employee (registered user) simply by asking an AI (not by, for example, quadratic voting of users).
 

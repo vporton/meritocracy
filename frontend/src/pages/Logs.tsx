@@ -307,12 +307,12 @@ const Logs: React.FC = () => {
   return (
     <div className="logs-container">
       <Helmet>
-        <title>Meritocracy App - User Activity Logs</title>
-        <meta name="description" content="Meritocracy App - Show user activity logs." />
+        <title>SciWard App - User Activity Logs</title>
+        <meta name="description" content="SciWard App - Show user activity logs." />
       </Helmet>
       <Canonical baseUrl={frontendOrigin} />
       <div className="logs-header">
-        <h1>Meritocracy App Logs</h1>
+        <h1>SciWard App Logs</h1>
         <p>View and filter OpenAI, task, user, and session logs</p>
       </div>
 

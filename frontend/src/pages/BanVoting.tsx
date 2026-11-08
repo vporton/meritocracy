@@ -149,10 +149,10 @@ export default function BanVoting() {
     return (
     <div className="ban-voting-page">
       <Helmet>
-        <title>Ban Voting · Meritocracy Platform</title>
+        <title>Ban Voting · SciWard Platform</title>
         <meta
           name="description"
-          content="Participate in Meritocracy's ban voting to flag or reverse bans on accounts suspected of prompt injection or severe plagiarism."
+          content="Participate in SciWard's ban voting to flag or reverse bans on accounts suspected of prompt injection or severe plagiarism."
         />
       </Helmet>
       <Canonical baseUrl={frontendOrigin} />

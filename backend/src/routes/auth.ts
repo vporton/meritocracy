@@ -292,7 +292,7 @@ router.post('/challenge/ethereum', challengeRateLimit, async (req, res): Promise
     const challengeId = createOpaqueToken(24);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     const message = [
-      'Sign in to Meritocracy',
+      'Sign in to SciWard',
       `Address: ${address}`,
       `Nonce: ${challengeId}`,
       `Expires at: ${expiresAt.toISOString()}`,

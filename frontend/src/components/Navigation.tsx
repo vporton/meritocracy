@@ -55,7 +55,7 @@ function Navigation() {
             Ban Voting
           </Link>
           <Link
-            to="https://science-dao.org/meritocracy/"
+            to="https://science-dao.org/sciward/"
             className='nav-link'
             onClick={closeMenu}
           >

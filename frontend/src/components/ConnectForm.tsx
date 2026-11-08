@@ -63,6 +63,22 @@ interface SolanaWindow extends Window {
   solflare?: SolanaWalletProvider | { solana?: SolanaWalletProvider };
 }
 
+interface BitcoinWalletProvider {
+  requestAccounts?: () => Promise<unknown>;
+  getAccounts?: () => Promise<unknown>;
+  connect?: () => Promise<unknown>;
+  request?: (method: string, params?: unknown) => Promise<unknown>;
+}
+
+interface BitcoinWindow extends Window {
+  unisat?: BitcoinWalletProvider;
+  okxwallet?: { bitcoin?: BitcoinWalletProvider };
+  phantom?: { solana?: SolanaWalletProvider; bitcoin?: BitcoinWalletProvider };
+  BitcoinProvider?: BitcoinWalletProvider;
+  LeatherProvider?: BitcoinWalletProvider;
+  bitcoin?: BitcoinWalletProvider;
+}
+
 interface SolanaWalletOption {
   id: string;
   label: string;
@@ -260,13 +276,17 @@ const selectInjectedSolanaWallet = (wallets: SolanaWalletOption[]): SolanaWallet
 };
 
 const connectInjectedSolanaWallet = async (): Promise<string | null> => {
-  try {
-    const wallets = getInjectedSolanaWallets();
-    const selectedWallet = selectInjectedSolanaWallet(wallets);
-    if (!selectedWallet) {
-      return null;
-    }
+  const wallets = getInjectedSolanaWallets();
+  if (wallets.length === 0) {
+    throw new Error('No Solana wallet was found. Install or enable Phantom, Solflare, Backpack, or MetaMask, then reload this page.');
+  }
 
+  const selectedWallet = selectInjectedSolanaWallet(wallets);
+  if (!selectedWallet) {
+    return null;
+  }
+
+  try {
     const { provider } = selectedWallet;
     const result = provider.connect
       ? await provider.connect()
@@ -281,8 +301,72 @@ const connectInjectedSolanaWallet = async (): Promise<string | null> => {
     return typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
   } catch (error) {
     console.error('Failed to connect injected Solana wallet:', error);
-    return null;
+    throw error;
   }
+};
+
+const findBitcoinAddress = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    const paymentAccount = value.find(item =>
+      item && typeof item === 'object' && 'purpose' in item && item.purpose === 'payment'
+    );
+    return findBitcoinAddress(paymentAccount) ?? value.map(findBitcoinAddress).find(Boolean);
+  }
+  if (!value || typeof value !== 'object') return undefined;
+
+  const result = value as Record<string, unknown>;
+  if (typeof result.address === 'string') return result.address;
+  return findBitcoinAddress(result.accounts) ?? findBitcoinAddress(result.addresses) ?? findBitcoinAddress(result.result);
+};
+
+const connectInjectedBitcoinWallet = async (): Promise<string> => {
+  if (typeof window === 'undefined') throw new Error('Browser wallets are not available here.');
+
+  const bitcoinWindow = window as BitcoinWindow;
+  const candidates = [
+    bitcoinWindow.unisat,
+    bitcoinWindow.okxwallet?.bitcoin,
+    bitcoinWindow.phantom?.bitcoin,
+    bitcoinWindow.BitcoinProvider,
+    bitcoinWindow.LeatherProvider,
+    bitcoinWindow.bitcoin,
+  ].filter((provider, index, providers): provider is BitcoinWalletProvider =>
+    Boolean(provider) && providers.indexOf(provider) === index
+  );
+
+  if (candidates.length === 0) {
+    throw new Error('No Bitcoin wallet was found. Install or enable UniSat, OKX, Phantom, Xverse, or Leather, then reload this page.');
+  }
+
+  let lastError: unknown;
+  for (const provider of candidates) {
+    try {
+      let response: unknown;
+      if (provider.requestAccounts) {
+        response = await provider.requestAccounts();
+      } else if (provider.getAccounts) {
+        response = await provider.getAccounts();
+      } else if (provider.connect) {
+        response = await provider.connect();
+      } else if (provider === bitcoinWindow.LeatherProvider && provider.request) {
+        response = await provider.request('getAddresses');
+      } else if (provider.request) {
+        response = await provider.request('getAccounts', {
+          purposes: ['payment'],
+          message: 'Connect your Bitcoin address to Meritocracy DAO',
+        });
+      }
+
+      const address = findBitcoinAddress(response)?.trim();
+      if (address) return address;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError instanceof Error) throw lastError;
+  throw new Error('The Bitcoin wallet did not return a payment address.');
 };
 
 const ConnectForm = () => {
@@ -1322,6 +1406,25 @@ const ConnectForm = () => {
           ...prev,
           addresses: 'error',
           error: error?.message || 'Failed to connect Solana wallet'
+        }));
+        return;
+      }
+    }
+
+    if (namespace === 'bip122' && !hasReownWalletModal) {
+      try {
+        setConnectStatus(prev => ({ ...prev, addresses: undefined, error: undefined }));
+        const injectedBitcoinAddress = await connectInjectedBitcoinWallet();
+        const updatedValue = syncWalletAddressField(field, injectedBitcoinAddress);
+        if (user && updatedValue) {
+          void persistAddressForm({ [field]: updatedValue });
+        }
+        return;
+      } catch (error: any) {
+        setConnectStatus(prev => ({
+          ...prev,
+          addresses: 'error',
+          error: error?.message || 'Failed to connect Bitcoin wallet'
         }));
         return;
       }

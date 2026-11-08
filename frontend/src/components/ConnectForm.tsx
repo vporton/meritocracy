@@ -1854,7 +1854,7 @@ const ConnectForm = () => {
             <label htmlFor="solanaAddress">Solana Address</label>
             <button
               type="button"
-              className="cancel-button"
+              className="wallet-connect-button"
               onClick={() => handleWalletAddressConnect('solanaAddress', 'solana')}
               disabled={connectStatus.addresses === 'processing'}
             >
@@ -1876,7 +1876,7 @@ const ConnectForm = () => {
             <label htmlFor="bitcoinAddress">Bitcoin Address</label>
             <button
               type="button"
-              className="cancel-button"
+              className="wallet-connect-button"
               onClick={() => handleWalletAddressConnect('bitcoinAddress', 'bip122')}
               disabled={connectStatus.addresses === 'processing'}
             >

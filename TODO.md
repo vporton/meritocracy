@@ -2,8 +2,6 @@
 
 - TODO@P3 Give back token like GIV of Giveth.
 
-- TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
-
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting
   by `fly --local-only` (if I remember option name correctly), with additional option to do testing in Docker due deployment.
 

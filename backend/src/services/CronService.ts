@@ -23,7 +23,7 @@ export const cronJobMetadata = {
   },
   livelinessCheck: {
     cron: '0 9 * * *',
-    description: 'Daily at 09:00 UTC (send due Didit Liveliness renewal requests before payout)'
+    description: 'Daily at 09:00 UTC (send renewal requests and return six-month overdue claims to the fund)'
   },
   monthlyCleanup: {
     cron: '0 4 1 * *',
@@ -248,8 +248,10 @@ export class CronService {
     return this.runWithExclusiveExecution('liveliness checks', async () => {
       if (!process.env.DIDIT_WORKFLOW_LIVELINESS_ID) {
         console.warn('⚠️  DIDIT_WORKFLOW_LIVELINESS_ID is not configured; skipping Liveliness renewal emails.');
-        return { dueUsers: 0, emailsSent: 0, skipped: 0, configurationMissing: true };
+        return { dueUsers: 0, emailsSent: 0, skipped: 0, forfeitedUsers: 0, configurationMissing: true };
       }
+
+      const forfeitedUsers = await this.forfeitOverdueLivelinessClaims();
 
       const now = new Date();
       const reminderThreshold = new Date(now);
@@ -301,8 +303,47 @@ export class CronService {
       }
 
       console.log(`🫡 Didit Liveliness: ${dueUsers.length} due users, ${emailsSent} emails sent, ${skipped} skipped.`);
-      return { dueUsers: dueUsers.length, emailsSent, skipped, configurationMissing: false };
+      return { dueUsers: dueUsers.length, emailsSent, skipped, forfeitedUsers, configurationMissing: false };
     });
+  }
+
+  /** A Liveliness result overdue for six months voids unpaid claims. Completed
+   * blockchain transfers are untouched; only treasury-reserved money returns. */
+  private async forfeitOverdueLivelinessClaims(): Promise<number> {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 6);
+    const users = await this.prisma.user.findMany({
+      where: {
+        onboarded: true,
+        livelinessForfeitedAt: null,
+        OR: [
+          { livelinessDueAt: { lte: cutoff } },
+          // A person who never completes the first check is measured from
+          // onboarding, because there is no expiry date to measure from.
+          { livelinessVerifiedAt: null, createdAt: { lte: cutoff } }
+        ]
+      },
+      select: { id: true }
+    });
+    if (users.length === 0) return 0;
+
+    const userIds = users.map(user => user.id);
+    await this.prisma.$transaction([
+      this.prisma.pendingTransaction.updateMany({
+        where: { userId: { in: userIds }, status: { in: ['PENDING', 'FAILED'] } },
+        data: { status: 'CANCELLED', errorMessage: 'LIVELINESS_FORFEITURE' }
+      }),
+      this.prisma.gasTokenDistribution.updateMany({
+        where: { userId: { in: userIds }, status: { in: ['DEFERRED', 'FAILED', 'PENDING'] } },
+        data: { status: 'PROCESSED', errorMessage: 'LIVELINESS_FORFEITURE' }
+      }),
+      this.prisma.user.updateMany({
+        where: { id: { in: userIds } },
+        data: { livelinessForfeitedAt: new Date() }
+      })
+    ]);
+    console.log(`↩️  Returned unpaid claims for ${users.length} users overdue on Liveliness for six months.`);
+    return users.length;
   }
 
   async runMonthlyCleanup() {

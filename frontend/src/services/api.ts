@@ -55,6 +55,9 @@ interface User {
   livelinessStatus?: string;
   livelinessVerifiedAt?: string;
   livelinessDueAt?: string;
+  voluntaryPayoutPercent?: number | null;
+  voluntaryPayoutCap?: string | number | null;
+  paymentFrozen?: boolean;
   createdAt: string;
   updatedAt: string;
   votingPleaUnsubscribed?: boolean;
@@ -100,6 +103,9 @@ interface UpdateUserData {
   stellarAddress?: string | null;
   icpAddress?: string | null;
   votingPleaUnsubscribed?: boolean;
+  voluntaryPayoutPercent?: number | null;
+  voluntaryPayoutCap?: number | string | null;
+  paymentFrozen?: boolean;
 }
 
 interface UpdatePostData {

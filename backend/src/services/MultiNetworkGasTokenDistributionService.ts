@@ -24,6 +24,7 @@ import { pendingTransactionService } from './PendingTransactionService.js';
 import { prisma } from '../lib/prisma.js';
 import { getVerifiedEmailAddresses } from './userEmailUtils.js';
 import { isEuCountryCode } from '../utils/euCountries.js';
+import { TokenPriceService } from './TokenPriceService.js';
 
 export interface DistributionFiber {
   userId: number;
@@ -434,7 +435,8 @@ export class MultiNetworkGasTokenDistributionService {
     return await this.prisma.user.findMany({
       where: {
         onboarded: true,
-        shareInGDP: { not: null }
+        shareInGDP: { not: null },
+        livelinessForfeitedAt: null
       },
       orderBy: {
         shareInGDP: 'desc'
@@ -452,13 +454,68 @@ export class MultiNetworkGasTokenDistributionService {
     const livelinessEnabled = Boolean(process.env.DIDIT_WORKFLOW_LIVELINESS_ID);
     const isLivelinessExpired = livelinessEnabled &&
       (user.livelinessStatus !== 'APPROVED' || !user.livelinessDueAt || user.livelinessDueAt <= now);
-    return isBanned || isUnderReview || isLivelinessExpired;
+    return isBanned || isUnderReview || user.paymentFrozen || isLivelinessExpired;
   }
 
   private getPaymentHoldReason(user: User): string {
     if (user.bannedTill && user.bannedTill > new Date()) return 'BANNED_HOLD';
     if (user.paymentHoldStartedAt) return 'UNDER_REVIEW_HOLD';
+    if (user.paymentFrozen) return 'USER_FROZEN';
     return 'LIVELINESS_REQUIRED';
+  }
+
+  // The remainder deliberately stays in the fund; it is neither reserved nor
+  // added to backlog. The dollar cap is applied across all token payouts below.
+  private applyVoluntaryPayoutPercentage(user: User, amount: number): number {
+    return Math.max(0, amount * ((user.voluntaryPayoutPercent ?? 100) / 100));
+  }
+
+  private async applyVoluntaryDollarCaps(
+    users: User[],
+    networkDistributions: Map<string, { adapter: GasTokenNetworkAdapter; context: GasTokenNetworkContext; distributions: DistributionFiber[] }>
+  ): Promise<void> {
+    const usersById = new Map(users.map(user => [user.id, user]));
+    const cappedUserIds = new Set(users.filter(user => user.voluntaryPayoutCap !== null).map(user => user.id));
+    if (cappedUserIds.size === 0) return;
+
+    const symbols = Array.from(networkDistributions.values(), entry => entry.context.tokenSymbol);
+    let quotes: Awaited<ReturnType<typeof TokenPriceService.getUsdQuotes>>;
+    try {
+      quotes = await TokenPriceService.getUsdQuotes(symbols);
+    } catch (error) {
+      console.error('Unable to obtain USD token prices for voluntary payout caps:', error);
+      quotes = {};
+    }
+
+    const totalUsd = new Map<number, number>();
+    const missingQuoteForUser = new Set<number>();
+    for (const { context, distributions } of networkDistributions.values()) {
+      const price = quotes[context.tokenSymbol.toUpperCase()]?.usd;
+      for (const distribution of distributions) {
+        if (!cappedUserIds.has(distribution.userId)) continue;
+        if (!price) {
+          missingQuoteForUser.add(distribution.userId);
+          continue;
+        }
+        totalUsd.set(distribution.userId, (totalUsd.get(distribution.userId) ?? 0) + distribution.amountToken * price);
+      }
+    }
+
+    for (const entry of networkDistributions.values()) {
+      entry.distributions = entry.distributions
+        .map(distribution => {
+          const user = usersById.get(distribution.userId)!;
+          if (!cappedUserIds.has(user.id)) return distribution;
+          if (missingQuoteForUser.has(user.id)) {
+            console.warn(`Skipping capped payout for user ${user.id}: USD price is unavailable for at least one token.`);
+            return { ...distribution, amountToken: 0 };
+          }
+          const capUsd = Number(user.voluntaryPayoutCap);
+          const factor = Math.min(1, capUsd / (totalUsd.get(user.id) ?? 0));
+          return { ...distribution, amountToken: distribution.amountToken * factor };
+        })
+        .filter(distribution => distribution.amountToken > 0);
+    }
   }
 
   private async getTokenReserve(context: GasTokenNetworkContext): Promise<number> {
@@ -641,7 +698,7 @@ export class MultiNetworkGasTokenDistributionService {
         return {
           userId: user.id,
           recipientAddress: recipientAddress!,
-          amountToken: newAmount + backlogAmount,
+          amountToken: this.applyVoluntaryPayoutPercentage(user, newAmount + backlogAmount),
           shareInGDP: share,
           backlogAmount: backlogAmount
         };
@@ -656,6 +713,8 @@ export class MultiNetworkGasTokenDistributionService {
         distributions: filtered
       });
     }
+
+    await this.applyVoluntaryDollarCaps(users, networkDistributions);
 
     return networkDistributions;
   }

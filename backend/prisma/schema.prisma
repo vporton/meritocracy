@@ -45,6 +45,10 @@ model User {
   livelinessVerifiedAt    DateTime?
   livelinessDueAt         DateTime?
   livelinessRequestedAt   DateTime?
+  voluntaryPayoutPercent  Float?
+  voluntaryPayoutCap      Decimal?
+  paymentFrozen           Boolean                  @default(false)
+  livelinessForfeitedAt   DateTime?
   kycVotingStatus         String?
   kycVotingVerifiedAt     DateTime?
   kycVotingRejectedAt     DateTime?
@@ -72,6 +76,7 @@ model User {
   @@index([compensationDueAt])
   @@index([kycStatus])
   @@index([livelinessDueAt])
+  @@index([livelinessForfeitedAt])
   @@index([cosmosAddress])
   @@index([icpAddress])
   @@unique([issuingState, personalNumber])

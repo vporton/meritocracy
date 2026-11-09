@@ -423,6 +423,9 @@ const ConnectForm = () => {
   const [appKitAlertMessage, setAppKitAlertMessage] = useState('');
   const [votingPleaUpdating, setVotingPleaUpdating] = useState(false);
   const [votingPleaError, setVotingPleaError] = useState<string | null>(null);
+  const [payoutPreferences, setPayoutPreferences] = useState({ percent: '', cap: '' });
+  const [payoutPreferencesSaving, setPayoutPreferencesSaving] = useState(false);
+  const [payoutPreferencesError, setPayoutPreferencesError] = useState<string | null>(null);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const latestEthereumConnectionRef = useRef<{ isConnected: boolean; address?: string }>({
     isConnected: false,
@@ -911,6 +914,41 @@ const ConnectForm = () => {
       setVotingPleaError(error.response?.data?.error || error.message || 'Failed to update voting preferences');
     } finally {
       setVotingPleaUpdating(false);
+    }
+  };
+
+  const savePayoutPreferences = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user) return;
+    const percent = payoutPreferences.percent === '' ? null : Number(payoutPreferences.percent);
+    const cap = payoutPreferences.cap === '' ? null : Number(payoutPreferences.cap);
+    if ((percent !== null && (!Number.isFinite(percent) || percent < 0 || percent > 100)) || (cap !== null && (!Number.isFinite(cap) || cap < 0))) {
+      setPayoutPreferencesError('Enter a percentage from 0 to 100 and a non-negative cap.');
+      return;
+    }
+    setPayoutPreferencesSaving(true);
+    setPayoutPreferencesError(null);
+    try {
+      await usersApi.update(user.id, { voluntaryPayoutPercent: percent, voluntaryPayoutCap: cap });
+      await refreshUser();
+    } catch (error: any) {
+      setPayoutPreferencesError(error.response?.data?.error || error.message || 'Failed to save payout preferences');
+    } finally {
+      setPayoutPreferencesSaving(false);
+    }
+  };
+
+  const togglePaymentFreeze = async () => {
+    if (!user) return;
+    setPayoutPreferencesSaving(true);
+    setPayoutPreferencesError(null);
+    try {
+      await usersApi.update(user.id, { paymentFrozen: !user.paymentFrozen });
+      await refreshUser();
+    } catch (error: any) {
+      setPayoutPreferencesError(error.response?.data?.error || error.message || 'Failed to change payout freeze');
+    } finally {
+      setPayoutPreferencesSaving(false);
     }
   };
 
@@ -1697,6 +1735,31 @@ const ConnectForm = () => {
 
       {renderConnectedStatus()}
       {renderVotingPleaPreference()}
+
+      <section className="voting-plea-preference" aria-labelledby="payout-preferences-title">
+        <h3 id="payout-preferences-title">Payout preferences</h3>
+        {!isAuthenticated || !user ? (
+          <p>Sign in above to choose how much of a payout you receive, return the rest to the fund, or temporarily freeze payouts.</p>
+        ) : (
+          <>
+          <p>Optionally return part of each payout to the fund. Limits are applied before a payment is reserved; the amount cap covers your total payout across all tokens in USD.</p>
+          <form className="payout-preferences-form" onSubmit={savePayoutPreferences}>
+            <label>Payout percentage
+              <input type="number" min="0" max="100" step="0.01" placeholder={String(user.voluntaryPayoutPercent ?? 100)} value={payoutPreferences.percent} onChange={event => setPayoutPreferences(prev => ({ ...prev, percent: event.target.value }))} />
+            </label>
+            <label>Total payout cap (USD)
+              <input type="number" min="0" step="any" placeholder={user.voluntaryPayoutCap == null ? 'No cap' : String(user.voluntaryPayoutCap)} value={payoutPreferences.cap} onChange={event => setPayoutPreferences(prev => ({ ...prev, cap: event.target.value }))} />
+            </label>
+            <button type="submit" disabled={payoutPreferencesSaving}>{payoutPreferencesSaving ? 'Saving...' : 'Save payout preferences'}</button>
+          </form>
+          <button type="button" onClick={togglePaymentFreeze} disabled={payoutPreferencesSaving} className="voting-plea-button">
+            {user.paymentFrozen ? 'Resume payouts' : 'Temporarily freeze payouts'}
+          </button>
+          <p>{user.paymentFrozen ? 'Payouts are frozen and accrue as a deferred claim until you resume.' : 'Payouts are active.'}</p>
+          {payoutPreferencesError && <p className="error-message voting-plea-error">{payoutPreferencesError}</p>}
+          </>
+        )}
+      </section>
 
       {isAuthenticated && user && !user.onboarded && (
         <div className="evaluation-start-card">

@@ -484,6 +484,26 @@
     font-weight: 600;
   }
 
+  .payout-preferences-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem 1rem;
+    margin: 0.85rem 0;
+  }
+
+  .payout-preferences-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+  }
+
+  .payout-preferences-form input {
+    min-width: 12rem;
+    padding: 0.55rem 0.65rem;
+  }
+
   .voting-plea-button {
     margin-top: 0.6rem;
     padding: 0.85rem 1.25rem;

@@ -1418,6 +1418,7 @@ router.post('/kyc/didit/callback', async (req, res): Promise<void> => {
         updateData.livelinessVerifiedAt = verifiedAt;
         updateData.livelinessDueAt = getLivelinessDueAt(verifiedAt);
         updateData.livelinessRequestedAt = null;
+        updateData.livelinessForfeitedAt = null;
       } else if (isVotingFlow) {
         // Voting KYC Flow: Sets ONLY Voting Status
         updateData.kycVotingStatus = 'APPROVED';

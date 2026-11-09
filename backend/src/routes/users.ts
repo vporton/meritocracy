@@ -26,6 +26,9 @@ type UpdateUserBody = {
   stellarAddress?: string | null;
   icpAddress?: string | null;
   votingPleaUnsubscribed?: string | boolean | null;
+  voluntaryPayoutPercent?: number | null;
+  voluntaryPayoutCap?: number | string | null;
+  paymentFrozen?: string | boolean | null;
 };
 
 function normalizeOptionalBoolean(value: string | boolean | null | undefined): boolean | undefined {
@@ -38,6 +41,16 @@ function normalizeOptionalBoolean(value: string | boolean | null | undefined): b
   }
 
   return value === 'true';
+}
+
+function normalizeOptionalNonNegativeNumber(value: number | string | null | undefined, field: string): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const normalized = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(normalized) || normalized < 0) {
+    throw Object.assign(new Error(`${field} must be a non-negative number`), { code: 'INVALID_PAYOUT_PREFERENCE' });
+  }
+  return normalized;
 }
 
 function getLeaderboardDisplayName(user: LeaderboardUser): string {
@@ -272,7 +285,10 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
       cosmosAddress,
       stellarAddress,
       icpAddress,
-      votingPleaUnsubscribed
+      votingPleaUnsubscribed,
+      voluntaryPayoutPercent,
+      voluntaryPayoutCap,
+      paymentFrozen
     } = req.body as UpdateUserBody;
     const authenticatedUserId = (req as any).userId;
     const parsedId = Number(id);
@@ -313,6 +329,13 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     }
 
     const normalizedVotingPleaPreference = normalizeOptionalBoolean(votingPleaUnsubscribed);
+    const normalizedPaymentFrozen = normalizeOptionalBoolean(paymentFrozen);
+    const normalizedPayoutPercent = normalizeOptionalNonNegativeNumber(voluntaryPayoutPercent, 'voluntaryPayoutPercent');
+    if (normalizedPayoutPercent !== undefined && normalizedPayoutPercent !== null && normalizedPayoutPercent > 100) {
+      res.status(400).json({ error: 'voluntaryPayoutPercent must be between 0 and 100' });
+      return;
+    }
+    const normalizedPayoutCap = normalizeOptionalNonNegativeNumber(voluntaryPayoutCap, 'voluntaryPayoutCap');
 
     let normalizedEthereumAddress: string | null | undefined;
     if (ethereumAddress === undefined) {
@@ -359,7 +382,10 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
           ...(cosmosAddress !== undefined && { cosmosAddress: cosmosAddress ? String(cosmosAddress).trim() : null }),
           ...(stellarAddress !== undefined && { stellarAddress: stellarAddress ? String(stellarAddress).trim() : null }),
           ...(icpAddress !== undefined && { icpAddress: icpAddress ? String(icpAddress).trim() : null }),
-          ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference })
+          ...(normalizedVotingPleaPreference !== undefined && { votingPleaUnsubscribed: normalizedVotingPleaPreference }),
+          ...(normalizedPayoutPercent !== undefined && { voluntaryPayoutPercent: normalizedPayoutPercent }),
+          ...(normalizedPayoutCap !== undefined && { voluntaryPayoutCap: normalizedPayoutCap }),
+          ...(normalizedPaymentFrozen !== undefined && { paymentFrozen: normalizedPaymentFrozen })
         },
       });
 
@@ -379,6 +405,10 @@ router.put('/:id', requireAuth, async (req, res): Promise<void> => {
     }
     if ((error as any).code === 'INVALID_EMAIL') {
       res.status(400).json({ error: 'Invalid email address' });
+      return;
+    }
+    if ((error as any).code === 'INVALID_PAYOUT_PREFERENCE') {
+      res.status(400).json({ error: error.message });
       return;
     }
     res.status(500).json({ error: 'Failed to update user' });

@@ -4,8 +4,6 @@
 
 - TODO@P3 Allow the user to delay distribution to them, to decrease gas spendings.
 
-- TODO@P3 Option to donate back to SciWard automatically.
-
 - TODO@P3 An automatic system for pick-checking honesty of the Join Proxy installation to prevent fraud with the JP.
 
 - TODO@P3 We can reduce GitHub actions minutes without increasing the price of hosting

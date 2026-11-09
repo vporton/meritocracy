@@ -32,6 +32,7 @@ export interface DistributionFiber {
   amountToken: number;
   shareInGDP: number;
   backlogAmount: number;
+  voluntaryPayoutCapUsd: number | null;
 }
 
 export interface NetworkDistributionResult {
@@ -427,21 +428,30 @@ export class MultiNetworkGasTokenDistributionService {
    * Users currently blocked by ban/review or an overdue Liveliness check are handled downstream by deferring their payout,
    * so their owed amount can be released quickly after unban.
    */
-  private async fetchEligibleUsers(): Promise<User[]> { // TODO@P3: Don't store all in memory.
+  /** Visits eligible users in bounded pages. Distribution fibers still need to
+   * be retained until stage 1, but full User records never do. */
+  private async forEachEligibleUserPage(callback: (users: User[]) => Promise<void>): Promise<void> {
+    const pageSize = 500;
     if (this.eligibleUsersOverride) {
-      return this.eligibleUsersOverride;
+      for (let offset = 0; offset < this.eligibleUsersOverride.length; offset += pageSize) {
+        await callback(this.eligibleUsersOverride.slice(offset, offset + pageSize));
+      }
+      return;
     }
 
-    return await this.prisma.user.findMany({
-      where: {
-        onboarded: true,
-        shareInGDP: { not: null },
-        livelinessForfeitedAt: null
-      },
-      orderBy: {
-        shareInGDP: 'desc'
-      }
-    });
+    let cursor: number | undefined;
+    while (true) {
+      const page = await this.prisma.user.findMany({
+        where: { onboarded: true, shareInGDP: { not: null }, livelinessForfeitedAt: null },
+        orderBy: { id: 'asc' },
+        take: pageSize,
+        ...(cursor === undefined ? {} : { cursor: { id: cursor }, skip: 1 })
+      });
+      if (page.length === 0) return;
+      await callback(page);
+      if (page.length < pageSize) return;
+      cursor = page[page.length - 1].id;
+    }
   }
 
   private isUserPaymentBlocked(user: User): boolean {
@@ -471,12 +481,15 @@ export class MultiNetworkGasTokenDistributionService {
   }
 
   private async applyVoluntaryDollarCaps(
-    users: User[],
     networkDistributions: Map<string, { adapter: GasTokenNetworkAdapter; context: GasTokenNetworkContext; distributions: DistributionFiber[] }>
   ): Promise<void> {
-    const usersById = new Map(users.map(user => [user.id, user]));
-    const cappedUserIds = new Set(users.filter(user => user.voluntaryPayoutCap !== null).map(user => user.id));
-    if (cappedUserIds.size === 0) return;
+    const capsByUserId = new Map<number, number>();
+    for (const { distributions } of networkDistributions.values()) {
+      for (const distribution of distributions) {
+        if (distribution.voluntaryPayoutCapUsd !== null) capsByUserId.set(distribution.userId, distribution.voluntaryPayoutCapUsd);
+      }
+    }
+    if (capsByUserId.size === 0) return;
 
     const symbols = Array.from(networkDistributions.values(), entry => entry.context.tokenSymbol);
     let quotes: Awaited<ReturnType<typeof TokenPriceService.getUsdQuotes>>;
@@ -492,7 +505,7 @@ export class MultiNetworkGasTokenDistributionService {
     for (const { context, distributions } of networkDistributions.values()) {
       const price = quotes[context.tokenSymbol.toUpperCase()]?.usd;
       for (const distribution of distributions) {
-        if (!cappedUserIds.has(distribution.userId)) continue;
+        if (!capsByUserId.has(distribution.userId)) continue;
         if (!price) {
           missingQuoteForUser.add(distribution.userId);
           continue;
@@ -504,14 +517,13 @@ export class MultiNetworkGasTokenDistributionService {
     for (const entry of networkDistributions.values()) {
       entry.distributions = entry.distributions
         .map(distribution => {
-          const user = usersById.get(distribution.userId)!;
-          if (!cappedUserIds.has(user.id)) return distribution;
-          if (missingQuoteForUser.has(user.id)) {
-            console.warn(`Skipping capped payout for user ${user.id}: USD price is unavailable for at least one token.`);
+          const capUsd = capsByUserId.get(distribution.userId);
+          if (capUsd === undefined) return distribution;
+          if (missingQuoteForUser.has(distribution.userId)) {
+            console.warn(`Skipping capped payout for user ${distribution.userId}: USD price is unavailable for at least one token.`);
             return { ...distribution, amountToken: 0 };
           }
-          const capUsd = Number(user.voluntaryPayoutCap);
-          const factor = Math.min(1, capUsd / (totalUsd.get(user.id) ?? 0));
+          const factor = Math.min(1, capUsd / (totalUsd.get(distribution.userId) ?? 0));
           return { ...distribution, amountToken: distribution.amountToken * factor };
         })
         .filter(distribution => distribution.amountToken > 0);
@@ -575,11 +587,6 @@ export class MultiNetworkGasTokenDistributionService {
       }
     >
   > {
-    const users = await this.fetchEligibleUsers();
-    if (users.length === 0) {
-      return new Map();
-    }
-
     const networkDistributions = new Map<
       string,
       {
@@ -599,19 +606,18 @@ export class MultiNetworkGasTokenDistributionService {
           ? (u: User) => this.isUserInRegion(u, context.region as SupportedRegion)
           : undefined;
 
-      const eligibleUsers = users.filter(user => {
-        if (userFilter && !userFilter(user)) return false;
-
-        const share = user.shareInGDP ?? 0;
-        const address = adapter.getRecipientAddress(user);
-        return share > 0 && !!address;
+      let eligibleCount = 0;
+      let totalShareDenom = 0;
+      await this.forEachEligibleUserPage(async page => {
+        for (const user of page) {
+          if (userFilter && !userFilter(user)) continue;
+          if ((user.shareInGDP ?? 0) <= 0 || !adapter.getRecipientAddress(user)) continue;
+          eligibleCount++;
+          totalShareDenom += user.shareInGDP ?? 0;
+        }
       });
 
-      // Total share used as denominator.
-      // IMPORTANT: Use only eligible recipients (same set we are distributing to) to avoid DB-state coupling.
-      const totalShareDenom = eligibleUsers.reduce((sum, u) => sum + (u.shareInGDP ?? 0), 0);
-
-      if (eligibleUsers.length === 0 || totalShareDenom <= 0) {
+      if (eligibleCount === 0 || totalShareDenom <= 0) {
         if (!context.country && !context.region) {
           console.warn(
             `⚠️  No eligible recipients found for ${context.networkName} (${context.adapterType}).`
@@ -687,21 +693,24 @@ export class MultiNetworkGasTokenDistributionService {
 
       console.log(`[${context.networkName}] Wallet: ${realWalletBalance}, Backlog Liability: ${totalBacklogLiability}, New Distributable: ${spendableFromWallet}`);
 
-      const distributions: DistributionFiber[] = eligibleUsers.map(user => {
-        const share = user.shareInGDP ?? 0;
-        const proportion = share / totalShareDenom;
-        const recipientAddress = adapter.getRecipientAddress(user);
-
-        const backlogAmount = backlogLookup.get(user.id) ?? 0;
-        const newAmount = proportion > 0 ? spendableFromWallet * proportion : 0;
-
-        return {
-          userId: user.id,
-          recipientAddress: recipientAddress!,
-          amountToken: this.applyVoluntaryPayoutPercentage(user, newAmount + backlogAmount),
-          shareInGDP: share,
-          backlogAmount: backlogAmount
-        };
+      const distributions: DistributionFiber[] = [];
+      await this.forEachEligibleUserPage(async page => {
+        for (const user of page) {
+          if (userFilter && !userFilter(user)) continue;
+          const share = user.shareInGDP ?? 0;
+          const recipientAddress = adapter.getRecipientAddress(user);
+          if (share <= 0 || !recipientAddress) continue;
+          const backlogAmount = backlogLookup.get(user.id) ?? 0;
+          const newAmount = spendableFromWallet * (share / totalShareDenom);
+          distributions.push({
+            userId: user.id,
+            recipientAddress,
+            amountToken: this.applyVoluntaryPayoutPercentage(user, newAmount + backlogAmount),
+            shareInGDP: share,
+            backlogAmount,
+            voluntaryPayoutCapUsd: user.voluntaryPayoutCap === null ? null : Number(user.voluntaryPayoutCap)
+          });
+        }
       });
 
       const filtered = distributions.filter(dist => dist.amountToken > 0);
@@ -714,7 +723,7 @@ export class MultiNetworkGasTokenDistributionService {
       });
     }
 
-    await this.applyVoluntaryDollarCaps(users, networkDistributions);
+    await this.applyVoluntaryDollarCaps(networkDistributions);
 
     return networkDistributions;
   }

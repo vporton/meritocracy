@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/logs/:userId", "destination": "/audit-log.html" },
+    { "source": "/login", "destination": "/connect.html" }
+  ]
+}

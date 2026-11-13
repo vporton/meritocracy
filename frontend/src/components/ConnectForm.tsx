@@ -1692,8 +1692,11 @@ const ConnectForm = () => {
         <title>SciWard App - Connect Your Account and Receive Money</title>
         <meta name="description" content="SciWard App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
       </Helmet>
-      <Canonical baseUrl={`${getFrontendOrigin()}/connect`} />
-      <h2>Connect to SciWard Platform</h2>
+      <Canonical baseUrl={getFrontendOrigin()} />
+      <h1>Connect to SciWard Platform</h1>
+      <noscript>
+        <p>This page lists the accounts and payment addresses SciWard supports. Enable JavaScript to sign in, connect an account or wallet, save addresses, and start an evaluation.</p>
+      </noscript>
 
       {renderConnectedStatus()}
       {renderVotingPleaPreference()}

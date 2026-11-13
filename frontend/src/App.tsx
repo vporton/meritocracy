@@ -15,14 +15,16 @@ import DefensePanel from './pages/DefensePanel'
 import UserAuditLog from './pages/UserAuditLog'
 import Treasury from './pages/Treasury'
 import SocialShareButtons from './components/SocialShareButtons'
+import type { PrerenderData } from './prerenderData'
 import './App.css'
 
 type AppProps = {
   location?: string
   helmetContext?: Record<string, unknown>
+  initialData?: PrerenderData
 }
 
-function App({ location, helmetContext }: AppProps) {
+function App({ location, helmetContext, initialData }: AppProps) {
   const testVar = import.meta.env.VITE_TEST_INSTANCE;
   const isTest = testVar === 'true';
   const queryClient = new QueryClient()
@@ -35,7 +37,7 @@ function App({ location, helmetContext }: AppProps) {
       <div className="page-container">
         <main>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home initialWorldGdp={initialData?.worldGdp} />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/logs/:userId" element={<UserAuditLog />} />
             <Route path="/audit-log" element={<UserAuditLog />} />
@@ -46,7 +48,7 @@ function App({ location, helmetContext }: AppProps) {
             <Route path="/ban-voting/timing-plan" element={<BanVotingTimingPlan />} />
             <Route path="/timing-plan" element={<BanVotingTimingPlan />} />
             <Route path="/defense-panel" element={<DefensePanel />} />
-            <Route path="/treasury" element={<Treasury />} />
+            <Route path="/treasury" element={<Treasury initialStatus={initialData?.treasury} />} />
             {/* Redirect old login route to new connect route */}
             <Route path="/login" element={<Navigate to="/connect" replace />} />
           </Routes>

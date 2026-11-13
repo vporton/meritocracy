@@ -8,8 +8,8 @@ export interface WorldGdpData {
   lastUpdated: string
 }
 
-export function useWorldGdp() {
-  const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(null)
+export function useWorldGdp(initialWorldGdp: WorldGdpData | null = null) {
+  const [worldGdp, setWorldGdp] = useState<WorldGdpData | null>(initialWorldGdp)
 
   useEffect(() => {
     let cancelled = false

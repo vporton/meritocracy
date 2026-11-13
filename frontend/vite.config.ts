@@ -27,10 +27,20 @@ const staticRoutes = new Set([
 const isPrerenderedRoute = (pathname: string) =>
   staticRoutes.has(pathname) || /^\/logs\/[^/]+\/?$/.test(pathname);
 
-const injectPrerenderedPage = (template: string, html: string, head: string) => template
+const serializePageData = (data: unknown) => JSON.stringify(data)
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/&/g, '\\u0026')
+  .replace(/\u2028/g, '\\u2028')
+  .replace(/\u2029/g, '\\u2029');
+
+const injectPrerenderedPage = (template: string, html: string, head: string, data: unknown) => template
   .replace('<div id="root"></div>', `<div id="root">${html}</div>`)
   .replace('    <title>SciWard App</title>\n', '')
-  .replace('</head>', `${head}\n  </head>`);
+  .replace(
+    '</head>',
+    `${head}\n<script id="__PRERENDER_DATA__" type="application/json">${serializePageData(data)}</script>\n  </head>`,
+  );
 
 const reactPrerenderDev = (): Plugin => ({
   name: 'react-prerender-dev',
@@ -56,7 +66,7 @@ const reactPrerenderDev = (): Plugin => ({
         const rendered = await renderer.render(request.url);
         response.statusCode = 200;
         response.setHeader('Content-Type', 'text/html; charset=utf-8');
-        response.end(injectPrerenderedPage(template, rendered.html, rendered.head));
+        response.end(injectPrerenderedPage(template, rendered.html, rendered.head, rendered.data));
       } catch (error) {
         server.ssrFixStacktrace(error as Error);
         next(error);

@@ -16,7 +16,11 @@ interface UserGdpShareData {
   formatted?: string;
 }
 
-export default function Home() {
+interface HomeProps {
+  initialWorldGdp?: WorldGdpData
+}
+
+export default function Home({ initialWorldGdp }: HomeProps) {
   const frontendOrigin = getFrontendOrigin()
   const { user, isAuthenticated, refreshUser } = useAuth()
   const location = useLocation()
@@ -25,7 +29,7 @@ export default function Home() {
   const [salaryStats, setSalaryStats] = useState<SalaryStats | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
   const showEvaluationCTA = !user?.onboarded
-  const worldGdp = useWorldGdp()
+  const worldGdp = useWorldGdp(initialWorldGdp ?? null)
 
   const formatUsd = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })

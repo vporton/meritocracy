@@ -6,7 +6,7 @@ import api from '../services/api'
 import { hasReownWalletModal } from '../config/wagmi'
 import { countries } from '../utils/countries'
 
-interface NetworkInfo {
+export interface NetworkInfo {
   name?: string;
   networkName?: string;
   adapterType?: string;
@@ -32,7 +32,7 @@ interface NetworkInfo {
   fundingAddresses?: FundingAddress[];
 }
 
-interface MultiNetworkStatus {
+export interface MultiNetworkStatus {
   enabledNetworks: string[];
   networks: Record<string, NetworkInfo>;
   totalNetworks: number;
@@ -173,10 +173,16 @@ const btcAmountToSatoshis = (amount: string) => {
   return (whole * BigInt(100000000) + fraction).toString();
 };
 
-function MultiNetworkGasBalances() {
-  const [networkStatus, setNetworkStatus] = useState<MultiNetworkStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>({})
+interface MultiNetworkGasBalancesProps {
+  initialStatus?: MultiNetworkStatus
+}
+
+function MultiNetworkGasBalances({ initialStatus }: MultiNetworkGasBalancesProps) {
+  const [networkStatus, setNetworkStatus] = useState<MultiNetworkStatus | null>(initialStatus ?? null)
+  const [loading, setLoading] = useState(!initialStatus)
+  const [loadingNetworks, setLoadingNetworks] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries((initialStatus?.enabledNetworks ?? []).map(networkId => [networkId, false]))
+  )
   const [error, setError] = useState<string | null>(null)
   const [copiedAddressKey, setCopiedAddressKey] = useState<string | null>(null)
   const [tokenQuotes, setTokenQuotes] = useState<Record<string, TokenPriceQuote>>({})
@@ -241,7 +247,6 @@ function MultiNetworkGasBalances() {
     try {
       setLoading(true)
       setError(null)
-      setNetworkStatus(null)
       setLoadingNetworks({})
       setTokenQuotes({})
       setFundingStatusMessage(null)
@@ -281,7 +286,14 @@ function MultiNetworkGasBalances() {
             networkName: net.networkName,
             adapterType: net.adapterType,
             walletAddress: net.walletAddress,
+            address: net.walletAddress,
+            chainId: net.chainId,
             tokenSymbol: net.tokenSymbol || '...',
+            tokenType: net.tokenType,
+            baseNetworkId: net.baseNetworkId,
+            country: net.country,
+            region: net.region,
+            fundingAddresses: net.fundingAddresses,
             totalReserve: 0,
             walletBalance: 0,
             availableForDistribution: 0,

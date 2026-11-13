@@ -1,3 +1,5 @@
+- TODO@P2: add `lang="he" dir="rtl"` to the Hebrew name.
+
 - TODO@P3 Should we check (with t=0) randomized prompts for accurately representing the original prompt?
 
 - TODO@P3 Give back token like GIV of Giveth.

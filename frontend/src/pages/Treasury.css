@@ -1,0 +1,57 @@
+.breadcrumb {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+.breadcrumb [aria-current='page'] {
+  color: #a8a8a8;
+}
+
+.treasury-token-notice {
+  max-width: 760px;
+  margin: 1.5rem auto;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #f0ae32;
+  border-left: 5px solid #f0ae32;
+  border-radius: 8px;
+  background: #3c2e12;
+  color: #fff5d7;
+  text-align: left;
+}
+
+.treasury-token-notice h2 {
+  margin: 0 0 0.5rem;
+  color: inherit;
+  font-size: 1.25rem;
+}
+
+.treasury-token-notice p {
+  margin: 0 0 1rem;
+  font-weight: 600;
+}
+
+.treasury-token-notice dl,
+.treasury-token-notice dl > div {
+  margin: 0;
+}
+
+.treasury-token-notice dl > div + div {
+  margin-top: 0.8rem;
+}
+
+.treasury-token-notice dt {
+  font-weight: 700;
+}
+
+.treasury-token-notice dd {
+  margin: 0.2rem 0 0;
+}
+
+@media (max-width: 600px) {
+  .treasury-token-notice {
+    padding: 1rem;
+  }
+}

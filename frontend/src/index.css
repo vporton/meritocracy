@@ -563,19 +563,103 @@ button:focus-visible {
 
 .site-footer {
   margin-top: 2rem;
-  padding-top: 1.25rem;
+  padding: 1.5rem 0 1rem;
   border-top: 1px solid #333;
 }
 
 .footer-brand {
-  justify-content: center;
-  margin-bottom: 1rem;
   font-size: 1.05rem;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(0, 2fr);
+  gap: 2rem;
+  text-align: left;
+}
+
+.footer-identity p {
+  max-width: 28rem;
+  margin: 0.75rem 0 0;
+  color: #a3a3a3;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.footer-link-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.footer-link-group h2 {
+  margin: 0 0 0.25rem;
+  color: inherit;
+  font-size: 0.9rem;
+}
+
+.footer-link-group a {
+  color: #bdbdbd;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.footer-link-group a:hover {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.footer-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+}
+
+.footer-github-link img {
+  display: block;
+}
+
+.footer-copyright {
+  margin: 1rem 0 0;
+  color: #a3a3a3;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .footer-links {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-color-scheme: light) {
   .site-footer {
     border-top-color: #ddd;
+  }
+
+  .footer-identity p,
+  .footer-copyright {
+    color: #4b5563;
+  }
+
+  .footer-link-group a {
+    color: #4b5563;
   }
 }
 

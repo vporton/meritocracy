@@ -54,30 +54,63 @@ function App({ location, helmetContext, initialData }: AppProps) {
           </Routes>
         </main>
         <footer className="site-footer">
-          <Link to="/" className="footer-brand" aria-label="SciWard home">
-            <img
-              src="/ward.png"
-              className="footer-logo"
-              width="36"
-              height="36"
-              alt=""
-            />
-            <span>SciWard</span>
-          </Link>
+          <div className="footer-content" data-nosnippet="data-nosnippet">
+            <div className="footer-identity">
+              <Link to="/" className="footer-brand" aria-label="SciWard home">
+                <img
+                  src="/ward.png"
+                  className="footer-logo"
+                  width="36"
+                  height="36"
+                  alt=""
+                />
+                <span>SciWard</span>
+              </Link>
+              <p>SciWard funds scientists and open-source developers through transparent AI-assisted governance.</p>
+            </div>
+
+            <nav className="footer-links" aria-label="Footer">
+              <section className="footer-link-group" aria-labelledby="footer-product">
+                <h2 id="footer-product">Product</h2>
+                <Link to="/">Home</Link>
+                <Link to="/connect">Connect Accounts</Link>
+                <Link to="/treasury">Treasury</Link>
+                <Link to="/logs">Audit Logs</Link>
+              </section>
+              <section className="footer-link-group" aria-labelledby="footer-support">
+                <h2 id="footer-support">Support</h2>
+                <a href="https://science-dao.org/meritocracy-help/">Help</a>
+                <a href="https://science-dao.org/donation/">Donate</a>
+                <a href="https://science-dao.org/contact/">Contact</a>
+                <a href="https://github.com/vporton/meritocracy/issues/new" target="_blank" rel="noopener noreferrer">Report a bug</a>
+              </section>
+              <section className="footer-link-group" aria-labelledby="footer-legal">
+                <h2 id="footer-legal">Legal</h2>
+                <a href="https://science-dao.org/terms-of-use/">Terms of Use</a>
+                <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a>
+                <a href="/sitemap.xml">Sitemap</a>
+              </section>
+              <section className="footer-link-group" aria-labelledby="footer-community">
+                <h2 id="footer-community">Community</h2>
+                <a href="https://science-dao.org/meritocracy/">Science DAO</a>
+                <a
+                  href="https://github.com/vporton/meritocracy"
+                  className="footer-github-link"
+                  aria-label="SciWard on GitHub"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img src="/github-mark.svg" alt="" width="20" height="20" aria-hidden="true" />
+                  <span>GitHub</span>
+                </a>
+              </section>
+            </nav>
+          </div>
           <SocialShareButtons
             title="SciWard"
             text="SciWard funds scientists and open-source developers through transparent AI-assisted governance."
           />
-          <p data-nosnippet="data-nosnippet">
-            <a href="https://science-dao.org/terms-of-use/">Terms of Use</a> |{"  "}
-            <a href="https://science-dao.org/privacy-policy/">Privacy Policy</a> |{"  "}
-            <a href="https://science-dao.org/contact/">Contact</a> |{"  "}
-            <a href="https://github.com/vporton/meritocracy/issues/new" target="_blank" rel="noopener noreferrer">Report a bug</a> |{"  "}
-            <a href="https://github.com/vporton/meritocracy" title="SciWard on GitHub">
-              <img src="/github-mark.svg" alt="GitHub" width="20" height="20" style={{ verticalAlign: 'middle' }} />
-              <span style={{ marginLeft: '0.25rem' }}>GitHub</span>
-            </a>
-          </p>
+          <p className="footer-copyright">© {new Date().getFullYear()} Science DAO. All rights reserved.</p>
         </footer>
       </div>
     </div>

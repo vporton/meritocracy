@@ -212,9 +212,19 @@ interface LeaderboardEntry {
   shareInGDP: number;
 }
 
+interface UserDirectoryPage {
+  items: User[];
+  pagination: {
+    pageSize: number;
+    nextCursor: number | null;
+    hasMore: boolean;
+  };
+}
+
 // Users API
 export const usersApi = {
-  getAll: (): Promise<AxiosResponse<User[]>> => api.get('/api/users'),
+  getAll: (cursor?: number, pageSize = 25): Promise<AxiosResponse<UserDirectoryPage>> =>
+    api.get('/api/users', { params: { ...(cursor ? { cursor } : {}), pageSize } }),
   getById: (id: number): Promise<AxiosResponse<User>> => api.get(`/api/users/${id}`),
   create: (userData: CreateUserData): Promise<AxiosResponse<User>> => api.post('/api/users', userData),
   update: (id: number, userData: UpdateUserData): Promise<AxiosResponse<User>> => api.put(`/api/users/${id}`, userData),
@@ -314,4 +324,4 @@ api.interceptors.response.use(
 )
 
 export default api
-export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats, TokenPriceQuote }
+export type { User, Post, CreateUserData, CreatePostData, UpdateUserData, UpdatePostData, AuthData, DBLogEntry, LogsFilter, LogStats, LogTypes, LeaderboardEntry, SalaryStats, TokenPriceQuote, UserDirectoryPage }

@@ -96,6 +96,9 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
       <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
         Top contributors to the world economy ({leaderboard.length} total)
       </p>
+      <p style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
+        <Link to="/user-audit-logs" className="audit-link">Browse all users’ audit logs</Link>
+      </p>
 
       <div className="leaderboard-container">
         <div className="leaderboard-header">

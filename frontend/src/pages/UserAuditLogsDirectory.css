@@ -1,0 +1,114 @@
+.user-audit-logs-directory {
+  min-height: 80vh;
+  padding: 2rem 0;
+  background: #f7fafc;
+}
+
+.user-audit-logs-directory .container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.user-audit-logs-directory .page-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.user-audit-logs-directory .back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #4c51bf;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.user-audit-logs-directory .back-link:hover,
+.user-audit-log-link:hover {
+  text-decoration: underline;
+}
+
+.user-audit-logs-directory h1 {
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+  font-size: 2.25rem;
+}
+
+.user-audit-logs-directory .page-header p,
+.user-audit-list-item p {
+  color: #718096;
+}
+
+.user-audit-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.user-audit-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.user-audit-list-item h2,
+.user-audit-list-item p {
+  margin: 0;
+}
+
+.user-audit-list-item h2 {
+  color: #2d3748;
+  font-size: 1.1rem;
+}
+
+.user-audit-list-item p {
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.user-audit-log-link {
+  flex: 0 0 auto;
+  color: #4c51bf;
+  font-weight: 600;
+}
+
+.directory-status {
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+}
+
+.directory-pagination {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.directory-pagination a {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background: #4c51bf;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.directory-pagination a:hover {
+  background: #3c3f9f;
+}
+
+@media (max-width: 540px) {
+  .user-audit-list-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

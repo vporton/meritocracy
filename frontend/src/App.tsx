@@ -13,6 +13,7 @@ import BanVoting from './pages/BanVoting'
 import BanVotingTimingPlan from './pages/BanVotingTimingPlan'
 import DefensePanel from './pages/DefensePanel'
 import UserAuditLog from './pages/UserAuditLog'
+import UserAuditLogsDirectory from './pages/UserAuditLogsDirectory'
 import Treasury from './pages/Treasury'
 import SocialShareButtons from './components/SocialShareButtons'
 import type { PrerenderData } from './prerenderData'
@@ -40,6 +41,7 @@ function App({ location, helmetContext, initialData }: AppProps) {
             <Route path="/" element={<Home initialWorldGdp={initialData?.worldGdp} />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/logs/:userId" element={<UserAuditLog />} />
+            <Route path="/user-audit-logs" element={<UserAuditLogsDirectory />} />
             <Route path="/audit-log" element={<UserAuditLog />} />
             <Route path="/connect" element={<ConnectForm />} />
             <Route path="/verify-email" element={<VerifyEmail />} />

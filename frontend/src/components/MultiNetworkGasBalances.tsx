@@ -689,6 +689,22 @@ function MultiNetworkGasBalances({ initialStatus }: MultiNetworkGasBalancesProps
           USD quotes from CoinGecko. Last update: {new Date(latestQuoteTime).toLocaleString()}
         </p>
       )}
+      <div
+        style={{
+          marginTop: '0.75rem',
+          padding: '0.75rem',
+          borderRadius: '8px',
+          background: 'rgba(59, 130, 246, 0.12)',
+          border: '1px solid rgba(59, 130, 246, 0.35)'
+        }}
+      >
+        <p style={{ margin: 0, color: '#0c4a6e', fontWeight: 600 }}>
+          Fund from browser wallet
+        </p>
+        <p style={{ margin: '0.35rem 0 0', color: '#075985', fontSize: '0.85rem' }}>
+          Connect your wallet, enter an amount on the destination card, then send the asset or approve its deposit.
+        </p>
+      </div>
       {fundingStatusMessage && (
         <p style={{ margin: '0.5rem 0 0 0', color: '#065f46', fontSize: '0.85rem', fontWeight: 600 }}>
           {fundingStatusMessage}
@@ -843,12 +859,6 @@ function MultiNetworkGasBalances({ initialStatus }: MultiNetworkGasBalancesProps
                     background: 'rgba(59, 130, 246, 0.12)',
                     border: '1px solid rgba(59, 130, 246, 0.35)'
                   }}>
-                    <p style={{ margin: '0 0 0.35rem 0', color: '#dbeafe', fontWeight: 600 }}>
-                      Fund from browser wallet
-                    </p>
-                    <p style={{ margin: '0 0 0.5rem 0', color: '#bfdbfe', fontSize: '0.8rem' }}>
-                      Send the native asset directly from the injected wallet exposed by Reown.
-                    </p>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                       <input
                         type="text"
@@ -892,9 +902,6 @@ function MultiNetworkGasBalances({ initialStatus }: MultiNetworkGasBalancesProps
                 )}
                 {networkInfo.fundingAddresses && networkInfo.fundingAddresses.length > 0 && (
                   <div style={{ marginTop: '0.75rem' }}>
-                    <p style={{ margin: '0 0 0.4rem 0', color: '#d1d5db', fontWeight: 600 }}>
-                      Fill from origin network
-                    </p>
                     {networkInfo.fundingAddresses.map((funding, index) => {
                       const fundingKey = `${networkName}-funding-${index}`
                       const fundingAmountKey = `${networkName}-funding-${index}`

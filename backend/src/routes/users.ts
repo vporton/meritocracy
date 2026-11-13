@@ -49,11 +49,25 @@ function getLeaderboardDisplayName(user: LeaderboardUser): string {
   return user.name || `User ${user.id}`;
 }
 
-// GET /api/users - Get public user summaries only.
+// GET /api/users - Get a cursor-paginated page of public user summaries.
 router.get('/', async (req, res): Promise<void> => {
   try {
+    const requestedCursor = req.query.cursor === undefined ? undefined : Number(req.query.cursor);
+    const requestedPageSize = req.query.pageSize === undefined ? 25 : Number(req.query.pageSize);
+    if (requestedCursor !== undefined && (!Number.isSafeInteger(requestedCursor) || requestedCursor < 1)) {
+      res.status(400).json({ error: 'Cursor must be a positive integer' });
+      return;
+    }
+    if (!Number.isSafeInteger(requestedPageSize) || requestedPageSize < 1 || requestedPageSize > 100) {
+      res.status(400).json({ error: 'pageSize must be an integer between 1 and 100' });
+      return;
+    }
+
     const users = await prisma.user.findMany({
-      where: { isDeleted: false },
+      where: {
+        isDeleted: false,
+        ...(requestedCursor === undefined ? {} : { id: { gt: requestedCursor } })
+      },
       select: {
         id: true,
         name: true,
@@ -62,9 +76,19 @@ router.get('/', async (req, res): Promise<void> => {
         createdAt: true
       },
       orderBy: { id: 'asc' },
-      take: 500
+      // Fetch one extra row to determine whether another cursor page exists.
+      take: requestedPageSize + 1
     });
-    res.json(users);
+    const hasMore = users.length > requestedPageSize;
+    const items = hasMore ? users.slice(0, requestedPageSize) : users;
+    res.json({
+      items,
+      pagination: {
+        pageSize: requestedPageSize,
+        nextCursor: hasMore ? items[items.length - 1].id : null,
+        hasMore
+      }
+    });
   } catch (error: any) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });

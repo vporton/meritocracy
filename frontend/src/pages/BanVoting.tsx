@@ -56,6 +56,11 @@ export default function BanVoting() {
     const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
     const isKycApproved = authUser?.kycVotingStatus === 'APPROVED';
+    const voteDisabledReason = !authUser
+        ? 'Log in required'
+        : !isKycApproved
+            ? 'Voting KYC required'
+            : null;
 
     // Fetch evaluated users and their vote stats
     const { data: users, isLoading, isError } = useQuery<User[]>({
@@ -161,6 +166,9 @@ export default function BanVoting() {
                 <header className="page-header">
                     <h1>Ban Voting System</h1>
                     <p className="subtitle">Vote to ban users who do <em>prompt injection</em> or <em>severe plagiarism</em>. Weekly reset.</p>
+                    <div className="ban-voting-introduction">
+                        <p>Ban voting is a community safeguard for evaluated SciWard accounts. Any logged-in user with approved Voting KYC can cast one vote for a given account in a weekly voting period; voters should review the public profiles, audit logs, and supporting links before acting. A ban takes effect when it reaches the larger of 12 votes or 1% of currently approved Voting KYC users. The first ban vote opens the case and immediately places that account’s payout on hold, so the rest of the community’s payouts can continue while the evidence is considered. If the threshold is not reached, the week’s vote count resets at Monday 00:00 and a new case must be opened in the new week. A banned user can present evidence to the Defense Panel and seek an unban vote; unbanning requires the larger of 16 votes or 1% of approved Voting KYC users. Use the links on each account to inspect the available evidence, and include confirming links when you open a case.</p>
+                    </div>
                     <p className="subtitle plan-link-row">
                         <a href="/ban-voting/timing-plan">View payout and ban/unban timing plan</a>
                     </p>
@@ -171,6 +179,33 @@ export default function BanVoting() {
                     </p>
                 </header>
 
+                <section className="ban-voting-explainer" aria-label="Ban voting guide">
+                    <section>
+                        <h2>How Ban Voting Works</h2>
+                        <p>Open a case with a reason and evidence, then other eligible voters can join it once that week. Each voter may vote once per target per week. Reaching the ban quorum applies a one-year ban; the weekly count starts over every Monday at 00:00.</p>
+                    </section>
+                    <section>
+                        <h2>What Counts as Prompt Injection or Severe Plagiarism?</h2>
+                        <p>Report deliberate attempts to manipulate or override an AI reviewer, including hidden or encoded instructions, and substantial copying presented as the account holder’s own work. Disagreement with an evaluation or a minor citation issue is not, by itself, grounds for a ban. Link to the specific public evidence.</p>
+                    </section>
+                    <section>
+                        <h2>Users Currently Eligible for a Ban Vote</h2>
+                        <p>The cards below list evaluated or onboarded accounts that can be reviewed in the current voting period, including accounts visible for an unban decision. A target’s vote total is only for the current week.</p>
+                    </section>
+                    <section>
+                        <h2>Defense Panel and Appeals</h2>
+                        <p>The Human-Governance Defense Panel can prepare an advisory scan of public evidence; it cannot ban an account or change a vote. A person contesting a ban should submit relevant public evidence there and ask approved voters to consider an unban vote. An unban removes the payment hold and schedules compensation.</p>
+                    </section>
+                    <section className="ban-voting-faq">
+                        <h2>FAQ</h2>
+                        <dl>
+                            <div><dt>Who can vote?</dt><dd>Logged-in users with approved Voting KYC.</dd></div>
+                            <div><dt>Why is a payout held?</dt><dd>A hold begins when the first ban vote opens a case, pending the vote’s result.</dd></div>
+                            <div><dt>Where can I inspect the evidence?</dt><dd>Use each card’s Audit Logs and Defense Panel links.</dd></div>
+                        </dl>
+                    </section>
+                </section>
+
                 {!isKycApproved && authUser && (
                     <div className="kyc-warning-banner">
                         <p><strong>Verification Required:</strong> You need to pass KYC Level 1 (Voting KYC) to participate in ban voting.
@@ -180,7 +215,8 @@ export default function BanVoting() {
 
                 {!authUser && (
                     <div className="kyc-warning-banner">
-                        <p>Please <a href="/connect">log in</a> to participate in ban voting.</p>
+                        <p>Log in to participate in ban voting.</p>
+                        <a className="login-to-vote-button" href="/connect">Log in to vote</a>
                     </div>
                 )}
 
@@ -305,12 +341,12 @@ export default function BanVoting() {
                                     </div>
                                 </div>
                                 <button
-                                    className={`vote-button ${!isKycApproved ? 'disabled' : ''}`}
+                                    className={`vote-button ${voteDisabledReason ? 'disabled' : ''}`}
                                     onClick={() => handleVoteClick(user)}
-                                    disabled={!isKycApproved}
-                                    title={!isKycApproved ? 'KYC Level 1 required' : ''}
+                                    disabled={Boolean(voteDisabledReason)}
+                                    title={voteDisabledReason ?? ''}
                                 >
-                                    {user.voteCount === 0 ? 'Start Ban Vote' : 'Join Ban Vote'}
+                                    {voteDisabledReason ?? (user.voteCount === 0 ? 'Start Ban Vote' : 'Join Ban Vote')}
                                 </button>
                             </div>
                         ))

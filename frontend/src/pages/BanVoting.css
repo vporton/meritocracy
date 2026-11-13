@@ -31,6 +31,60 @@
     font-size: 1.1rem;
 }
 
+.ban-voting-introduction {
+    max-width: 900px;
+    margin: 1rem auto 0;
+    color: #4a5568;
+    line-height: 1.65;
+    text-align: left;
+}
+
+.ban-voting-explainer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.ban-voting-explainer > section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.25rem;
+    color: #4a5568;
+    line-height: 1.55;
+}
+
+.ban-voting-explainer h2 {
+    margin: 0 0 0.65rem;
+    color: #2d3748;
+    font-size: 1.2rem;
+}
+
+.ban-voting-explainer p {
+    margin: 0;
+}
+
+.ban-voting-faq {
+    grid-column: 1 / -1;
+}
+
+.ban-voting-faq dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+}
+
+.ban-voting-faq dt {
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.ban-voting-faq dd {
+    margin: 0.25rem 0 0;
+}
+
 .plan-link-row {
     margin-top: 0.6rem;
 }
@@ -299,6 +353,20 @@
     font-weight: 600;
 }
 
+.kyc-warning-banner .login-to-vote-button {
+    display: inline-block;
+    margin-top: 0.65rem;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    background: #c05621;
+    color: #fff;
+    text-decoration: none;
+}
+
+.kyc-warning-banner .login-to-vote-button:hover {
+    background: #9c4221;
+}
+
 .vote-button.disabled {
     background: #cbd5e0 !important;
     color: #718096 !important;
@@ -307,6 +375,13 @@
 
 .vote-button.disabled:hover {
     background: #cbd5e0 !important;
+}
+
+@media (max-width: 720px) {
+    .ban-voting-explainer,
+    .ban-voting-faq dl {
+        grid-template-columns: 1fr;
+    }
 }
 
 .user-profiles {

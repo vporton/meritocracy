@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { usersApi, LeaderboardEntry } from '../services/api'
 import { useWorldGdp } from '../hooks/useWorldGdp'
+import { formatGdpSharePercentage } from '../utils/gdp'
 
 interface LeaderboardProps {
   limit?: number;
@@ -129,7 +130,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
               <span className="leaderboard-name" title={`User #${entry.userId}: ${entry.name}`}>{entry.name}</span>
             </div>
             <div className="col-share">
-              <span className="share-percent">{entry.shareInGDP} of GDP</span>
+              <span className="share-percent">{formatGdpSharePercentage(entry.shareInGDP)} of GDP</span>
               {worldGdp && (
                 <span className="share-value">
                   {' = '}${(entry.shareInGDP * worldGdp.worldGdp).toLocaleString()}

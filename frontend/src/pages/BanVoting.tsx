@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import Canonical from '../components/Canonical';
 import { API_BASE_URL } from '../services/api';
 import { getFrontendOrigin } from '../config/origins';
+import { formatGdpSharePercentage } from '../utils/gdp';
 import './BanVoting.css';
 
 interface AIResponse {
@@ -202,8 +203,8 @@ export default function BanVoting() {
                                         <span className="stat">
                                             <span className="label">Recommended (yearly) Salary:</span>
                                             <span className="value">
-                                                {user.shareInGDP
-                                                    ? `${(user.shareInGDP * 100).toExponential(4)}%${worldGdp ? ` ($${(user.shareInGDP * worldGdp).toLocaleString()})` : ''}`
+                                                {user.shareInGDP !== null
+                                                    ? `${formatGdpSharePercentage(user.shareInGDP)}${worldGdp ? ` ($${(user.shareInGDP * worldGdp).toLocaleString()})` : ''}`
                                                     : 'N/A'
                                                 }
                                             </span>

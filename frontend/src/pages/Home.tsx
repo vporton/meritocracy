@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async'
 import Canonical from '../components/Canonical'
 import { getFrontendOrigin } from '../config/origins'
 import { useWorldGdp } from '../hooks/useWorldGdp'
+import { formatGdpSharePercentage } from '../utils/gdp'
 
 interface UserGdpShareData {
   userId: number;
@@ -233,7 +234,7 @@ export default function Home({ initialWorldGdp }: HomeProps) {
           {userGdpShare.shareInGDP !== null ? (
             <div>
               <p><span aria-hidden="true">🎯</span> <strong>Your Recommended (yearly) Salary:</strong>{" "}
-                {userGdpShare.shareInGDP.toString()}{" = "}
+                {formatGdpSharePercentage(userGdpShare.shareInGDP)} of GDP{" = "}
                 {worldGdp ? `$${(userGdpShare.shareInGDP * worldGdp.worldGdp).toLocaleString()}` : "Calculating..."}</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
                 This represents your calculated portion of the world economy based on your contributions

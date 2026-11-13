@@ -206,7 +206,11 @@ export default function Home({ initialWorldGdp }: HomeProps) {
           <div>
             <p><span aria-hidden="true">💰</span> <strong>World GDP:</strong> {worldGdp.formatted} {worldGdp.currency}</p>
             <p style={{ fontSize: '0.9rem', color: '#888' }}>
-              Last updated: {new Date(worldGdp.lastUpdated).toLocaleDateString()}
+              Last updated: {new Intl.DateTimeFormat('en-GB', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              }).format(new Date(worldGdp.lastUpdated))}
             </p>
           </div>
         ) : (

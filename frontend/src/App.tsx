@@ -1,4 +1,4 @@
-import { BrowserRouter, StaticRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, StaticRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { HelmetProvider } from "react-helmet-async";
 import { WagmiProvider } from './lib/retiredWallet'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -53,7 +53,17 @@ function App({ location, helmetContext, initialData }: AppProps) {
             <Route path="/login" element={<Navigate to="/connect" replace />} />
           </Routes>
         </main>
-        <footer>
+        <footer className="site-footer">
+          <Link to="/" className="footer-brand" aria-label="SciWard home">
+            <img
+              src="/ward.png"
+              className="footer-logo"
+              width="36"
+              height="36"
+              alt=""
+            />
+            <span>SciWard</span>
+          </Link>
           <SocialShareButtons
             title="SciWard"
             text="SciWard funds scientists and open-source developers through transparent AI-assisted governance."

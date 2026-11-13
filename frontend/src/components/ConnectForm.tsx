@@ -316,7 +316,7 @@ const connectMetaMaskSolanaWallet = async (): Promise<string | null> => {
     dapp: {
       name: 'SciWard',
       url: window.location.origin,
-      iconUrl: `${window.location.origin}/logo.png`,
+      iconUrl: `${window.location.origin}/ward.png`,
     },
     // The connector accepts any Solana RPC endpoint. A public endpoint keeps
     // address-only wallet linking independent of an Infura account.

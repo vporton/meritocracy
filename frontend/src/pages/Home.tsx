@@ -140,7 +140,7 @@ export default function Home({ initialWorldGdp }: HomeProps) {
       "name": "SciWard",
       "url": "${frontendOrigin}",
       "description": "An AI-powered funding platform for scientists and open-source developers.",
-      "logo": "${frontendOrigin}/logo.png",
+      "logo": "${frontendOrigin}/ward.png",
       "sameAs": [
         "https://science-dao.org"
       ]

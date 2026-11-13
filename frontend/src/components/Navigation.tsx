@@ -19,6 +19,16 @@ function Navigation() {
   return (
     <nav className="nav" aria-label="Main">
       <div className="nav-header">
+        <Link to="/" className="nav-brand" aria-label="SciWard home" onClick={closeMenu}>
+          <img
+            src="/ward.png"
+            className="nav-logo"
+            width="44"
+            height="44"
+            alt=""
+          />
+          <span className="nav-brand-name">SciWard</span>
+        </Link>
         <button className="nav-toggle" onClick={toggleMenu} aria-label="Toggle navigation">
           ☰
         </button>

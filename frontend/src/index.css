@@ -196,6 +196,44 @@ button:focus-visible {
   flex-wrap: wrap;
 }
 
+.nav-header {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.nav-brand,
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.nav-brand:hover,
+.footer-brand:hover {
+  color: inherit;
+}
+
+.nav-logo,
+.footer-logo {
+  display: block;
+  object-fit: cover;
+  border-radius: 9px;
+}
+
+.nav-logo {
+  width: 44px;
+  height: 44px;
+}
+
+.footer-logo {
+  width: 36px;
+  height: 36px;
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;
@@ -350,7 +388,8 @@ button:focus-visible {
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
-  width: 100%;
+  width: auto;
+  flex: 1 1 auto;
   align-items: center;
   min-width: 0;
 }
@@ -410,7 +449,8 @@ button:focus-visible {
 
   .nav-header {
     display: flex;
-    justify-content: flex-end; /* Or space-between if we add a brand later */
+    justify-content: space-between;
+    width: 100%;
   }
 
   .nav-toggle {
@@ -516,6 +556,24 @@ button:focus-visible {
     font-weight: normal;
     font-size: 0.8em;
     margin-top: 2px;
+  }
+}
+
+.site-footer {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #333;
+}
+
+.footer-brand {
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .site-footer {
+    border-top-color: #ddd;
   }
 }
 

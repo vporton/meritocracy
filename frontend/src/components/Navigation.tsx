@@ -17,7 +17,7 @@ function Navigation() {
   }
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="Main">
       <div className="nav-header">
         <button className="nav-toggle" onClick={toggleMenu} aria-label="Toggle navigation">
           ☰
@@ -29,6 +29,7 @@ function Navigation() {
           <Link
             to="/"
             className={`nav-link ${isActive('/') ? 'active' : ''}`}
+            aria-current={`${isActive('/') ? 'page' : 'false'}`}
             onClick={closeMenu}
           >
             Home
@@ -36,13 +37,15 @@ function Navigation() {
           <Link
             to="/logs"
             className={`nav-link ${isActive('/logs') ? 'active' : ''}`}
+            aria-current={`${isActive('/logs') ? 'page' : 'false'}`}
             onClick={closeMenu}
           >
-            Logs
+            Audit Logs
           </Link>
           <Link
             to="/treasury"
             className={`nav-link ${isActive('/treasury') ? 'active' : ''}`}
+            aria-current={`${isActive('/treasury') ? 'page' : 'false'}`}
             onClick={closeMenu}
           >
             Treasury
@@ -50,16 +53,17 @@ function Navigation() {
           <Link
             to="/ban-voting"
             className={`nav-link ${isActive('/ban-voting') ? 'active' : ''}`}
+            aria-current={`${isActive('/ban-voting') ? 'page' : 'false'}`}
             onClick={closeMenu}
           >
             Ban Voting
           </Link>
           <Link
-            to="https://science-dao.org/sciward/"
+            to="https://science-dao.org/meritocracy/"
             className='nav-link'
             onClick={closeMenu}
           >
-            Site
+            Science DAO
           </Link>
           <Link
             to="https://science-dao.org/donation/"
@@ -75,15 +79,6 @@ function Navigation() {
           >
             Help
           </Link>
-          <a
-            href="https://github.com/vporton/meritocracy/issues/new"
-            className="nav-link"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={closeMenu}
-          >
-            Report a bug
-          </a>
         </div>
 
         <div className="nav-right">
@@ -99,9 +94,10 @@ function Navigation() {
               <Link
                 to="/connect"
                 className={`nav-link ${isActive('/connect') ? 'active' : ''}`}
+                aria-current={`${isActive('/connect') ? 'page' : 'false'}`}
                 onClick={closeMenu}
               >
-                Connect
+                Connect Accounts
               </Link>
               {isAuthenticated && (
                 <button

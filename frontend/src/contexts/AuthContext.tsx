@@ -32,8 +32,18 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
+  const [isLoading, setIsLoading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Keep the server render and the browser's first render identical. Browser
+  // credentials are restored immediately after hydration.
+  useEffect(() => {
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      setIsLoading(true);
+      setToken(storedToken);
+    }
+  }, []);
 
   const notifyAuthSync = useCallback(() => {
     if (typeof window === 'undefined') {

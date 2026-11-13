@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { getFrontendOrigin } from '../config/origins'
 import './SocialShareButtons.css'
 
 interface SocialShareButtonsProps {
@@ -13,7 +14,7 @@ export default function SocialShareButtons({
   url,
 }: SocialShareButtonsProps) {
   const [copied, setCopied] = useState(false)
-  const shareUrl = useMemo(() => url || window.location.href, [url])
+  const shareUrl = useMemo(() => url || getFrontendOrigin(), [url])
   const encodedUrl = encodeURIComponent(shareUrl)
   const encodedText = encodeURIComponent(text)
   const encodedTitle = encodeURIComponent(title)

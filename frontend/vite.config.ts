@@ -1,12 +1,69 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 // import environment from 'vite-plugin-environment';
 import dotenv from 'dotenv';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 dotenv.config();
 
 const polyfillsPath = fileURLToPath(new URL('./src/polyfills.ts', import.meta.url));
+const indexPath = fileURLToPath(new URL('./index.html', import.meta.url));
+
+const staticRoutes = new Set([
+  '/',
+  '/treasury',
+  '/ban-voting',
+  '/logs',
+  '/audit-log',
+  '/ban-voting/timing-plan',
+  '/timing-plan',
+  '/defense-panel',
+  '/connect',
+  '/verify-email',
+  '/admin',
+]);
+
+const isPrerenderedRoute = (pathname: string) =>
+  staticRoutes.has(pathname) || /^\/logs\/[^/]+\/?$/.test(pathname);
+
+const injectPrerenderedPage = (template: string, html: string, head: string) => template
+  .replace('<div id="root"></div>', `<div id="root">${html}</div>`)
+  .replace('    <title>SciWard App</title>\n', '')
+  .replace('</head>', `${head}\n  </head>`);
+
+const reactPrerenderDev = (): Plugin => ({
+  name: 'react-prerender-dev',
+  apply: 'serve' as const,
+  configureServer(server) {
+    // Handle documents before Vite's SPA fallback returns the empty template.
+    server.middlewares.use(async (request, response, next) => {
+      if (request.method !== 'GET' || !request.url) {
+        next();
+        return;
+      }
+
+      const url = new URL(request.url, 'http://localhost');
+      if (!isPrerenderedRoute(url.pathname)) {
+        next();
+        return;
+      }
+
+      try {
+        const source = await readFile(indexPath, 'utf8');
+        const template = await server.transformIndexHtml(request.url, source);
+        const renderer = await server.ssrLoadModule('/src/entry-server.tsx');
+        const rendered = await renderer.render(request.url);
+        response.statusCode = 200;
+        response.setHeader('Content-Type', 'text/html; charset=utf-8');
+        response.end(injectPrerenderedPage(template, rendered.html, rendered.head));
+      } catch (error) {
+        server.ssrFixStacktrace(error as Error);
+        next(error);
+      }
+    });
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -21,6 +78,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    reactPrerenderDev(),
     // environment("all", { prefix: "VITE_" }),
   ],
   define: {
@@ -39,6 +97,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['buffer', 'crypto-browserify', 'stream-browserify', 'ethers', 'wagmi', 'axios'],
+  },
+  ssr: {
+    // react-helmet-async publishes CommonJS server exports. Bundling it keeps
+    // those exports interoperable in Vite's ESM prerender artifact.
+    noExternal: ['react-helmet-async'],
   },
   preview: {
     allowedHosts: [

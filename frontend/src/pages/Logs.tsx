@@ -296,14 +296,6 @@ const Logs: React.FC = () => {
     );
   };
 
-  if (loading && logs.length === 0) {
-    return (
-      <div className="logs-container">
-        <div className="loading">Loading logs...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="logs-container">
       <Helmet>
@@ -386,7 +378,9 @@ const Logs: React.FC = () => {
       <div className="logs-section">
         <h3>Logs ({logs.length})</h3>
 
-        {logs.length === 0 ? (
+        {loading && logs.length === 0 ? (
+          <div className="loading">Loading logs...</div>
+        ) : logs.length === 0 ? (
           <div className="no-logs">No logs found matching the current filters.</div>
         ) : (
           <div className="logs-list">

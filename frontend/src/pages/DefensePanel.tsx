@@ -25,8 +25,8 @@ const providers: Record<Provider, { label: string; model: string }> = {
 };
 type VotingUser = { id: number; name: string | null; githubHandle?: string; gitlabHandle?: string; bitbucketHandle?: string; orcidId?: string };
 
-function storedKey(provider: Provider) { try { return localStorage.getItem(`${KEY_PREFIX}${provider}`) ?? ''; } catch { return ''; } }
-function storedPrompt() { try { return localStorage.getItem(PROMPT_STORAGE_KEY) ?? DEFAULT_REVIEW_PROMPT; } catch { return DEFAULT_REVIEW_PROMPT; } }
+function storedKey(provider: Provider) { if (typeof window === 'undefined') return ''; try { return localStorage.getItem(`${KEY_PREFIX}${provider}`) ?? ''; } catch { return ''; } }
+function storedPrompt() { if (typeof window === 'undefined') return DEFAULT_REVIEW_PROMPT; try { return localStorage.getItem(PROMPT_STORAGE_KEY) ?? DEFAULT_REVIEW_PROMPT; } catch { return DEFAULT_REVIEW_PROMPT; } }
 function isPublicUrl(value: string) {
   try {
     const url = new URL(value); const host = url.hostname.toLowerCase();

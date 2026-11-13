@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -45,7 +46,15 @@ interface AssessmentsResponse {
 
 export default function UserAuditLog() {
     const frontendOrigin = getFrontendOrigin();
-    const { userId } = useParams<{ userId: string }>();
+    const { userId: routeUserId } = useParams<{ userId: string }>();
+    const hydrated = useSyncExternalStore(
+        () => () => undefined,
+        () => true,
+        () => false
+    );
+    // A generic audit-log document can be served for every dynamic user ID.
+    // Keep its first browser render identical, then resolve the real route.
+    const userId = hydrated ? routeUserId : undefined;
     const [searchParams] = useSearchParams();
     const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
     const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
@@ -83,7 +92,7 @@ export default function UserAuditLog() {
     const baseLogsPath = userId ? `/logs/${userId}` : '/logs';
     const pageToSearch = (targetPage: number) => (targetPage > 1 ? `?page=${targetPage}` : '');
 
-    const displayName = userProfile?.name?.trim() || (userId ? `User #${userId}` : 'Unknown user');
+    const displayName = userProfile?.name?.trim() || (userId ? `User #${userId}` : 'a selected user');
 
     const formatFraction = (value: number) =>
         Math.abs(value) < 0.0001 ? value.toExponential(4) : value.toLocaleString(undefined, { maximumSignificantDigits: 6 });
@@ -191,7 +200,8 @@ export default function UserAuditLog() {
     return (
         <div className="user-audit-log-page">
             <Helmet>
-                <title>{`Recommended Salary for "${displayName}"${page !== 1 ? ` (Archive page ${page})` : ""} - SciWard`}</title>
+                <title>{userId ? `Recommended Salary for "${displayName}"${page !== 1 ? ` (Archive page ${page})` : ""} - SciWard` : 'User Audit Logs - SciWard'}</title>
+                <meta name="description" content="Review the AI rationales and public sources behind SciWard recommended salaries." />
             </Helmet>
             <Canonical baseUrl={frontendOrigin} />
             <div className="container">
@@ -214,7 +224,11 @@ export default function UserAuditLog() {
                 </header>
 
                 <div className="assessments-list">
-                    {isLoading ? (
+                    {!userId ? (
+                        <div className="empty-state">
+                            <p>Choose a user from Ban Voting to review their recommended-salary research, AI rationale, and public sources.</p>
+                        </div>
+                    ) : isLoading ? (
                         <div className="loading">Loading research history...</div>
                     ) : isError ? (
                         <div className="error-message">Failed to load research data.</div>

@@ -6,8 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "start": "npx serve -s dist -l 4173",
+    "build": "npm run build:client && npm run build:server && npm run prerender",
+    "build:client": "vite build",
+    "build:server": "vite build --ssr src/entry-server.tsx --outDir .prerender",
+    "prerender": "node scripts/prerender.mjs",
+    "start": "npx serve dist -l 4173",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
@@ -27,8 +30,8 @@
     "crypto-js": "^4.2.0",
     "ethers": "^6.16.0",
     "process": "^0.11.10",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^7.17.0",
     "viem": "^2.55.13",
@@ -37,8 +40,8 @@
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
@@ -54,7 +57,7 @@
     "vite": "^7.3.1"
   },
   "overrides": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
   }
 }

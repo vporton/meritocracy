@@ -41,7 +41,9 @@
     "flexible-batches": {
       "openai": "6.22.0"
     },
-    "utf-8-validate": "5.0.10"
+    "utf-8-validate": "5.0.10",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
   },
   "dependencies": {
     "@icp-sdk/core": "5.4.0",

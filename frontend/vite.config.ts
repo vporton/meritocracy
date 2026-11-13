@@ -36,7 +36,7 @@ const serializePageData = (data: unknown) => JSON.stringify(data)
 
 const injectPrerenderedPage = (template: string, html: string, head: string, data: unknown) => template
   .replace('<div id="root"></div>', `<div id="root">${html}</div>`)
-  .replace('    <title>SciWard App</title>\n', '')
+  .replace('    <title>SciWard</title>\n', '')
   .replace(
     '</head>',
     `${head}\n<script id="__PRERENDER_DATA__" type="application/json">${serializePageData(data)}</script>\n  </head>`,

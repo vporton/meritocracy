@@ -56,7 +56,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
   if (loading) {
     return (
       <div className="card">
-        <h3>🏆 Internet contributors leaderboard</h3>
+        <h3><span aria-hidden="true">🏆</span> Internet contributors leaderboard</h3>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <div className="loading">Loading leaderboard...</div>
         </div>
@@ -67,9 +67,9 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
   if (error) {
     return (
       <div className="card">
-        <h3>🏆 Internet contributors leaderboard</h3>
+        <h3><span aria-hidden="true">🏆</span> Internet contributors leaderboard</h3>
         <div className="error">
-          ❌ {error}
+          <span aria-hidden="true">❌</span> {error}
         </div>
       </div>
     )
@@ -78,7 +78,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
   if (leaderboard.length === 0) {
     return (
       <div className="card">
-        <h3>🏆 Internet contributors leaderboard</h3>
+        <h3><span aria-hidden="true">🏆</span> Internet contributors leaderboard</h3>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <p>📊 No GDP shares have been calculated yet</p>
           <p style={{ fontSize: '0.9rem', color: '#888' }}>
@@ -91,7 +91,7 @@ function Leaderboard({ limit = 100, showTop = 10 }: LeaderboardProps) {
 
   return (
     <div className="card">
-      <h3>🏆 Internet contributors leaderboard</h3>
+      <h3><span aria-hidden="true">🏆</span> Internet contributors leaderboard</h3>
       <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '1rem' }}>
         Top contributors to the world economy ({leaderboard.length} total)
       </p>

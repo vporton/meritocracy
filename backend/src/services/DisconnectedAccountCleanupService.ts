@@ -240,7 +240,7 @@ export class DisconnectedAccountCleanupService {
 
           } catch (error) {
             const errorMessage = `Failed to delete batch starting at index ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-            console.error(`❌ ${errorMessage}`);
+            console.error(`<span aria-hidden="true">❌</span> ${errorMessage}`);
             result.errors.push(errorMessage);
           }
         }

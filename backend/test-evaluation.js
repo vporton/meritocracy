@@ -16,7 +16,7 @@ async function testEvaluation() {
       console.log('✅ Evaluation completed successfully!');
       console.log('📊 Result:', result.result);
     } else {
-      console.log('❌ Evaluation failed:', result.error);
+      console.log('<span aria-hidden="true">❌</span> Evaluation failed:', result.error);
     }
   } catch (error) {
     console.error('💥 Test failed with error:', error);

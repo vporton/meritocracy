@@ -110,7 +110,7 @@ export class TaskExecutor {
         await this.releaseTaskLock(taskId);
       }
     } catch (error) {
-      console.error(`❌ Error executing task ${taskId}:`, error);
+      console.error(`<span aria-hidden="true">❌</span> Error executing task ${taskId}:`, error);
       await this.markTaskAsFailed(taskId);
       await this.releaseTaskLock(taskId);
       return false;

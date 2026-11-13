@@ -183,7 +183,7 @@ const executed = await multiNetworkGasTokenDistributionService
   .executePendingTransactions(undefined, 100);
 
 console.log(`✅ Executed: ${executed.executed}`);
-console.log(`❌ Failed: ${executed.failed}`);
+console.log(`<span aria-hidden="true">❌</span> Failed: ${executed.failed}`);
 console.log(`⏭️  Skipped: ${executed.skipped}`);
 
 // Check statistics

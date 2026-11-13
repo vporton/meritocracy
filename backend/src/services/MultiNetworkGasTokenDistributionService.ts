@@ -225,7 +225,7 @@ export class MultiNetworkGasTokenDistributionService {
           baseContexts = await adapter.getNetworkContexts(tokenOptions);
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`❌ Failed to load contexts for adapter ${adapter.type}: ${message}`);
+          console.error(`<span aria-hidden="true">❌</span> Failed to load contexts for adapter ${adapter.type}: ${message}`);
           continue;
         }
 
@@ -251,7 +251,7 @@ export class MultiNetworkGasTokenDistributionService {
                 context: scopedContext
               });
             } catch (error) {
-              console.error(`❌ Failed to setup country context for ${context.networkId} / ${country}:`, error);
+              console.error(`<span aria-hidden="true">❌</span> Failed to setup country context for ${context.networkId} / ${country}:`, error);
             }
           }
 
@@ -270,7 +270,7 @@ export class MultiNetworkGasTokenDistributionService {
                 context: scopedContext
               });
             } catch (error) {
-              console.error(`❌ Failed to setup region context for ${context.networkId} / ${region}:`, error);
+              console.error(`<span aria-hidden="true">❌</span> Failed to setup region context for ${context.networkId} / ${region}:`, error);
             }
           }
         }
@@ -574,7 +574,7 @@ export class MultiNetworkGasTokenDistributionService {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.error(
-          `❌ Failed to read wallet balance for ${context.networkName} (${context.adapterType}): ${message}`
+          `<span aria-hidden="true">❌</span> Failed to read wallet balance for ${context.networkName} (${context.adapterType}): ${message}`
         );
         networkDistributions.set(contextId, {
           adapter,
@@ -973,12 +973,12 @@ export class MultiNetworkGasTokenDistributionService {
 
           const message = `Failed to send to user ${dist.userId}: ${errorMessage}`;
           result.errors.push(message);
-          console.error(`❌ [${context.networkName}] ${message}`);
+          console.error(`<span aria-hidden="true">❌</span> [${context.networkName}] ${message}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push(`Error processing user ${dist.userId}: ${errorMessage}`);
-        console.error(`❌ [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`);
+        console.error(`<span aria-hidden="true">❌</span> [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`);
       }
     }
 
@@ -1307,12 +1307,12 @@ export class MultiNetworkGasTokenDistributionService {
 
           const message = `Failed to store transaction for user ${dist.userId}: ${errorMessage}`;
           result.errors.push(message);
-          console.error(`❌ [${context.networkName}] ${message}`);
+          console.error(`<span aria-hidden="true">❌</span> [${context.networkName}] ${message}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push(`Error processing user ${dist.userId}: ${errorMessage}`);
-        console.error(`❌ [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`);
+        console.error(`<span aria-hidden="true">❌</span> [${context.networkName}] Error processing user ${dist.userId}: ${errorMessage}`);
       }
     }
 
@@ -1460,7 +1460,7 @@ export class MultiNetworkGasTokenDistributionService {
 
           results.failed++;
           results.errors.push(`Transaction ${pendingTx.transactionHash.substring(0, 16)}...: ${errorMessage} `);
-          console.error(`❌ Failed to execute transaction ${pendingTx.transactionHash}: ${errorMessage} `);
+          console.error(`<span aria-hidden="true">❌</span> Failed to execute transaction ${pendingTx.transactionHash}: ${errorMessage} `);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -1473,7 +1473,7 @@ export class MultiNetworkGasTokenDistributionService {
 
     console.log('📊 [STAGE 2] Execution completed:');
     console.log(`  ✅ Executed: ${results.executed} `);
-    console.log(`  ❌ Failed: ${results.failed} `);
+    console.log(`  <span aria-hidden="true">❌</span> Failed: ${results.failed} `);
     console.log(`  ⏭️  Skipped: ${results.skipped} `);
 
     return results;

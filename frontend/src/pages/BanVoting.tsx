@@ -149,10 +149,10 @@ export default function BanVoting() {
     return (
     <div className="ban-voting-page">
       <Helmet>
-        <title>Ban Voting · SciWard Platform</title>
+        <title>Ban Voting – Report Prompt Injection &amp; Plagiarism | SciWard</title>
         <meta
           name="description"
-          content="Participate in SciWard's ban voting to flag or reverse bans on accounts suspected of prompt injection or severe plagiarism."
+          content="Vote to ban SciWard users caught using prompt injection or severe plagiarism. Weekly reset, transparent audit logs and a human-governance defense panel."
         />
       </Helmet>
       <Canonical baseUrl={frontendOrigin} />

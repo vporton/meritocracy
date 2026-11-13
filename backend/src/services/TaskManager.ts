@@ -71,7 +71,7 @@ export class TaskManager {
       const success = await TaskRunnerRegistry.runByTaskId(this.prisma, taskId);
       return success; // What does the return value of this function mean?
     } catch (error) {
-      console.error(`❌ Error running task ${taskId}:`, error);
+      console.error(`<span aria-hidden="true">❌</span> Error running task ${taskId}:`, error);
 
       TaskRunnerRegistry.markTaskAsCancelled(this.prisma, taskId);
 
@@ -203,7 +203,7 @@ export class TaskManager {
       return { executed, failed, skipped };
 
     } catch (error) {
-      console.error('❌ Error running all pending tasks:', error);
+      console.error('<span aria-hidden="true">❌</span> Error running all pending tasks:', error);
       return { executed: 0, failed: 0, skipped: 0 };
     }
   }
@@ -317,7 +317,7 @@ export class TaskManager {
       }
 
     } catch (error) {
-      console.error(`❌ Error checking task output for task ${taskId}:`, error);
+      console.error(`<span aria-hidden="true">❌</span> Error checking task output for task ${taskId}:`, error);
 
       // Mark task as cancelled due to error
       try {
@@ -397,7 +397,7 @@ export class TaskManager {
       return deleteResult.count;
 
     } catch (error) {
-      console.error('❌ Error deleting orphaned dependencies:', error);
+      console.error('<span aria-hidden="true">❌</span> Error deleting orphaned dependencies:', error);
       return 0;
     }
   }

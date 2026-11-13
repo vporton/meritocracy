@@ -76,7 +76,7 @@ async function testCleanupServiceWithKycProtection() {
     if (dryRunResult2.preservedBannedCount > 0) {
       console.log('✅ Test 3 passed - Banned accounts are properly preserved\n');
     } else {
-      console.log('❌ Test 3 failed - No banned accounts were preserved\n');
+      console.log('<span aria-hidden="true">❌</span> Test 3 failed - No banned accounts were preserved\n');
     }
 
     // Test 4: Verify KYC accounts are preserved
@@ -119,7 +119,7 @@ async function testCleanupServiceWithKycProtection() {
     if (dryRunResult3.preservedKycCount > 0) {
       console.log('✅ Test 4 passed - KYC accounts are properly preserved\n');
     } else {
-      console.log('❌ Test 4 failed - No KYC accounts were preserved\n');
+      console.log('<span aria-hidden="true">❌</span> Test 4 failed - No KYC accounts were preserved\n');
     }
 
     // Test 5: Test with different grace periods
@@ -138,7 +138,7 @@ async function testCleanupServiceWithKycProtection() {
     if (stats90Days.disconnectedUsers <= stats7Days.disconnectedUsers) {
       console.log('✅ Test 5 passed - Grace period affects disconnected user count correctly\n');
     } else {
-      console.log('❌ Test 5 failed - Grace period logic may be incorrect\n');
+      console.log('<span aria-hidden="true">❌</span> Test 5 failed - Grace period logic may be incorrect\n');
     }
 
     // Test 6: Verify that accounts with both ban and KYC are preserved
@@ -173,7 +173,7 @@ async function testCleanupServiceWithKycProtection() {
     if (dryRunResult4.preservedBannedCount > 0 && dryRunResult4.preservedKycCount > 0) {
       console.log('✅ Test 6 passed - Accounts with both ban and KYC are properly preserved\n');
     } else {
-      console.log('❌ Test 6 failed - Accounts with both ban and KYC were not preserved\n');
+      console.log('<span aria-hidden="true">❌</span> Test 6 failed - Accounts with both ban and KYC were not preserved\n');
     }
 
     console.log('🎉 All tests completed successfully!');
@@ -190,7 +190,7 @@ async function testCleanupServiceWithKycProtection() {
     console.log('- Identity protection: Accounts with verification data preserved');
 
   } catch (error) {
-    console.error('❌ Test failed with error:', error);
+    console.error('<span aria-hidden="true">❌</span> Test failed with error:', error);
   } finally {
     await prisma.$disconnect();
   }

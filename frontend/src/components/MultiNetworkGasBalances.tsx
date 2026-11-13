@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+  import { useState, useEffect } from 'react'
 import { useAppKit, useAppKitAccount, useAppKitProvider } from '../lib/walletModal'
 import { useSendTransaction, useWriteContract } from '../lib/retiredWallet'
 import { parseEther, parseUnits, type Address } from 'viem'
@@ -585,7 +585,7 @@ function MultiNetworkGasBalances({ initialStatus }: MultiNetworkGasBalancesProps
     return (
       <div className="card">
         <div className="error">
-          ❌ {error}
+          <span aria-hidden="true">❌</span> {error}
           <br />
           <small>Make sure the backend server is running and multi-network support is configured</small>
         </div>
@@ -756,9 +756,9 @@ function MultiNetworkGasBalances({ initialStatus }: MultiNetworkGasBalancesProps
               transition: 'opacity 0.3s ease'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h4 style={{ margin: 0, color: '#646cff' }}>
+                <h2 style={{ margin: 0, color: '#646cff' }}>
                   🌐 {displayName}
-                </h4>
+                </h2>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   {isNetworkLoading && (
                     <span className="loading-spinner" style={{ fontSize: '0.8rem', color: '#888' }}>

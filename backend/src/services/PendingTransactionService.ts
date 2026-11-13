@@ -103,7 +103,7 @@ export class PendingTransactionService {
             return hash;
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            console.error(`❌ Failed to store transaction: ${message}`);
+            console.error(`<span aria-hidden="true">❌</span> Failed to store transaction: ${message}`);
             throw error;
         }
     }
@@ -195,7 +195,7 @@ export class PendingTransactionService {
             }
         });
 
-        console.log(`❌ Transaction ${transactionHash} marked as failed: ${errorMessage}`);
+        console.log(`<span aria-hidden="true">❌</span> Transaction ${transactionHash} marked as failed: ${errorMessage}`);
     }
 
     /**

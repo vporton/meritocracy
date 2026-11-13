@@ -127,8 +127,8 @@ export default function Home({ initialWorldGdp }: HomeProps) {
   return (
     <div>
       <Helmet>
-        <title>SciWard – Funding Scientists & Open Source</title>
-        <meta name="description" content="SciWard is an AI-powered funding platform for scientists and open-source developers." />
+        <title>SciWard: AI Funding for Scientists &amp; Open-Source Developers</title>
+        <meta name="description" content="Free AI-powered platform paying weekly crypto grants to scientists and open-source developers for measurable work. Connect your accounts for a free evaluation." />
         <script type="application/ld+json">
         {`
 {
@@ -201,34 +201,34 @@ export default function Home({ initialWorldGdp }: HomeProps) {
         </div>
       )}
       <div className="card">
-        <h2>🌍 World Economy</h2>
+        <p><span aria-hidden="true">🌍</span> World Economy</p>
         {worldGdp ? (
           <div>
-            <p>💰 <strong>World GDP:</strong> {worldGdp.formatted} {worldGdp.currency}</p>
+            <p><span aria-hidden="true">💰</span> <strong>World GDP:</strong> {worldGdp.formatted} {worldGdp.currency}</p>
             <p style={{ fontSize: '0.9rem', color: '#888' }}>
               Last updated: {new Date(worldGdp.lastUpdated).toLocaleDateString()}
             </p>
           </div>
         ) : (
-          <p>📊 <strong>World GDP:</strong> Data not available</p>
+          <p><span aria-hidden="true">📊</span>  <strong>World GDP:</strong> Data not available</p>
         )}
       </div>
 
       {salaryStats && (
         <div className="card">
-          <h2>💹 Recommended Salaries (All Users)</h2>
+          <h2><span aria-hidden="true">💹</span> Recommended Salaries (All Users)</h2>
           <p style={{ marginBottom: '0.25rem' }}>📈 <strong>Total recommended salary:</strong> {formatUsd(salaryStats.totalRecommendedSalary)} across {salaryStats.userCount} users</p>
           <p style={{ marginBottom: '0.25rem' }}>⚖️ <strong>Average recommended salary:</strong> {formatUsd(salaryStats.averageRecommendedSalary)}</p>
-          <p>🧮 <strong>Median recommended salary:</strong> {formatUsd(salaryStats.medianRecommendedSalary)}</p>
+          <p><span aria-hidden="true">🧮</span> <strong>Median recommended salary:</strong> {formatUsd(salaryStats.medianRecommendedSalary)}</p>
         </div>
       )}
     
       {userGdpShare && (
         <div className="card">
-          <h2>💼 Your Economic Share</h2>
+          <h2><span aria-hidden="true">💼</span> Your Economic Share</h2>
           {userGdpShare.shareInGDP !== null ? (
             <div>
-              <p>🎯 <strong>Your Recommended (yearly) Salary:</strong>{" "}
+              <p><span aria-hidden="true">🎯</span> <strong>Your Recommended (yearly) Salary:</strong>{" "}
                 {userGdpShare.shareInGDP.toString()}{" = "}
                 {worldGdp ? `$${(userGdpShare.shareInGDP * worldGdp.worldGdp).toLocaleString()}` : "Calculating..."}</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
@@ -237,7 +237,7 @@ export default function Home({ initialWorldGdp }: HomeProps) {
             </div>
           ) : (
             <div>
-              <p>⏳ <strong>Your Recommended (yearly) Salary:</strong> Not yet calculated</p>
+              <p><span aria-hidden="true">⏳</span> <strong>Your Recommended (yearly) Salary:</strong> Not yet calculated</p>
               <p style={{ fontSize: '0.9rem', color: '#888' }}>
                 Complete your profile and evaluation to receive your economic share calculation
               </p>
@@ -261,7 +261,7 @@ export default function Home({ initialWorldGdp }: HomeProps) {
               marginBottom: '1rem'
             }}>
               <p style={{ margin: 0, color: '#92400e', fontWeight: '600' }}>
-                🎉 <strong>You have already been onboarded!</strong>
+                <span aria-hidden="true">🎉</span> <strong>You have already been onboarded!</strong>
               </p>
               <p style={{ margin: '0.5rem 0 0 0', color: '#92400e', fontSize: '0.9rem' }}>
                 Your evaluation process has been completed. You can view your progress and results in the <a href="/logs" style={{ color: '#b45309', textDecoration: 'underline' }}>Logs</a> page.

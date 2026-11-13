@@ -47,7 +47,7 @@ async function testMultiNetworkSystem() {
       const distributions = await prisma.gasTokenDistribution.findMany();
       console.log(`✅ GasTokenDistribution table accessible, ${distributions.length} records found`);
     } catch (error) {
-      console.log(`❌ Database schema test failed: ${error.message}`);
+      console.log(`<span aria-hidden="true">❌</span> Database schema test failed: ${error.message}`);
       return;
     }
 
@@ -57,7 +57,7 @@ async function testMultiNetworkSystem() {
       const multiNetworkService = new MultiNetworkGasTokenDistributionService(prisma);
       console.log('✅ MultiNetworkGasTokenDistributionService initialized successfully');
     } catch (error) {
-      console.log(`❌ Service initialization failed: ${error.message}`);
+      console.log(`<span aria-hidden="true">❌</span> Service initialization failed: ${error.message}`);
       return;
     }
 

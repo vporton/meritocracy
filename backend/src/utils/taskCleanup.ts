@@ -71,6 +71,6 @@ export async function deleteTaskIfOrphaned(prisma: PrismaClient, taskId: number)
             }
         }
     } catch (error) {
-        console.error(`❌ Error in deleteTaskIfOrphaned for task ${taskId}:`, error);
+        console.error(`<span aria-hidden="true">❌</span> Error in deleteTaskIfOrphaned for task ${taskId}:`, error);
     }
 }

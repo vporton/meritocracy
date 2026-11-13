@@ -1689,7 +1689,7 @@ const ConnectForm = () => {
   return (
     <div className="connect-form">
       <Helmet>
-        <title>SciWard App - Connect Your Account and Receive Money</title>
+        <title>SciWard - Connect Your Account and Receive Money</title>
         <meta name="description" content="SciWard App - You just connect your accounts (GitHub, ORCID, etc.) and start receiving money." />
       </Helmet>
       <Canonical baseUrl={getFrontendOrigin()} />

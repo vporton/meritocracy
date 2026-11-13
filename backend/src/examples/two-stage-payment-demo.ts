@@ -24,7 +24,7 @@ async function runTwoStagePaymentDemo() {
 
     console.log('\n📊 Stage 1 Results:');
     console.log(`  🌐 Networks: ${prepared.networkResults.size}`);
-    console.log(`  ❌ Errors: ${prepared.errors.length}`);
+    console.log(`  <span aria-hidden="true">❌</span> Errors: ${prepared.errors.length}`);
 
     // Show statistics
     const statsAfterStage1 = await pendingTransactionService.getStatistics();
@@ -32,7 +32,7 @@ async function runTwoStagePaymentDemo() {
     console.log(`  📝 Pending: ${statsAfterStage1.pending}`);
     console.log(`  ⚡ Executing: ${statsAfterStage1.executing}`);
     console.log(`  ✅ Completed: ${statsAfterStage1.completed}`);
-    console.log(`  ❌ Failed: ${statsAfterStage1.failed}`);
+    console.log(`  <span aria-hidden="true">❌</span> Failed: ${statsAfterStage1.failed}`);
     console.log(`  📊 Total: ${statsAfterStage1.total}`);
 
     // ============================================================================
@@ -45,9 +45,9 @@ async function runTwoStagePaymentDemo() {
 
     console.log('\n📊 Stage 2 Results:');
     console.log(`  ✅ Executed: ${executed.executed}`);
-    console.log(`  ❌ Failed: ${executed.failed}`);
+    console.log(`  <span aria-hidden="true">❌</span> Failed: ${executed.failed}`);
     console.log(`  ⏭️  Skipped: ${executed.skipped}`);
-    console.log(`  Success: ${executed.success ? '✅' : '❌'}`);
+    console.log(`  Success: ${executed.success ? '✅' : '<span aria-hidden="true">❌</span>'}`);
 
     if (executed.errors.length > 0) {
         console.log('\n⚠️  Errors:');
@@ -62,7 +62,7 @@ async function runTwoStagePaymentDemo() {
     console.log(`  📝 Pending: ${statsAfterStage2.pending}`);
     console.log(`  ⚡ Executing: ${statsAfterStage2.executing}`);
     console.log(`  ✅ Completed: ${statsAfterStage2.completed}`);
-    console.log(`  ❌ Failed: ${statsAfterStage2.failed}`);
+    console.log(`  <span aria-hidden="true">❌</span> Failed: ${statsAfterStage2.failed}`);
     console.log(`  📊 Total: ${statsAfterStage2.total}`);
 
     console.log('\n══════════════════════════════════════════════════════════════');
@@ -77,6 +77,6 @@ runTwoStagePaymentDemo()
         process.exit(0);
     })
     .catch((error) => {
-        console.error('❌ Demo failed:', error);
+        console.error('<span aria-hidden="true">❌</span> Demo failed:', error);
         process.exit(1);
     });

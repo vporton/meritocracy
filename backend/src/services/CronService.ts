@@ -324,7 +324,7 @@ export class CronService {
             result.errors.forEach(error => console.log(`  - ${error}`));
           }
         } else {
-          console.error('❌ Monthly disconnected account cleanup failed');
+          console.error('<span aria-hidden="true">❌</span> Monthly disconnected account cleanup failed');
           result.errors.forEach(error => console.error(`  - ${error}`));
         }
 
@@ -351,7 +351,7 @@ export class CronService {
       console.log('📈 Refreshing world GDP data...');
       const success = await GlobalDataService.fetchAndUpdateWorldGdp();
       if (!success) {
-        console.error('❌ World GDP refresh failed');
+        console.error('<span aria-hidden="true">❌</span> World GDP refresh failed');
         return {
           refreshed: false,
           reason: 'failed'
@@ -452,7 +452,7 @@ export class CronService {
 
           } catch (error) {
             const errorMessage = `Failed to create evaluation flow for user ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-            console.error(`❌ ${errorMessage}`);
+            console.error(`<span aria-hidden="true">❌</span> ${errorMessage}`);
             results.errors.push(errorMessage);
             results.failed++;
           }
@@ -460,7 +460,7 @@ export class CronService {
 
         console.log('📊 Quarterly evaluation process completed:');
         console.log(`  ✅ Successful: ${results.successful}`);
-        console.log(`  ❌ Failed: ${results.failed}`);
+        console.log(`  <span aria-hidden="true">❌</span> Failed: ${results.failed}`);
 
         if (results.errors.length > 0) {
           console.log('  🚨 Errors:');

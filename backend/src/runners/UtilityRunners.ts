@@ -309,7 +309,7 @@ export abstract class BaseRunner implements TaskRunner {
 
       this.log('info', `✅ ${logPrefix} completed for task ${taskId}`, { taskId });
     } catch (error) {
-      this.log('error', `❌ Error in ${logPrefix}`, { taskId, error: error instanceof Error ? error.message : String(error) });
+      this.log('error', `<span aria-hidden="true">❌</span> Error in ${logPrefix}`, { taskId, error: error instanceof Error ? error.message : String(error) });
       throw error;
     } finally {
       await this.prisma.$disconnect();

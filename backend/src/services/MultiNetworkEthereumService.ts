@@ -325,7 +325,7 @@ export class MultiNetworkEthereumService {
             this.networks.set(networkConfig.name, networkClient);
             console.log(`✅ Initialized ${networkConfig.name} network client`);
         } catch (error) {
-            console.error(`❌ Failed to initialize ${networkConfig.name} network:`, error);
+            console.error(`<span aria-hidden="true">❌</span> Failed to initialize ${networkConfig.name} network:`, error);
         }
     }
 

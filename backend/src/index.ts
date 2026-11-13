@@ -218,7 +218,7 @@ async function initializeApp() {
 
     // Resume any distributions that were left pending when the process was interrupted.
     void multiNetworkGasTokenDistributionService.executePendingTransactions(undefined, 5000).catch(error => {
-      console.error('❌ Failed to recover pending gas token transactions on startup:', error);
+      console.error('<span aria-hidden="true">❌</span> Failed to recover pending gas token transactions on startup:', error);
     });
 
     // Set up monthly GDP update check
@@ -250,7 +250,7 @@ async function initializeApp() {
     });
 
   } catch (error) {
-    console.error('❌ Error initializing app:', error);
+    console.error('<span aria-hidden="true">❌</span> Error initializing app:', error);
   }
 }
 
@@ -264,9 +264,9 @@ const server = app.listen(PORT, async () => {
 
 server.on('error', (error: any) => {
   if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Error: Port ${PORT} is already in use. Please kill the process using it and try again.`);
+    console.error(`<span aria-hidden="true">❌</span> Error: Port ${PORT} is already in use. Please kill the process using it and try again.`);
   } else {
-    console.error('❌ Error starting server:', error);
+    console.error('<span aria-hidden="true">❌</span> Error starting server:', error);
   }
   process.exit(1);
 });

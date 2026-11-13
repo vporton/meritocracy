@@ -147,7 +147,7 @@ export class TaskRunnerRegistry {
 
       return true;
     } catch (error) {
-      console.error(`❌ Error running TaskRunner by task ID ${taskId}:`, error);
+      console.error(`<span aria-hidden="true">❌</span> Error running TaskRunner by task ID ${taskId}:`, error);
       return false;
     }
   }
@@ -217,10 +217,10 @@ export class TaskRunnerRegistry {
 
       await deleteTaskIfOrphaned(prisma, taskId);
 
-      console.log(`❌ Task ${taskId} marked as CANCELLED`);
+      console.log(`<span aria-hidden="true">❌</span> Task ${taskId} marked as CANCELLED`);
       return true;
     } catch (error) {
-      console.error(`❌ Error cancelling task ${taskId}:`, error);
+      console.error(`<span aria-hidden="true">❌</span> Error cancelling task ${taskId}:`, error);
       return false;
     }
   }

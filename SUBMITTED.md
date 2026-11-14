@@ -130,6 +130,7 @@
 * Ashoka https://www.ashoka.org - submitted 15 Dec 2025
 * SparkDeSci https://spark-science.org/ - waiver for under-resourced teams, but the site does not work.
 * Mozilla Foundation: Fellowship Program https://www.mozillafoundation.org/en/what-we-do/grantmaking/fellowship/2026-nominations-request/ - submitted 10 Jan 2026 - submitted Letter of Intent 17 Jan 2026
+* Mozilla Foundation: Fellowship Program https://www.mozillafoundation.org/en/what-we-do/grantmaking/fellowship/2027-nominations-request/ - submitted 14 Nov 2026 - submitted Letter of Intent 17 Jan 2026
 * https://grant-finder.zeffy.com
   * Science
     * SEMPRA FOUNDATION https://www.semprafoundation.org/contact-us - emailed 1 Feb 2026
